@@ -128,7 +128,6 @@ export function cell_strongest(cell: Cell){
 
 export function cell_id(cell: Cell){
   if (cell === undefined){
-    console.log("cell is undefined");
     return "undefined";
   }
 
