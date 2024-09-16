@@ -11,9 +11,9 @@
   "dependencies": {
     "effect-ts": "^0.0.1",
     "fp-ts": "^2.16.9",
-    "generic-handler": "0.2.7",
+    "generic-handler": "0.3.4",
     "rxjs": "^7.8.1",
-    "sando-layer": "0.0.4",
+    "sando-layer": "0.0.7",
     "uuid": "^10.0.0"
   }
 }

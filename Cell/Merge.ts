@@ -1,14 +1,13 @@
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-import { is_cell_value, get_cell_value, CellValue, is_nothing, is_contradiction, the_contradiction } from "./CellValue";
+import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { is_equal } from "../PublicState";
 
 
 
 
 export const merge = construct_simple_generic_procedure("merge", 2,
-    (content: CellValue, increment: CellValue) => {
+    (content: any, increment: any) => {
         if (is_nothing(content)) {
-            console.log("merge nothing");
             return increment
         }
         else if (is_nothing(increment)) {

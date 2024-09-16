@@ -3,6 +3,11 @@ import { Relation, make_relation } from "./DataTypes/Relation";
 import { Cell, add_cell_content, cell_id, cell_strongest } from "./Cell/Cell";
 import { add_global_child, add_global_propagator, get_global_parent, set_global_parent } from "./PublicState";
 import { type Either, right, left } from "fp-ts/Either";
+import { force } from "./Cell/GenericArith";
+
+
+force();
+
 export class Propagator{
  private relation : Relation; 
  private inputs_ids : string[] = []; 

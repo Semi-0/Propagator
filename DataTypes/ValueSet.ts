@@ -3,47 +3,69 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 
-import { get_cell_value, is_nothing, type CellValue } from "../Cell/CellValue";
-import { all_match, match_args } from "generic-handler/Predicates";
+import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_unusable_value, merge_layered, value_imples } from "../PublicState";
-import { map } from "fp-ts/Array";
-import { BetterSet, construct_better_set, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
+import { type BetterSet, construct_better_set, find, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { merge } from "../Cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { get_base_value  } from "sando-layer/Specified/BaseLayer";
-import { is_layered_object, LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { define_generic_procedure_handler as define_layer_operation_handler } from "sando-layer/node_modules/generic-handler/GenericProcedure";
+import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { is_layered_object } from "../temp_predicates";
 import { add, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
-import { is_atom } from "generic-handler/built_in_generics/generic_predicates";
+import { is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
-import { reduce, filter, is_array } from "generic-handler/built_in_generics/generic_array";
+import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { isArrowFunction } from "typescript";
 import { all_premises_in, is_all_premises_in } from "./Premises";
 import { inspect } from "bun";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
+import { get_base_value } from "../Cell/GenericArith";
+import { is_nothing } from "../Cell/CellValue";
+import { map, filter, reduce } from "generic-handler/built_in_generics/generic_array_operation"
+
 
 
 export class ValueSet {
-    elements: BetterSet<CellValue>;
+    elements: BetterSet<any>;
 
-    constructor(elements: BetterSet<CellValue>) {
-        console.log("CONSTRUCTING VALUE SET" + inspect(elements))
+    constructor(elements: BetterSet<any>) {
         this.elements = elements
     }
 }
 
+const is_value_set = register_predicate("is_value_set", (value: any) => value instanceof ValueSet)
+
+define_generic_procedure_handler(map,
+    match_args(is_value_set, is_function),
+    (set: ValueSet, procedure: (a: any) => any) => {
+        return new ValueSet(map(procedure, set.elements))
+    }
+)
+
+define_generic_procedure_handler(filter,
+    match_args(is_value_set, is_function),
+    (set: ValueSet, predicate: (a: any) => boolean) => {
+        return new ValueSet(filter(predicate, set.elements))
+    }
+)
+
+define_generic_procedure_handler(reduce,
+    match_args(is_value_set, is_function, is_function),
+    (set: ValueSet, procedure: (a: any) => any, initial: any) => {
+        return reduce(set.elements, procedure, initial)
+    }
+)
 
 export const construct_value_set = construct_simple_generic_procedure("construct_value_set", 
     1,
-    (elements: BetterSet<CellValue>) => {
+    (elements: BetterSet<any>) => {
         guard(is_better_set(elements), () => {throw new Error("elements must be a better set")})
         return new ValueSet(elements)}
 )
 
 define_generic_procedure_handler(construct_value_set,
     match_args(is_array),
-    (elements: CellValue[]) => {return construct_value_set(construct_better_set(elements, to_string))}
+    (elements: any[]) => {return construct_value_set(construct_better_set(elements, to_string))}
 )
 
 
@@ -65,32 +87,13 @@ define_generic_procedure_handler(add,
 
 )
 
-define_generic_procedure_handler(add,
-    match_args(is_value_set, is_atom),
-    (set: ValueSet, elt: LayeredObject) => {
-        return construct_value_set(add(set.elements, elt))
-    }
-)
 
-define_generic_procedure_handler(subtract,
-    all_match(is_value_set),
-    (a: ValueSet, b: ValueSet) => construct_value_set(subtract(a.elements, b.elements))
-)
-
-define_generic_procedure_handler(reduce,
-    match_args(is_value_set, isArrowFunction, is_value_set),
-    (set: ValueSet, procedure: (a: any, b: any) => any, initial: ValueSet) => reduce(set.elements, procedure, initial)
-)
 
 function any(predicate: (a: any) => boolean, set: ValueSet): boolean {
     // THIS SHOULD BE MORE GENERIC
-    return set.elements.find(predicate) !== undefined
+    return find(set.elements, predicate) !== undefined
 }
 
-function is_value_set(value: any): value is ValueSet {
-
-  return value instanceof ValueSet;
-}
 
 function is_layered_value_set(value: any): value is ValueSet{
     return is_layered_object(value) && is_value_set(get_base_value(value))
@@ -103,7 +106,7 @@ function to_value_set(value: any): ValueSet {
 }
 
 
-define_layer_operation_handler(get_base_value,
+define_generic_procedure_handler(get_base_value,
     match_args(is_value_set),
     (set: ValueSet) => get_base_value(strongest_consequence(set)))
 
@@ -113,9 +116,6 @@ define_generic_procedure_handler(is_unusable_value,
     (set: ValueSet) => is_unusable_value(strongest_consequence(set)))
 
 
-function map_value_set(procedure: (a: any) => any, ...sets: ValueSet[]): ValueSet {
-    return sets.reduce((acc, set) => add(acc, set.elements.map(procedure)), construct_value_set([]));
-}
 
 function merge_value_sets(content: ValueSet, increment: LayeredObject): ValueSet {
     return is_nothing(increment) ? to_value_set(content) : value_set_adjoin(to_value_set(content), increment);
@@ -144,7 +144,7 @@ function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
 }
 
 
-function strongest_consequence(set: ValueSet): CellValue{
+function strongest_consequence<A>(set: ValueSet): A{
     return reduce(filter((elt: LayeredObject) => 
                         // @ts-ignore
                         is_all_premises_in(get_support_layer_value(elt)), 

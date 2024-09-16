@@ -1,8 +1,7 @@
 import {  public_state,  PublicState,  add_global_cell, add_global_child, get_global_parent } from "../PublicState";
 import { Propagator } from "../Propagator";
-import { BehaviorSubject,  pipe } from "rxjs";
+import { BehaviorSubject,  combineLatest,  pipe } from "rxjs";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-import { is_array } from "generic-handler/built_in_generics/generic_array";
 
 import { filter, map } from "rxjs/operators";
 import { Relation, make_relation } from "../DataTypes/Relation";
@@ -13,16 +12,7 @@ import { merge } from "./Merge"
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
-  if (is_array(a) && a.length > 0) {
-    return a[a.length - 1];
-  }
-  else if (is_nothing(a)) {
-    return the_nothing;
-  }
-
-  else {
     return a;
-  }
 })
 
 export const general_contradiction = construct_simple_generic_procedure("general_contradiction", 1, (a: any) => {
@@ -59,6 +49,10 @@ export class Cell{
     add_global_child(this.relation);
   }
 
+  observe_update(observer:(cellValues: any) => void){
+    combineLatest([this.content, this.strongest]).subscribe(observer);
+  }
+
   getRelation(){
     return this.relation;
   }
@@ -82,7 +76,9 @@ export class Cell{
   testContent(content: any, strongest: any): any | null {
 
     const _strongest = strongest_value(content);
+    console.log("testContent", content, strongest, _strongest);
     if (_strongest === strongest){
+ 
       return null;
     }
     else if (general_contradiction(_strongest)){

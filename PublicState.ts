@@ -6,7 +6,6 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
 import { match_args } from 'generic-handler/Predicates';
-import { get_cell_value, is_cell_value } from './Cell/CellValue';
 export class PublicState{
     parent: Relation = make_relation("root", null);
     allCells: Cell[] = [];
@@ -45,6 +44,12 @@ export const public_state = new PublicState();
 
 export const get_all_cells = (): Cell[] => {
     return public_state.allCells;
+}
+
+export const observe_all_cells = (method: (cell_value: any) => void) => {
+    get_all_cells().forEach((cell: Cell) => {
+        cell.observe_update(method);
+    })
 }
 
 

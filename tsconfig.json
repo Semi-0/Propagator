@@ -23,5 +23,10 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "files": [
+    "./Cell/CellValue.ts",
+    "./Cell/GenericArith.ts",
+    "./SimpleTest.ts"
+  ],
 }
