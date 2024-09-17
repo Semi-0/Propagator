@@ -50,28 +50,29 @@ define_generic_procedure_handler(_divide,
 ) 
 
 define_generic_procedure_handler(_add,
-    match_args(is_contradiction, is_any),
+    one_of_args_match(is_contradiction),
+
         (a: any, b: any) => {
             return the_contradiction
     }
 )
 
 define_generic_procedure_handler(_subtract,
-    match_args(is_contradiction, is_any),
+    one_of_args_match(is_contradiction),
         (a: any, b: any) => {
             return the_contradiction
     }
 ) 
 
 define_generic_procedure_handler(_multiply,
-    match_args(is_contradiction, is_any),
+    one_of_args_match(is_contradiction),
         (a: any, b: any) => {
             return the_contradiction
     }
 )
 
 define_generic_procedure_handler(_divide,
-    match_args(is_contradiction, is_any),
+    one_of_args_match(is_contradiction),
         (a: any, b: any) => {
             return the_contradiction
     }

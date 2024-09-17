@@ -55,19 +55,10 @@ const product = new Cell("product");
 
 
 c_multiply(x, y, product);
-// console.log("before");
-// get_all_cells().forEach(cell => console.log(cell.summarize()));
 
 tell(x, 4, "fst");
-// get_all_cells().forEach(cell => console.log(cell.summarize()));
 
 tell(product, 40, "fst");
-// get_all_cells().forEach(cell => console.log(cell.summarize()));
 
 
-// console.log(x.summarize());
-// console.log(y.summarize());
-// console.log(product.summarize());
-
-// tell(x, 5);
-// get_all_cells().forEach(cell => console.log(cell.summarize()));
+tell(x, 5, "snd");
