@@ -1,15 +1,16 @@
-import { for_each } from "generic-handler/built_in_generics/generic_array";
 import { Cell, test_cell_content } from "../Cell/Cell";
-import { get_all_cells, public_state } from "../PublicState";
-import {LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { Layer } from "sando-layer/Basic/Layer";
+import { set_global_state } from "../PublicState";
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
 import { compact } from "fp-ts/lib/Array";
 import { map, filter } from "fp-ts/Array";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-
+import { for_each } from "../helper";
+import { find } from "generic-handler/built_in_generics/generic_better_set";
+import { PublicStateCommand } from "../PublicState";
 export enum BeliefState {
     Believed,
     NotBelieved,
@@ -47,7 +48,8 @@ export enum BeliefState {
     } 
 
     wake_up_roots(){
-        for_each(get_all_cells(), (cell: Cell) => {
+
+        set_global_state(PublicStateCommand.SET_CELL, (cell: Cell) => {
             test_cell_content(cell);
         });
         
@@ -134,7 +136,7 @@ export function all_premises_in(set: BetterSet<LayeredObject>) {
 }
 
 export function is_all_premises_in(set: BetterSet<string>): boolean{
-    return set.find(premise => is_premises_out(premise)) == undefined;
+    return find(set, (premise: string) => is_premises_out(premise)) == undefined;
 }
 
 export function premises_nogoods(name: string): Set<any>{

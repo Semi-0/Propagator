@@ -1,4 +1,4 @@
-import {  public_state,  PublicState,  add_global_cell, add_global_child, get_global_parent } from "../PublicState";
+import {  set_global_state,  get_global_parent } from "../PublicState";
 import { Propagator } from "../Propagator";
 import { BehaviorSubject,  combineLatest,  pipe } from "rxjs";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
@@ -8,7 +8,7 @@ import { Relation, make_relation } from "../DataTypes/Relation";
 import { inspect } from "bun";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { merge } from "./Merge"
-
+import { PublicStateCommand } from "../PublicState";
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -45,8 +45,8 @@ export class Cell{
           this.strongest.next(content);
         });
 
-    add_global_cell(this);
-    add_global_child(this.relation);
+    set_global_state(PublicStateCommand.ADD_CELL, this);
+    set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
   }
 
   observe_update(observer:(cellValues: any) => void){
@@ -95,16 +95,18 @@ export class Cell{
   }
 
   addNeighbor(propagator: Propagator){
-    this.neighbors.set(propagator.getRelation().getID(), propagator);
+    this.neighbors.set(propagator.getRelation().get_id(), propagator);
   }
 
   summarize(){
-    const name = this.relation.getName();
+    const name = this.relation.get_name();
     const strongest = this.strongest.getValue();
     const content = this.content.getValue();
     return `name: ${name}\nstrongest: ${strongest}\ncontent: ${content}`;
   }
 }
+
+
 
 export function test_cell_content(cell: Cell){
   return cell.force_update();
@@ -127,5 +129,5 @@ export function cell_id(cell: Cell){
     return "undefined";
   }
 
-  return cell.getRelation().getID();
+  return cell.getRelation().get_id();
 }

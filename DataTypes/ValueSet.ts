@@ -15,9 +15,7 @@ import { is_atom, is_function } from "generic-handler/built_in_generics/generic_
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
-import { isArrowFunction } from "typescript";
-import { all_premises_in, is_all_premises_in } from "./Premises";
-import { inspect } from "bun";
+import { is_all_premises_in } from "./Premises";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
 import { get_base_value } from "../Cell/GenericArith";
 import { is_nothing } from "../Cell/CellValue";

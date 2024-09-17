@@ -1,35 +1,40 @@
 // @ts-nocheck
 import { v4 as uuidv4 } from 'uuid';
+import { type Cell } from '../Cell/Cell';
+import { type Propagator } from '../Propagator/Propagator';
+import { type Relation } from './Relation';
+
+export type InterestedType = Cell | Propagator | Relation;
 
 export class Relation{
     name: string;
     uuid: string;
-    parent: any;
-    children: any[] = [];
+    parent: InterestedType;
+    children: InterestedType[] = [];
 
-    constructor(name: string, parent: any){
+    constructor(name: string, parent: InterestedType){
         this.name = name;
         this.parent = parent;
         this.uuid = uuidv4(); 
     }
 
-    addChild(child: any){
+    add_child(child: InterestedType){
         this.children.push(child);
     }
 
-    getID(){
+    get_id(){
         return this.uuid;
     }
 
-    getName(){
+    get_name(){
         return this.name;
     }
 
-    setName(name: string){
+    set_name(name: string){
        this.name = name;
     }
 
-    getChildren(){
+    get_children(){
         return this.children;
     }
 
@@ -42,6 +47,6 @@ export function is_relation(obj: any): obj is Relation{
     return obj instanceof Relation;
 }
 
-export function make_relation(name: string, parent: any){
+export function make_relation(name: string, parent: InterestedType){
     return new Relation(name, parent);
 }

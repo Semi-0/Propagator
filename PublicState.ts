@@ -1,55 +1,110 @@
 
 import { Cell } from './Cell/Cell';
 import { make_relation, Relation } from './DataTypes/Relation';
-import type { Propagator } from './Propagator';
+import { Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
 import { match_args } from 'generic-handler/Predicates';
-export class PublicState{
-    parent: Relation = make_relation("root", null);
-    allCells: Cell[] = [];
-    allPropagators: Propagator[] = [];
+import  { BehaviorSubject, filter, tap } from 'rxjs';
+import {  type InterestedType } from './DataTypes/Relation';
+import { inspect } from 'bun';
+import { guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
+import { isFunction } from 'rxjs/internal/util/isFunction';
 
-    addCell(cell: Cell){
-        this.allCells.push(cell);
+export enum PublicStateCommand{
+    ADD_CELL = "add_cell",
+    ADD_PROPAGATOR = "add_propagator",
+    ADD_CHILD = "add_child",
+    SET_PARENT = "set_parent",
+    SET_CELL = "set_cell"
+}
+
+interface PublicStateMessage{
+    command: PublicStateCommand;
+    args: any[];
+    summarize: () => string;
+}
+
+export function public_state_message(command: PublicStateCommand, ...args: any[]): PublicStateMessage{
+    function get_command(){
+        return command;
     }
 
-    addChild(child: Relation){
-        this.parent.addChild(child);
+    function get_args(){
+        return args;
+    } 
+
+    function summarize(){
+        const args_summarize = ( args[0] instanceof Cell) || (args[0] instanceof Propagator) ? args[0].summarize() : inspect(args);
+
+        return  "command: " + get_command() + " args: " + args_summarize;
+    }
+
+    return {
+        command: get_command(),
+        args: get_args(),
+        summarize: summarize
     }
 }
 
-export function add_global_cell(cell: Cell){
-    public_state.addCell(cell);
+
+var parent = make_relation("root", null);
+const all_cells: Cell[] = [];
+const all_propagators: Propagator[] = [];
+
+const receiver : BehaviorSubject<PublicStateMessage> = new BehaviorSubject<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
+
+receiver.subscribe((msg: PublicStateMessage) => {
+    switch(msg.command){
+        case PublicStateCommand.ADD_CELL:
+            all_cells.push(...msg.args);
+            break;
+
+        case PublicStateCommand.ADD_PROPAGATOR:
+            all_propagators.push(...msg.args);
+            break;
+
+        case PublicStateCommand.ADD_CHILD:
+            guard(msg.args.length == 1, throw_error("add_error:", "add_child expects 1 argument, got " + msg.args.length, msg.summarize()));
+            parent.add_child(msg.args[0]);
+            break;
+        case PublicStateCommand.SET_PARENT:
+            guard(msg.args.length == 1, throw_error("add_error:", "set_parent expects 1 argument, got " + msg.args.length, msg.summarize()));
+            parent = msg.args[0];
+            break;
+        case PublicStateCommand.SET_CELL:
+            guard(msg.args.length == 1, throw_error("add_error:", "set_cell expects 1 argument, got " + msg.args.length, msg.summarize()));
+            guard(isFunction(msg.args[0]), throw_error("add_error:", "set_cell expects a function, got " + msg.args[0], msg.summarize()));
+            all_cells.forEach((cell: Cell) => {
+                msg.args[0](cell);
+            })
+            break;
+    }
+})
+
+export function set_global_state(type: PublicStateCommand, ...args: any[]){
+    // altering global state should be very careful, so i intentionally make the operation observable
+    const msg = public_state_message(type, ...args);
+    receiver.next(msg);
 } 
 
-export function add_global_propagator(propagator: Propagator){
-    public_state.allPropagators.push(propagator);
-}
-
-export function add_global_child(relation: Relation){
-    public_state.addChild(relation);
-}
 
 export function get_global_parent(){
-    return public_state.parent;
-}
-
-export function set_global_parent(relation: Relation){
-    public_state.parent = relation;
-}
-
-export const public_state = new PublicState();
-
-export const get_all_cells = (): Cell[] => {
-    return public_state.allCells;
+    return parent;
 }
 
 export const observe_all_cells = (method: (cell_value: any) => void) => {
-    get_all_cells().forEach((cell: Cell) => {
-        cell.observe_update(method);
-    })
+    receiver.pipe(filter((msg: PublicStateMessage) => msg.command == PublicStateCommand.ADD_CELL),   
+                  tap((msg: PublicStateMessage) => {
+                        console.log("new cell updated!", msg.summarize());
+                        return msg
+                    }))
+                .subscribe((msg: PublicStateMessage) => {
+                    msg.args.forEach((cell: Cell) => {
+                        cell.observe_update(method);
+                    })
+                })
 }
 
 
@@ -59,13 +114,7 @@ export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     }
 )
 
-define_generic_procedure_handler(
-    is_equal,
-    match_args(is_cell_value, is_cell_value),
-    (a: any, b: any) => {
-        return get_cell_value(a) === get_cell_value(b)
-    }
-)
+
 
 
 export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
