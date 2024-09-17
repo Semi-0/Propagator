@@ -115,11 +115,11 @@ export function is_premises_out(name: string): boolean{
     return !_premises_metadata(name).is_believed();
 } 
 
-export function mark_premises_in(name: string){
+export function mark_premise_in(name: string){
     _premises_metadata(name).set_believed();
 } 
 
-export function mark_premises_out(name: string){
+export function mark_premise_out(name: string){
     _premises_metadata(name).set_not_believed();
 } 
 
@@ -129,7 +129,7 @@ export function all_premises_in(set: BetterSet<LayeredObject>) {
         const support = get_support_layer_value(obj);
         if(support){
             for_each(support, (premise: PremiseMetaData) => {
-                mark_premises_in(premise.get_name());
+                mark_premise_in(premise.get_name());
             });
         }
     });  

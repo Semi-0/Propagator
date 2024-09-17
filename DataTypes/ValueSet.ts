@@ -3,7 +3,7 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 
-import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
+import { all_match, force_load_predicate, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_unusable_value, merge_layered, value_imples } from "../PublicState";
 import { type BetterSet, construct_better_set, find, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { merge } from "../Cell/Merge";
@@ -11,7 +11,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
 import { add, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
-import { is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
+import { force_load_generic_predicates, is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
@@ -67,16 +67,15 @@ define_generic_procedure_handler(construct_value_set,
 )
 
 
+// define_generic_procedure_handler(is_atom,
+//     match_args(is_layered_object),
+//     (elt: LayeredObject) => {return is_atom(get_base_value(elt))}
+// )
 
-define_generic_procedure_handler(is_atom,
-    match_args(is_layered_object),
-    (elt: LayeredObject) => {return is_atom(get_base_value(elt))}
-)
-
-define_generic_procedure_handler(is_atom,
-    match_args(is_value_set),
-    (elt: ValueSet) => {return false}
-)
+// define_generic_procedure_handler(is_atom,
+//     match_args(is_value_set),
+//     (elt: ValueSet) => {return false}
+// )
 
 define_generic_procedure_handler(add,
     all_match(is_value_set),

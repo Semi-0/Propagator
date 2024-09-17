@@ -5,12 +5,14 @@ import { Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
-import { match_args } from 'generic-handler/Predicates';
+import { all_match, match_args } from 'generic-handler/Predicates';
 import  { BehaviorSubject, filter, tap } from 'rxjs';
 import {  type InterestedType } from './DataTypes/Relation';
 import { inspect } from 'bun';
 import { guarantee_type, guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
+import { is_layered_object } from './temp_predicates';
+import { get_base_value } from 'sando-layer/Basic/Layer';
 
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
@@ -20,7 +22,7 @@ export enum PublicStateCommand{
     SET_CELLS = "set_cells"
 }
 
-interface PublicStateMessage{
+export interface PublicStateMessage{
     command: PublicStateCommand;
     args: any[];
     summarize: () => string;
@@ -66,18 +68,37 @@ receiver.subscribe((msg: PublicStateMessage) => {
             break;
 
         case PublicStateCommand.ADD_CHILD:
-            guard(msg.args.length == 1, throw_error("add_error:", "add_child expects 1 argument, got " + msg.args.length, msg.summarize()));
-            guarantee_type("add_child", msg.args[0], "Relation");
+            guard(msg.args.length == 1, throw_error(
+                "add_error:",
+                "add_child expects 1 argument, got " + msg.args.length,
+                msg.summarize()
+            ));
+            guard(msg.args[0] instanceof Relation, throw_error(
+                "add_error:",
+                "add_child expects a relation, got " + msg.args[0],
+                msg.summarize()
+            ));
             parent.add_child(msg.args[0]);
             break;
         case PublicStateCommand.SET_PARENT:
-            guard(msg.args.length == 1, throw_error("add_error:", "set_parent expects 1 argument, got " + msg.args.length, msg.summarize()));
+            guard(msg.args.length == 1, throw_error(
+                "add_error:",
+                "set_parent expects 1 argument, got " + msg.args.length,
+                msg.summarize()
+            ));
             parent = msg.args[0];
             break;
         case PublicStateCommand.SET_CELLS:
-            guard(msg.args.length == 1, throw_error("add_error:", "set_cell expects 1 argument, got " + msg.args.length, msg.summarize()));
-            guard(isFunction(msg.args[0]), throw_error("add_error:", "set_cell expects a function, got " + msg.args[0], msg.summarize()));
-            
+            guard(msg.args.length == 1, throw_error(
+                "add_error:",
+                "set_cell expects 1 argument, got " + msg.args.length,
+                msg.summarize()
+            ));
+            guard(isFunction(msg.args[0]), throw_error(
+                "add_error:",
+                "set_cell expects a function, got " + msg.args[0],
+                msg.summarize()
+            ));
             all_cells.forEach((cell: Cell) => {
                 msg.args[0](cell);
             })
@@ -96,17 +117,24 @@ export function get_global_parent(){
     return parent;
 }
 
-export const observe_all_cells = (observeCommand: (msg: PublicStateMessage) => void, observeCell: (cell: Cell) => void) => {
-    receiver.pipe(filter((msg: PublicStateMessage) => msg.command == PublicStateCommand.ADD_CELL),   
+export const observe_all_cells = (observeCommand: (msg: PublicStateMessage) => void, 
+                                  observeCell: (cell: Cell) => void) => {
+    receiver.pipe(filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
+                  filter((msg: PublicStateMessage) => msg.args.length == 1 && msg.args[0] instanceof Cell),
                   tap((msg: PublicStateMessage) => {
                         observeCommand(msg);
                         return msg
                     }))
                 .subscribe((msg: PublicStateMessage) => {
-                    msg.args.forEach((cell: Cell) => {
-                        observeCell(cell);
-                    })
+                    const cell = msg.args[0]; 
+                    guard((cell instanceof Cell), throw_error(
+                        "observe_all_cells", 
+                        "observe_all_cells expects a cell, got " + cell, 
+                        msg.summarize()
+                    ));
+                    observeCell(cell);
                 })
+                
 }
 
 
@@ -115,6 +143,16 @@ export const is_equal = construct_simple_generic_procedure("is_equal", 2,
         return a === b;
     }
 )
+
+define_generic_procedure_handler(is_equal,
+    all_match(is_layered_object),
+    (a: any, b: any) => {
+        // TODO: this is not correct, because it does not consider the layered structure of the objects
+        return get_base_value(a) === get_base_value(b);
+    }
+)
+
+
 
 
 

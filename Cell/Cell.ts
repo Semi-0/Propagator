@@ -1,4 +1,4 @@
-import {  set_global_state,  get_global_parent } from "../PublicState";
+import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
 import { Propagator } from "../Propagator";
 import { BehaviorSubject,  combineLatest,  pipe } from "rxjs";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
@@ -9,6 +9,8 @@ import { inspect } from "bun";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
+import { describe } from "../ui";
+import { is_layered_object } from "../temp_predicates";
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -44,7 +46,6 @@ export class Cell{
         .subscribe(content => {
           this.strongest.next(content);
         });
-
     set_global_state(PublicStateCommand.ADD_CELL, this);
     set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
   }
@@ -70,15 +71,16 @@ export class Cell{
   }
 
   addContent(increment:any){
+ 
     this.content.next(cell_merge(this.content.getValue(), increment));
   }
 
   testContent(content: any, strongest: any): any | null {
 
     const _strongest = strongest_value(content);
-    console.log("testContent", content, strongest, _strongest);
-    if (_strongest === strongest){
- 
+    console.log("testContent", describe(content), is_layered_object(strongest), describe(_strongest));
+    if (is_equal(content, strongest)){
+      console.log("returning null");
       return null;
     }
     else if (general_contradiction(_strongest)){
@@ -86,6 +88,7 @@ export class Cell{
       return _strongest;
     }
     else {
+      console.log("returning _strongest");
       return _strongest
     }
   }
@@ -102,7 +105,7 @@ export class Cell{
     const name = this.relation.get_name();
     const strongest = this.strongest.getValue();
     const content = this.content.getValue();
-    return `name: ${name}\nstrongest: ${strongest}\ncontent: ${content}`;
+    return `name: ${name}\nstrongest: ${describe(strongest)}\ncontent: ${describe(content)}`;
   }
 }
 
