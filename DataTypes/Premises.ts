@@ -49,7 +49,7 @@ export enum BeliefState {
 
     wake_up_roots(){
 
-        set_global_state(PublicStateCommand.SET_CELL, (cell: Cell) => {
+        set_global_state(PublicStateCommand.SET_CELLS, (cell: Cell) => {
             test_cell_content(cell);
         });
         

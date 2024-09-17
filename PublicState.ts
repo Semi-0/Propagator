@@ -1,6 +1,6 @@
 
 import { Cell } from './Cell/Cell';
-import { make_relation, Relation } from './DataTypes/Relation';
+import { is_relation, make_relation, Relation } from './DataTypes/Relation';
 import { Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
@@ -9,7 +9,7 @@ import { match_args } from 'generic-handler/Predicates';
 import  { BehaviorSubject, filter, tap } from 'rxjs';
 import {  type InterestedType } from './DataTypes/Relation';
 import { inspect } from 'bun';
-import { guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
+import { guarantee_type, guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
 
 export enum PublicStateCommand{
@@ -17,7 +17,7 @@ export enum PublicStateCommand{
     ADD_PROPAGATOR = "add_propagator",
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
-    SET_CELL = "set_cell"
+    SET_CELLS = "set_cells"
 }
 
 interface PublicStateMessage{
@@ -67,15 +67,17 @@ receiver.subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.ADD_CHILD:
             guard(msg.args.length == 1, throw_error("add_error:", "add_child expects 1 argument, got " + msg.args.length, msg.summarize()));
+            guarantee_type("add_child", msg.args[0], "Relation");
             parent.add_child(msg.args[0]);
             break;
         case PublicStateCommand.SET_PARENT:
             guard(msg.args.length == 1, throw_error("add_error:", "set_parent expects 1 argument, got " + msg.args.length, msg.summarize()));
             parent = msg.args[0];
             break;
-        case PublicStateCommand.SET_CELL:
+        case PublicStateCommand.SET_CELLS:
             guard(msg.args.length == 1, throw_error("add_error:", "set_cell expects 1 argument, got " + msg.args.length, msg.summarize()));
             guard(isFunction(msg.args[0]), throw_error("add_error:", "set_cell expects a function, got " + msg.args[0], msg.summarize()));
+            
             all_cells.forEach((cell: Cell) => {
                 msg.args[0](cell);
             })
@@ -94,15 +96,15 @@ export function get_global_parent(){
     return parent;
 }
 
-export const observe_all_cells = (method: (cell_value: any) => void) => {
+export const observe_all_cells = (observeCommand: (msg: PublicStateMessage) => void, observeCell: (cell: Cell) => void) => {
     receiver.pipe(filter((msg: PublicStateMessage) => msg.command == PublicStateCommand.ADD_CELL),   
                   tap((msg: PublicStateMessage) => {
-                        console.log("new cell updated!", msg.summarize());
+                        observeCommand(msg);
                         return msg
                     }))
                 .subscribe((msg: PublicStateMessage) => {
                     msg.args.forEach((cell: Cell) => {
-                        cell.observe_update(method);
+                        observeCell(cell);
                     })
                 })
 }
