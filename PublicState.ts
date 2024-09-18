@@ -19,7 +19,8 @@ export enum PublicStateCommand{
     ADD_PROPAGATOR = "add_propagator",
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
-    SET_CELLS = "set_cells"
+    SET_CELLS = "set_cells",
+    ADD_AMB_PROPAGATOR = "add_amb_propagator"
 }
 
 export interface PublicStateMessage{
@@ -54,7 +55,7 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
 var parent = make_relation("root", null);
 const all_cells: Cell[] = [];
 const all_propagators: Propagator[] = [];
-
+const all_amb_propagators: Propagator[] = [];
 const receiver : BehaviorSubject<PublicStateMessage> = new BehaviorSubject<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
 receiver.subscribe((msg: PublicStateMessage) => {
@@ -68,17 +69,21 @@ receiver.subscribe((msg: PublicStateMessage) => {
             break;
 
         case PublicStateCommand.ADD_CHILD:
-            guard(msg.args.length == 1, throw_error(
-                "add_error:",
-                "add_child expects 1 argument, got " + msg.args.length,
-                msg.summarize()
-            ));
-            guard(msg.args[0] instanceof Relation, throw_error(
-                "add_error:",
-                "add_child expects a relation, got " + msg.args[0],
-                msg.summarize()
-            ));
-            parent.add_child(msg.args[0]);
+            if (msg.args.length == 1){
+                msg.args[0].add_child(msg.args[0]);
+            }
+            else if (msg.args.length == 2){ 
+                const child = msg.args[0];
+                const parent = msg.args[1];
+                parent.add_child(child);
+            }
+            else{
+                throw_error(
+                    "add_error:",
+                    "add_child expects 1 or 2 arguments, got " + msg.args.length,
+                    msg.summarize()
+                );
+            }
             break;
         case PublicStateCommand.SET_PARENT:
             guard(msg.args.length == 1, throw_error(
@@ -102,6 +107,9 @@ receiver.subscribe((msg: PublicStateMessage) => {
             all_cells.forEach((cell: Cell) => {
                 msg.args[0](cell);
             })
+            break;
+        case PublicStateCommand.ADD_AMB_PROPAGATOR:
+            all_amb_propagators.push(...msg.args);
             break;
     }
 })

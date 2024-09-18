@@ -1,44 +1,19 @@
 // import { isNumber } from "effect/Predicate";
 import { Cell } from "./Cell/Cell";
-import {  constraint_propagator, primitive_propagator } from "./Propagator";  
-import { monitor_change, tell } from "./ui";
-import { add, divide, multiply, subtract } from "./Cell/GenericArith";
-
-
-import { construct_value_set } from "./DataTypes/ValueSet";
-
-
+import { do_nothing, monitor_change, observe_cell, tell } from "./ui";
 import { force } from "./Cell/GenericArith";
-import { Relation } from "./DataTypes/Relation";
+import { c_multiply } from "./BuiltInProps";
 
 force();
 
 
 
 
-const p_multiply =  primitive_propagator((...inputs: any[]) => {
-    // console.log("multiple inputs", inputs);
-    const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
-   
-    // console.log("multiply result", result);
-    return result;
-}, "multiply");
-
-const p_subdivide = primitive_propagator((...inputs: any[]) => {
-    // console.log("subdivide inputs", inputs);
-    return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
-}, "subdivide"); 
 
 
-function c_multiply(x: Cell, y: Cell, product: Cell){
-    return constraint_propagator([x, y, product], () => {
-        p_multiply(x, y, product);
-        p_subdivide(product, x, y);
-        p_subdivide(product, y, x);
-    }, "c:*")
-}
+const log_in_console = observe_cell((str: string) => console.log(str));
 
-monitor_change();
+monitor_change(do_nothing, log_in_console);
 
 const x = new Cell("x");
 const y = new Cell("y");
@@ -56,9 +31,9 @@ const product = new Cell("product");
 
 c_multiply(x, y, product);
 
-tell(x, 4, "fst");
+tell(x, 8, "fst");
 
 tell(product, 40, "fst");
 
 
-tell(x, 5, "snd");
+

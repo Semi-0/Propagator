@@ -11,6 +11,9 @@ import { merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { is_layered_object } from "../temp_predicates";
+import { construct_support_value, get_support_layer_value } from "sando-layer/Specified/SupportLayer";
+import { process_contradictions } from "../BuiltInProps";
+import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -21,9 +24,14 @@ export const general_contradiction = construct_simple_generic_procedure("general
   return false;
 })
 
-export const handle_contradiction = construct_simple_generic_procedure("handle_contradiction", 1, (a: any) => {
-  return null;
-})
+export function handle_cell_contradiction(cell: Cell){
+  const nogood = map_to_new_set(get_support_layer_value(cell.getStrongest().value), 
+                              (elt: string) => construct_better_set([elt], (elt: string) => elt), 
+                              (elt: BetterSet<string>) => inspect(elt));
+  process_contradictions(nogood, cell)
+}
+
+export const handle_contradiction = handle_cell_contradiction;
 
 export const compactMap = <T, R>(fn: (value: T) => R) => pipe(
   map(fn),
@@ -78,9 +86,7 @@ export class Cell{
   testContent(content: any, strongest: any): any | null {
 
     const _strongest = strongest_value(content);
-    console.log("testContent", describe(content), is_layered_object(strongest), describe(_strongest));
     if (is_equal(content, strongest)){
-      console.log("returning null");
       return null;
     }
     else if (general_contradiction(_strongest)){
@@ -88,7 +94,6 @@ export class Cell{
       return _strongest;
     }
     else {
-      console.log("returning _strongest");
       return _strongest
     }
   }

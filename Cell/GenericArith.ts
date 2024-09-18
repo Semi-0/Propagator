@@ -2,8 +2,8 @@
 // import { ValueSet } from "./ValueSet";
 // import { match_args } from "generic-handler/Predicates";
 import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide } from "generic-handler/built_in_generics/generic_arithmetic";
-import { construct_generic_procedure, construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { match_args, one_of_args_match } from "generic-handler/Predicates";
+import {  construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import {  one_of_args_match } from "generic-handler/Predicates";
 import { is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { summary_all_rules } from "generic-handler/GenericDebugger";
