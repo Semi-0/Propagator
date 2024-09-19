@@ -55,8 +55,8 @@ export const construct_reactor = () => construct_prototype_reactor((observers: (
     }
 })
 
-export function construct_scheduled_reactor(scheduling: (task: () => Promise<void>) => void): Reactor{
-    return construct_prototype_reactor((observers: ((...args: any[]) => void)[], 
+export function construct_scheduled_reactor(scheduling: (task: () => Promise<void>) => void): () => Reactor{
+    return () => construct_prototype_reactor((observers: ((...args: any[]) => void)[], 
                                         subscribe: (observer: (...args: any[]) => void) => void, 
                                         unsubscribe: (observer: (...args: any[]) => void) => void,
                                         default_next: (...v: any[]) => void | Promise<void>) => {
@@ -109,6 +109,45 @@ export function construct_stateful_reactor(initial_value: any): Reactor{
         }
     })
 }
+
+export function construct_stateful_reactor_with_scheduler(
+  scheduling: (task: () => Promise<void>) => void
+): (initial_value: any) => Reactor {
+  return (initial_value: any) =>
+    construct_prototype_reactor(
+      (
+        observers: ((...args: any[]) => void)[],
+        subscribe: (observer: (...args: any[]) => void) => void,
+        unsubscribe: (observer: (...args: any[]) => void) => void,
+        default_next: (...v: any[]) => void | Promise<void>
+      ) => {
+        let value = initial_value;
+
+        function next(...v: any) {
+          scheduling(() =>
+            new Promise<void>((resolve) => {
+              value = v;
+              default_next(value);
+              resolve();
+            })
+          );
+        }
+
+        function summarize() {
+          return `stateful reactor with ${observers.length} observers`;
+        }
+
+        return {
+          observers,
+          next,
+          summarize,
+          subscribe,
+          unsubscribe,
+        };
+      }
+    );
+}
+
 
 export function reactor_combine(reactor_constructor: () => Reactor): any{
     return (...reactors: Reactor[]) => {
@@ -217,3 +256,8 @@ export function cancellable_execute(queue: (() => Promise<void>)[]):   Reactor {
     return cancel
 }
 
+export const SimpleScheduler = simple_scheduler()
+
+export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
+
+export const scheduled_reactive_state = construct_stateful_reactor_with_scheduler(SimpleScheduler.schedule)
