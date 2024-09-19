@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "bun:test";
-import { construct_cell_value, get_cell_value, is_contradiction, is_nothing, the_contradiction, the_nothing } from "../Cell/CellValue";
+import {  is_contradiction, is_nothing, the_contradiction, the_nothing } from "../Cell/CellValue";
 import { force } from "../Cell/GenericArith";
 import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic";
 
@@ -7,12 +7,7 @@ beforeAll(() => {
     force()
 })
 
-describe("CellValue", () => {
-    it("should create a CellValue with given value", () => {
-        const value = construct_cell_value(1);
-        expect(get_cell_value(value)).toBe(1);
-    });
-});
+
 
 describe("The Nothing", () => {
     it("critic for the nothing should work", () => {
