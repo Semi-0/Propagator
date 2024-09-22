@@ -175,89 +175,114 @@ export function reactor_combine(reactor_constructor: () => Reactor): any{
 
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
-    run: () => void;
+    execute_all: () => Reactor;
     steppable_run: () => () => Promise<void>;
-    cancellable_run: () => Reactor;
+  
 }
 
 
 export function simple_scheduler(): Scheduler {
-    var queue: (() => Promise<void>)[] = [] 
+    // i failed to consider that when queue is getting executed, other tasks might be added to the queue
+    var queue: Set<(() => Promise<void>)> = new Set() 
+    var executed: Set<(() => Promise<void>)> = new Set()
 
     function schedule(f: () => Promise<void>){
-        queue.push(f)
+        queue.add(f)
     }
 
-    function execute(){
-        if (queue.length !== 0){
-            queue[0]()
-            queue = queue.slice(1)
+    function dequeue(): () => Promise<void>{
+        var f = queue.values().next().value
+        queue.delete(f)
+        return f
+    } 
+
+
+    function execute_task(): () => Promise<void>{
+        const f = dequeue()
+
+        return async () => {
+            await f()
+            executed.add(f)
         }
     }
 
-    function steppable_run(){
-        return steppable_execute(queue)
+    function execute_all(): Reactor{
+        const cancellable = construct_reactor()
+        var running = true
+
+        async function exec(){
+            if ((queue.size !== 0) && (running)){
+                await execute_task()()
+                exec()
+            }
+        }
+
+        cancellable.subscribe(() => {
+            running = false
+        })
+
+        exec()
+
+        return cancellable
     }
 
-    function cancellable_run() {
-        return cancellable_execute(queue);
+
+    function steppable_run(){
+        return execute_task()
     }
+
+ 
 
     return {
         schedule,
-        run: execute,
+        execute_all,
         steppable_run,
-        cancellable_run
     }
 }
 
 
-
-
-export function steppable_execute(queue: (() => Promise<void>)[]): () => Promise<void> {
-    var index = 0
-
+export function steppable_execute( execute_tasks:  () => Promise<void>): () => Promise<void> {
     return async () => {
-        if (index < queue.length){
-            await queue[index]()
-            index = index + 1
-        }
+        await execute_tasks()
     }
 }
 
 
-
-export function cancellable_execute(queue: (() => Promise<void>)[]):   Reactor {
-    let currentIndex = 0;
-
-    let cancel = construct_reactor()
-    let cancelled = false;
-
-    async function runTasks() {
-        for (const task of queue) {
-            if (cancelled) {
-                break
-            }
-            else{
-                await task();
-                currentIndex = currentIndex + 1
-            }
-        }
-    }
-
-    runTasks();
-     
-    cancel.subscribe((value) => {
-        console.log("cancelled")
-        cancelled = true
-    })
-
-
-    return cancel
-}
 
 export const SimpleScheduler = simple_scheduler()
 
 export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
 
 export const scheduled_reactive_state = construct_stateful_reactor_with_scheduler(SimpleScheduler.schedule)
+
+// const test_reactor = scheduled_reactor() 
+
+// const test_reactor_2 = scheduled_reactor() 
+
+
+// test_reactor.subscribe((value) => {
+//     console.log("test_reactor", value) 
+//     test_reactor_2.next(value + 1)
+
+// })
+
+// test_reactor_2.subscribe((value) => {
+//     console.log("test_reactor_2", value) 
+// })
+
+// test_reactor.next(0)
+
+// SimpleScheduler.execute_all()
+
+// setTimeout(() => {
+//     console.log("setting timeout")
+//     test_reactor.next(1)
+// }, 1000)
+
+ 
+
+// setTimeout(() => {
+//     console.log("setting timeout 2")
+//     test_reactor.next(2)
+//     SimpleScheduler.execute_all()
+// }, 2000)
