@@ -1,4 +1,4 @@
-import { construct_reactor, construct_scheduled_reactor, construct_stateful_reactor_with_scheduler, type Reactor } from "./Reactor";
+import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactor";
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
     execute_sequential: (error_handler: (e: Error) => void) => (() => void);
@@ -136,7 +136,7 @@ export function steppable_run_task() {
 export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
 
 
-export const scheduled_reactive_state = construct_stateful_reactor_with_scheduler(SimpleScheduler.schedule)
+export const scheduled_reactive_state = construct_scheduled_stateful_reactor(SimpleScheduler.schedule)
 
 // schedule_task(async () => {
 //     console.log("Hello")
