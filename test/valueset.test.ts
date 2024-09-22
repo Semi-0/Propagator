@@ -17,7 +17,16 @@ describe("ValueSet", () => {
     const valueSet1 = construct_value_set(elements1);
     const valueSet2 = construct_value_set(elements2);
     const result = add(valueSet1, valueSet2);
-    expect(get_length(result.elements)).toBe(3);
+    expect(result.to_array()).toEqual([3]);
+
+  });
+
+  it("should able to add multiple elements", () => {
+    const elements = [1, 2];
+    const valueSet = construct_value_set(elements);
+    const valueSet2 = construct_value_set([4, 5]);
+    const result = add(valueSet, valueSet2);
+    expect(result.to_array()).toEqual([5, 6, 7]);
   });
 
   it("should check if a value is a ValueSet", () => {

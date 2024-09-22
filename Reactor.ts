@@ -1,8 +1,10 @@
 // without scheduler gives a fine grain control over when the reactor should be updated 
 // the visualization would be very limited
 
+
+
 // PERHAPS SHOULD USE SET FOR PERFORMANCE
-interface Reactor{
+export interface Reactor{
     observers: ((...args: any[]) => void)[];
     next: (...v: any[]) => void;
     subscribe: (observer: (...args: any[]) => void) => void;
@@ -10,6 +12,15 @@ interface Reactor{
     summarize: () => string;
 }
 
+
+function default_next(observers: ((...args: any[]) => void)[], ...v: any[]){ 
+    try{
+        observers.forEach(observer => observer(...v))
+    }
+    catch (e){
+        console.log("error in reactor: ", e)
+    }
+}
 
 export function construct_prototype_reactor(constructor: (
     observers: ((...args: any[]) => void)[],
@@ -35,9 +46,17 @@ export function construct_prototype_reactor(constructor: (
         observers = observers.filter(o => o !== observer)
     } 
 
-    const self = constructor(observers, subscribe, unsubscribe, next)
+    // const self = constructor(observers, subscribe, unsubscribe, next)
 
-    return self
+    return {
+        observers,
+        next,
+        subscribe,
+        unsubscribe,
+        summarize: () => {
+            return "reactor with " + observers.length + " observers"
+        }
+    }
 }
 
 export const construct_reactor = () => construct_prototype_reactor((observers: ((...args: any[]) => void)[], 
@@ -173,87 +192,8 @@ export function reactor_combine(reactor_constructor: () => Reactor): any{
     }
 }    
 
-export interface Scheduler{
-    schedule: (f: () => Promise<void>) => void;
-    execute_all: () => Reactor;
-    steppable_run: () => () => Promise<void>;
-  
-}
 
 
-export function simple_scheduler(): Scheduler {
-    // i failed to consider that when queue is getting executed, other tasks might be added to the queue
-    var queue: Set<(() => Promise<void>)> = new Set() 
-    var executed: Set<(() => Promise<void>)> = new Set()
-
-    function schedule(f: () => Promise<void>){
-        queue.add(f)
-    }
-
-    function dequeue(): () => Promise<void>{
-        var f = queue.values().next().value
-        queue.delete(f)
-        return f
-    } 
-
-
-    function execute_task(): () => Promise<void>{
-        const f = dequeue()
-
-        return async () => {
-            await f()
-            executed.add(f)
-        }
-    }
-
-    function execute_all(): Reactor{
-        const cancellable = construct_reactor()
-        var running = true
-
-        async function exec(){
-            if ((queue.size !== 0) && (running)){
-                await execute_task()()
-                exec()
-            }
-        }
-
-        cancellable.subscribe(() => {
-            running = false
-        })
-
-        exec()
-
-        return cancellable
-    }
-
-
-    function steppable_run(){
-        return execute_task()
-    }
-
- 
-
-    return {
-        schedule,
-        execute_all,
-        steppable_run,
-    }
-}
-
-
-export function steppable_execute( execute_tasks:  () => Promise<void>): () => Promise<void> {
-    return async () => {
-        await execute_tasks()
-    }
-}
-
-
-
-export const SimpleScheduler = simple_scheduler()
-
-export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
-
-export const scheduled_reactive_state = construct_stateful_reactor_with_scheduler(SimpleScheduler.schedule)
 
 // const test_reactor = scheduled_reactor() 
 

@@ -5,51 +5,64 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 
 import { all_match, force_load_predicate, match_args, register_predicate } from "generic-handler/Predicates";
 import { is_unusable_value, merge_layered, value_imples } from "../PublicState";
-import { type BetterSet, construct_better_set, find, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
+import { add_item, type BetterSet, construct_better_set, find, flat_map, is_better_set, map_to_same_set, remove, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { merge } from "../Cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
-import { add, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
+import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
 import { force_load_generic_predicates, is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { is_all_premises_in } from "./Premises";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import { get_base_value } from "../Cell/GenericArith";
+import { get_base_value } from "../Cell/CellValue";
 import { is_nothing } from "../Cell/CellValue";
 import { map, filter, reduce } from "generic-handler/built_in_generics/generic_array_operation"
+import { number } from "fp-ts";
 
 
 
-export class ValueSet {
-    elements: BetterSet<any>;
+export class ValueSet<A> {
+    elements: BetterSet<A>;
 
-    constructor(elements: BetterSet<any>) {
+    constructor(elements: BetterSet<A>) {
         this.elements = elements
     }
+
+    add_item(item: A): ValueSet<A> {
+        return new ValueSet<A>(add_item(this.elements, item))
+    }
+
+    to_array(): A[] {
+        return to_array(this.elements)
+    }
+
 }
+
+
+
 
 const is_value_set = register_predicate("is_value_set", (value: any) => value instanceof ValueSet)
 
 define_generic_procedure_handler(map,
     match_args(is_value_set, is_function),
-    (set: ValueSet, procedure: (a: any) => any) => {
+    (set: ValueSet<any>, procedure: (a: any) => any) => {
         return new ValueSet(map(procedure, set.elements))
     }
 )
 
 define_generic_procedure_handler(filter,
     match_args(is_value_set, is_function),
-    (set: ValueSet, predicate: (a: any) => boolean) => {
+    (set: ValueSet<any>, predicate: (a: any) => boolean) => {
         return new ValueSet(filter(predicate, set.elements))
     }
 )
 
 define_generic_procedure_handler(reduce,
     match_args(is_value_set, is_function, is_function),
-    (set: ValueSet, procedure: (a: any) => any, initial: any) => {
+    (set: ValueSet<any>, procedure: (a: any) => any, initial: any) => {
         return reduce(set.elements, procedure, initial)
     }
 )
@@ -67,70 +80,49 @@ define_generic_procedure_handler(construct_value_set,
 )
 
 
-// define_generic_procedure_handler(is_atom,
-//     match_args(is_layered_object),
-//     (elt: LayeredObject) => {return is_atom(get_base_value(elt))}
-// )
-
-// define_generic_procedure_handler(is_atom,
-//     match_args(is_value_set),
-//     (elt: ValueSet) => {return false}
-// )
-
-define_generic_procedure_handler(add,
-    all_match(is_value_set),
-    (a: ValueSet, b: ValueSet) => {
-        return construct_value_set(add(a.elements, b.elements))}
-
-)
 
 
 
-function any(predicate: (a: any) => boolean, set: ValueSet): boolean {
+function any<A>(predicate: (a: A) => boolean, set: ValueSet<A>): boolean {
     // THIS SHOULD BE MORE GENERIC
     return find(set.elements, predicate) !== undefined
 }
 
 
-function is_layered_value_set(value: any): value is ValueSet{
+function is_layered_value_set<A>(value: any): value is ValueSet<A>{
     return is_layered_object(value) && is_value_set(get_base_value(value))
 }
 
 
 
-function to_value_set(value: any): ValueSet {
+function to_value_set<A>(value: any): ValueSet<A> {
   return is_value_set(value) ? value : construct_value_set(value);
 }
 
 
 define_generic_procedure_handler(get_base_value,
     match_args(is_value_set),
-    (set: ValueSet) => get_base_value(strongest_consequence(set)))
+    (set: ValueSet<any>) => get_base_value(strongest_consequence(set)))
 
 
 define_generic_procedure_handler(is_unusable_value,
     match_args(is_value_set),
-    (set: ValueSet) => is_unusable_value(strongest_consequence(set)))
+    (set: ValueSet<any>) => is_unusable_value(strongest_consequence(set)))
 
 
 
-function merge_value_sets(content: ValueSet, increment: LayeredObject): ValueSet {
+function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>, increment: LayeredObject): ValueSet<LayeredObject> {
     return is_nothing(increment) ? to_value_set(content) : value_set_adjoin(to_value_set(content), increment);
 }
 
 
 define_generic_procedure_handler(merge,
     match_args(is_value_set, is_layered_object),
-    (set: ValueSet, elt: LayeredObject) => merge_value_sets(set, elt)
+    (set: ValueSet<any>, elt: LayeredObject) => merge_value_sets(set, elt)
 )
 
-function value_set_adjoin(set: ValueSet, elt: LayeredObject): ValueSet {
-    if(any(oldElt => element_subsumes(oldElt, elt), set)) {
-        return set;
-    }
-    else{
-        return add(set, elt);
-    }
+function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
+    return set.add_item(elt)
 }
 
 function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
@@ -141,7 +133,7 @@ function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
 }
 
 
-function strongest_consequence<A>(set: ValueSet): A{
+function strongest_consequence<A>(set: ValueSet<A>): A{
     return reduce(filter((elt: LayeredObject) => 
                         // @ts-ignore
                         is_all_premises_in(get_support_layer_value(elt)), 
@@ -150,8 +142,52 @@ function strongest_consequence<A>(set: ValueSet): A{
                          construct_value_set([]));
 }
 
- 
+import { pipe } from 'fp-ts/function';
 
+
+function cross_join_map<A>(procedure: (elt_a: A, b: ValueSet<A>) => ValueSet<A>) : (a: ValueSet<A>, b: ValueSet<A>) => ValueSet<A> {
+    return (a: ValueSet<A>, b: ValueSet<A>) => 
+        pipe(
+            a.elements,
+            (a: BetterSet<A>) => {
+                return flat_map(a, (elt_a: A) => procedure(elt_a, b).elements, a.identify_by)
+            },
+            construct_value_set
+        );
+}
+
+function value_set_arithmetic<A>(procedure: (elt_a: A, elt_b: A) => A) : (a: ValueSet<A>, b: ValueSet<A>) => ValueSet<A> {
+    return cross_join_map((elt_a: A, b: ValueSet<A>) => 
+        pipe(
+            b.elements,
+            (b: BetterSet<A>) => map_to_same_set(b, (elt_b: A) => {
+                return procedure(elt_a, elt_b)
+            }),
+            construct_value_set
+        )
+    );
+}
+
+// ValueSet Arithmetic
+define_generic_procedure_handler(add,
+    match_args(is_value_set, is_value_set),
+    value_set_arithmetic(add)
+)
+ 
+define_generic_procedure_handler(subtract,
+    match_args(is_value_set, is_value_set),
+    value_set_arithmetic(subtract)
+) 
+
+define_generic_procedure_handler(multiply,
+    match_args(is_value_set, is_value_set),
+    value_set_arithmetic(multiply)
+)
+
+define_generic_procedure_handler(divide,
+    match_args(is_value_set, is_value_set),
+    value_set_arithmetic(divide)
+)
 
 
 // define_generic_procedure_handler(

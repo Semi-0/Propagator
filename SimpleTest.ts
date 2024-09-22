@@ -1,10 +1,10 @@
 // import { isNumber } from "effect/Predicate";
 import { Cell } from "./Cell/Cell";
 import { do_nothing, monitor_change, observe_cell, tell } from "./ui";
-import { force } from "./Cell/GenericArith";
+import { force_load_arithmatic } from "./Cell/GenericArith";
 import { c_multiply } from "./BuiltInProps";
 
-force();
+force_load_arithmatic();
 
 
 

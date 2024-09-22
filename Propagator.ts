@@ -4,10 +4,10 @@ import { Cell, add_cell_content, cell_id, cell_strongest } from "./Cell/Cell";
 import { set_global_state, get_global_parent } from "./PublicState";
 
 import { type Either, right, left } from "fp-ts/Either";
-import { force } from "./Cell/GenericArith";
+import { force_load_arithmatic } from "./Cell/GenericArith";
 import { PublicStateCommand } from "./PublicState";
 
-force();
+force_load_arithmatic();
 
 export class Propagator{
  private relation : Relation; 
