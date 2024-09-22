@@ -42,16 +42,22 @@ test("simple_scheduler with steppable_run", async () => {
 
    
 
-    await scheduler.steppable_run();
+    await scheduler.steppable_run((e) => {
+        console.log("error in task", e)
+    });
     expect(mockTasks[0]).toHaveBeenCalled();
     expect(mockTasks[1]).not.toHaveBeenCalled();
     expect(mockTasks[2]).not.toHaveBeenCalled();
 
-    await scheduler.steppable_run();
+    await scheduler.steppable_run((e) => {
+        console.log("error in task", e)
+    });
     expect(mockTasks[1]).toHaveBeenCalled();
     expect(mockTasks[2]).not.toHaveBeenCalled();
 
-    await scheduler.steppable_run();
+    await scheduler.steppable_run((e) => {
+        console.log("error in task", e)
+    });
     expect(mockTasks[2]).toHaveBeenCalled();
 });
 

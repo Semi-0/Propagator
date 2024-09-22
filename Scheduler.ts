@@ -3,7 +3,7 @@ export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
     execute_sequential: (error_handler: (e: Error) => void) => (() => void);
     execute_simultaneous: (error_handler: (e: Error) => void) => void;
-    steppable_run: () => void;
+    steppable_run:  (error_handler: (e: Error) => void) => void;
     get_executed_length: () => number;
     clear_all_tasks: () => void;
 }
@@ -36,11 +36,12 @@ export function simple_scheduler(): Scheduler {
     }
 
 
-    function execute_task(): () => Promise<void>{
-        const f = dequeue()
+    function execute_task(task: () => Promise<void>, error_handler: (e: Error) => void): () => Promise<void>{
         return async () => {
-            await f().then(() => {
-                executed.add(f)
+            await task().then(() => {
+                executed.add(task)
+            }).catch((e) => {
+                error_handler(e)
             })
         }
     }
@@ -52,16 +53,7 @@ export function simple_scheduler(): Scheduler {
 
         async function exec(){
             while ((queue.size !== 0) && (running)){
-                const f = queue.values().next().value 
-
-                try {
-                    await f() 
-                } catch (e) {
-                    error_handler(e)
-                }
-                queue.delete(f)
-                executed.add(f)
-
+                await execute_task(dequeue(), error_handler)()
             }
         }
 
@@ -73,21 +65,18 @@ export function simple_scheduler(): Scheduler {
     }
 
     async function execute_simultaneous(error_handler: (e: Error) => void){
-        const tasks = Array.from(queue).map(async (f) => {
-            try {
-                await f();
-                queue.delete(f);
-                executed.add(f);
-            } catch (e) {
-                error_handler(e)
-            }
+        const tasksToExecute = Array.from(queue);
+        queue.clear(); // Clear the queue immediately
+
+        const tasks = tasksToExecute.map(async (f) => {
+            execute_task(f, error_handler)()
         });
 
         await Promise.all(tasks);
     }
 
-    function steppable_run(){
-        return execute_task()()
+    function steppable_run(error_handler: (e: Error) => void){
+        return execute_task(dequeue(), error_handler)()
     }
 
  
@@ -101,15 +90,6 @@ export function simple_scheduler(): Scheduler {
         clear_all_tasks
     }
 }
-
-
-export function steppable_execute( execute_tasks:  () => Promise<void>): () => Promise<void> {
-    return async () => {
-        await execute_tasks()
-    }
-}
-
-
 
 export const SimpleScheduler = simple_scheduler()
 
@@ -129,55 +109,11 @@ export async function execute_all_tasks_simultaneous(error_handler: (e: Error) =
     return SimpleScheduler.execute_simultaneous(error_handler)
 }
 
-export function steppable_run_task() {
-      SimpleScheduler.steppable_run()
+export function steppable_run_task(error_handler: (e: Error) => void) {
+      SimpleScheduler.steppable_run(error_handler)
 }
 
 export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
 
 
 export const scheduled_reactive_state = construct_scheduled_stateful_reactor(SimpleScheduler.schedule)
-
-// schedule_task(async () => {
-//     console.log("Hello")
-// })
-
-// schedule_task(async () => {
-//     return new Promise((resolve, reject) => {
-//         setTimeout(() => {
-//             console.log("1000 timeout")
-//             resolve()
-//         }, 1000)
-//     })
-// })
-
-// schedule_task(async () => {
-//     return new Promise((resolve, reject) => {
-//         setTimeout(() => {
-//             console.log("2000 timeout")
-//             resolve()
-//         }, 2000)
-//     })
-// })
-
-// setTimeout(() => {
-//     console.log("simultaneous count 2000")
-// }, 2000)
-
-// const cancel =  execute_all_tasks_sequential((e) => {
-//     console.log("error in task", e)
-// })
-// console.log("do other stuff")
-
-
-// setTimeout(() => {
-//     console.log("cancel")
-//     cancel()
-// }, 1000)
-
-
-
-// await execute_all_tasks_simultaneous((e) => {
-//     console.log("error in task", e)
-// })
-
