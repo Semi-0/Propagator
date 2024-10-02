@@ -4,8 +4,9 @@ import { Cell, cell_strongest_base_value, cell_strongest_value } from "../Cell/C
 import { c_multiply } from "../BuiltInProps";
 import { tell } from "../ui";
 import { get_base_value } from "../Cell/CellValue";
+import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler } from "../Scheduler";
 
-test("c_multiply", () => {
+test("c_multiply", async () => {
     const x = new Cell("x");
     const y = new Cell("y");
     const product = new Cell("product");
@@ -19,7 +20,15 @@ test("c_multiply", () => {
 
     tell(product, 40, "fst");
 
+    console.log(summarize_scheduler_state())
+
+    execute_all_tasks_sequential((error: Error) => {
+        console.log("error", error);
+    }, () => {
+        console.log("done")
+        expect(cell_strongest_base_value(y)).toBe(5);
+    })
     
    
-    expect(cell_strongest_base_value(y)).toBe(5);
+   
 })

@@ -3,6 +3,7 @@ import { construct_reactor } from "../Reactor";
 import { scheduled_reactor, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, schedule_task, reset_scheduler, simple_scheduler } from "../Scheduler";
 import { zip, merge } from "../Reactor";
 import { filter, map, scan, combine_latest } from "../Reactor";
+import { compact_map } from "../Reactor";
 
 
 test("filter", () => {
@@ -59,7 +60,7 @@ test("scan", () => {
 test("combineLatest", () => {
     const reactor1 = construct_reactor<number>();
     const reactor2 = construct_reactor<number>();
-    const combinedReactor = combine_latest<number>()(reactor1, reactor2);
+    const combinedReactor = combine_latest<number>(reactor1, reactor2);
 
     const observer = jest.fn((...args: any[]) => {
         console.log("args", args)
@@ -115,5 +116,26 @@ test("merge", () => {
     expect(observer).toHaveBeenNthCalledWith(2, "a");
     expect(observer).toHaveBeenNthCalledWith(3, 2);
     expect(observer).toHaveBeenNthCalledWith(4, "b");
+});
+
+test("compact_map", () => {
+    const reactor = construct_reactor<number | null | undefined>();
+    // @ts-ignore
+    const compact_mapper = compact_map((v) => v !== null && v !== undefined ? v * 2 : v)
+    const observer = jest.fn();
+    // @ts-ignore
+    // console.log(inspect(compact_mapper, {showHidden: true}))
+    compact_mapper(reactor).subscribe(observer);
+
+    reactor.next(1);
+    reactor.next(null);
+    reactor.next(2);
+    reactor.next(undefined);
+    reactor.next(3);
+
+    expect(observer).toHaveBeenCalledTimes(3);
+    expect(observer).toHaveBeenNthCalledWith(1, 2);
+    expect(observer).toHaveBeenNthCalledWith(2, 4);
+    expect(observer).toHaveBeenNthCalledWith(3, 6);
 });
 

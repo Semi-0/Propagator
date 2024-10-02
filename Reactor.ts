@@ -2,8 +2,9 @@
 // the visualization would be very limited
 
 import { pipe } from "fp-ts/lib/function";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
 
-type Reactor<T> = StandardReactor<T> | StatefulReactor<T>
+export type Reactor<T> = StandardReactor<T> | StatefulReactor<T>
 
 
 // PERHAPS SHOULD USE SET FOR PERFORMANCE
@@ -123,7 +124,7 @@ export function construct_scheduled_reactor<T>(scheduling: (task: () => Promise<
     })
 }
 
-interface StatefulReactor<T> extends StandardReactor<T>{
+export interface StatefulReactor<T> extends StandardReactor<T>{
     get_value: () => any
 }
 
@@ -181,6 +182,12 @@ export function construct_scheduled_stateful_reactor<T>(
     ) as StatefulReactor<T>
 }
 
+export function subscribe<T>(f: (v: T) => void): (reactor: Reactor<T>) => void{
+    return (reactor: Reactor<T>) => {
+        reactor.subscribe(f)
+    }
+}
+
 export function construct_simple_transformer<T>(f: (v: T, inner: Reactor<T>) => void): (reactor: Reactor<T>) => Reactor<T>  {
     return (reactor: Reactor<T>) => {
         var inner = construct_reactor<T>()
@@ -207,12 +214,23 @@ export function filter<T>(f: (v: T) => boolean): (reactor: Reactor<T>) => Reacto
     })
 }
 
+export function compact_map<T>(f: (v: T) => T): (reactor: Reactor<T>) => Reactor<T>{
+    return compose(map(f), filter(v => v !== null && v !== undefined))
+}
+
+
 export function scan<T>(f: (v: T, acc: T) => T): (reactor: Reactor<T>) => Reactor<T>{
     var acc: T
 
     return construct_simple_transformer<T>((v, inner) => {
         acc = f(v, acc)
         inner.next(acc)
+    })
+}
+export function tap<T>(f: (v: T) => void): (reactor: Reactor<T>) => Reactor<T>{
+    return construct_simple_transformer<T>((v, inner) => {
+        f(v)
+        inner.next(v)
     })
 }
 
@@ -240,7 +258,7 @@ export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reac
 }
 
 
-export function combine_latest<T>(): (...reactors: Reactor<any>[]) => Reactor<any[]>{
+export function combine_latest<T>(...reactors: Reactor<T>[]): Reactor<T>{
     return construct_multicast_reactor<T>(
     (rs: Reactor<T>[]) => rs.map(reactor => {return null}), 
     (old_value_pack, index, value) => old_value_pack.map((v, i) => i === index ? value : v),
@@ -250,7 +268,7 @@ export function combine_latest<T>(): (...reactors: Reactor<any>[]) => Reactor<an
         }
         return value_pack
     }
-    )
+    )(...reactors)
 }
 
 export const zip = construct_multicast_reactor(

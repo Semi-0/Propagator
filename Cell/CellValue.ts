@@ -7,9 +7,12 @@ import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
 
 export const get_base_value = construct_simple_generic_procedure("get_base_value", 1, (a: LayeredObject) => {
-
-    guard(is_layered_object(a), throw_error("get_base_value", "argument is not a layered object", inspect(a)))
-    return get_base_value_layer(a)
+    if (is_layered_object(a)){
+        return get_base_value_layer(a)
+    }
+    else{
+        return a
+    }
 })
 
 export const the_nothing = "&&the_nothing&&"

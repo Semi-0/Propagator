@@ -13,6 +13,8 @@ test("cancellable_execute", async () => {
     
     const cancel = execute_all_tasks_sequential((e) => {
         console.log("error in task", e)
+    }, () => {
+        console.log("done")
     });
 
     // Allow some time for the first task to start
@@ -83,6 +85,8 @@ test("scheduled_reactor", async () => {
     await new Promise<void>(resolve => {
         execute_all_tasks_sequential((e) => {
             console.error("Error in task:", e);
+        }, () => {
+            console.log("done")
         });
         // Give some time for all tasks to complete
         setTimeout(resolve, 100);
@@ -115,6 +119,8 @@ test("scheduled_reactive_state", async () => {
     await new Promise<void>(resolve => {
         execute_all_tasks_sequential((e) => {
             console.error("Error in task:", e);
+        }, () => {
+            console.log("done")
         });
         // Give some time for all tasks to complete
         setTimeout(resolve, 100);

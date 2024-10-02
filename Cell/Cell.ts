@@ -1,20 +1,20 @@
 import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
 import { Propagator } from "../Propagator";
-import { BehaviorSubject,  combineLatest,  pipe } from "rxjs";
+import {  combineLatest   } from "rxjs";
+import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-
-import { filter, map } from "rxjs/operators";
+import { compact_map,  subscribe, type StatefulReactor } from "../Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { inspect } from "bun";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
 import { merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
-import { is_layered_object } from "../temp_predicates";
-import { construct_support_value, get_support_layer_value } from "sando-layer/Specified/SupportLayer";
+import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../BuiltInProps";
 import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { scheduled_reactive_state } from "../Scheduler";
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -25,36 +25,40 @@ export const general_contradiction = construct_simple_generic_procedure("general
   return false;
 })
 
-export function handle_cell_contradiction(cell: Cell){
-  const nogood = map_to_new_set(get_support_layer_value(cell.getStrongest().value), 
-                              (elt: string) => construct_better_set([elt], (elt: string) => elt), 
-                              (elt: BetterSet<string>) => inspect(elt));
+
+export function handle_cell_contradiction(cell: Cell) {
+  const nogood = pipe(
+    cell,
+    cell_strongest_value,
+    get_support_layer_value,
+    (value) => map_to_new_set(
+      value,
+      (elt: string) => construct_better_set([elt], (elt: string) => elt),
+      (elt: BetterSet<string>) => inspect(elt)
+    )
+  );
+
   process_contradictions(nogood, cell)
 }
 
 export const handle_contradiction = handle_cell_contradiction;
 
-export const compactMap = <T, R>(fn: (value: T) => R) => pipe(
-  map(fn),
-  filter(value => value !== null && value !== undefined)
-);
 
 export class Cell{
   private relation : Relation 
   private neighbors : Map<string, Propagator> = new Map();
-  private content : BehaviorSubject<any> = new BehaviorSubject<any>(the_nothing);
-  private strongest : BehaviorSubject<any> = new BehaviorSubject<any>(the_nothing);
+  private content : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
+  private strongest : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
 
   constructor(name: string){
     this.relation = make_relation(name, get_global_parent());
 
-    this.content
-        .pipe(
-          compactMap(content => this.testContent(content, this.strongest.getValue()))
-        )
-        .subscribe(content => {
-          this.strongest.next(content);
-        });
+    pipe(
+      this.content,
+      compact_map((content: any) => this.testContent(content, this.strongest.get_value())),
+      subscribe((content: any) => this.strongest.next(content))
+    )
+   
     set_global_state(PublicStateCommand.ADD_CELL, this);
     set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
   }
@@ -82,11 +86,10 @@ export class Cell{
 
   addContent(increment:any){
  
-    this.content.next(cell_merge(this.content.getValue(), increment));
+    this.content.next(cell_merge(this.content.get_value(), increment));
   }
 
   testContent(content: any, strongest: any): any | null {
-
     const _strongest = strongest_value(content);
     if (is_equal(content, strongest)){
       return null;
@@ -101,7 +104,7 @@ export class Cell{
   }
 
   force_update(){
-    this.content.next(this.content.getValue());
+    this.content.next(this.content.get_value());
   }
 
   addNeighbor(propagator: Propagator){
@@ -110,11 +113,12 @@ export class Cell{
 
   summarize(){
     const name = this.relation.get_name();
-    const strongest = this.strongest.getValue();
-    const content = this.content.getValue();
+    const strongest = this.strongest.get_value();
+    const content = this.content.get_value();
     return `name: ${name}\nstrongest: ${describe(strongest)}\ncontent: ${describe(content)}`;
   }
 }
+
 
 
 
@@ -143,7 +147,7 @@ export function cell_id(cell: Cell){
 }
 
 export function cell_strongest_value(cell: Cell){
-  return cell.getStrongest().getValue();
+  return cell.getStrongest().get_value();
 }
 
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
