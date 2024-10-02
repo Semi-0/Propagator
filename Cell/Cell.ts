@@ -3,7 +3,7 @@ import { Propagator } from "../Propagator";
 import {  combineLatest   } from "rxjs";
 import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-import { compact_map,  subscribe, type StatefulReactor } from "../Reactor";
+import { combine_latest, compact_map,  subscribe, type StatefulReactor } from "../Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { inspect } from "bun";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
@@ -64,7 +64,7 @@ export class Cell{
   }
 
   observe_update(observer:(cellValues: any) => void){
-    combineLatest([this.content, this.strongest]).subscribe(observer);
+    combine_latest(this.content, this.strongest).subscribe(observer);
   }
 
   getRelation(){
