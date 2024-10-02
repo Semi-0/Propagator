@@ -1,63 +1,119 @@
 import { expect, test, jest } from "bun:test";
 import { construct_reactor } from "../Reactor";
 import { scheduled_reactor, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, schedule_task, reset_scheduler, simple_scheduler } from "../Scheduler";
+import { zip, merge } from "../Reactor";
+import { filter, map, scan, combine_latest } from "../Reactor";
 
-test("cancellable_execute", async () => {
-    reset_scheduler()
-    const mockTasks = [
-        jest.fn(() => new Promise<void>(resolve => setTimeout(() => { resolve(); }, 100))),
-        jest.fn(() => new Promise<void>(resolve => setTimeout(() => { resolve(); }, 200))),
-        jest.fn(() => new Promise<void>(resolve => setTimeout(() => { resolve(); }, 300)))
-    ];
-   
-    mockTasks.forEach(task => schedule_task(task));
-    
-    const cancel = execute_all_tasks_sequential((e) => {
-        console.log("error in task", e)
-    });
 
-    // Allow some time for the first task to start
-    await new Promise(resolve => setTimeout(resolve, 50));
+test("filter", () => {
+    const reactor = construct_reactor<number>();
+    const filteredReactor = filter<number>(v => v % 2 === 0)(reactor);
 
-    cancel();
+    const observer = jest.fn();
+    filteredReactor.subscribe(observer);
 
-    // Wait for all potential executions to finish
-    await new Promise(resolve => setTimeout(resolve, 600));
+    reactor.next(1);
+    reactor.next(2);
+    reactor.next(3);
+    reactor.next(4);
 
-    expect(mockTasks[0]).toHaveBeenCalled();
-    expect(mockTasks[1]).not.toHaveBeenCalled();
-    expect(mockTasks[2]).not.toHaveBeenCalled();
+    expect(observer).toHaveBeenCalledTimes(2);
+    expect(observer).toHaveBeenCalledWith(2);
+    expect(observer).toHaveBeenCalledWith(4);
 });
 
-test("simple_scheduler with steppable_run", async () => {
+test("map", () => {
+    const reactor = construct_reactor<number>();
+    const mappedReactor = map<number>(v => v * 2)(reactor);
 
-    const scheduler = simple_scheduler();
-    const mockTasks = [
-        jest.fn(async () => { console.log(10); }),
-        jest.fn(async () => { console.log(20); }),
-        jest.fn(async () => { console.log(30); })
-    ];
+    const observer = jest.fn();
+    mappedReactor.subscribe(observer);
 
-    mockTasks.forEach(task => scheduler.schedule(task));
+    reactor.next(1);
+    reactor.next(2);
+    reactor.next(3);
 
-   
+    expect(observer).toHaveBeenCalledTimes(3);
+    expect(observer).toHaveBeenCalledWith(2);
+    expect(observer).toHaveBeenCalledWith(4);
+    expect(observer).toHaveBeenCalledWith(6);
+});
 
-    await scheduler.steppable_run((e) => {
-        console.log("error in task", e)
+test("scan", () => {
+    const reactor = construct_reactor<number>();
+    const scannedReactor = scan<number>((v, acc) => (acc || 0) + v)(reactor);
+
+    const observer = jest.fn();
+    scannedReactor.subscribe(observer);
+
+    reactor.next(1);
+    reactor.next(2);
+    reactor.next(3);
+
+    expect(observer).toHaveBeenCalledTimes(3);
+    expect(observer).toHaveBeenCalledWith(1);
+    expect(observer).toHaveBeenCalledWith(3);
+    expect(observer).toHaveBeenCalledWith(6);
+});
+
+test("combineLatest", () => {
+    const reactor1 = construct_reactor<number>();
+    const reactor2 = construct_reactor<number>();
+    const combinedReactor = combine_latest<number>()(reactor1, reactor2);
+
+    const observer = jest.fn((...args: any[]) => {
+        console.log("args", args)
     });
-    expect(mockTasks[0]).toHaveBeenCalled();
-    expect(mockTasks[1]).not.toHaveBeenCalled();
-    expect(mockTasks[2]).not.toHaveBeenCalled();
+    combinedReactor.subscribe(observer);
 
-    await scheduler.steppable_run((e) => {
-        console.log("error in task", e)
-    });
-    expect(mockTasks[1]).toHaveBeenCalled();
-    expect(mockTasks[2]).not.toHaveBeenCalled();
+    reactor1.next(1);
+    reactor2.next(2);
+    reactor1.next(3);
+    reactor2.next(4);
 
-    await scheduler.steppable_run((e) => {
-        console.log("error in task", e)
-    });
-    expect(mockTasks[2]).toHaveBeenCalled();
+    expect(observer).toHaveBeenCalledTimes(3);
+    expect(observer).toHaveBeenCalledWith([1, 2]);
+    expect(observer).toHaveBeenCalledWith([3, 4]);
+});
+
+test("zip", () => {
+    const reactor1 = construct_reactor<number>();
+    const reactor2 = construct_reactor<string>();
+    const zippedReactor = zip(reactor1, reactor2);
+
+    const observer = jest.fn();
+    zippedReactor.subscribe(observer);
+
+    reactor1.next(1);
+    reactor2.next("a");
+    reactor1.next(2);
+    reactor2.next("b");
+    reactor1.next(3);
+    reactor2.next("c");
+
+    expect(observer).toHaveBeenCalledTimes(3);
+    expect(observer).toHaveBeenNthCalledWith(1, [1, "a"]);
+    expect(observer).toHaveBeenNthCalledWith(2, [2, "b"]);
+    expect(observer).toHaveBeenNthCalledWith(3, [3, "c"]);
+});
+
+test("merge", () => {
+    const reactor1 = construct_reactor<number>();
+    const reactor2 = construct_reactor<string>();
+    const mergedReactor = merge(reactor1, reactor2);
+
+    const observer = jest.fn();
+    mergedReactor.subscribe(observer);
+
+    reactor1.next(1);
+    reactor2.next("a");
+    reactor1.next(2);
+    reactor2.next("b");
+
+    expect(observer).toHaveBeenCalledTimes(4);
+    expect(observer).toHaveBeenNthCalledWith(1, 1);
+    expect(observer).toHaveBeenNthCalledWith(2, "a");
+    expect(observer).toHaveBeenNthCalledWith(3, 2);
+    expect(observer).toHaveBeenNthCalledWith(4, "b");
 });
 

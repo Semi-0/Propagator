@@ -65,14 +65,25 @@ export function simple_scheduler(): Scheduler {
     }
 
     async function execute_simultaneous(error_handler: (e: Error) => void){
-        const tasksToExecute = Array.from(queue);
-        queue.clear(); // Clear the queue immediately
+        var running = true
+        async function exec(){
+            if (running){
+            const tasksToExecute = Array.from(queue);
+            queue.clear(); // Clear the queue immediately
+            const tasks = tasksToExecute.map(async (f) => {
+                execute_task(f, error_handler)()
+            });
 
-        const tasks = tasksToExecute.map(async (f) => {
-            execute_task(f, error_handler)()
-        });
+            await Promise.all(tasks);
+            }
+        }
+        while (queue.size !== 0){
+            await exec()
+        }
 
-        await Promise.all(tasks);
+        return () => {
+            running = false
+        }
     }
 
     function steppable_run(error_handler: (e: Error) => void){
@@ -114,6 +125,5 @@ export function steppable_run_task(error_handler: (e: Error) => void) {
 }
 
 export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
-
 
 export const scheduled_reactive_state = construct_scheduled_stateful_reactor(SimpleScheduler.schedule)

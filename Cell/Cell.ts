@@ -6,7 +6,7 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 import { filter, map } from "rxjs/operators";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { inspect } from "bun";
-import { is_nothing, the_nothing, is_contradiction, the_contradiction } from "./CellValue";
+import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
 import { merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
@@ -14,6 +14,7 @@ import { is_layered_object } from "../temp_predicates";
 import { construct_support_value, get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../BuiltInProps";
 import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -73,6 +74,7 @@ export class Cell{
   getStrongest(){
     return this.strongest;
   } 
+
 
   getNeighbors(){
     return this.neighbors;
@@ -139,3 +141,9 @@ export function cell_id(cell: Cell){
 
   return cell.getRelation().get_id();
 }
+
+export function cell_strongest_value(cell: Cell){
+  return cell.getStrongest().getValue();
+}
+
+export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)

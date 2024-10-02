@@ -219,10 +219,10 @@ export function scan<T>(f: (v: T, acc: T) => T): (reactor: Reactor<T>) => Reacto
 
 export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reactor<T>[]) => any[],
                                             update_latest: (old_value_pack: any[], index: number, value: any) => any[],
-                                            mapper: (value_pack: any[], reactor: Reactor<any[]>) => any[]): (...others: Reactor<any>[]) => (reactor: Reactor<T>) => Reactor<any>{
-    return (...others: Reactor<any>[]) => {
-        return (reactor: Reactor<T>) => {
-            const reactors = [reactor, ...others]
+                                            mapper: (value_pack: any[], reactor: Reactor<any[]>) => any[]): (...others: Reactor<any>[]) => Reactor<any>{
+    return (...reactors: Reactor<any>[]) => {
+
+          
             var inner = construct_reactor<any[]>()
             var value_pack = value_pack_constructor(reactors)
 
@@ -237,11 +237,10 @@ export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reac
 
             return inner
         }
-    }
 }
 
 
-export function combine_latest<T>(): (...others: Reactor<any>[]) => (reactor: Reactor<T>) => Reactor<any[]>{
+export function combine_latest<T>(): (...reactors: Reactor<any>[]) => Reactor<any[]>{
     return construct_multicast_reactor<T>(
     (rs: Reactor<T>[]) => rs.map(reactor => {return null}), 
     (old_value_pack, index, value) => old_value_pack.map((v, i) => i === index ? value : v),
@@ -268,7 +267,7 @@ export const zip = construct_multicast_reactor(
     }
 )
 
-export const fork = construct_multicast_reactor(
+export const merge = construct_multicast_reactor(
     (rs: Reactor<any>[]) => [], 
     (old_value_pack, index, value) => [value],
     (value_pack, inner) => {
@@ -278,87 +277,3 @@ export const fork = construct_multicast_reactor(
         return []
     }
 )
-
-// export function combine_latest(...other: Reactor[]): (reactor : Reactor) => Reactor{
-//     return (reactor : Reactor) => {
-//     const reactors = [reactor, ...other]
-//     var latest_values = reactors.map(reactor => {return false})
-//     var inner = construct_reactor()
-        
-//     function update_latest(index: number, value: any){
-//         latest_values[index] = value 
-//         if (latest_values.every(value => value)){
-//             inner.next(...latest_values)
-//         }
-//     }
-
-
-//     reactors.forEach((reactor, index) => {
-//         reactor.subscribe((value) => {
-//             update_latest(index, value)
-//         })
-//     })
-
-//         return inner
-//     }
-// // }    
-
-// export function zip(...other: Reactor[]): (reactor : Reactor) => Reactor{
-//     return (reactor : Reactor) => {
-//         const reactors = [reactor, ...other]
-//         const create_zip_pack = (rs: Reactor[]) => rs.map(reactor => {return null})
-//         var latest_values = create_zip_pack(reactors)
-//         var inner = construct_reactor()
-
-//         function update_latest(index: number, value: any){
-//             latest_values[index] = value 
-//             if (latest_values.every(value => value !== null)){
-//                 inner.next(...latest_values)
-//                 latest_values = create_zip_pack(reactors)
-//             }
-//         }
-
-//         reactors.forEach((reactor, index) => {
-//             reactor.subscribe((value) => {
-//                 update_latest(index, value)
-//             })
-//         })
-
-//         return inner
-//     }
-// }
-
-
-
-
-// const test_reactor = scheduled_reactor() 
-
-// const test_reactor_2 = scheduled_reactor() 
-
-
-// test_reactor.subscribe((value) => {
-//     console.log("test_reactor", value) 
-//     test_reactor_2.next(value + 1)
-
-// })
-
-// test_reactor_2.subscribe((value) => {
-//     console.log("test_reactor_2", value) 
-// })
-
-// test_reactor.next(0)
-
-// SimpleScheduler.execute_all()
-
-// setTimeout(() => {
-//     console.log("setting timeout")
-//     test_reactor.next(1)
-// }, 1000)
-
- 
-
-// setTimeout(() => {
-//     console.log("setting timeout 2")
-//     test_reactor.next(2)
-//     SimpleScheduler.execute_all()
-// }, 2000)

@@ -1,7 +1,7 @@
 import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
-import { all_premises_in, is_all_premises_in, is_hypothetical, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
+import { is_hypothetical, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
 import { first } from "generic-handler/built_in_generics/generic_array_operation";
 import { add, construct_better_set, flat_map, for_each, merge, set_remove, map_to_new_set , filter, get_length, to_array} from "generic-handler/built_in_generics/generic_better_set";
 import { second } from "./helper";
