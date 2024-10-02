@@ -36,9 +36,7 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
 
 
 export function force_load_CellValue(){
-    console.log("force_load_CellValue")
-    console.log(is_nothing)
-    console.log(is_contradiction)
+  
 }
 
 

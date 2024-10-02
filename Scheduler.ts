@@ -68,10 +68,8 @@ export function simple_scheduler(): Scheduler {
 
         async function exec(){
             while ((queue.size !== 0) && (running)){
-                console.log(queue.size)
                 await execute_task(dequeue(), error_handler)()
             }
-            console.log("done")
         }
 
         exec().then(then)

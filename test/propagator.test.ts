@@ -20,12 +20,9 @@ test("c_multiply", async () => {
 
     tell(product, 40, "fst");
 
-    console.log(summarize_scheduler_state())
 
     execute_all_tasks_sequential((error: Error) => {
-        console.log("error", error);
     }, () => {
-        console.log("done")
         expect(cell_strongest_base_value(y)).toBe(5);
     })
     
