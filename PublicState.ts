@@ -6,14 +6,15 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
 import { all_match, match_args } from 'generic-handler/Predicates';
-import  { BehaviorSubject, filter, tap } from 'rxjs';
 import {  type InterestedType } from './DataTypes/Relation';
 import { inspect } from 'bun';
 import { guarantee_type, guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
 import { is_layered_object } from './temp_predicates';
 import { get_base_value } from 'sando-layer/Basic/Layer';
-
+import { construct_stateful_reactor, type StatefulReactor } from './Reactor';
+import { pipe } from 'fp-ts/function';
+import { filter, tap, map } from './Reactor';
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",
@@ -52,20 +53,23 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
 }
 
 
-var parent = make_relation("root", null);
-const all_cells: Cell[] = [];
-const all_propagators: Propagator[] = [];
-const all_amb_propagators: Propagator[] = [];
-const receiver : BehaviorSubject<PublicStateMessage> = new BehaviorSubject<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
+var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
+// Todo: make this read only
+const all_cells: StatefulReactor<Cell[]> = construct_stateful_reactor<Cell[]>([]);
+const all_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
+const all_amb_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
+
+
+const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
         case PublicStateCommand.ADD_CELL:
-            all_cells.push(...msg.args);
+            all_cells.next([...all_cells.get_value(), ...msg.args]);
             break;
 
         case PublicStateCommand.ADD_PROPAGATOR:
-            all_propagators.push(...msg.args);
+            all_propagators.next([...all_propagators.get_value(), ...msg.args]);
             break;
 
         case PublicStateCommand.ADD_CHILD:
@@ -75,7 +79,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             else if (msg.args.length == 2){ 
                 const child = msg.args[0];
                 const parent = msg.args[1];
-                parent.add_child(child);
+                parent.next(parent.get_value().add_child(child));
             }
             else{
                 throw_error(
@@ -104,12 +108,10 @@ receiver.subscribe((msg: PublicStateMessage) => {
                 "set_cell expects a function, got " + msg.args[0],
                 msg.summarize()
             ));
-            all_cells.forEach((cell: Cell) => {
-                msg.args[0](cell);
-            })
+            all_cells.next(msg.args[0](all_cells.get_value()));
             break;
         case PublicStateCommand.ADD_AMB_PROPAGATOR:
-            all_amb_propagators.push(...msg.args);
+            all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
             break;
     }
 })
@@ -122,29 +124,33 @@ export function set_global_state(type: PublicStateCommand, ...args: any[]){
 
 
 export function get_global_parent(){
-    return parent;
+    return parent.get_value();
 }
 
-export const observe_all_cells = (observeCommand: (msg: PublicStateMessage) => void, 
+export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessage) => void, 
                                   observeCell: (cell: Cell) => void) => {
-    receiver.pipe(filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
-                  filter((msg: PublicStateMessage) => msg.args.length == 1 && msg.args[0] instanceof Cell),
-                  tap((msg: PublicStateMessage) => {
-                        observeCommand(msg);
-                        return msg
-                    }))
-                .subscribe((msg: PublicStateMessage) => {
-                    const cell = msg.args[0]; 
-                    guard((cell instanceof Cell), throw_error(
-                        "observe_all_cells", 
-                        "observe_all_cells expects a cell, got " + cell, 
-                        msg.summarize()
-                    ));
-                    observeCell(cell);
-                })
+    pipe(receiver,
+        filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
+        filter((msg: PublicStateMessage) => msg.args.length == 1 && msg.args[0] instanceof Cell),
+        tap((msg: PublicStateMessage) => {
+            observeCommand(msg);
+            return msg
+        }))
+    .subscribe((msg: PublicStateMessage) => {
+        const cell = msg.args[0]; 
+        guard((cell instanceof Cell), throw_error(
+            "observe_all_cells", 
+            "observe_all_cells expects a cell, got " + cell, 
+            msg.summarize()
+        ));
+        observeCell(cell);
+    })
                 
 }
 
+export const observe_cell_array = all_cells
+export const observe_propagator_array = all_propagators
+export const observe_amb_propagator_array = all_amb_propagators
 
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {

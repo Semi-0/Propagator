@@ -3,7 +3,7 @@ import { add_cell_content, Cell } from "./Cell/Cell";
 import { for_each } from "./helper";
 import { support_by } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out } from "./DataTypes/Premises";
-import { observe_all_cells, PublicStateCommand } from "./PublicState";
+import { observe_all_cells_update, PublicStateCommand } from "./PublicState";
 import {  type PublicStateMessage } from "./PublicState";
 import { is_layered_object } from "./temp_predicates";
 export function tell(cell: Cell, information: any, ...premises: string[]){
@@ -49,7 +49,7 @@ export function observe_cell(print_to: (str: string) => void){
 }
 
 export function monitor_change(func: (msg: PublicStateMessage) => void, cell_func: (cell: Cell) => void){
-    observe_all_cells(func,  
+    observe_all_cells_update(func,  
         (cell: Cell) => {
             cell_func(cell)
         }

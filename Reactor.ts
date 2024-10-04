@@ -214,6 +214,8 @@ export function filter<T>(f: (v: T) => boolean): (reactor: Reactor<T>) => Reacto
     })
 }
 
+
+
 export function compact_map<T>(f: (v: T) => T): (reactor: Reactor<T>) => Reactor<T>{
     return compose(map(f), filter(v => v !== null && v !== undefined))
 }
