@@ -6,7 +6,6 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
 import { all_match, match_args } from 'generic-handler/Predicates';
-import { inspect } from 'bun';
 import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
 import { is_layered_object } from './temp_predicates';
@@ -41,7 +40,7 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
     } 
 
     function summarize(){
-        const args_summarize = ( args[0] instanceof Cell) || (args[0] instanceof Propagator) ? args[0].summarize() : inspect(args);
+        const args_summarize = ( args[0] instanceof Cell) || (args[0] instanceof Propagator) ? args[0].summarize() : "unknown args";
 
         return  "command: " + get_command() + " args: " + args_summarize;
     }

@@ -5,7 +5,6 @@ import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { combine_latest, compact_map,  subscribe, type StatefulReactor } from "../Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
-import { inspect } from "bun";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
 import { merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
@@ -15,6 +14,7 @@ import { process_contradictions } from "../BuiltInProps";
 import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
+import { identify_strint_set } from "../helper";
 export const cell_merge = merge;
 
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
@@ -34,7 +34,7 @@ export function handle_cell_contradiction(cell: Cell) {
     (value) => map_to_new_set(
       value,
       (elt: string) => construct_better_set([elt], (elt: string) => elt),
-      (elt: BetterSet<string>) => inspect(elt)
+      (elt: BetterSet<string>) => identify_strint_set(elt)
     )
   );
 

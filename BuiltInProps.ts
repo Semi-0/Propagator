@@ -8,9 +8,8 @@ import { second } from "./helper";
 import { PublicStateCommand, set_global_state } from "./PublicState";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
-import { inspect } from "bun";
 import { pipe } from "fp-ts/lib/function";
-
+import { reduce } from "generic-handler/built_in_generics/generic_better_set";
 export const p_multiply =  primitive_propagator((...inputs: any[]) => {
     // console.log("multiple inputs", inputs);
     const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
@@ -68,7 +67,8 @@ export function binary_amb(cell: Cell): Propagator{
 
 function pairwise_union(nogoods1: BetterSet<string>, nogoods2: BetterSet<string>) : BetterSet<BetterSet<string>>{
     // why flatmap?
-    return map_to_new_set<string, BetterSet<string>>(nogoods1, (item: string) => add(nogoods2, item), (item: BetterSet<string>) => inspect(item))
+    return map_to_new_set<string, BetterSet<string>>(nogoods1, (item: string) => add(nogoods2, item), 
+                                                    (item: BetterSet<string>) => reduce(item, (acc, value) => acc + value, ""))
 }
 
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
