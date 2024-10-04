@@ -1,14 +1,13 @@
 
 import { Cell } from './Cell/Cell';
-import { is_relation, make_relation, Relation } from './DataTypes/Relation';
+import {  make_relation, Relation } from './DataTypes/Relation';
 import { Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
 import { merge } from './Cell/Merge';
 import { all_match, match_args } from 'generic-handler/Predicates';
-import {  type InterestedType } from './DataTypes/Relation';
 import { inspect } from 'bun';
-import { guarantee_type, guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
+import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
 import { is_layered_object } from './temp_predicates';
 import { get_base_value } from 'sando-layer/Basic/Layer';
@@ -21,6 +20,8 @@ export enum PublicStateCommand{
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
     SET_CELLS = "set_cells",
+    SET_PROPAGATORS = "set_propagators",
+    SET_AMB_PROPAGATORS = "set_amb_propagators",
     ADD_AMB_PROPAGATOR = "add_amb_propagator"
 }
 
@@ -112,6 +113,13 @@ receiver.subscribe((msg: PublicStateMessage) => {
             break;
         case PublicStateCommand.ADD_AMB_PROPAGATOR:
             all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
+            break;
+
+        case PublicStateCommand.SET_PROPAGATORS:
+            all_propagators.next(msg.args[0]);
+            break;
+        case PublicStateCommand.SET_AMB_PROPAGATORS:
+            all_amb_propagators.next(msg.args[0]);
             break;
     }
 })
