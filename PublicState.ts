@@ -13,6 +13,7 @@ import { get_base_value } from 'sando-layer/Basic/Layer';
 import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactor';
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactor';
+import { inspect } from 'bun';
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",
@@ -60,20 +61,30 @@ const all_amb_propagators: StatefulReactor<Propagator[]> = construct_stateful_re
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
+
+function is_cell(o: any): boolean{
+    return o.getContent !== undefined && o.getRelation !== undefined && o.getStrongest !== undefined && o.getNeighbors !== undefined;
+}
+
+function is_propagator(o: any): boolean{
+    return o.getInputsID !== undefined && o.getOutputsID !== undefined && o.summarize !== undefined;
+}
+
+
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
         case PublicStateCommand.ADD_CELL:
-            if (msg.args.every(o => o instanceof Cell)) {
+            if (msg.args.every(o => is_cell(o))) {
                 all_cells.next([...all_cells.get_value(), ...msg.args]);
             }
             else{
-                console.log("captured attempt for insert weird thing inside cells")
+                console.log("captured attempt for insert weird thing inside cells:" + msg.args)
             }
             break;
 
         case PublicStateCommand.ADD_PROPAGATOR:
-            if (msg.args.every(o => o instanceof Propagator)) {
-                all_cells.next([...all_cells.get_value(), ...msg.args]);
+            if (msg.args.every(o => is_propagator(o))) {
+                all_propagators.next([...all_propagators.get_value(), ...msg.args]);
             }
             else{
                 console.log("captured attempt for insert weird thing inside propagators")
