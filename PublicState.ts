@@ -18,7 +18,8 @@ export enum PublicStateCommand{
     ADD_PROPAGATOR = "add_propagator",
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
-    ADD_AMB_PROPAGATOR = "add_amb_propagator"
+    ADD_AMB_PROPAGATOR = "add_amb_propagator",
+    CLEAN_UP = "clean_up"
 }
 
 export interface PublicStateMessage{
@@ -62,11 +63,22 @@ const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reacto
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
         case PublicStateCommand.ADD_CELL:
-            all_cells.next([...all_cells.get_value(), ...msg.args]);
+            if (msg.args.every(o => o instanceof Cell)) {
+                all_cells.next([...all_cells.get_value(), ...msg.args]);
+            }
+            else{
+                console.log("captured attempt for insert weird thing inside cells")
+            }
             break;
 
         case PublicStateCommand.ADD_PROPAGATOR:
-            all_propagators.next([...all_propagators.get_value(), ...msg.args]);
+            if (msg.args.every(o => o instanceof Propagator)) {
+                all_cells.next([...all_cells.get_value(), ...msg.args]);
+            }
+            else{
+                console.log("captured attempt for insert weird thing inside propagators")
+            }
+            
             break;
 
         case PublicStateCommand.ADD_CHILD:
@@ -96,8 +108,18 @@ receiver.subscribe((msg: PublicStateMessage) => {
             break;
        
         case PublicStateCommand.ADD_AMB_PROPAGATOR:
-            all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
+            if (msg.args.every(o => o instanceof Propagator)) {
+                all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
+            }
+            else{
+                console.log("captured attempt for insert weird thing inside propagators")
+            }
             break;
+        case PublicStateCommand.CLEAN_UP:
+            all_cells.next(all_cells.get_value().filter(e => e instanceof Cell))
+            all_propagators.next(all_propagators.get_value().filter(e => e instanceof Propagator))
+            all_amb_propagators.next(all_amb_propagators.get_value().filter(e => e instanceof Propagator))
+        
     }
 })
 
