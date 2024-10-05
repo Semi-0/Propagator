@@ -16,6 +16,7 @@ export interface StandardReactor<T>{
     summarize: () => string;
 }
 
+
 function default_next<T>(error_handler: (e: any) => void): (observers: ((...args: T[]) => void)[]) => (v: T) => void{
     return (observers: ((...args: T[]) => void)[]) => {
         return (v: T) => {
@@ -152,6 +153,24 @@ export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor
     }) as StatefulReactor<T>
 }
 
+// A ReadOnly Reactor is a reactor that can only be read
+interface ReadOnlyReactor<T>{
+    observers: ((...args: T[]) => void)[];
+    subscribe: (observer: (...args: T[]) => void) => void;
+    unsubscribe: (observer: (...args: T[]) => void) => void;
+    summarize: () => string;
+}
+
+
+export function ReadOnlyReactor<T>(reactor: Reactor<T>): ReadOnlyReactor<T>{
+    return {
+        observers: reactor.observers,
+        subscribe: reactor.subscribe,
+        unsubscribe: reactor.unsubscribe,
+        summarize: reactor.summarize
+    }
+}
+
 export function construct_scheduled_stateful_reactor<T>(
   scheduling: (task: () => Promise<void>) => void
 ): (initial_value: any) => StatefulReactor<T> {
@@ -164,6 +183,10 @@ export function construct_scheduled_stateful_reactor<T>(
       ) => {
         let value = initial_value;
 
+        function subscribe_and_notify_initial_state(observer: (...v: any[]) => void){
+            observer(value)
+            subscribe(observer)
+        }
   
 
         return {
@@ -174,7 +197,7 @@ export function construct_scheduled_stateful_reactor<T>(
             scheduled_modifer(scheduling)
           ),
           summarize: () => summarize("stateful_reactor", observers),
-          subscribe,
+          subscribe: subscribe_and_notify_initial_state,
           unsubscribe,
           get_value: () => value
         };

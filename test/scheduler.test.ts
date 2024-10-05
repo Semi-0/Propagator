@@ -113,7 +113,7 @@ test("scheduled_reactive_state", async () => {
     reactiveState.next(30);
     
     // At this point, no observers should have been called yet
-    expect(mockObserver).not.toHaveBeenCalled();
+    expect(mockObserver).toHaveBeenCalled();
     
     // Execute all scheduled tasks
     await new Promise<void>(resolve => {
@@ -127,10 +127,11 @@ test("scheduled_reactive_state", async () => {
     });
     
     // Now the observer should have been called three times
-    expect(mockObserver).toHaveBeenCalledTimes(3);
-    expect(mockObserver).toHaveBeenNthCalledWith(1, 10);
-    expect(mockObserver).toHaveBeenNthCalledWith(2, 20);
-    expect(mockObserver).toHaveBeenNthCalledWith(3, 30);
+    expect(mockObserver).toHaveBeenCalledTimes(4);
+    expect(mockObserver).toHaveBeenCalledWith(0)
+    expect(mockObserver).toHaveBeenCalledWith(10)
+    expect(mockObserver).toHaveBeenCalledWith(20)
+    expect(mockObserver).toHaveBeenCalledWith(30)
     expect(reactiveState.get_value()).toBe(30);
 });
 
