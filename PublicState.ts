@@ -10,7 +10,7 @@ import {  guard, throw_error } from 'generic-handler/built_in_generics/other_gen
 import { isFunction } from 'rxjs/internal/util/isFunction';
 import { is_layered_object } from './temp_predicates';
 import { get_base_value } from 'sando-layer/Basic/Layer';
-import { construct_stateful_reactor, type StatefulReactor } from './Reactor';
+import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactor';
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactor';
 export enum PublicStateCommand{
@@ -18,9 +18,6 @@ export enum PublicStateCommand{
     ADD_PROPAGATOR = "add_propagator",
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
-    SET_CELLS = "set_cells",
-    SET_PROPAGATORS = "set_propagators",
-    SET_AMB_PROPAGATORS = "set_amb_propagators",
     ADD_AMB_PROPAGATOR = "add_amb_propagator"
 }
 
@@ -97,28 +94,9 @@ receiver.subscribe((msg: PublicStateMessage) => {
             ));
             parent = msg.args[0];
             break;
-        case PublicStateCommand.SET_CELLS:
-            guard(msg.args.length == 1, throw_error(
-                "add_error:",
-                "set_cell expects 1 argument, got " + msg.args.length,
-                msg.summarize()
-            ));
-            guard(isFunction(msg.args[0]), throw_error(
-                "add_error:",
-                "set_cell expects a function, got " + msg.args[0],
-                msg.summarize()
-            ));
-            all_cells.next(msg.args[0](all_cells.get_value()));
-            break;
+       
         case PublicStateCommand.ADD_AMB_PROPAGATOR:
             all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
-            break;
-
-        case PublicStateCommand.SET_PROPAGATORS:
-            all_propagators.next(msg.args[0]);
-            break;
-        case PublicStateCommand.SET_AMB_PROPAGATORS:
-            all_amb_propagators.next(msg.args[0]);
             break;
     }
 })
@@ -155,9 +133,9 @@ export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessag
                 
 }
 
-export const observe_cell_array = all_cells
-export const observe_propagator_array = all_propagators
-export const observe_amb_propagator_array = all_amb_propagators
+export const observe_cell_array = construct_readonly_reactor(all_cells)
+export const observe_propagator_array = construct_readonly_reactor(all_propagators)
+export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_propagators)
 
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {

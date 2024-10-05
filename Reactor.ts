@@ -131,9 +131,6 @@ export interface StatefulReactor<T> extends StandardReactor<T>{
     get_value: () => any
 }
 
-
-
-
 export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor<T>{
     var value = initial_value
 
@@ -183,13 +180,57 @@ export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadO
         })
        })
 
+       function stateful_subscribe(observer: (...args: any[]) => void){
+        // if the linked reactor has state, 
+        // then it emit the current value when subscribe to a new observer
+      
+        subscribe(observer)
+        //@ts-ignore
+        if (linked_reactor.get_value !== undefined){
+            // @ts-ignore
+            observer(linked_reactor.get_value())
+        }
+       }
+
        return {
         observers,
-        subscribe,
+        subscribe: stateful_subscribe,
         summarize: () => summarize("readonly reactor", observers),
         unsubscribe
        }
     })
+}
+
+// DANGER!!
+export function construct_replay_reactor<T>(): BidirectionalReactor<T>{
+    let replayBuffer: T[] = [];
+
+    return construct_prototype_reactor<T>(
+          (observers: ((...args: any[]) => void)[],
+          subscribe: (observer: (...args: any[]) => void) => void,
+          unsubscribe: (observer: (...args: any[]) => void) => void) => {
+
+            function delayed_next(v: T): void{
+                const n = default_next((e) => {throw e})(observers)
+                replayBuffer.push(v);
+                n(v)
+            }
+
+            function replayed_subscribe(observer: (...args: any[]) => void){
+                subscribe(observer)
+                for (const v of replayBuffer) {
+                    observer(v);
+                }
+            }
+
+            return{ 
+                observers,
+                next: delayed_next,
+                subscribe: replayed_subscribe,
+                unsubscribe,
+                summarize: () => summarize("replay_reactor", observers),
+            }
+        }) as BidirectionalReactor<T>
 }
 
 
