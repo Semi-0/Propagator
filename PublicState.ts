@@ -13,7 +13,6 @@ import { get_base_value } from 'sando-layer/Basic/Layer';
 import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactor';
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactor';
-import { inspect } from 'bun';
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",

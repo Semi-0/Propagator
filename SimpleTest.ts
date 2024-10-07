@@ -12,9 +12,9 @@ force_load_arithmatic();
 
 
 
-const log_in_console = observe_cell((str: string) => console.log(str));
+// const log_in_console = observe_cell((str: string) => console.log(str));
 
-monitor_change(do_nothing, log_in_console);
+// monitor_change(do_nothing, log_in_console);
 
 const x = new Cell("x");
 const y = new Cell("y");
@@ -22,11 +22,6 @@ const product = new Cell("product");
 
 
 
-// combineLatest([x.getStrongest(), y.getStrongest(), product.getStrongest()]).pipe(
-//     tap(values => console.log("values", values))
-// ).subscribe();
-
-// x.getStrongest().subscribe(value => console.log("x update", value));
 
 
 
