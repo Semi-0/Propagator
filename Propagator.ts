@@ -39,6 +39,9 @@ export class Propagator{
     set_global_state(PublicStateCommand.ADD_PROPAGATOR, this);
  }
 
+ get_name(){
+    return this.name;
+ }
 
  getRelation(){
     return this.relation;
