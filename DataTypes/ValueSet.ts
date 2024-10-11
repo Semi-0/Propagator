@@ -23,6 +23,22 @@ import { map, filter, reduce } from "generic-handler/built_in_generics/generic_a
 import { number } from "fp-ts";
 
 
+define_generic_procedure_handler(to_string,
+    match_args(is_layered_object),
+    (value: LayeredObject) => value.describe_self()
+)
+
+define_generic_procedure_handler(to_string,
+    match_args(is_better_set),
+    (set: BetterSet<any>) => {
+        const meta_data = set.meta_data
+        const keys = Array.from(meta_data.keys())
+        const values = keys.map(key => to_string(meta_data.get(key)))
+        return `${values.join(", ")}`
+    }
+)
+
+
 
 export class ValueSet<A> {
     elements: BetterSet<A>;
@@ -37,6 +53,10 @@ export class ValueSet<A> {
 
     to_array(): A[] {
         return to_array(this.elements)
+    }
+
+    toString(): string {
+        return `ValueSet: ${to_string(this.elements)})`
     }
 
 }
@@ -121,6 +141,13 @@ define_generic_procedure_handler(merge,
     (set: ValueSet<any>, elt: LayeredObject) => merge_value_sets(set, elt)
 )
 
+define_generic_procedure_handler(merge,
+    match_args(is_value_set, is_value_set),
+    (set1: ValueSet<any>, set2: ValueSet<any>) => {
+        console.log("merge", set1, set2)
+        return value_set_adjoin(set1, set2)}
+)
+
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
     return set.add_item(elt)
 }
@@ -132,14 +159,21 @@ function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
     );
 }
 
-
-function strongest_consequence<A>(set: ValueSet<A>): A{
-    return reduce(filter((elt: LayeredObject) => 
-                        // @ts-ignore
-                        is_all_premises_in(get_support_layer_value(elt)), 
-                            set.elements), 
-                         (acc: LayeredObject, item: LayeredObject) => merge_layered(acc, item), 
-                         construct_value_set([]));
+function strongest_consequence<A>(set: ValueSet<A>): A {
+    return pipe(
+        set.elements,
+        (elements) => filter(elements, (elt: LayeredObject) => 
+            // @ts-ignore
+            is_all_premises_in(get_support_layer_value(elt)),
+            
+        ),
+        (filtered) => reduce(
+            filtered,
+            (acc: LayeredObject, item: LayeredObject) => merge_layered(acc, item),
+            construct_value_set([])
+        )
+        
+    );
 }
 
 import { pipe } from 'fp-ts/function';

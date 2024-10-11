@@ -6,14 +6,38 @@ import { mark_premise_in, mark_premise_out } from "./DataTypes/Premises";
 import { observe_all_cells_update, PublicStateCommand } from "./PublicState";
 import {  type PublicStateMessage } from "./PublicState";
 import { is_layered_object } from "./temp_predicates";
+import { steppable_run_task } from "./Scheduler";
+import { construct_value_set } from "./DataTypes/ValueSet";
+
+
 export function tell(cell: Cell, information: any, ...premises: string[]){
     for_each(premises, (premise: string) => {
         register_predicate(premise, information);
     })
 
     add_cell_content(cell,
-        premises.length == 0 ? information : support_by(information, premises)
-    )
+        premises.length == 0 ? information : support_by(information, premises))
+
+    steppable_run_task((e) => {
+        console.log("error:", e)
+    })
+}
+
+export function tell_value_set(cell: Cell, information: any, ...premises: string[]){
+    // console.log("telling", information)
+    for_each(premises, (premise: string) => {
+        register_predicate(premise, information);
+    })
+
+    add_cell_content(cell,
+        premises.length == 0 ? information : construct_value_set([support_by(information, premises)]))
+    
+
+    steppable_run_task((e) => {
+        console.log("error:", e)
+    })
+
+    // console.log("told")
 }
 
 export function describe(v: any){
