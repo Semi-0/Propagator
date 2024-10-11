@@ -3,8 +3,7 @@ import { Cell } from './Cell/Cell';
 import {  make_relation, Relation } from './DataTypes/Relation';
 import { Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
-import { make_layered_procedure } from 'sando-layer/Basic/LayeredProcedure';
-import { merge } from './Cell/Merge';
+
 import { all_match, match_args } from 'generic-handler/Predicates';
 import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { isFunction } from 'rxjs/internal/util/isFunction';
@@ -187,18 +186,4 @@ define_generic_procedure_handler(is_equal,
 
 
 
-
-export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
-    (value: any) => {
-        return false;
-    }
-)
-
-export const value_imples = construct_simple_generic_procedure("value_imples", 2,
-    (a: any, b: any) => {
-        return a === b;
-    }
-)
-
-export const merge_layered = make_layered_procedure("merge_layered", 2, merge)
 

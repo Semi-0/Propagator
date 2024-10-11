@@ -4,7 +4,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 
 
 import { all_match, force_load_predicate, match_args, register_predicate } from "generic-handler/Predicates";
-import { is_unusable_value, merge_layered, value_imples } from "../PublicState";
+import { is_unusable_value, merge_layered, value_imples } from "../Cell/GenericArith";
 import { add_item, type BetterSet, construct_better_set, find, flat_map, is_better_set, map_to_same_set, remove, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { merge } from "../Cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";

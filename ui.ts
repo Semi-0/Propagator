@@ -2,7 +2,7 @@ import { register_predicate } from "generic-handler/Predicates";
 import { add_cell_content, Cell } from "./Cell/Cell"; 
 import { for_each } from "./helper";
 import { support_by } from "sando-layer/Specified/SupportLayer";
-import { mark_premise_in, mark_premise_out } from "./DataTypes/Premises";
+import { mark_premise_in, mark_premise_out, register_premise } from "./DataTypes/Premises";
 import { observe_all_cells_update, PublicStateCommand } from "./PublicState";
 import {  type PublicStateMessage } from "./PublicState";
 import { is_layered_object } from "./temp_predicates";
@@ -12,7 +12,7 @@ import { construct_value_set } from "./DataTypes/ValueSet";
 
 export function tell(cell: Cell, information: any, ...premises: string[]){
     for_each(premises, (premise: string) => {
-        register_predicate(premise, information);
+        register_premise(premise, information);
     })
 
     add_cell_content(cell,
@@ -26,7 +26,7 @@ export function tell(cell: Cell, information: any, ...premises: string[]){
 export function tell_value_set(cell: Cell, information: any, ...premises: string[]){
     // console.log("telling", information)
     for_each(premises, (premise: string) => {
-        register_predicate(premise, information);
+        register_premise(premise, information);
     })
 
     add_cell_content(cell,

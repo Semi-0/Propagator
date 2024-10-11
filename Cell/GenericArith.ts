@@ -7,9 +7,24 @@ import { is_contradiction, is_nothing, the_contradiction, the_nothing, force_loa
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_layered_object } from "sando-layer/Basic/LayeredObject";
-
+import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"; 
+import { merge } from "./Merge";
 
 force_load_CellValue()
+
+export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
+    (value: any) => {
+        return false;
+    }
+)
+
+export const value_imples = construct_simple_generic_procedure("value_imples", 2,
+    (a: any, b: any) => {
+        return a === b;
+    }
+)
+
+export const merge_layered = make_layered_procedure("merge_layered", 2, merge)
 
 
 
