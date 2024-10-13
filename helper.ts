@@ -27,3 +27,19 @@ export const second = construct_simple_generic_procedure("second", 1, (array: an
 })
 
 export const identify_strint_set = (set: BetterSet<string>) =>  reduce(set, (acc, value) => acc + value, "")
+
+// check if the object has circular dependency 
+
+export function hasCircularDependency(obj: any)
+{
+    try
+    {
+        JSON.stringify(obj);
+    }
+    catch(e)
+    {
+        // @ts-ignore
+        return e.includes("Converting circular structure to JSON"); 
+    }
+    return false;
+}

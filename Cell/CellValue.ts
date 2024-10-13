@@ -4,6 +4,22 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
 
+export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
+    (value: any) => {
+        return false;
+    }
+)
+
+export const value_imples = construct_simple_generic_procedure("value_imples", 2,
+    (a: any, b: any) => {
+        return a === b;
+    }
+)
+
+
+
+
+
 export const get_base_value = construct_simple_generic_procedure("get_base_value", 1, (a: LayeredObject) => {
     if (is_layered_object(a)){
         return get_base_value_layer(a)
@@ -34,7 +50,7 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
 
 
 export function force_load_CellValue(){
-  
+  console.log
 }
 
 

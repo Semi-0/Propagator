@@ -3,24 +3,24 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 
-import { all_match, force_load_predicate, match_args, register_predicate } from "generic-handler/Predicates";
-import { is_unusable_value, merge_layered, value_imples } from "../Cell/GenericArith";
-import { add_item, type BetterSet, construct_better_set, find, flat_map, is_better_set, map_to_same_set, remove, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { merge } from "../Cell/Merge";
+import {   match_args, register_predicate } from "generic-handler/Predicates";
+import { add_item, type BetterSet, construct_better_set, find, flat_map, for_each, is_better_set, map_to_same_set, remove, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
 import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
-import { force_load_generic_predicates, is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
+import {  is_function } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { is_all_premises_in } from "./Premises";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import { get_base_value } from "../Cell/CellValue";
+import {  get_base_value } from "../Cell/CellValue";
 import { is_nothing } from "../Cell/CellValue";
 import { map, filter, reduce } from "generic-handler/built_in_generics/generic_array_operation"
-import { number } from "fp-ts";
+import { is_unusable_value, value_imples } from "../Cell/CellValue";
+import { merge_layered } from "../Cell/Merge";
+import { merge } from "../Cell/Merge";
 
 
 define_generic_procedure_handler(to_string,
@@ -145,7 +145,11 @@ define_generic_procedure_handler(merge,
     match_args(is_value_set, is_value_set),
     (set1: ValueSet<any>, set2: ValueSet<any>) => {
         console.log("merge", set1, set2)
-        return value_set_adjoin(set1, set2)}
+        for_each(set2.elements, (elt: LayeredObject) => {
+            set1 = value_set_adjoin(set1, elt)
+        })
+        return set1
+    }
 )
 
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
@@ -177,6 +181,7 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
 }
 
 import { pipe } from 'fp-ts/function';
+import { hasCircularDependency } from "../helper";
 
 
 function cross_join_map<A>(procedure: (elt_a: A, b: ValueSet<A>) => ValueSet<A>) : (a: ValueSet<A>, b: ValueSet<A>) => ValueSet<A> {

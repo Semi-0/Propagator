@@ -1,6 +1,5 @@
 import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
 import { Propagator } from "../Propagator";
-import {  combineLatest   } from "rxjs";
 import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { combine_latest, compact_map,  subscribe, type StatefulReactor } from "../Reactor";

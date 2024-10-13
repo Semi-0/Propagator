@@ -2,7 +2,7 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { describe } from "../ui";
 import { is_equal } from "../PublicState";
-
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 
 export const merge = construct_simple_generic_procedure("merge", 2,
@@ -28,3 +28,5 @@ export const merge = construct_simple_generic_procedure("merge", 2,
     }
 )
 
+
+export const merge_layered = make_layered_procedure("merge_layered", 2, merge)
