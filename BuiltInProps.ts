@@ -1,7 +1,7 @@
 import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
-import { is_hypothetical, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
+import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
 import { first } from "generic-handler/built_in_generics/generic_array_operation";
 import { add, construct_better_set, flat_map, for_each, merge, set_remove, map_to_new_set , filter, get_length, to_array} from "generic-handler/built_in_generics/generic_better_set";
 import { second } from "./helper";
@@ -11,10 +11,8 @@ import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
 import { reduce } from "generic-handler/built_in_generics/generic_better_set";
 export const p_multiply =  primitive_propagator((...inputs: any[]) => {
-    // console.log("multiple inputs", inputs);
     const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
    
-    // console.log("multiply result", result);
     return result;
 }, "multiply");
 
@@ -36,14 +34,14 @@ export function c_multiply(x: Cell, y: Cell, product: Cell){
 // TODO: this need be able to work only if the support set can be propagated first!!!
 export function binary_amb(cell: Cell): Propagator{
     // 
-    const premises = make_hypotheticals<boolean>(cell, [true, false])
+    const premises = make_hypotheticals<boolean>(cell, construct_better_set([true, false], (elt: boolean) => elt.toString()))
     const true_premise = first(premises)
     const false_premise = second(premises)
 
     function amb_choose(){
         // is filter support set in here? or perhaps i should set premises_nogoods to return BetterSet<LayeredObject>
-        const reason_against_true = filter(premises_nogoods(true_premise), is_premises_in)
-        const reason_against_false = filter(premises_nogoods(false_premise), is_premises_in)
+        const reason_against_true = filter(premises_nogoods(true_premise), is_premise_in)
+        const reason_against_false = filter(premises_nogoods(false_premise), is_premise_in)
 
         if(get_length(reason_against_true) == 0){
             mark_premise_in(true_premise)

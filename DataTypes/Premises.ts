@@ -5,7 +5,7 @@ import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { for_each } from "../helper";
-import { add, find } from "generic-handler/built_in_generics/generic_better_set";
+import { add, find, set_every } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand } from "../PublicState";
 import { Relation } from "./Relation";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -50,9 +50,9 @@ export enum BeliefState {
 
     wake_up_roots(){
 
-        set_global_state(PublicStateCommand.SET_CELLS, (cell: Cell) => {
-            test_cell_content(cell);
-        });
+        // set_global_state(PublicStateCommand.SET_CELLS, (cell: Cell) => {
+        //     test_cell_content(cell);
+        // });
         
        //TODO:  alert amb propagator
     }
@@ -104,16 +104,29 @@ export function _premises_metadata(name: string): PremiseMetaData{
         return premise;
     }
     else{
+        console.log("premise not found", name)
+        console.log(premises_list)
         throw new Error(name + " is not a premise");
     }
 } 
 
-export function is_premises_in(name: string): boolean{
+export function is_premise_in(name: string): boolean{
     return _premises_metadata(name).is_believed();
+}
+
+export function is_premise_out(name: string): boolean{
+    return !_premises_metadata(name).is_believed();
+}
+
+export function is_premises_in(names: BetterSet<string>): boolean{
+    return set_every(names, (name: string) => {
+        console.log("is_premise_in", name)
+        return is_premise_in(name)
+    });
 } 
 
-export function is_premises_out(name: string): boolean{
-    return !_premises_metadata(name).is_believed();
+export function is_premises_out(names: BetterSet<string>): boolean{
+    return !is_premises_in(names);
 } 
 
 export function mark_premise_in(name: string){
@@ -136,9 +149,6 @@ export function all_premises_in(set: BetterSet<LayeredObject>) {
     });  
 }
 
-export function is_all_premises_in(set: BetterSet<string>): boolean{
-    return find(set, (premise: string) => is_premises_out(premise)) == undefined;
-}
 
 export function premises_nogoods(name: string): BetterSet<any>{
     return _premises_metadata(name).get_no_goods();
@@ -187,7 +197,7 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
     }
 }
 
-export function make_hypotheticals<A>(output: Cell, values: A[]): string[]{
+export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
     const peers = map(values, (value: A) => _make_hypothetical(output, value));
     for_each(peers, (peer: Hypothesis<A>) => {
         peer.set_peers(peers);

@@ -2,7 +2,7 @@ import {  set_global_state,  get_global_parent, is_equal } from "../PublicState"
 import { Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-import { combine_latest, compact_map,  subscribe, type StatefulReactor } from "../Reactor";
+import { combine_latest, compact_map,  filter,  map,  subscribe, type StatefulReactor } from "../Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
 import { merge } from "./Merge"
@@ -14,11 +14,10 @@ import { construct_better_set, map_to_new_set, type BetterSet } from "generic-ha
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
 import { identify_strint_set } from "../helper";
+import { strongest_value } from "./StrongestValue";
 export const cell_merge = merge;
 
-export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
-    return a;
-})
+
 
 export const general_contradiction = construct_simple_generic_procedure("general_contradiction", 1, (a: any) => {
   return false;
@@ -54,7 +53,8 @@ export class Cell{
 
     pipe(
       this.content,
-      compact_map((content: any) => this.testContent(content, this.strongest.get_value())),
+      map((content: any) => this.testContent(content, this.strongest.get_value())),
+      filter((content: any) => content !== this.strongest.get_value()),
       subscribe((content: any) => this.strongest.next(content))
     )
    
@@ -90,10 +90,8 @@ export class Cell{
 
   testContent(content: any, strongest: any): any | null {
     const _strongest = strongest_value(content);
-    if (is_equal(content, strongest)){
-      return null;
-    }
-    else if (general_contradiction(_strongest)){
+    if (general_contradiction(_strongest)){
+      console.log("contradiction", content, strongest)
       handle_contradiction(this);
       return _strongest;
     }

@@ -8,37 +8,35 @@ import {  type PublicStateMessage } from "./PublicState";
 import { is_layered_object } from "./temp_predicates";
 import { steppable_run_task } from "./Scheduler";
 import { construct_value_set } from "./DataTypes/ValueSet";
+import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
+import { pipe } from "fp-ts/lib/function";
+export function tell_constructor(constructor: (arg: any) => any){
+    return (cell: Cell, information: any, ...premises: string[]) => {
+        for_each(premises, (premise: string) => {
+            register_premise(premise, constructor(information));
+        }) 
+        console.log("reduce", reduce(premises, (acc: any, premise: string) => support_by(acc, premise), information))
+        add_cell_content(cell,
+            pipe(
+                information,
+                (info) => premises.length === 0 ? info : 
+                            reduce(premises, 
+                                    (acc: any, premise: string) => support_by(acc, premise), 
+                                    info),
+                constructor
+            )
+        )
 
-
-export function tell(cell: Cell, information: any, ...premises: string[]){
-    for_each(premises, (premise: string) => {
-        register_premise(premise, information);
-    })
-
-    add_cell_content(cell,
-        premises.length == 0 ? information : support_by(information, premises))
-
-    steppable_run_task((e) => {
-        console.log("error:", e)
-    })
+        steppable_run_task((e) => {
+            console.log("error:", e)
+        })
+    }
 }
 
-export function tell_value_set(cell: Cell, information: any, ...premises: string[]){
-    // console.log("telling", information)
-    for_each(premises, (premise: string) => {
-        register_premise(premise, information);
-    })
 
-    add_cell_content(cell,
-        premises.length == 0 ? information : construct_value_set([support_by(information, premises)]))
-    
+export const tell = tell_constructor((a: any) => a)
 
-    steppable_run_task((e) => {
-        console.log("error:", e)
-    })
-
-    // console.log("told")
-}
+export const tell_value_set = tell_constructor(construct_value_set)
 
 export function describe(v: any){
     if (is_layered_object(v)){

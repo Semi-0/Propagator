@@ -23,10 +23,11 @@ export const merge = construct_simple_generic_procedure("merge", 2,
             return content
         }
         else {
+            console.log("caused by", content, increment)
             return the_contradiction
         }
     }
 )
-
+ 
 
 export const merge_layered = make_layered_procedure("merge_layered", 2, merge)

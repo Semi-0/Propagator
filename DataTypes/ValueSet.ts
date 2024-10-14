@@ -4,24 +4,24 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 
 
 import {   match_args, register_predicate } from "generic-handler/Predicates";
-import { add_item, type BetterSet, construct_better_set, find, flat_map, for_each, is_better_set, map_to_same_set, remove, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { add_item, type BetterSet, construct_better_set, find, flat_map, for_each, has, is_better_set, map_to_same_set, remove, set_every, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
-import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
-import {  is_function } from "generic-handler/built_in_generics/generic_predicates";
+import { add, divide, is_equal, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
+import {  is_atom, is_function } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
-import { is_all_premises_in } from "./Premises";
+import {  is_premises_in } from "./Premises";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import {  get_base_value } from "../Cell/CellValue";
+import {  get_base_value, the_nothing } from "../Cell/CellValue";
 import { is_nothing } from "../Cell/CellValue";
 import { map, filter, reduce } from "generic-handler/built_in_generics/generic_array_operation"
 import { is_unusable_value, value_imples } from "../Cell/CellValue";
 import { merge_layered } from "../Cell/Merge";
 import { merge } from "../Cell/Merge";
-
+import { strongest_value } from "../Cell/StrongestValue";
 
 define_generic_procedure_handler(to_string,
     match_args(is_layered_object),
@@ -89,9 +89,9 @@ define_generic_procedure_handler(reduce,
 
 export const construct_value_set = construct_simple_generic_procedure("construct_value_set", 
     1,
-    (elements: BetterSet<any>) => {
-        guard(is_better_set(elements), () => {throw new Error("elements must be a better set")})
-        return new ValueSet(elements)}
+    (elements: any) => {
+        throw new Error("unimplemented")
+    }
 )
 
 define_generic_procedure_handler(construct_value_set,
@@ -99,19 +99,29 @@ define_generic_procedure_handler(construct_value_set,
     (elements: any[]) => {return construct_value_set(construct_better_set(elements, to_string))}
 )
 
+define_generic_procedure_handler(construct_value_set,
+    match_args(is_atom),
+    (element: any) => {
+        console.log("construct_value_set", element)
+        return construct_value_set([element])
+    }
+)
+
+define_generic_procedure_handler(construct_value_set,
+    match_args(is_better_set),
+    (set: BetterSet<any>) => {
+        return new ValueSet(set)
+    }
+)
 
 
 
 
-function any<A>(predicate: (a: A) => boolean, set: ValueSet<A>): boolean {
-    // THIS SHOULD BE MORE GENERIC
-    return find(set.elements, predicate) !== undefined
+
+function value_set_equals<A>(set1: ValueSet<A>, set2: ValueSet<A>): boolean {
+    return set_every(set1.elements, (elt: A) => has(set2.elements, elt)) && set_every(set2.elements, (elt: A) => has(set1.elements, elt))
 }
 
-
-function is_layered_value_set<A>(value: any): value is ValueSet<A>{
-    return is_layered_object(value) && is_value_set(get_base_value(value))
-}
 
 
 
@@ -144,12 +154,22 @@ define_generic_procedure_handler(merge,
 define_generic_procedure_handler(merge,
     match_args(is_value_set, is_value_set),
     (set1: ValueSet<any>, set2: ValueSet<any>) => {
-        console.log("merge", set1, set2)
-        for_each(set2.elements, (elt: LayeredObject) => {
-            set1 = value_set_adjoin(set1, elt)
-        })
-        return set1
+        if (value_set_equals(set1, set2)) {
+            return set1
+        }
+        else {
+            for_each(set2.elements, (elt: LayeredObject) => {
+                set1 = value_set_adjoin(set1, elt)
+            })
+            return set1
+        }
     }
+)
+
+// this is required to define detailed how elements in value set are merged, if it is not defined, it will only return contradiction
+define_generic_procedure_handler(strongest_value,
+    match_args(is_value_set),
+    (set: ValueSet<any>) => strongest_consequence(set)
 )
 
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
@@ -167,8 +187,13 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
     return pipe(
         set.elements,
         (elements) => filter(elements, (elt: LayeredObject) => 
-            // @ts-ignore
-            is_all_premises_in(get_support_layer_value(elt)),
+            // console.log(elements),
+            // console.log("is_premises_in", elt),
+            // @ts-ignore{}
+            {
+                console.log("is_premises_in_strongest_consequence:", elt.describe_self())
+                return is_premises_in(get_support_layer_value(elt))
+            }
             
         ),
         (filtered) => reduce(
@@ -182,6 +207,7 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
 
 import { pipe } from 'fp-ts/function';
 import { hasCircularDependency } from "../helper";
+import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 
 
 function cross_join_map<A>(procedure: (elt_a: A, b: ValueSet<A>) => ValueSet<A>) : (a: ValueSet<A>, b: ValueSet<A>) => ValueSet<A> {
@@ -196,6 +222,7 @@ function cross_join_map<A>(procedure: (elt_a: A, b: ValueSet<A>) => ValueSet<A>)
 }
 
 function value_set_arithmetic<A>(procedure: (elt_a: A, elt_b: A) => A) : (a: ValueSet<A>, b: ValueSet<A>) => ValueSet<A> {
+    console.log("try value set arithmetic")
     return cross_join_map((elt_a: A, b: ValueSet<A>) => 
         pipe(
             b.elements,

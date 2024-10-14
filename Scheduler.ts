@@ -102,8 +102,10 @@ export function simple_scheduler(): Scheduler {
         }
     }
 
-    function steppable_run(error_handler: (e: Error) => void){
-        return execute_task(dequeue(), error_handler)()
+    function steppable_run(error_handler: (e: Error) => void){ 
+        if (queue.size !== 0){
+            return execute_task(dequeue(), error_handler)()
+        }
     }
 
  

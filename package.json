@@ -15,7 +15,7 @@
     "fp-ts": "^2.16.9",
     "generic-handler": "0.3.6",
     "rxjs": "^7.8.1",
-    "sando-layer": "0.1.4",
+    "sando-layer": "0.1.5",
     "uuid": "^10.0.0"
   }
 }
