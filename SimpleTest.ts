@@ -35,37 +35,50 @@ tell(x, 8, "fst");
 tell(product, 40, "snd");
 
 
+await execute_all_tasks_sequential(() => {
+    console.log("error")
+}).task
+
+tell(x, 9, "c")
+
+await execute_all_tasks_sequential(() => {
+    console.log("error")
+}).task
+  
+kick_out("c")
+
+await execute_all_tasks_sequential(() => {
+    console.log("error")
+}).task
 
 
 
+// execute_all_tasks_sequential(() => {}, () => {
+//     console.log("done1")
+//     tell(x, 9, "c")
+//     console.log("told x 9")
 
 
-execute_all_tasks_sequential(() => {}, () => {
-    console.log("done1")
-    tell(x, 9, "c")
-    console.log("told x 9")
+//     for (let i = 0; i < 10; i++){
+//         console.log(i)
+//         console.log(summarize_scheduler_state())
+//         steppable_run_task((e) => {
+//             console.log("error:", e)
+//         })
+//     }
+//     console.log(summarize_scheduler_state())
 
 
-    for (let i = 0; i < 10; i++){
-        console.log(i)
-        console.log(summarize_scheduler_state())
-        steppable_run_task((e) => {
-            console.log("error:", e)
-        })
-    }
-    console.log(summarize_scheduler_state())
+//     kick_out("c") 
 
-
-    kick_out("c") 
-
-    for (let i = 0; i < 10; i++){
-        console.log("kick out", i)
-        console.log(summarize_scheduler_state())
-        steppable_run_task((e) => {
-            console.log("error:", e)
-        })
-    }
-})
+//     for (let i = 0; i < 10; i++){
+//         console.log("kick out", i)
+//         console.log(summarize_scheduler_state())
+//         steppable_run_task((e) => {
+//             console.log("error:", e)
+//         })
+//     }
+// })
 
 
 

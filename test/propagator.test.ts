@@ -26,7 +26,6 @@ test("c_multiply", async () => {
 
 
     execute_all_tasks_sequential((error: Error) => {
-    }, () => {
         expect(cell_strongest_base_value(y)).toBe(5);
     })
     

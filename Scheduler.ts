@@ -1,7 +1,7 @@
 import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactivity/Reactor";
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
-    execute_sequential: (error_handler: (e: Error) => void, then: () => void) => (() => void);
+    execute_sequential: (error_handler: (e: Error) => void) => ExecutionHandler;
     execute_simultaneous: (error_handler: (e: Error) => void) => void;
     steppable_run:  (error_handler: (e: Error) => void) => void;
     summarize: () => string;
@@ -9,6 +9,17 @@ export interface Scheduler{
 }
 
 
+export interface ExecutionHandler{
+    task: Promise<void>;
+    cancel: () => void;
+}
+
+function construct_execution_handler(task: Promise<void>, cancel: () => void): ExecutionHandler{
+    return {
+        task,
+        cancel
+    }
+}
 
 export function simple_scheduler(): Scheduler {
 
@@ -62,7 +73,7 @@ export function simple_scheduler(): Scheduler {
 
     // what if error occurs in execute_task?
     // set buffer for executed tasks
-    function execute_sequential(error_handler: (e: Error) => void, then: () => void): () => void{
+    function execute_sequential(error_handler: (e: Error) => void): ExecutionHandler{
         // this failed to considered when new task poped up during execution
         // still needs cancellable promise
         var running = true
@@ -73,11 +84,11 @@ export function simple_scheduler(): Scheduler {
             }
         }
 
-        exec().then(then)
+        const promise = exec()
 
-        return () => {
+        return construct_execution_handler(promise, () => {
             running = false
-        }
+        })
     }
 
     async function execute_simultaneous(error_handler: (e: Error) => void){
@@ -138,8 +149,8 @@ export function schedule_task(task: () => Promise<void>){
     SimpleScheduler.schedule(task)
 } 
 
-export function execute_all_tasks_sequential(error_handler: (e: Error) => void, then: () => void) {
-    return SimpleScheduler.execute_sequential(error_handler, then)
+export function execute_all_tasks_sequential(error_handler: (e: Error) => void) {
+    return SimpleScheduler.execute_sequential(error_handler)
 }
 
 export async function execute_all_tasks_simultaneous(error_handler: (e: Error) => void) {
