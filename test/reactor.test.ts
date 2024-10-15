@@ -1,9 +1,9 @@
 import { expect, test, jest } from "bun:test";
-import { construct_reactor } from "../Reactor";
+import { construct_reactor } from "../Reactivity/Reactor";
 import { scheduled_reactor, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, schedule_task, reset_scheduler, simple_scheduler } from "../Scheduler";
-import { zip, merge } from "../Reactor";
-import { filter, map, scan, combine_latest } from "../Reactor";
-import { compact_map } from "../Reactor";
+import { zip, merge } from "../Reactivity/Reactor";
+import { filter, map, scan, combine_latest } from "../Reactivity/Reactor";
+import { compact_map } from "../Reactivity/Reactor";
 
 
 test("filter", () => {

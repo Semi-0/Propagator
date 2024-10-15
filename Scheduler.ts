@@ -1,4 +1,4 @@
-import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactor";
+import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactivity/Reactor";
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
     execute_sequential: (error_handler: (e: Error) => void, then: () => void) => (() => void);
@@ -7,6 +7,7 @@ export interface Scheduler{
     summarize: () => string;
     clear_all_tasks: () => void;
 }
+
 
 
 export function simple_scheduler(): Scheduler {

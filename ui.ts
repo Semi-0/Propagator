@@ -15,7 +15,7 @@ export function tell_constructor(constructor: (arg: any) => any){
         for_each(premises, (premise: string) => {
             register_premise(premise, constructor(information));
         }) 
-        console.log("reduce", reduce(premises, (acc: any, premise: string) => support_by(acc, premise), information))
+
         add_cell_content(cell,
             pipe(
                 information,
@@ -28,15 +28,13 @@ export function tell_constructor(constructor: (arg: any) => any){
         )
 
         steppable_run_task((e) => {
-            console.log("error:", e)
         })
     }
 }
 
 
 export const tell = tell_constructor((a: any) => a)
-
-export const tell_value_set = tell_constructor(construct_value_set)
+// export const tell_value_set = tell_constructor(construct_value_set)
 
 export function describe(v: any){
     if (is_layered_object(v)){

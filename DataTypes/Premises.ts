@@ -42,18 +42,17 @@ export enum BeliefState {
 
     set_believed(){
         this.set_belief_state(BeliefState.Believed);
+        this.wake_up_roots();
     }
 
     set_not_believed(){
         this.set_belief_state(BeliefState.NotBelieved);
+        this.wake_up_roots();
     } 
 
     wake_up_roots(){
+        set_global_state(PublicStateCommand.FORCE_UPDATE_ALL, null);
 
-        // set_global_state(PublicStateCommand.SET_CELLS, (cell: Cell) => {
-        //     test_cell_content(cell);
-        // });
-        
        //TODO:  alert amb propagator
     }
 
@@ -104,8 +103,6 @@ export function _premises_metadata(name: string): PremiseMetaData{
         return premise;
     }
     else{
-        console.log("premise not found", name)
-        console.log(premises_list)
         throw new Error(name + " is not a premise");
     }
 } 
@@ -206,6 +203,8 @@ export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): Bette
 }
 
 function _make_hypothetical<A>(output: Cell, value: A): string {
+    // ADD VALUE SUPPORT BY HYPOTHESIS TO CELL
+    // IN SHORT EACH HYPOTHESIS BECOMES COMBINATION OF VALUES
     // TODO: extend to_string with generic
     // TODO: initialize cell with contradiction
     const relation = new Relation("hypothetical:" + to_string(value), output);

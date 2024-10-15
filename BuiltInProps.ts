@@ -70,6 +70,7 @@ function pairwise_union(nogoods1: BetterSet<string>, nogoods2: BetterSet<string>
 }
 
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
+    // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
    for_each<BetterSet<string>>(nogoods, save_nogood)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
@@ -116,6 +117,9 @@ function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
 
 function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, complaining_cell: Cell){ 
     if(toDisbelieve.length > 0){
+        //TODO: AFTER THE PREMISES IS OUT, THE VALUE SET STRONGEST VALUE WOULD NOT CONTAIN
+        // ITS CORRESPONDING VALUE, HOWEVER, ITS NECESSARY TO FORCE THE CELL TO BE RECALCULATED
+        // ONE SMART WAY IS TO SET REACTIVITY FROM PREMISES STORE TO CELL STORE
         mark_premise_out(toDisbelieve[0])
     } 
     else{

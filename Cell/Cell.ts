@@ -2,10 +2,10 @@ import {  set_global_state,  get_global_parent, is_equal } from "../PublicState"
 import { Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
-import { combine_latest, compact_map,  filter,  map,  subscribe, type StatefulReactor } from "../Reactor";
+import { combine_latest, compact_map,  filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
-import { merge } from "./Merge"
+import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
@@ -15,8 +15,12 @@ import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
 import { identify_strint_set } from "../helper";
 import { strongest_value } from "./StrongestValue";
-export const cell_merge = merge;
+import { cell_merge } from "./Merge";
 
+// TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
+// WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
+// 2. DEFINE WHAT IS THE STRONGEST VALUE FOR THIS SPECIFIC KIND OF DATASET
+// 3. (OPTIONAL) WHAT TO DO WHEN CONTRADICTON IS FOUND
 
 
 export const general_contradiction = construct_simple_generic_procedure("general_contradiction", 1, (a: any) => {
@@ -54,7 +58,7 @@ export class Cell{
     pipe(
       this.content,
       map((content: any) => this.testContent(content, this.strongest.get_value())),
-      filter((content: any) => content !== this.strongest.get_value()),
+      filter((content: any) => !is_equal(content, this.strongest.get_value())),
       subscribe((content: any) => this.strongest.next(content))
     )
    
@@ -87,6 +91,7 @@ export class Cell{
  
     this.content.next(cell_merge(this.content.get_value(), increment));
   }
+
 
   testContent(content: any, strongest: any): any | null {
     const _strongest = strongest_value(content);

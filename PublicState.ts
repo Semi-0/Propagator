@@ -6,19 +6,21 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 
 import { all_match, match_args } from 'generic-handler/Predicates';
 import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
-import { isFunction } from 'rxjs/internal/util/isFunction';
 import { is_layered_object } from './temp_predicates';
-import { get_base_value } from 'sando-layer/Basic/Layer';
-import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactor';
+import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactivity/Reactor';
 import { pipe } from 'fp-ts/function';
-import { filter, tap, map } from './Reactor';
+import { filter, tap, map } from './Reactivity/Reactor';
+import { generic_merge, set_merge } from './Cell/Merge';
+
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",
     ADD_CHILD = "add_child",
     SET_PARENT = "set_parent",
     ADD_AMB_PROPAGATOR = "add_amb_propagator",
-    CLEAN_UP = "clean_up"
+    CLEAN_UP = "clean_up",
+    FORCE_UPDATE_ALL = "force_update_all",
+    SET_CELL_MERGE = "set_cell_merge"
 }
 
 export interface PublicStateMessage{
@@ -71,6 +73,12 @@ function is_propagator(o: any): boolean{
 
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
+        case PublicStateCommand.FORCE_UPDATE_ALL:
+            all_cells.get_value().forEach((cell: Cell) => {
+                cell.force_update();
+            });
+            break;
+
         case PublicStateCommand.ADD_CELL:
             if (msg.args.every(o => is_cell(o))) {
                 all_cells.next([...all_cells.get_value(), ...msg.args]);
@@ -124,11 +132,26 @@ receiver.subscribe((msg: PublicStateMessage) => {
                 console.log("captured attempt for insert weird thing inside propagators")
             }
             break;
+
         case PublicStateCommand.CLEAN_UP:
-            all_cells.next(all_cells.get_value().filter(e => e instanceof Cell))
-            all_propagators.next(all_propagators.get_value().filter(e => e instanceof Propagator))
-            all_amb_propagators.next(all_amb_propagators.get_value().filter(e => e instanceof Propagator))
-        
+            all_cells.next([])
+            all_propagators.next([])
+            all_amb_propagators.next([])
+            set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
+            break;
+
+        case PublicStateCommand.SET_CELL_MERGE:
+            if (msg.args.length == 1){
+                set_merge(msg.args[0]);
+            }
+            else{
+                throw_error(
+                    "add_error:",
+                    "set_cell_merge expects 1 argument, got " + msg.args.length,
+                    msg.summarize()
+                );
+            }
+            break;
     }
 })
 
@@ -168,6 +191,9 @@ export const observe_cell_array = construct_readonly_reactor(all_cells)
 export const observe_propagator_array = construct_readonly_reactor(all_propagators)
 export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_propagators)
 
+
+import { layered_deep_equal } from 'sando-layer/Equality';
+
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
         return a === b;
@@ -177,8 +203,7 @@ export const is_equal = construct_simple_generic_procedure("is_equal", 2,
 define_generic_procedure_handler(is_equal,
     all_match(is_layered_object),
     (a: any, b: any) => {
-        // TODO: this is not correct, because it does not consider the layered structure of the objects
-        return get_base_value(a) === get_base_value(b);
+        return layered_deep_equal(a, b);
     }
 )
 

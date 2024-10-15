@@ -6,9 +6,9 @@ import { type Either, right, left } from "fp-ts/Either";
 import { force_load_arithmatic } from "./Cell/GenericArith";
 import { PublicStateCommand } from "./PublicState";
 import { scheduled_reactor } from "./Scheduler";
-import { combine_latest, construct_reactor, tap, type Reactor } from "./Reactor";
+import { combine_latest, construct_reactor, tap, type Reactor } from "./Reactivity/Reactor";
 import { pipe } from "fp-ts/function";
-import { map, subscribe } from "./Reactor";
+import { map, subscribe } from "./Reactivity/Reactor";
 import type { StringLiteralType } from "typescript";
 force_load_arithmatic();
 
