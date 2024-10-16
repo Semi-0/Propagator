@@ -74,7 +74,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             const inputs_reactors = inputs.map(cell => cell_strongest(cell));
             
             // @ts-ignore
-            return right(new Propagator(name, inputs, [output], () => {
+            return new Propagator(name, inputs, [output], () => {
 
                 const activator = pipe(combine_latest(...inputs_reactors),
                     map(values => {
@@ -87,7 +87,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
                     })(activator)
 
                 return activator;
-            }))
+            })
         }
         else{
            throw new Error("Primitive propagator must have at least two inputs");
