@@ -2,7 +2,7 @@
 
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { add_item, type BetterSet, construct_better_set, find, flat_map, for_each, has, is_better_set, map_to_same_set, remove, set_every, set_some, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
@@ -25,7 +25,7 @@ export class ValueSet<A> {
     }
 
     add_item(item: A): ValueSet<A> {
-        return new ValueSet<A>(add_item(this.elements, item));
+        return new ValueSet<A>(set_add_item(this.elements, item));
     }
 
     to_array(): A[] {
@@ -106,7 +106,7 @@ define_generic_procedure_handler(construct_value_set,
 
 // ValueSet utilities
 function value_set_equals<A>(set1: ValueSet<A>, set2: ValueSet<A>): boolean {
-    return set_every(set1.elements, (elt: A) => has(set2.elements, elt)) && set_every(set2.elements, (elt: A) => has(set1.elements, elt));
+    return set_every(set1.elements, (elt: A) => set_has(set2.elements, elt)) && set_every(set2.elements, (elt: A) => set_has(set1.elements, elt));
 }
 
 function to_value_set<A>(value: any): ValueSet<A> {
@@ -142,7 +142,7 @@ function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: Laye
     if (set_some(set.elements, (e: LayeredObject) => element_subsumes(elt, e))){
         return set;
     } else {
-        return new ValueSet(add_item(set.elements, elt));
+        return new ValueSet(set_add_item(set.elements, elt));
     }
 }
 
@@ -171,7 +171,7 @@ function cross_join_map<A>(procedure: (elt_a: A, b: ValueSet<A>) => ValueSet<A>)
         pipe(
             a.elements,
             (a: BetterSet<A>) => {
-                return flat_map(a, (elt_a: A) => procedure(elt_a, b).elements, a.identify_by);
+                return set_flat_map(a, (elt_a: A) => procedure(elt_a, b).elements);
             },
             construct_value_set
         );
@@ -181,7 +181,7 @@ function value_set_arithmetic<A>(procedure: (elt_a: A, elt_b: A) => A) : (a: Val
     return cross_join_map((elt_a: A, b: ValueSet<A>) => 
         pipe(
             b.elements,
-            (b: BetterSet<A>) => map_to_same_set(b, (elt_b: A) => {
+            (b: BetterSet<A>) => set_map(b, (elt_b: A) => {
                 return procedure(elt_a, elt_b);
             }),
             construct_value_set

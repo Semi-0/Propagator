@@ -4,14 +4,16 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { for_each } from "../helper";
-import { add, find, set_every } from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, set_equal } from "generic-handler/built_in_generics/generic_better_set";
+import { set_every, set_for_each as for_each } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand } from "../PublicState";
 import { Relation } from "./Relation";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { v4 as uuidv4 } from 'uuid';
 import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
+
+import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
 export enum BeliefState {
     Believed,
     NotBelieved,
@@ -21,7 +23,7 @@ export enum BeliefState {
  class PremiseMetaData {
     name : string;
     belief_state: BeliefState = BeliefState.Believed; 
-    no_goods: BetterSet<any> = construct_better_set<any>([], (item) => item);
+    no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([], (item) => JSON.stringify(item));
     roots: BetterSet<any> = construct_better_set<any>([], (item) => item);
 
     constructor(name: string){
@@ -51,8 +53,7 @@ export enum BeliefState {
     } 
 
     wake_up_roots(){
-        set_global_state(PublicStateCommand.FORCE_UPDATE_ALL, null);
-
+        premises_has_changed.next(true);
        //TODO:  alert amb propagator
     }
 
@@ -61,14 +62,14 @@ export enum BeliefState {
     }
 
     add_root(root: any){
-        this.roots = add(this.roots, root);
+        this.roots = set_add_item(this.roots, root);
     } 
 
-    get_no_goods(): BetterSet<any>{
+    get_no_goods(): BetterSet<BetterSet<string>>{
         return this.no_goods;
     }
 
-    set_no_goods(no_goods: BetterSet<any>){
+    set_no_goods(no_goods: BetterSet<BetterSet<string>>){
         this.no_goods = no_goods;
     } 
 
@@ -79,26 +80,48 @@ export enum BeliefState {
 }
 
 // TODO: maybe using a map could making altering quicker 
-export var premises_list : Map<string, PremiseMetaData> = new Map(); 
+export var premises_list : StatefulReactor<Map<string, PremiseMetaData>> = construct_stateful_reactor(new Map()); 
+var premises_has_changed: StandardReactor<boolean> = construct_reactor();
+
+export function observe_premises_has_changed(): ReadOnlyReactor<boolean>{
+    return construct_readonly_reactor(premises_has_changed);
+}
+
+export function set_map(f: (map: Map<string, PremiseMetaData>) => Map<string, PremiseMetaData>){
+    premises_list.next(f(premises_list.get_value()));
+}
+
+export function has_name(name: string): boolean{
+    return premises_list.get_value().has(name);
+}
+
+export function get_metadata(name: string): PremiseMetaData{
+    return premises_list.get_value().get(name);
+}
 
 export function clear_premises(){
-    premises_list.clear();  
+    premises_list.next(new Map());  
 }
 
 export function register_premise(name: string, root: any): PremiseMetaData{
     const premise = new PremiseMetaData(name);
     premise.add_root(root);
-    premises_list.set(name, premise);
+
+    set_map((map) => {
+        map.set(name, premise);
+        return map;
+    });
+
     return premise;
 }
 
 export function is_premises(name: string): boolean{
     // THIS IS QUITE SLOW 
-    return premises_list.has(name); 
+    return has_name(name); 
 }
 
 export function _premises_metadata(name: string): PremiseMetaData{
-    const premise = premises_list.get(name);
+    const premise = get_metadata(name);
     if(premise){
         return premise;
     }
@@ -117,7 +140,6 @@ export function is_premise_out(name: string): boolean{
 
 export function is_premises_in(names: BetterSet<string>): boolean{
     return set_every(names, (name: string) => {
-        console.log("is_premise_in", name)
         return is_premise_in(name)
     });
 } 
@@ -135,16 +157,11 @@ export function mark_premise_out(name: string){
 } 
 
 
-export function all_premises_in(set: BetterSet<LayeredObject>) {
-    for_each(set, (obj: LayeredObject) => {
-        const support = get_support_layer_value(obj);
-        if(support){
-            for_each(support, (premise: PremiseMetaData) => {
-                mark_premise_in(premise.get_name());
-            });
-        }
-    });  
-}
+// export function all_premises_in(set: BetterSet<BetterSet<string>>) {
+//     for_each(set, (obj: LayeredObject) => {
+        
+//     });  
+// }
 
 
 export function premises_nogoods(name: string): BetterSet<any>{
@@ -196,9 +213,9 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
 
 export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
     const peers = map(values, (value: A) => _make_hypothetical(output, value));
-    for_each(peers, (peer: Hypothesis<A>) => {
+    for_each( (peer: Hypothesis<A>) => {
         peer.set_peers(peers);
-    });
+    }, peers);
     return peers;
 }
 

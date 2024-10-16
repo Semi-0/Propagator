@@ -2,22 +2,29 @@
 // the visualization would be very limited
 
 import { pipe } from "fp-ts/lib/function";
-import { for_each } from "generic-handler/built_in_generics/generic_better_set";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 
-export type Reactor<T> = BidirectionalReactor<T> | ReadOnlyReactor<T>
+export type Reactor<T> =  ReadOnlyReactor<T>
 
-export type BidirectionalReactor<T> = StandardReactor<T> | StatefulReactor<T>
+
 
 // PERHAPS SHOULD USE SET FOR PERFORMANCE
-export interface StandardReactor<T>{
-    observers: ((v: T) => void)[];
+export interface StandardReactor<T> extends ReadOnlyReactor<T>{
     next: (v: T) => void;
-    subscribe: (observer: (v: T) => void) => void;
-    unsubscribe: (observer: (v: T) => void) => void;
+}
+
+// A ReadOnly Reactor is a reactor that can only be read
+export interface ReadOnlyReactor<T>{
+    observers: ((...args: T[]) => void)[];
+    subscribe: (observer: (...args: T[]) => void) => void;
+    unsubscribe: (observer: (...args: T[]) => void) => void;
     summarize: () => string;
 }
 
+
+export interface StatefulReactor<T> extends StandardReactor<T>{
+    get_value: () => any
+}
 
 function default_next<T>(error_handler: (e: any) => void): (observers: ((...args: T[]) => void)[]) => (v: T) => void{
     return (observers: ((...args: T[]) => void)[]) => {
@@ -127,9 +134,7 @@ export function construct_scheduled_reactor<T>(scheduling: (task: () => Promise<
     }) as StandardReactor<T>
 }
 
-export interface StatefulReactor<T> extends StandardReactor<T>{
-    get_value: () => any
-}
+
 
 export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor<T>{
     var value = initial_value
@@ -160,13 +165,7 @@ export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor
     }) as StatefulReactor<T>
 }
 
-// A ReadOnly Reactor is a reactor that can only be read
-interface ReadOnlyReactor<T>{
-    observers: ((...args: T[]) => void)[];
-    subscribe: (observer: (...args: T[]) => void) => void;
-    unsubscribe: (observer: (...args: T[]) => void) => void;
-    summarize: () => string;
-}
+
 
 export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadOnlyReactor<T>{
    return construct_prototype_reactor(( 
@@ -202,7 +201,7 @@ export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadO
 }
 
 // DANGER!!
-export function construct_replay_reactor<T>(): BidirectionalReactor<T>{
+export function construct_replay_reactor<T>(): StandardReactor<T>{
     let replayBuffer: T[] = [];
 
     return construct_prototype_reactor<T>(
@@ -230,7 +229,7 @@ export function construct_replay_reactor<T>(): BidirectionalReactor<T>{
                 unsubscribe,
                 summarize: () => summarize("replay_reactor", observers),
             }
-        }) as BidirectionalReactor<T>
+        }) as StandardReactor<T>
 }
 
 
@@ -277,7 +276,7 @@ export function subscribe<T>(f: (v: T) => void): (reactor: Reactor<T>) => void{
     }
 }
 
-export function construct_simple_transformer<T>(f: (v: T, inner: BidirectionalReactor<T>) => void): (reactor: Reactor<T>) => Reactor<T>  {
+export function construct_simple_transformer<T>(f: (v: T, inner: StandardReactor<T>) => void): (reactor: Reactor<T>) => Reactor<T>  {
     return (reactor: Reactor<T>) => {
         var inner = construct_reactor<T>()
 
@@ -289,10 +288,10 @@ export function construct_simple_transformer<T>(f: (v: T, inner: BidirectionalRe
     }
 }
 
-export function map<T>(f: (v: T) => T): (reactor: Reactor<T>) => BidirectionalReactor<T>{
+export function map<T>(f: (v: T) => T): (reactor: Reactor<T>) => StandardReactor<T>{
     return construct_simple_transformer<T>((v, inner) => {
         inner.next(f(v))
-    }) as (reactor: Reactor<T>) => BidirectionalReactor<T>
+    }) as (reactor: Reactor<T>) => StandardReactor<T>
 }
 
 export function filter<T>(f: (v: T) => boolean): (reactor: Reactor<T>) => Reactor<T>{
@@ -328,7 +327,7 @@ export function tap<T>(f: (v: T) => void): (reactor: Reactor<T>) => Reactor<T>{
 
 export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reactor<T>[]) => any[],
                                             update_latest: (old_value_pack: any[], index: number, value: any) => any[],
-                                            mapper: (value_pack: any[], reactor: BidirectionalReactor<any[]>) => any[]): (...others: Reactor<any>[]) => Reactor<any>{
+                                            mapper: (value_pack: any[], reactor: StandardReactor<any[]>) => any[]): (...others: Reactor<any>[]) => Reactor<any>{
     return (...reactors: Reactor<any>[]) => {
 
           
@@ -349,7 +348,7 @@ export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reac
 }
 
 
-export function combine_latest<T>(...reactors: Reactor<T>[]): BidirectionalReactor<T>{
+export function combine_latest<T>(...reactors: Reactor<T>[]): StandardReactor<T>{
     return construct_multicast_reactor<T>(
     (rs: Reactor<T>[]) => rs.map(reactor => {return null}), 
     (old_value_pack, index, value) => old_value_pack.map((v, i) => i === index ? value : v),
@@ -359,7 +358,7 @@ export function combine_latest<T>(...reactors: Reactor<T>[]): BidirectionalReact
         }
         return value_pack
     } 
-    )(...reactors) as BidirectionalReactor<T>
+    )(...reactors) as StandardReactor<T>
 }
 
 export const zip = construct_multicast_reactor(

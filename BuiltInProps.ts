@@ -1,15 +1,16 @@
 import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
-import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
-import { first } from "generic-handler/built_in_generics/generic_array_operation";
-import { add, construct_better_set, flat_map, for_each, merge, set_remove, map_to_new_set , filter, get_length, to_array} from "generic-handler/built_in_generics/generic_better_set";
-import { second } from "./helper";
+import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
+import { first, second } from "./helper";
+import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union} from "generic-handler/built_in_generics/generic_better_set";
+import { set_reduce_right } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand, set_global_state } from "./PublicState";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
-import { reduce } from "generic-handler/built_in_generics/generic_better_set";
+import { merge, tap, type Reactor } from "./Reactivity/Reactor";
+import { map } from "./Reactivity/Reactor";
 export const p_multiply =  primitive_propagator((...inputs: any[]) => {
     const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
    
@@ -24,69 +25,119 @@ export const p_subdivide = primitive_propagator((...inputs: any[]) => {
 
 export function c_multiply(x: Cell, y: Cell, product: Cell){
     return constraint_propagator([x, y, product], () => {
-        p_multiply(x, y, product);
-        p_subdivide(product, x, y);
-        p_subdivide(product, y, x);
+        const m = p_multiply(x, y, product).getActivator();
+        const s1 = p_subdivide(product, x, y).getActivator();
+        const s2 = p_subdivide(product, y, x).getActivator();
+
+        return merge(m, s1, s2) as Reactor<any>
     }, "c:*")
 }
 
+function construct_amb_reactor(f: () => void): () => Reactor<boolean>{
+  return () =>  tap<boolean>(f)(observe_premises_has_changed() as Reactor<boolean>)
+}
 
 // TODO: this need be able to work only if the support set can be propagated first!!!
 export function binary_amb(cell: Cell): Propagator{
     // 
-    const premises = make_hypotheticals<boolean>(cell, construct_better_set([true, false], (elt: boolean) => elt.toString()))
+    const premises =  make_hypotheticals<boolean>(cell, make_better_set([true, false]))
     const true_premise = first(premises)
     const false_premise = second(premises)
 
     function amb_choose(){
         // is filter support set in here? or perhaps i should set premises_nogoods to return BetterSet<LayeredObject>
-        const reason_against_true = filter(premises_nogoods(true_premise), is_premise_in)
-        const reason_against_false = filter(premises_nogoods(false_premise), is_premise_in)
+        const reason_against_true = set_filter(premises_nogoods(true_premise), is_premise_in)
+        const reason_against_false = set_filter(premises_nogoods(false_premise), is_premise_in)
 
-        if(get_length(reason_against_true) == 0){
+        if(set_get_length(reason_against_true) == 0){
             mark_premise_in(true_premise)
             mark_premise_out(false_premise)
         }
-        else if(get_length(reason_against_false) == 0){
+        else if(set_get_length(reason_against_false) == 0){
             mark_premise_in(false_premise)
             mark_premise_out(true_premise)
         }
         else{
             mark_premise_out(true_premise)
             mark_premise_out(false_premise) 
-            process_contradictions(pairwise_union(reason_against_true, reason_against_false), cell)
+            process_contradictions(construct_better_set([pairwise_union(reason_against_true, reason_against_false)], JSON.stringify), cell)
         }
     }
-
-    const self = new Propagator("binary_amb", [cell], [cell], amb_choose)
+    // when amb propagato is activated?
+    const self = new Propagator("binary_amb", [cell], [cell], construct_amb_reactor(amb_choose))
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
 
-function pairwise_union(nogoods1: BetterSet<string>, nogoods2: BetterSet<string>) : BetterSet<BetterSet<string>>{
+
+export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
+    const premises: BetterSet<string> = make_hypotheticals<any>(cell, values)
+        function amb_choose(){
+            // if all the premises is believed, it represent a contradiction
+            const premise_to_choose = set_find((premise: string) =>  pipe(premises_nogoods(premise), 
+                                                (nogoods) => !set_some(nogoods, is_premises_in)), premises)
+
+            if (premise_to_choose !== undefined){
+                set_for_each((premise: string) => {
+                    if (premise === premise_to_choose){
+                       mark_premise_in(premise)
+                    }
+                    else{
+                        mark_premise_out(premise)
+                    }
+                }, premises)
+            }
+            else{
+                const nogoods = cross_product_union(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
+                                                    is_premises_in)))
+
+                set_for_each((premise: string) => {
+                   mark_premise_out(premise)
+                }, premises)
+
+                process_contradictions(nogoods, cell)
+            }
+        }
+
+
+    const self = new Propagator("p_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
+    return self
+}
+
+function pairwise_union(nogoods1: BetterSet<string>, nogoods2: BetterSet<string>) : BetterSet<string>{
     // why flatmap?
-    return map_to_new_set<string, BetterSet<string>>(nogoods1, (item: string) => add(nogoods2, item), 
-                                                    (item: BetterSet<string>) => reduce(item, (acc, value) => acc + value, ""))
+    return set_flat_map(nogoods1,(nogood1: string) => {
+        return set_map(nogoods2, (nogood2: string) => {
+            return set_union(nogood1, nogood2)
+        })
+    }) 
+}
+
+function cross_product_union(nogoodss: BetterSet<BetterSet<string>>): BetterSet<BetterSet<string>>{
+    // TODO: implement
+    return set_reduce_right(pairwise_union, nogoodss, construct_better_set([], JSON.stringify))
 }
 
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
-   for_each<BetterSet<string>>(nogoods, save_nogood)
+   set_for_each<BetterSet<string>>(save_nogood, nogoods)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
    maybe_kick_out(toDisbelieve, nogood, complaining_cell)
 }
 
 function save_nogood(nogood: BetterSet<string>){
-    for_each(nogood, (premise: string) => {
-        set_premises_nogoods(premise, merge(set_remove(nogood, premise), premises_nogoods(premise), (item) => item) )
-    })
+    // no good is the combination of premises that failed
+    set_for_each((premise: string) => {
+        set_premises_nogoods(premise, set_add_item(premises_nogoods(premise), set_remove_item(nogood, premise)))
+    }, nogood)
 }
 
 function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): any[] {
 
     const count = (method: (elt: string) => boolean, set: BetterSet<string>)  => {
-        return get_length(filter(set, method))
+        return set_get_length(set_filter(set, method))
     }
 
     const sort_by = (set: BetterSet<BetterSet<string>>, method: (elt: BetterSet<string>) => number) => {
@@ -105,8 +156,8 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
 
 
 function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
-    const hyps = filter(nogood, is_hypothetical) 
-    if (!(get_length(hyps) === 0)){
+    const hyps = set_filter(nogood, is_hypothetical) 
+    if (!(set_get_length(hyps) === 0)){
         return [first(hyps), nogood]
     }
     else{
@@ -126,4 +177,5 @@ function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, compl
         throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
     }
 }
+
 

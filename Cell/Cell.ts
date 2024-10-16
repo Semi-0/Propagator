@@ -13,7 +13,6 @@ import { process_contradictions } from "../BuiltInProps";
 import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
-import { identify_strint_set } from "../helper";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 
@@ -33,14 +32,9 @@ export function handle_cell_contradiction(cell: Cell) {
     cell,
     cell_strongest_value,
     get_support_layer_value,
-    (value) => map_to_new_set(
-      value,
-      (elt: string) => construct_better_set([elt], (elt: string) => elt),
-      (elt: BetterSet<string>) => identify_strint_set(elt)
-    )
   );
 
-  process_contradictions(nogood, cell)
+  process_contradictions(construct_better_set([nogood], (item) => JSON.stringify(item)), cell)
 }
 
 export const handle_contradiction = handle_cell_contradiction;

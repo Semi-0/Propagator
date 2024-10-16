@@ -17,12 +17,13 @@ export class Propagator{
  private inputs_ids : string[] = []; 
  private outputs_ids : string[] = []; 
  private name : string;
+ private activator : Reactor<any>;
 
 
  constructor(name: string, 
             inputs: Cell[], 
             outputs: Cell[], 
-            activate: () => void){
+            activate: () => Reactor<any>){
     this.name = name;
 
     this.relation = get_global_parent();
@@ -33,7 +34,7 @@ export class Propagator{
 
     // activation is a flag to tell the propagator is activated
    
-    activate();
+    this.activator = activate();
 
     
     set_global_state(PublicStateCommand.ADD_PROPAGATOR, this);
@@ -55,13 +56,17 @@ export class Propagator{
     return this.outputs_ids;
  }
 
+ getActivator(){
+    return this.activator;
+ }
+
  summarize(){
     return "propagator: " + this.name + " inputs: " + this.inputs_ids + " outputs: " + this.outputs_ids;
  }
 }
 
 export function primitive_propagator(f: (...inputs: any[]) => any, name: string){
-    return (...cells: Cell[]): Either<string, Propagator> => {
+    return (...cells: Cell[]): Propagator => {
         if (cells.length > 1){
 
             const output = cells[cells.length - 1];
@@ -70,34 +75,38 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             
             // @ts-ignore
             return right(new Propagator(name, inputs, [output], () => {
-                 pipe(combine_latest(...inputs_reactors),
+
+                const activator = pipe(combine_latest(...inputs_reactors),
                     map(values => {
                         return f(...values);
-                    }),
+                    }))
+
+
                     subscribe((result: any) => {
                         add_cell_content(output, result);
-                    })
-                )
+                    })(activator)
+
+                return activator;
             }))
         }
         else{
-            return left("Primitive propagator must have at least two inputs");
+           throw new Error("Primitive propagator must have at least two inputs");
         }
     }
 }
 
 
-export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => void, name: string): Either<string, Propagator>{
+export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => Reactor<any>, name: string): Propagator{
     const me = new Propagator(name, inputs, outputs, () => {
         // TODO: this is not good, in typescript there is no equivalent of parameterize in scheme, perhaps use readerMonad?
         set_global_state(PublicStateCommand.SET_PARENT, me.getRelation());
         return to_build();
     });
-    return right(me);
+    return me;
 }
 
-export function constraint_propagator(cells: Cell[],  to_build: () => void, name: string): Either<string, Propagator>{
-    return right(new Propagator(name, cells, cells, () => {
+export function constraint_propagator(cells: Cell[],  to_build: () => Reactor<any>, name: string): Propagator{
+    return new Propagator(name, cells, cells, () => {
         return to_build();
-    }));
+    });
 }

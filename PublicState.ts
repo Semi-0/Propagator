@@ -155,6 +155,12 @@ receiver.subscribe((msg: PublicStateMessage) => {
     }
 })
 
+
+observe_premises_has_changed().subscribe((has_changed: boolean) => {
+    set_global_state(PublicStateCommand.FORCE_UPDATE_ALL, null);
+})
+
+
 export function set_global_state(type: PublicStateCommand, ...args: any[]){
     // altering global state should be very careful, so i intentionally make the operation observable
     const msg = public_state_message(type, ...args);
@@ -193,6 +199,7 @@ export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_p
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
+import { observe_premises_has_changed } from './DataTypes/Premises';
 
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
