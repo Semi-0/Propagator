@@ -6,6 +6,7 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 export const generic_merge = construct_simple_generic_procedure("merge", 2,
     (content: any, increment: any) => {
+        console.log("merging")
         if (is_nothing(content)) {
             return increment
         }
@@ -22,6 +23,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
             return content
         }
         else {
+            
             console.log("contradiction caused by content:", content, "increment:", increment)
             return the_contradiction
         }

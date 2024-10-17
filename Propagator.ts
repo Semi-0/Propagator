@@ -83,6 +83,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 
 
                     subscribe((result: any) => {
+                        console.log("get result", result)
                         add_cell_content(output, result);
                     })(activator)
 

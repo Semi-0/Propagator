@@ -14,7 +14,8 @@ import { map } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
 
 export const p_add =  primitive_propagator((...inputs: any[]) => {
-    const result = inputs.reduce((acc, curr) => add(acc, curr), 0);
+    const result = inputs.slice(1).reduce((acc, curr) => add(acc, curr), inputs[0]);
+
     return result;
 }, "add");
 
@@ -30,7 +31,6 @@ export const p_multiply =  primitive_propagator((...inputs: any[]) => {
 }, "multiply");
 
 export const p_divide = primitive_propagator((...inputs: any[]) => {
-    // console.log("subdivide inputs", inputs);
     return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
 }, "subdivide"); 
 
@@ -166,6 +166,7 @@ function cross_product_union(nogoodss: BetterSet<BetterSet<string>>): BetterSet<
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
+   set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
    maybe_kick_out(toDisbelieve, nogood, complaining_cell)
@@ -200,12 +201,16 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
 
 
 function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
+    console.log("choosing to disbelieve")
     const hyps = set_filter(nogood, is_hypothetical) 
+    console.log("hyps", set_get_length(hyps))
     if (!(set_get_length(hyps) === 0)){
+        console.log("choosing first hypothetical", first(hyps))
         return [first(hyps), nogood]
     }
     else{
-        return [[], nogood]
+        console.log("no hypothetical premises found")
+        throw Error("contradiction can't be resolved, no hypothetical premises found " )
     }     
 }
 

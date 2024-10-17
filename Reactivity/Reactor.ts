@@ -246,20 +246,12 @@ export function construct_scheduled_stateful_reactor<T>(
         subscribe: (observer: (...args: any[]) => void) => void,
         unsubscribe: (observer: (...args: any[]) => void) => void
       ) => {
-        var value: T | undefined = undefined;
+        var value = initial_value;
 
-        scheduling(() => {
-            value = initial_value
-            return Promise.resolve()
-        })
+   
 
         function subscribe_and_notify_initial_state(observer: (...v: any[]) => void){
-            scheduling(() => {
-                if (value !== undefined){
-                    observer(value)
-                }
-                return Promise.resolve()
-            })
+            observer(value)
    
             subscribe(observer)
         }
@@ -269,7 +261,7 @@ export function construct_scheduled_stateful_reactor<T>(
           observers,
           next: pipe(observers,
             default_next(throw_error("stateful_reactor")),
-            stateful_modifer((v) => scheduling(() => {value = v; return Promise.resolve()})), 
+            stateful_modifer((v) => {value = v }), 
             scheduled_modifer(scheduling)
           ),
           summarize: () => summarize("stateful_reactor", observers),

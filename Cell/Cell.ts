@@ -1,20 +1,22 @@
 import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
 import { Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { combine_latest, compact_map,  filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
-import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value } from "./CellValue";
+import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../BuiltInProps";
-import { construct_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, make_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
+import { match_args } from "generic-handler/Predicates";
+import { inspect } from "bun";
 
 // TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
 // WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
@@ -22,9 +24,8 @@ import { cell_merge } from "./Merge";
 // 3. (OPTIONAL) WHAT TO DO WHEN CONTRADICTON IS FOUND
 
 
-export const general_contradiction = construct_simple_generic_procedure("general_contradiction", 1, (a: any) => {
-  return false;
-})
+export const general_contradiction = is_layered_contradiction
+
 
 
 export function handle_cell_contradiction(cell: Cell) {
@@ -33,8 +34,9 @@ export function handle_cell_contradiction(cell: Cell) {
     cell_strongest_value,
     get_support_layer_value,
   );
-
-  process_contradictions(construct_better_set([nogood], (item) => JSON.stringify(item)), cell)
+  console.log("handling contradiction")
+  
+  process_contradictions(make_better_set([nogood]), cell)
 }
 
 export const handle_contradiction = handle_cell_contradiction;
@@ -55,13 +57,22 @@ export class Cell{
       filter((content: any) => !is_equal(content, this.strongest.get_value())),
       subscribe((content: any) => this.strongest.next(content))
     )
+
+    this.strongest.subscribe((v: any) => {
+      if (general_contradiction(v)){
+        handle_cell_contradiction(this)
+      }
+    }
+  
+  )
    
     set_global_state(PublicStateCommand.ADD_CELL, this);
     set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
   }
 
   observe_update(observer:(cellValues: any) => void){
-    combine_latest(this.content, this.strongest).subscribe(observer);
+    this.strongest.subscribe(observer);
+    // combine_latest(this.content, this.strongest).subscribe(observer);
   }
 
   getRelation(){
@@ -82,7 +93,7 @@ export class Cell{
   }
 
   addContent(increment:any){
- 
+
     this.content.next(cell_merge(this.content.get_value(), increment));
   }
 
@@ -90,11 +101,11 @@ export class Cell{
   testContent(content: any, strongest: any): any | null {
     const _strongest = strongest_value(content);
     if (general_contradiction(_strongest)){
-      console.log("contradiction", content, strongest)
-      handle_contradiction(this);
+      console.log("contradiction: cell name = " + this.getRelation().get_name())
       return _strongest;
     }
     else {
+      // console.log("no contradiction:" +inspect(_strongest))
       return _strongest
     }
   }

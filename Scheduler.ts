@@ -28,6 +28,7 @@ export function simple_scheduler(): Scheduler {
     var immediate_execute: boolean = false
 
     function schedule(f: () => Promise<void>){
+        // console.log("scheduled", f)
         if (immediate_execute){
             f()
             executed.add(f)

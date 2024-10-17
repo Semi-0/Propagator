@@ -20,6 +20,7 @@ export class Relation{
 
     add_child(child: InterestedType){
         this.children.push(child);
+        return this;
     }
 
     get_id(){

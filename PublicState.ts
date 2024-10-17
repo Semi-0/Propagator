@@ -20,7 +20,8 @@ export enum PublicStateCommand{
     ADD_AMB_PROPAGATOR = "add_amb_propagator",
     CLEAN_UP = "clean_up",
     FORCE_UPDATE_ALL = "force_update_all",
-    SET_CELL_MERGE = "set_cell_merge"
+    SET_CELL_MERGE = "set_cell_merge",
+    UPDATE_FAILED_COUNT = "update_failed_count"
 }
 
 export interface PublicStateMessage{
@@ -57,6 +58,7 @@ var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(mak
 const all_cells: StatefulReactor<Cell[]> = construct_stateful_reactor<Cell[]>([]);
 const all_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
 const all_amb_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
+const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
 
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
@@ -73,6 +75,10 @@ function is_propagator(o: any): boolean{
 
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
+        case PublicStateCommand.UPDATE_FAILED_COUNT:
+            console.log("update_failed_count", failed_count.get_value())
+            failed_count.next(failed_count.get_value() + 1)
+            break;
         case PublicStateCommand.FORCE_UPDATE_ALL:
             all_cells.get_value().forEach((cell: Cell) => {
                 cell.force_update();
@@ -100,12 +106,13 @@ receiver.subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.ADD_CHILD:
             if (msg.args.length == 1){
-                msg.args[0].add_child(msg.args[0]);
+                parent.next(parent.get_value().add_child(msg.args[0]));
             }
             else if (msg.args.length == 2){ 
-                const child = msg.args[0];
-                const parent = msg.args[1];
-                parent.next(parent.get_value().add_child(child));
+
+                const parent_arg = msg.args[0];
+                const child_arg = msg.args[1];
+                parent_arg.add_child(child_arg);
             }
             else{
                 throw_error(
@@ -137,6 +144,8 @@ receiver.subscribe((msg: PublicStateMessage) => {
             all_cells.next([])
             all_propagators.next([])
             all_amb_propagators.next([])
+            clean_premises_store()
+            clean_hypothetical_store()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
             break;
 
@@ -199,7 +208,7 @@ export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_p
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
-import { observe_premises_has_changed } from './DataTypes/Premises';
+import { clean_hypothetical_store, clean_premises_store, observe_premises_has_changed } from './DataTypes/Premises';
 
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {

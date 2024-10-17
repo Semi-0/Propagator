@@ -48,6 +48,13 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
     return value === the_contradiction
 })
 
+export const is_layered_contradiction = register_predicate("is_layered_contradiction", (value: any) => {
+    if (is_layered_object(value)) {
+        return get_base_value(value) === the_contradiction
+    }
+    return is_contradiction(value)
+})
+
 
 export function force_load_CellValue(){
   console.log

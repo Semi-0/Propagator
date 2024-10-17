@@ -4,7 +4,7 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { set_add_item, set_equal } from "generic-handler/built_in_generics/generic_better_set";
+import { make_better_set, set_add_item, set_equal, set_map } from "generic-handler/built_in_generics/generic_better_set";
 import { set_every, set_for_each as for_each } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand } from "../PublicState";
 import { Relation } from "./Relation";
@@ -83,11 +83,16 @@ export enum BeliefState {
 export var premises_list : StatefulReactor<Map<string, PremiseMetaData>> = construct_stateful_reactor(new Map()); 
 var premises_has_changed: StandardReactor<boolean> = construct_reactor();
 
+
+export function clean_premises_store(){
+    set_premises_list( (m) => {return new Map()})
+}
+
 export function observe_premises_has_changed(): ReadOnlyReactor<boolean>{
     return construct_readonly_reactor(premises_has_changed);
 }
 
-export function set_map(f: (map: Map<string, PremiseMetaData>) => Map<string, PremiseMetaData>){
+export function set_premises_list(f: (map: Map<string, PremiseMetaData>) => Map<string, PremiseMetaData>){
     premises_list.next(f(premises_list.get_value()));
 }
 
@@ -107,7 +112,7 @@ export function register_premise(name: string, root: any): PremiseMetaData{
     const premise = new PremiseMetaData(name);
     premise.add_root(root);
 
-    set_map((map) => {
+    set_premises_list((map) => {
         map.set(name, premise);
         return map;
     });
@@ -180,8 +185,8 @@ export function set_premises_nogoods(name: string, nogoods: BetterSet<any>){
 export interface Hypothesis<A>{
     get_relations(): Relation[];
     get_output(): Cell;
-    get_peers(): Hypothesis<A>[];
-    set_peers(peers: Hypothesis<A>[]): void;
+    get_peers(): BetterSet<string>;
+    set_peers(peers: BetterSet<string>): void;
     get_id(): string;
     summarize(): string;
 }
@@ -192,6 +197,10 @@ export interface Hypothesis<A>{
 // but then it would be hard to use the hypothesis object
 // so here i use a store for linking id with hypothesis object
 var hypotheticals_store : Map<string, Hypothesis<any>> = new Map();
+
+export function clean_hypothetical_store(){
+    hypotheticals_store = new Map()
+}
 
 export function register_hypothesis(id: string, hypothesis: Hypothesis<any>){
     hypotheticals_store.set(id, hypothesis);
@@ -212,9 +221,13 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
 }
 
 export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
-    const peers = map(values, (value: A) => _make_hypothetical(output, value));
-    for_each( (peer: Hypothesis<A>) => {
-        peer.set_peers(peers);
+    const peers = set_map(values, (value: A) => _make_hypothetical(output, value));
+
+    for_each( (peer: string) => {
+        const peer_metadata = _hypothesis_metadata(peer);
+        if(peer_metadata){
+            _hypothesis_metadata(peer)?.set_peers(peers);
+        }
     }, peers);
     return peers;
 }
@@ -225,7 +238,7 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     // TODO: extend to_string with generic
     // TODO: initialize cell with contradiction
     const relation = new Relation("hypothetical:" + to_string(value), output);
-    var peers: Hypothesis<A>[] = [];
+    var peers: BetterSet<string> = make_better_set<string>([]);
     var id = uuidv4();
 
     function get_relations(): Relation[]{
@@ -236,11 +249,11 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
         return output;
     }
 
-    function get_peers(): Hypothesis<A>[]{
+    function get_peers_tags(): BetterSet<string>{
         return peers;
     }
 
-    function set_peers(_peers: Hypothesis<A>[]): void{
+    function set_peers_from_tags(_peers: BetterSet<string>): void{
         peers = _peers;
     }
     
@@ -255,15 +268,16 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     const self = {
         get_relations,
         get_output,
-        get_peers,
-        set_peers,
+        get_peers: get_peers_tags,
+        set_peers: set_peers_from_tags,
         summarize,
         get_id,
     }
 
-    set_global_state(PublicStateCommand.ADD_CHILD, self, output)
+    set_global_state(PublicStateCommand.ADD_CHILD, relation, output)
     register_hypothesis(id, self)
     register_premise(id, output);
+    // console.log("add_cell_content",  support_by(value, id))
     add_cell_content(output, support_by(value, id));
     return id;       
 }

@@ -81,7 +81,7 @@ define_generic_procedure_handler(reduce,
 export const construct_value_set = construct_simple_generic_procedure("construct_value_set", 
     1,
     (elements: any) => {
-        throw new Error("unimplemented");
+        throw new Error("unimplemented: " + elements);
     }
 );
 
@@ -126,7 +126,9 @@ define_generic_procedure_handler(is_unusable_value,
 
 define_generic_procedure_handler(strongest_value,
     match_args(is_value_set),
-    (set: ValueSet<any>) => strongest_consequence(set)
+    (set: ValueSet<any>) => {
+        // console.log("strongest_consequence", strongest_consequence(set))
+        return strongest_consequence(set)}
 );
 
 // ValueSet operations
@@ -138,8 +140,9 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
 }
 
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
+    // TODO: SUBSUME MIGHT NOT WORK HERE!!!
     // @ts-ignore
-    if (set_some(set.elements, (e: LayeredObject) => element_subsumes(elt, e))){
+    if (set_some(set.elements, (e: LayeredObject) => element_subsumes(e, elt))){
         return set;
     } else {
         return new ValueSet(set_add_item(set.elements, elt));
@@ -159,7 +162,11 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
         (elements) => filter(elements, (elt: LayeredObject) => is_premises_in(get_support_layer_value(elt))),
         (filtered) => reduce(
             filtered,
-            (acc: LayeredObject, item: LayeredObject) => merge_layered(acc, item),
+            (acc: LayeredObject, item: LayeredObject) => {
+
+                // console.log("merge_layered, acc: ", acc, "item: ", item)
+                // console.log("result", merge_layered(acc, item))
+                return merge_layered(acc, item)},
             the_nothing,
         )
     );
