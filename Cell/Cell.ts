@@ -2,7 +2,7 @@ import {  set_global_state,  get_global_parent, is_equal } from "../PublicState"
 import { Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { combine_latest, compact_map,  filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
+import { combine_latest, compact_map,  construct_stateful_reactor,  filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
@@ -54,10 +54,10 @@ export class Cell{
     pipe(
       this.content,
       map((content: any) => this.testContent(content, this.strongest.get_value())),
-      tap((content: any) => console.log("cell name:", this.relation.get_name())),
-      tap((content: any) => console.log("content update:", content, "previous strongest:", this.strongest.get_value())),
+      // tap((content: any) => console.log("cell name:", this.relation.get_name())),
+      // tap((content: any) => console.log("content update:", content, "previous strongest:", this.strongest.get_value())),
       filter((content: any) => !is_equal(content, this.strongest.get_value())),
-      tap((content: any) => console.log("is not equal:")),
+      // tap((content: any) => console.log("is not equal:")),
       subscribe((content: any) => {
         this.strongest.next(content)
 
@@ -70,9 +70,9 @@ export class Cell{
     )
 
     this.strongest.subscribe((v: any) => {
-      console.log("strongest value contradiction:", v)
+      console.log("strongest value update!:", v)
       if (general_contradiction(v)){
-        console.log("contradiction handling:", v)
+        // console.log("contradiction handling:", v)
         handle_cell_contradiction(this)
       }
     })

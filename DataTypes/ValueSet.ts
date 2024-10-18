@@ -166,13 +166,17 @@ export function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): bool
 function strongest_consequence<A>(set: ValueSet<A>): A {
     return pipe(
         set.elements,
-        (elements) => filter(elements, (elt: LayeredObject) => is_premises_in(get_support_layer_value(elt))),
+        (elements) => filter(elements, (elt: LayeredObject) => {
+            console.log("elt: ", is_layered_object(elt) ?  elt.describe_self() : elt)
+            console.log("elt in: ", is_premises_in(get_support_layer_value(elt)))
+            return is_premises_in(get_support_layer_value(elt))
+        }),
         (filtered) => reduce(
             filtered,
             (acc: LayeredObject, item: LayeredObject) => {
 
                 // console.log("merge_layered, acc: ", acc, "item: ", item)
-                console.log("result", merge_layered(acc, item))
+                console.log("result", merge_layered(acc, item).describe_self())
                 return merge_layered(acc, item)},
             the_nothing,
         )

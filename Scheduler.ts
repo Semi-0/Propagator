@@ -1,4 +1,5 @@
 import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactivity/Reactor";
+import { v4 as uuidv4 } from 'uuid';
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
     execute_sequential: (error_handler: (e: Error) => void) => ExecutionHandler;
@@ -6,6 +7,7 @@ export interface Scheduler{
     steppable_run:  (error_handler: (e: Error) => void) => void;
     summarize: () => string;
     clear_all_tasks: () => void;
+    set_immediate_execute: (value: boolean) => void; 
 }
 
 
@@ -22,19 +24,20 @@ function construct_execution_handler(task: Promise<void>, cancel: () => void): E
 }
 
 export function simple_scheduler(): Scheduler {
-
-    var queue: Set<(() => Promise<void>)> = new Set() 
-    var executed: Set<(() => Promise<void>)> = new Set()
+    var queue: Map<string, () => Promise<void>> = new Map()
+    var executed: Map<string, () => Promise<void>> = new Map()
     var immediate_execute: boolean = false
 
+
+
     function schedule(f: () => Promise<void>){
-        // console.log("scheduled", f)
+        const taskId = uuidv4();
         if (immediate_execute){
             f()
-            executed.add(f)
+            executed.set(taskId, f)
         }
         else{
-            queue.add(f)
+            queue.set(taskId, f)
         }
     }
 
@@ -42,10 +45,10 @@ export function simple_scheduler(): Scheduler {
         immediate_execute = value
     }
 
-    function dequeue(): () => Promise<void>{
-        var f = queue.values().next().value
-        queue.delete(f)
-        return f
+    function dequeue(): [string, () => Promise<void>]{
+        const [taskId, f] = queue.entries().next().value
+        queue.delete(taskId)
+        return [taskId, f]
     } 
 
     function summarize(): string{
@@ -53,35 +56,28 @@ export function simple_scheduler(): Scheduler {
                 + "executed: " + executed.size.toString()
     }
      
-   
-
-
     function clear_all_tasks(){
         queue.clear()
         executed.clear()
     }
 
-
-    function execute_task(task: () => Promise<void>, error_handler: (e: Error) => void): () => Promise<void>{
+    function execute_task(taskId: string, task: () => Promise<void>, error_handler: (e: Error) => void): () => Promise<void>{
         return async () => {
             await task().then(() => {
-                executed.add(task)
+                executed.set(taskId, task)
             }).catch((e) => {
                 error_handler(e)
             })
         }
     }
 
-    // what if error occurs in execute_task?
-    // set buffer for executed tasks
     function execute_sequential(error_handler: (e: Error) => void): ExecutionHandler{
-        // this failed to considered when new task poped up during execution
-        // still needs cancellable promise
         var running = true
 
         async function exec(){
             while ((queue.size !== 0) && (running)){
-                await execute_task(dequeue(), error_handler)()
+                const [taskId, task] = dequeue()
+                await execute_task(taskId, task, error_handler)()
             }
         }
 
@@ -93,17 +89,16 @@ export function simple_scheduler(): Scheduler {
     }
 
     async function execute_simultaneous(error_handler: (e: Error) => void){
-        // TODO:
         var running = true
         async function exec(){
-            if (running ){
-            const tasksToExecute = Array.from(queue);
-            queue.clear(); // Clear the queue immediately
-            const tasks = tasksToExecute.map(async (f) => {
-                execute_task(f, error_handler)()
-            });
+            if (running){
+                const tasksToExecute = Array.from(queue);
+                queue.clear(); // Clear the queue immediately
+                const tasks = tasksToExecute.map(async ([taskId, f]) => {
+                    execute_task(taskId, f, error_handler)()
+                });
 
-            await Promise.all(tasks);
+                await Promise.all(tasks);
             }
         }
         while (queue.size !== 0){
@@ -117,11 +112,10 @@ export function simple_scheduler(): Scheduler {
 
     function steppable_run(error_handler: (e: Error) => void){ 
         if (queue.size !== 0){
-            return execute_task(dequeue(), error_handler)()
+            const [taskId, task] = dequeue()
+            return execute_task(taskId, task, error_handler)()
         }
     }
-
- 
 
     return {
         schedule,
@@ -129,7 +123,8 @@ export function simple_scheduler(): Scheduler {
         execute_simultaneous,
         steppable_run,
         summarize,
-        clear_all_tasks
+        clear_all_tasks,
+        set_immediate_execute
     }
 }
 
@@ -137,6 +132,11 @@ export const SimpleScheduler = simple_scheduler()
 
 export function summarize_scheduler_state(){
     return SimpleScheduler.summarize()
+}
+
+
+export function set_immediate_execute(value: boolean){
+    SimpleScheduler.set_immediate_execute(value)
 }
 
 export function report_executed_length(){

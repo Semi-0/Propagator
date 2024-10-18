@@ -10,30 +10,27 @@ import { steppable_run_task } from "./Scheduler";
 import { construct_value_set } from "./DataTypes/ValueSet";
 import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
 import { pipe } from "fp-ts/lib/function";
-export function tell_constructor(constructor: (arg: any) => any){
-    return (cell: Cell, information: any, ...premises: string[]) => {
-        for_each(premises, (premise: string) => {
-            register_premise(premise, constructor(information));
-        }) 
+export async function tell(cell: Cell, information: any, ...premises: string[]) {
+    const constructor = (a: any) => a;
 
-        add_cell_content(cell,
-            pipe(
-                information,
-                (info) => premises.length === 0 ? info : 
-                            reduce(premises, 
-                                    (acc: any, premise: string) => support_by(acc, premise), 
-                                    info),
-                constructor
-            )
+    for_each(premises, (premise: string) => {
+        register_premise(premise, constructor(information));
+    });
+
+    add_cell_content(cell,
+        pipe(
+            information,
+            (info) => premises.length === 0 ? info : 
+                        reduce(premises, 
+                                (acc: any, premise: string) => support_by(acc, premise), 
+                                info),
+            constructor
         )
+    );
 
-        steppable_run_task((e) => {
-        })
-    }
+    await steppable_run_task((e) => {
+    });
 }
-
-
-export const tell = tell_constructor((a: any) => a)
 // export const tell_value_set = tell_constructor(construct_value_set)
 
 export function describe(v: any){
