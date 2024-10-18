@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { ValueSet, construct_value_set } from "../DataTypes/ValueSet";
+import { ValueSet, construct_value_set, element_subsumes } from "../DataTypes/ValueSet";
 import { add } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_better_set, set_get_length as get_length, merge_set, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
@@ -53,6 +53,44 @@ describe("ValueSet", () => {
     const valueSet = construct_value_set(elements);
     expect(valueSet instanceof ValueSet).toBe(true);
   });
+
+
+  it("element subsumes shoud when support and base is the same", () => {
+    const element1 = support_by(1, "f");
+
+    const element2 = support_by(1, "f");
+
+    expect(element_subsumes(element1, element2)).toBe(true);
+  })
+
+  it("element subsumes shoud when base is the same and support is higher", () => {
+    const element1 = support_by(1, "f");
+
+    const element2 = support_by(1, "g");
+
+    expect(element_subsumes(element1, element2)).toBe(false);
+  })
+
+  it("element subsumes shoud when base is higher", () => {
+    const element1 = support_by(1, "f");
+
+    const element2 = support_by(2, "f");
+
+    expect(element_subsumes(element1, element2)).toBe(false);
+  })
+
+
+  it("element subsumes shoud when support is higher", () => {
+    const element1 = support_by(1, "f");
+    const element3 = support_by(element1, "g");
+
+    const element2 = support_by(1, "g");
+
+    expect(element_subsumes(element1, element3)).toBe(true);
+    expect(element_subsumes(element2, element3)).toBe(true);
+    expect(element_subsumes(element1, element2)).toBe(false);
+  })
+
 
 
 });

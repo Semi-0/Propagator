@@ -57,7 +57,7 @@ export const is_layered_contradiction = register_predicate("is_layered_contradic
 
 
 export function force_load_CellValue(){
-  console.log
+//   console.log
 }
 
 

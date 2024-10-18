@@ -20,7 +20,7 @@ export enum BeliefState {
 }
 
 
- class PremiseMetaData {
+export class PremiseMetaData {
     name : string;
     belief_state: BeliefState = BeliefState.Believed; 
     no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([], (item) => JSON.stringify(item));
@@ -40,19 +40,28 @@ export enum BeliefState {
 
     set_belief_state(state: BeliefState){
         this.belief_state = state;
+        this.wake_up_roots();
     } 
 
     set_believed(){
+        if(track_premises_changed){
+           console.log("premises:", this.name, "is believed")
+        }
         this.set_belief_state(BeliefState.Believed);
-        this.wake_up_roots();
+  
     }
 
     set_not_believed(){
+        if(track_premises_changed){
+            console.log("premises:", this.name, "is not believed")
+         }
         this.set_belief_state(BeliefState.NotBelieved);
-        this.wake_up_roots();
     } 
 
     wake_up_roots(){
+        set_global_state(PublicStateCommand.FORCE_UPDATE_ALL)
+
+        // TODO: force update propagators
         premises_has_changed.next(true);
        //TODO:  alert amb propagator
     }
@@ -82,7 +91,27 @@ export enum BeliefState {
 // TODO: maybe using a map could making altering quicker 
 export var premises_list : StatefulReactor<Map<string, PremiseMetaData>> = construct_stateful_reactor(new Map()); 
 var premises_has_changed: StandardReactor<boolean> = construct_reactor();
+var track_premises_changed: boolean = false;
 
+export function summarize_premises_list(): string {
+    console.log("caught summarize")
+    const premisesMap = premises_list.get_value();
+    const summaries: string[] = [];
+    
+    premisesMap.forEach((premise: PremiseMetaData, key: string) => {
+        summaries.push(premise.summarize());
+    });
+    
+    return summaries.join("\n");
+}
+
+export function track_premise(){
+    track_premises_changed = true;
+}
+
+function wake_up_roots(){
+    premises_has_changed.next(true);
+}
 
 export function clean_premises_store(){
     set_premises_list( (m) => {return new Map()})
@@ -155,6 +184,7 @@ export function is_premises_out(names: BetterSet<string>): boolean{
 
 export function mark_premise_in(name: string){
     _premises_metadata(name).set_believed();
+
 } 
 
 export function mark_premise_out(name: string){
@@ -221,8 +251,12 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
 }
 
 export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
-    const peers = set_map(values, (value: A) => _make_hypothetical(output, value));
-
+    console.log("make_hypotheticals")
+    console.log("values", values)
+    const peers = set_map(values, (value: A) => {
+        console.log("value", value)
+        return _make_hypothetical(output, value)});
+    console.log("peers", peers)
     for_each( (peer: string) => {
         const peer_metadata = _hypothesis_metadata(peer);
         if(peer_metadata){
@@ -273,6 +307,8 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
         summarize,
         get_id,
     }
+
+    console.log("registered hypothetical", "name:", id, "value:", value)
 
     set_global_state(PublicStateCommand.ADD_CHILD, relation, output)
     register_hypothesis(id, self)

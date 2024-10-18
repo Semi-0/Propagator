@@ -2,7 +2,7 @@ import { primitive_propagator, constraint_propagator, Propagator } from "./Propa
 import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
-import { first, second } from "./helper";
+import { first, for_each, second } from "./helper";
 import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union} from "generic-handler/built_in_generics/generic_better_set";
 import { set_reduce_right } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand, set_global_state } from "./PublicState";
@@ -12,6 +12,7 @@ import { pipe } from "fp-ts/lib/function";
 import { merge, tap, type Reactor } from "./Reactivity/Reactor";
 import { map } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
+import { inspect } from "bun";
 
 export const p_add =  primitive_propagator((...inputs: any[]) => {
     const result = inputs.slice(1).reduce((acc, curr) => add(acc, curr), inputs[0]);
@@ -114,30 +115,42 @@ export function binary_amb(cell: Cell): Propagator{
 }
 
 
+
+export function find_premise_to_choose(premises: BetterSet<string>): string | undefined{
+    return set_find((premise: string) =>  pipe(premises_nogoods(premise), 
+                                                (nogoods) => !set_some(nogoods, is_premises_in)), premises)
+}
+
+export function mark_only_chosen_premise(premises: BetterSet<string>, chosen_premise: string){
+    set_for_each((premise: string) => {
+        if (premise === chosen_premise){
+           mark_premise_in(premise)
+        }
+        else{
+            mark_premise_out(premise)
+        }
+    }, premises)
+}
+
+export function mark_all_premises_out(premises: BetterSet<string>){
+    const nogoods = cross_product_union(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
+    is_premises_in)))
+    set_for_each((premise: string) => {
+        mark_premise_out(premise)
+    }, premises)
+    return nogoods
+}
+
 export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
     const premises: BetterSet<string> = make_hypotheticals<any>(cell, values)
         function amb_choose(){
             // if all the premises is believed, it represent a contradiction
-            const premise_to_choose = set_find((premise: string) =>  pipe(premises_nogoods(premise), 
-                                                (nogoods) => !set_some(nogoods, is_premises_in)), premises)
-
+            const premise_to_choose = find_premise_to_choose(premises)
             if (premise_to_choose !== undefined){
-                set_for_each((premise: string) => {
-                    if (premise === premise_to_choose){
-                       mark_premise_in(premise)
-                    }
-                    else{
-                        mark_premise_out(premise)
-                    }
-                }, premises)
+               mark_only_chosen_premise(premises, premise_to_choose)
             }
             else{
-                const nogoods = cross_product_union(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
-                                                    is_premises_in)))
-
-                set_for_each((premise: string) => {
-                   mark_premise_out(premise)
-                }, premises)
+                const nogoods = mark_all_premises_out(premises)
 
                 process_contradictions(nogoods, cell)
             }
@@ -166,10 +179,13 @@ function cross_product_union(nogoodss: BetterSet<BetterSet<string>>): BetterSet<
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
+    console.log("processing contradictions")
    set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
+   console.log("nogoods", nogoods)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
-   maybe_kick_out(toDisbelieve, nogood, complaining_cell)
+   console.log("toDisbelieve", toDisbelieve)
+   maybe_kick_out([toDisbelieve], nogood, complaining_cell)
 }
 
 function save_nogood(nogood: BetterSet<string>){
@@ -201,22 +217,20 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
 
 
 function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
-    console.log("choosing to disbelieve")
     const hyps = set_filter(nogood, is_hypothetical) 
-    console.log("hyps", set_get_length(hyps))
     if (!(set_get_length(hyps) === 0)){
-        console.log("choosing first hypothetical", first(hyps))
         return [first(hyps), nogood]
     }
     else{
-        console.log("no hypothetical premises found")
         throw Error("contradiction can't be resolved, no hypothetical premises found " )
     }     
 }
 
 
 function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, complaining_cell: Cell){ 
+    
     if(toDisbelieve.length > 0){
+        console.log("disbelieving premise", toDisbelieve[0])
         //TODO: AFTER THE PREMISES IS OUT, THE VALUE SET STRONGEST VALUE WOULD NOT CONTAIN
         // ITS CORRESPONDING VALUE, HOWEVER, ITS NECESSARY TO FORCE THE CELL TO BE RECALCULATED
         // ONE SMART WAY IS TO SET REACTIVITY FROM PREMISES STORE TO CELL STORE

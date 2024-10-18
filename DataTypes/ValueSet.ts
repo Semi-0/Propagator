@@ -2,7 +2,7 @@
 
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map } from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
@@ -104,8 +104,12 @@ define_generic_procedure_handler(construct_value_set,
     }
 );
 
+
+export function value_set_length<A>(set: ValueSet<A>): number {
+    return set.elements.meta_data.size;
+}
 // ValueSet utilities
-function value_set_equals<A>(set1: ValueSet<A>, set2: ValueSet<A>): boolean {
+export function value_set_equals<A>(set1: ValueSet<A>, set2: ValueSet<A>): boolean {
     return set_every(set1.elements, (elt: A) => set_has(set2.elements, elt)) && set_every(set2.elements, (elt: A) => set_has(set1.elements, elt));
 }
 
@@ -139,8 +143,10 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
     return is_nothing(increment) ? to_value_set(content) : value_set_adjoin(to_value_set(content), increment);
 }
 
+
+
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
-    // TODO: SUBSUME MIGHT NOT WORK HERE!!!
+    // TODO: SUBSTITUTE ELEMENT MIGHT NOT WORK HERE!!!
     // @ts-ignore
     if (set_some(set.elements, (e: LayeredObject) => element_subsumes(e, elt))){
         return set;
@@ -149,10 +155,11 @@ function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: Laye
     }
 }
 
-function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
+export function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
     return (
         value_imples(get_base_value(elt1), get_base_value(elt2)) &&
-        less_than_or_equal(get_support_layer_value(elt1), get_support_layer_value(elt2))
+        (set_smaller_than(get_support_layer_value(elt1), get_support_layer_value(elt2)) || 
+        set_equal(get_support_layer_value(elt1), get_support_layer_value(elt2)))
     );
 }
 
@@ -165,7 +172,7 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
             (acc: LayeredObject, item: LayeredObject) => {
 
                 // console.log("merge_layered, acc: ", acc, "item: ", item)
-                // console.log("result", merge_layered(acc, item))
+                console.log("result", merge_layered(acc, item))
                 return merge_layered(acc, item)},
             the_nothing,
         )

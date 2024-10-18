@@ -58,7 +58,7 @@ var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(mak
 const all_cells: StatefulReactor<Cell[]> = construct_stateful_reactor<Cell[]>([]);
 const all_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
 const all_amb_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
-const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
+export const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
 
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
@@ -76,7 +76,7 @@ function is_propagator(o: any): boolean{
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
         case PublicStateCommand.UPDATE_FAILED_COUNT:
-            console.log("update_failed_count", failed_count.get_value())
+            console.log("update failed count:", failed_count.get_value())
             failed_count.next(failed_count.get_value() + 1)
             break;
         case PublicStateCommand.FORCE_UPDATE_ALL:
@@ -205,6 +205,7 @@ export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessag
 export const observe_cell_array = construct_readonly_reactor(all_cells)
 export const observe_propagator_array = construct_readonly_reactor(all_propagators)
 export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_propagators)
+export const observe_failed_count = construct_readonly_reactor(failed_count)
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
@@ -219,6 +220,7 @@ export const is_equal = construct_simple_generic_procedure("is_equal", 2,
 define_generic_procedure_handler(is_equal,
     all_match(is_layered_object),
     (a: any, b: any) => {
+        // console.log("is_equal:", a, b)
         return layered_deep_equal(a, b);
     }
 )

@@ -16,8 +16,7 @@ import { scheduled_reactive_state } from "../Scheduler";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 import { match_args } from "generic-handler/Predicates";
-import { inspect } from "bun";
-
+import { tap } from "../Reactivity/Reactor";
 // TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
 // WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
 // 2. DEFINE WHAT IS THE STRONGEST VALUE FOR THIS SPECIFIC KIND OF DATASET
@@ -29,14 +28,15 @@ export const general_contradiction = is_layered_contradiction
 
 
 export function handle_cell_contradiction(cell: Cell) {
-  const nogood = pipe(
+  const nogoods = pipe(
     cell,
     cell_strongest_value,
     get_support_layer_value,
   );
   console.log("handling contradiction")
+  console.log("nogood", nogoods)
   
-  process_contradictions(make_better_set([nogood]), cell)
+  process_contradictions(make_better_set([nogoods]), cell)
 }
 
 export const handle_contradiction = handle_cell_contradiction;
@@ -54,17 +54,30 @@ export class Cell{
     pipe(
       this.content,
       map((content: any) => this.testContent(content, this.strongest.get_value())),
+      tap((content: any) => console.log("cell name:", this.relation.get_name())),
+      tap((content: any) => console.log("content update:", content, "previous strongest:", this.strongest.get_value())),
       filter((content: any) => !is_equal(content, this.strongest.get_value())),
-      subscribe((content: any) => this.strongest.next(content))
+      tap((content: any) => console.log("is not equal:")),
+      subscribe((content: any) => {
+        this.strongest.next(content)
+
+    
+        // if (general_contradiction(content)){
+       
+        //   handle_cell_contradiction(this)
+        // }
+      })
     )
 
     this.strongest.subscribe((v: any) => {
+      console.log("strongest value contradiction:", v)
       if (general_contradiction(v)){
+        console.log("contradiction handling:", v)
         handle_cell_contradiction(this)
       }
-    }
+    })
   
-  )
+  
    
     set_global_state(PublicStateCommand.ADD_CELL, this);
     set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
@@ -99,9 +112,12 @@ export class Cell{
 
 
   testContent(content: any, strongest: any): any | null {
+    // console.log("testing content", content)
     const _strongest = strongest_value(content);
     if (general_contradiction(_strongest)){
-      console.log("contradiction: cell name = " + this.getRelation().get_name())
+      // console.log("contradiction: cell name = " + this.getRelation().get_name())
+      // console.log("previous strongest:", strongest)
+      // console.log("contradiction:", _strongest)
       return _strongest;
     }
     else {
@@ -111,7 +127,10 @@ export class Cell{
   }
 
   force_update(){
+    // console.log(this.relation.get_name())
+    // console.log("force update:", this.content.get_value())
     this.content.next(this.content.get_value());
+    // this.strongest.next(this.strongest.get_value());
   }
 
   addNeighbor(propagator: Propagator){
