@@ -70,7 +70,7 @@ export class Cell{
     )
 
     this.strongest.subscribe((v: any) => {
-      console.log("strongest value update!:", v)
+      // console.log("strongest value update!:", v)
       if (general_contradiction(v)){
         // console.log("contradiction handling:", v)
         handle_cell_contradiction(this)

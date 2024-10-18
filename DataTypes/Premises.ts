@@ -14,6 +14,7 @@ import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
 
 import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
+import { execute_all_tasks_simultaneous } from "../Scheduler";
 export enum BeliefState {
     Believed,
     NotBelieved,
@@ -250,12 +251,11 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
     }
 }
 
-export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
-    console.log("make_hypotheticals")
-    console.log("values", values)
-    const peers = set_map(values, (value: A) => {
+export async function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): Promise<BetterSet<string>>{
+
+    const peers = await set_map(values, async (value: A) => {
         console.log("value", value)
-        return _make_hypothetical(output, value)});
+        return await _make_hypothetical(output, value)});
     console.log("peers", peers)
     for_each( (peer: string) => {
         const peer_metadata = _hypothesis_metadata(peer);
@@ -266,7 +266,7 @@ export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): Bette
     return peers;
 }
 
-function _make_hypothetical<A>(output: Cell, value: A): string {
+async function _make_hypothetical<A>(output: Cell, value: A): Promise<string> {
     // ADD VALUE SUPPORT BY HYPOTHESIS TO CELL
     // IN SHORT EACH HYPOTHESIS BECOMES COMBINATION OF VALUES
     // TODO: extend to_string with generic
@@ -315,6 +315,7 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     register_premise(id, output);
     // console.log("add_cell_content",  support_by(value, id))
     add_cell_content(output, support_by(value, id));
+    await execute_all_tasks_simultaneous((error: Error) => {});
     return id;       
 }
 

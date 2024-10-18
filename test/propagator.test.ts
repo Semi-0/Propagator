@@ -4,7 +4,7 @@ import { add_cell_content, Cell, cell_strongest_base_value, cell_strongest_value
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract } from "../BuiltInProps";
 import { kick_out, tell } from "../ui";
 import { get_base_value, is_contradiction, the_contradiction } from "../Cell/CellValue";
-import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute } from "../Scheduler";
+import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Scheduler";
 import { set_global_state } from "../PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
 import { PublicStateCommand } from "../PublicState";
@@ -127,13 +127,13 @@ test.only("tell a single cell multiple times should keep all values but the stro
     const product = new Cell("product");
 
     p_multiply(x, y, product);
-
     const numValues = 100;
     const values: number[] = [];
     const premises: string[] = [];
 
-    set_immediate_execute(true)
+    // set_immediate_execute(true)
 
+    console.log("prerun")
     let i = 0;
     while (i < numValues) {
         
@@ -143,6 +143,8 @@ test.only("tell a single cell multiple times should keep all values but the stro
         add_cell_content(x, value)
 
         console.log(summarize_scheduler_state())
+
+        await execute_all_tasks_simultaneous((error: Error) => {});
 
         // await new Promise<void>(resolve => {
         //     setTimeout(() => {
@@ -158,7 +160,7 @@ test.only("tell a single cell multiple times should keep all values but the stro
         i++;
     }
 
-    await execute_all_tasks_sequential((error: Error) => {}).task;
+    await execute_all_tasks_simultaneous((error: Error) => {});
     console.log(summarize_scheduler_state())
     // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
     console.log("value set length", value_set_length(x.getContent().get_value()))
@@ -175,7 +177,7 @@ test.only("tell a single cell multiple times should keep all values but the stro
     console.log("Added values:", values);
     console.log("Used premises:", premises);
 
-    set_immediate_execute(false)
+    // set_immediate_execute(false)
 });
 
 
