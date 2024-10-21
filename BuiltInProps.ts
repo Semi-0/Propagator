@@ -3,6 +3,14 @@ import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
 import { merge,  type Reactor } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { not } from "./Cell/GenericArith";
+
+
+export const p_not = primitive_propagator((input: any) => {
+
+    return not(input);
+}, "not");
 
 export const p_add =  primitive_propagator((...inputs: any[]) => {
     const result = inputs.slice(1).reduce((acc, curr) => add(acc, curr), inputs[0]);

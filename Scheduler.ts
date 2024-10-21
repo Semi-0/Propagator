@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export interface Scheduler{
     schedule: (f: () => Promise<void>) => void;
     execute_sequential: (error_handler: (e: Error) => void) => ExecutionHandler;
-    execute_simultaneous: (error_handler: (e: Error) => void) => void;
+    execute_simultaneous: (error_handler: (e: Error) => void) => ExecutionHandler;
     steppable_run:  (error_handler: (e: Error) => void) => void;
     summarize: () => string;
     clear_all_tasks: () => void;
@@ -116,14 +116,11 @@ export function simple_scheduler(): Scheduler {
 
     function execute_sequential(error_handler: (e: Error) => void): ExecutionHandler {
         let running = true;
-        let currentTask: Promise<void> | null = null;
 
         async function exec() {
             while (queue.length !== 0 && running) {
                 const [taskId, task] = dequeue();
-                currentTask = execute_task(taskId, task, error_handler)();
-                await currentTask;
-                currentTask = null;
+                await execute_task(taskId, task, error_handler)();
             }
         }
 
@@ -131,33 +128,28 @@ export function simple_scheduler(): Scheduler {
 
         return construct_execution_handler(promise, () => {
             running = false;
-            if (currentTask) {
-                // If there's a task in progress, we can't cancel it,
-                // but we can prevent further tasks from starting.
-            }
+
         });
     }
 
-    async function execute_simultaneous(error_handler: (e: Error) => void){
-        var running = true
-        async function exec(){
-            if (running){
-                const tasksToExecute = [...queue];
+    function execute_simultaneous(error_handler: (e: Error) => void): ExecutionHandler {
+        let running = true;
+
+        async function exec() {
+            while (running && queue.length > 0) {
+                const tasksToExecute = queue.map(task => execute_task(task[0], task[1], error_handler)());
                 queue = []; // Clear the queue immediately
-                const tasks = tasksToExecute.map(async ([taskId, f]) => {
-                    execute_task(taskId, f, error_handler)()
-                });
 
-                await Promise.all(tasks);
+                await Promise.all(tasksToExecute);
             }
-        }
-        while (queue.length !== 0){
-            await exec()
+            running = false;
         }
 
-        return () => {
-            running = false
-        }
+        const exec_promise = exec(); // Start execution
+
+        return construct_execution_handler(exec_promise, () => {
+            running = false;
+        });
     }
 
     function steppable_run(error_handler: (e: Error) => void){ 
@@ -209,7 +201,7 @@ export function execute_all_tasks_sequential(error_handler: (e: Error) => void) 
     return SimpleScheduler.execute_sequential(error_handler)
 }
 
-export async function execute_all_tasks_simultaneous(error_handler: (e: Error) => void) {
+export function execute_all_tasks_simultaneous(error_handler: (e: Error) => void) {
     return SimpleScheduler.execute_simultaneous(error_handler)
 }
 

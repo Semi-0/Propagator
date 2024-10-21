@@ -3,10 +3,17 @@ import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { is_equal } from "../PublicState";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
+var trace_merge = false; 
+
+export function set_trace_merge(trace: boolean){
+    trace_merge = trace;
+}
 
 export const generic_merge = construct_simple_generic_procedure("merge", 2,
     (content: any, increment: any) => {
-        // console.log("merging")
+        if (trace_merge) {
+            console.log("merging", content, increment)
+        }
         if (is_nothing(content)) {
             return increment
         }
@@ -23,8 +30,6 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
             return content
         }
         else {
-            
-           
             return the_contradiction
         }
     }

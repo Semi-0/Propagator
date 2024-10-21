@@ -16,6 +16,7 @@ import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 import { match_args } from "generic-handler/Predicates";
 import { tap } from "../Reactivity/Reactor";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 // TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
 // WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
 // 2. DEFINE WHAT IS THE STRONGEST VALUE FOR THIS SPECIFIC KIND OF DATASET
@@ -94,8 +95,10 @@ export class Cell{
   }
 
   addContent(increment:any){
-
-    this.content.next(cell_merge(this.content.get_value(), increment));
+    console.log("before merge", to_string(this.content.get_value()), to_string(increment))
+    const result = cell_merge(this.content.get_value(), increment);
+    console.log("merged", to_string(result))
+    this.content.next(result);
   }
 
 
@@ -145,6 +148,7 @@ export function add_cell_neighbour(cell: Cell, propagator: Propagator){
 }
 
 export function add_cell_content(cell: Cell, content: any){
+  console.log("add_cell_content", cell.summarize())
   cell.addContent(content);
 }
 

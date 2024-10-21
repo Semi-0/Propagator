@@ -77,6 +77,24 @@ test("combineLatest", () => {
     expect(observer).toHaveBeenCalledWith([3, 4]);
 });
 
+test("combineLatest with single input", () => {
+    const reactor1 = construct_reactor<number>();
+
+    const combinedReactor = combine_latest<number>(reactor1);
+
+    const observer = jest.fn((...args: any[]) => {
+        console.log("args", args)
+    });
+    combinedReactor.subscribe(observer);
+
+    reactor1.next(1);
+    reactor1.next(3);
+
+    expect(observer).toHaveBeenCalledTimes(2);
+    expect(observer).toHaveBeenNthCalledWith(1, [1]);
+    expect(observer).toHaveBeenNthCalledWith(2, [3]);
+});
+
 test("zip", () => {
     const reactor1 = construct_reactor<number>();
     const reactor2 = construct_reactor<string>();
@@ -138,4 +156,3 @@ test("compact_map", () => {
     expect(observer).toHaveBeenNthCalledWith(2, 4);
     expect(observer).toHaveBeenNthCalledWith(3, 6);
 });
-

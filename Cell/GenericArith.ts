@@ -5,7 +5,7 @@ import { add as _add, subtract as _subtract, multiply as _multiply, divide as _d
 import { all_match, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_layered_object  as _is_layered_object} from "sando-layer/Basic/LayeredObject";
 
 
@@ -78,6 +78,10 @@ export const layered_multiply = make_layered_procedure("layered_multiply", 2, (x
 
 export const layered_divide = make_layered_procedure("layered_divide", 2, (x: any, y: any) => _divide(x, y))
 
+export const layered_not = make_layered_procedure("layered_not", 1, (x: any) => !x)
+
+const _not = construct_simple_generic_procedure("not", 1, (x: any) => !x)
+
 define_generic_procedure_handler(_add,
     all_match(is_layered_object),
     (a: any, b: any) => {
@@ -107,8 +111,16 @@ define_generic_procedure_handler(_divide,
     }
 )
 
+define_generic_procedure_handler(_not,
+    all_match(is_layered_object),
+    (a: any) => {
+        return layered_not(a)
+    }
+)
+
 export const add = _add
 export const subtract = _subtract
 export const multiply = _multiply
 export const divide = _divide
+export const not = _not
 
