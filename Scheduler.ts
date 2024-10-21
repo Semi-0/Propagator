@@ -26,11 +26,29 @@ function construct_execution_handler(task: Promise<void>, cancel: () => void): E
 }
 
 
-var debug_scheduler = false; 
+var trace_scheduler = false; 
+var trace_new_scheduled_task = false; 
+var trace_executed_task = false;  
+var trace_scheduler_state_updates = false; 
 
-export function configure_debug_scheduler(debug: boolean){
-    debug_scheduler = debug;
+export function configure_trace_scheduler(trace: boolean){
+    trace_scheduler = trace;
+    trace_new_scheduled_task = trace;
+    trace_executed_task = trace;
+    trace_scheduler_state_updates = trace;
 }
+
+export function configure_trace_new_scheduled_task(trace: boolean){
+    trace_new_scheduled_task = trace;
+} 
+
+export function configure_trace_executed_task(trace: boolean){
+    trace_executed_task = trace;
+} 
+
+export function configure_trace_scheduler_state_updates(trace: boolean){
+    trace_scheduler_state_updates = trace;
+} 
 
 export function simple_scheduler(): Scheduler {
     var queue: Array<[string, () => Promise<void>]> = []
@@ -44,7 +62,7 @@ export function simple_scheduler(): Scheduler {
         queue.push([taskId, f]);
 
 
-        if (debug_scheduler){
+        if (trace_new_scheduled_task){
             console.log("scheduled", taskId)
         }
 
@@ -78,8 +96,12 @@ export function simple_scheduler(): Scheduler {
         return async () => {
             try {
 
-                if (debug_scheduler){
+                if (trace_executed_task){
                     console.log("executing", taskId)
+                }
+
+                if (trace_scheduler_state_updates){
+                    console.log("state:", summarize())
                 }
 
                 await task();

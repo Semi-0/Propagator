@@ -5,7 +5,7 @@ import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../BuiltInProps";
 import { configure_log_process_contradictions, find_premise_to_choose } from "../Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
-import { clear_all_tasks, configure_debug_scheduler, execute_all_tasks_sequential } from "../Scheduler";
+import { clear_all_tasks, execute_all_tasks_sequential } from "../Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { observe_cell, tell } from "../ui";
 import { set_merge } from "@/cell/Merge";

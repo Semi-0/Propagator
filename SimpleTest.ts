@@ -3,7 +3,7 @@ import { Cell, test_cell_content, track_content, track_strongest } from "./Cell/
 import { force_load_arithmatic } from "./Cell/GenericArith";
 import { c_add, c_multiply, p_add, p_multiply } from "./BuiltInProps";
 import { configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Search";
-import { execute_all_tasks_sequential, steppable_run_task, summarize_scheduler_state } from "./Scheduler";
+import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, steppable_run_task, summarize_scheduler_state } from "./Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
 import { failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./PublicState";
 import { merge_value_sets } from "./DataTypes/ValueSet";
@@ -32,19 +32,20 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 configure_log_amb_choose(true);
 configure_log_process_contradictions(true);
+configure_trace_scheduler_state_updates(true);
 // configure_log_nogoods(true);
 
 const x = new Cell("x");
 const y = new Cell("y");
 const z = new Cell("z"); 
 
-// track_strongest(y).subscribe((value: any) => {
-//     console.log("x strongest", to_string(value))
-// })
+track_strongest(z).subscribe((value: any) => {
+    console.log("x strongest", to_string(value))
+})
 
-// track_content(z).subscribe((value: any) => {
-//     console.log("z content", to_string(value))
-// })
+track_content(z).subscribe((value: any) => {
+    console.log("z content", to_string(value))
+})
 
 const x2 = new Cell("x2");
 const y2 = new Cell("y2");
