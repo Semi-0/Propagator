@@ -3,9 +3,9 @@ import { Cell, track_content } from "../Cell/Cell";
 import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals, summarize_premises_list, premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../BuiltInProps";
-import { find_premise_to_choose } from "../search";
+import { configure_log_process_contradictions, find_premise_to_choose } from "../Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
-import { execute_all_tasks_sequential } from "../Scheduler";
+import { clear_all_tasks, execute_all_tasks_sequential } from "../Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { observe_cell, tell } from "../ui";
 import { set_merge } from "@/cell/Merge";
@@ -13,21 +13,26 @@ import { PublicStateCommand, set_global_state } from "../PublicState";
 import { merge_value_sets, value_set_length } from "../DataTypes/ValueSet";
 import { subscribe } from "../Reactivity/Reactor";
 import { type PremiseMetaData } from "../DataTypes/Premises";
-import { mark_only_chosen_premise } from "../search";
+import { mark_only_chosen_premise } from "../Search";
 let a: Cell, b: Cell, sum: Cell;
 
-beforeEach(() => {
-    set_global_state(PublicStateCommand.CLEAN_UP);
-    set_merge(merge_value_sets);
 
-    // Set up cells
-    a = new Cell("a");
-    b = new Cell("b");
-    sum = new Cell("sum");
-    p_add(a, b, sum);
-});
 
 describe("Premises and Hypotheticals", () => {
+
+    beforeEach(() => {
+
+        set_global_state(PublicStateCommand.CLEAN_UP);
+        clear_all_tasks();
+        set_merge(merge_value_sets);
+
+        // Set up cells
+        a = new Cell("a");
+        b = new Cell("b");
+        sum = new Cell("sum");
+        p_add(a, b, sum);
+});
+
     it("should trigger premises_has_changed when premise state changes", async () => {
         let triggered = false;
 
@@ -49,18 +54,8 @@ describe("Premises and Hypotheticals", () => {
     });
 
     it("hypotheticals should all been added to cell content", async () => {
-
-        track_premise();
-        track_content(a).subscribe((content) => {
-            console.log("add contented", content);
-        })
-
         make_hypotheticals(a, make_better_set([1, 2, 3, 4, 5, 6]));
-        // await execute_all_tasks_sequential((error: Error) => {
-        //     console.error("Error during task execution:", error);
-        // }).task;
 
-        // console.log("a content", a.getContent().get_value());
         expect(value_set_length(a.getContent().get_value())).toBe(7)
     })
 
@@ -76,7 +71,10 @@ describe("Premises and Hypotheticals", () => {
         expect(cell_strongest_base_value(sum)).toBe(3);
     });
 
-    it("should handle contradictions with hypotheticals", async () => {
+    it.only("should handle contradictions with hypotheticals", async () => {
+        configure_log_process_contradictions(true);
+        track_premise();
+
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1, 2, 3]));
         tell(b, 2, "b_value");
         tell(sum, 6, "sum_value");
@@ -149,8 +147,6 @@ describe("Premises and Hypotheticals", () => {
         
 
         expect(premises_is_changed).toBe(true);
-        // console.log("a content", a.getContent().get_value());
-        // console.log("a strongest", a.getStrongest().get_value());
-        // console.log("sum strongest", sum.getStrongest().get_value());
+ 
     });
 });

@@ -13,6 +13,9 @@ export const for_each = construct_simple_generic_procedure("for_each", 2,
     }
 )
 
+
+
+
 define_generic_procedure_handler(for_each,
 match_args(is_better_set, is_function),
 (set: BetterSet<any>, procedure: (a: any) => any) => {

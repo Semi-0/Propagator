@@ -38,6 +38,7 @@ export class ValueSet<A> {
     }
 }
 
+
 // Predicates and handlers
 const is_value_set = register_predicate("is_value_set", (value: any) => value instanceof ValueSet);
 
@@ -54,6 +55,11 @@ define_generic_procedure_handler(to_string,
         const values = keys.map(key => to_string(meta_data.get(key)));
         return `${values.join(", ")}`;
     }
+);
+
+define_generic_procedure_handler(to_string,
+    match_args(is_value_set),
+    (set: ValueSet<any>) => set.toString()
 );
 
 // ValueSet operations

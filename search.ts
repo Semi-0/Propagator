@@ -17,7 +17,7 @@ import { inspect } from "bun";
 
 var log_amb_choose = false; 
 var log_process_contradictions = false;
-
+var log_nogoods = false;
 
 export function configure_log_process_contradictions(debug: boolean){
     log_process_contradictions = debug;
@@ -27,9 +27,15 @@ export function configure_log_amb_choose(debug: boolean){
     log_amb_choose = debug;
 }
 
+export function configure_log_nogoods(debug: boolean){
+    log_nogoods = debug;
+}
+
+
 export function configure_debug_search(debug: boolean){
     configure_log_process_contradictions(debug);
     configure_log_amb_choose(debug);
+    configure_log_nogoods(debug);
 }
 
 
@@ -147,9 +153,13 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    maybe_kick_out([toDisbelieve], nogood, complaining_cell)
 
    if (log_process_contradictions){
+        console.log("complaining cell", complaining_cell.summarize())
         console.log("processing contradictions")
-        console.log("nogoods", nogoods)
         console.log("disbelieved premise", toDisbelieve)
+   }
+
+   if(log_nogoods){
+        console.log("nogoods", nogoods, " complaining cell: ",  complaining_cell.getRelation().get_name())
    }
 }
 

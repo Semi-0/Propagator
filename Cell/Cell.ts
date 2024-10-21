@@ -8,7 +8,7 @@ import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
-import { process_contradictions } from "../search";
+import { process_contradictions } from "../Search";
 import { construct_better_set, make_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
@@ -36,6 +36,7 @@ export function handle_cell_contradiction(cell: Cell) {
   
   process_contradictions(make_better_set([nogoods]), cell)
 }
+
 
 export const handle_contradiction = handle_cell_contradiction;
 

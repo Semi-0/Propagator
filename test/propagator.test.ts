@@ -1,4 +1,4 @@
-import { expect, test, jest, beforeEach, afterEach } from "bun:test"; 
+import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
 import { add_cell_content, Cell, cell_strongest_base_value, cell_strongest_value } from "../Cell/Cell";
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract } from "../BuiltInProps";
@@ -19,271 +19,266 @@ beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
     set_merge(merge_value_sets)
 })
+describe("test propagator", () => {
+    test("c_multiply is propoerly working with value set", async () => {
 
-test("c_multiply is propoerly working with value set", async () => {
+
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
+        
+        c_multiply(x, y, product);
 
 
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
+
+        tell(x, 8, "fst");
+
+
+        tell(product, 40, "snd");
+
+
+    await  execute_all_tasks_sequential((error: Error) => {
+        }).task
+        
     
-    c_multiply(x, y, product);
+            expect(cell_strongest_base_value(y)).toBe(5);
+    })
+
+
+    test("causing contradiction", async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
+        
+        c_multiply(x, y, product);
 
 
 
-    tell(x, 8, "fst");
+        tell(x, 8, "fst");
 
 
-    tell(product, 40, "snd");
+        tell(product, 40, "snd");
 
 
-   await  execute_all_tasks_sequential((error: Error) => {
-    }).task
+        await execute_all_tasks_sequential((error: Error) => {
+        }).task
+        
     
-   
         expect(cell_strongest_base_value(y)).toBe(5);
-})
 
 
-test("causing contradiction", async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-    
-    c_multiply(x, y, product);
+        tell(product, 5, "red");
 
+        await execute_all_tasks_sequential((error: Error) => {}).task
 
+        expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
+    }) 
 
-    tell(x, 8, "fst");
-
-
-    tell(product, 40, "snd");
-
-
-    await execute_all_tasks_sequential((error: Error) => {
-    }).task
-    
-   
-    expect(cell_strongest_base_value(y)).toBe(5);
-
-
-    tell(product, 5, "red");
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
-}) 
-
-test("kick out resolve contradiction", async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-    
-    c_multiply(x, y, product);
-
-
-
-    tell(x, 8, "fst");
-
-
-    tell(product, 40, "snd");
-
-
-    await execute_all_tasks_sequential((error: Error) => {
-    }).task
-    
-   
-    expect(cell_strongest_base_value(y)).toBe(5);
-
-
-    tell(product, 5, "red");
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
-
-    kick_out("red")
-
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(is_contradiction(cell_strongest_base_value(product))).toBe(false)
-}) 
-
-
-test("tell a single cell multiple times should keep all values but the strongest value should be contradiction", async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-
-    p_multiply(x, y, product);
-    const numValues = 100;
-    const values: number[] = [];
-    const premises: string[] = [];
-
-    // set_immediate_execute(true)
-
-    let i = 0;
-    while (i < numValues) {
+    test("kick out resolve contradiction", async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
         
-        const value = i; // Random integer between 1 and 10
-        const premise = randomUUID();
-        
-        add_cell_content(x, value)
+        c_multiply(x, y, product);
 
+
+
+        tell(x, 8, "fst");
+
+
+        tell(product, 40, "snd");
+
+
+        await execute_all_tasks_sequential((error: Error) => {
+        }).task
+        
+    
+        expect(cell_strongest_base_value(y)).toBe(5);
+
+
+        tell(product, 5, "red");
+
+        await execute_all_tasks_sequential((error: Error) => {}).task
+
+        expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
+
+        kick_out("red")
+
+
+        await execute_all_tasks_sequential((error: Error) => {}).task
+
+        expect(is_contradiction(cell_strongest_base_value(product))).toBe(false)
+    }) 
+
+
+    test("tell a single cell multiple times should keep all values but the strongest value should be contradiction", async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
+
+        p_multiply(x, y, product);
+        const numValues = 100;
+        const values: number[] = [];
+        const premises: string[] = [];
+
+        // set_immediate_execute(true)
+
+        let i = 0;
+        while (i < numValues) {
+            
+            const value = i; // Random integer between 1 and 10
+            const premise = randomUUID();
+            
+            add_cell_content(x, value)
+
+
+            await execute_all_tasks_simultaneous((error: Error) => {});
+
+            // await new Promise<void>(resolve => {
+            //     setTimeout(() => {
+            //         console.log("tell", value, premise);
+            //         resolve(); // Resolve the promise after the timeout
+            //     }, 300); // Adjust the delay as needed (e.g., 1000 for 1 second)
+            // });
+
+
+
+            values.push(value);
+            premises.push(premise);
+            i++;
+        }
 
         await execute_all_tasks_simultaneous((error: Error) => {});
+        // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
+        expect(value_set_length(x.getContent().get_value())).toBe(numValues + 1); // +1 for the contradiction value
 
-        // await new Promise<void>(resolve => {
-        //     setTimeout(() => {
-        //         console.log("tell", value, premise);
-        //         resolve(); // Resolve the promise after the timeout
-        //     }, 300); // Adjust the delay as needed (e.g., 1000 for 1 second)
-        // });
+ 
+    });
 
 
+    test('primitive propagator is working with multiply', async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
 
-        values.push(value);
-        premises.push(premise);
-        i++;
-    }
-
-    await execute_all_tasks_simultaneous((error: Error) => {});
-    // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
-    expect(value_set_length(x.getContent().get_value())).toBe(numValues + 1); // +1 for the contradiction value
-
-    // Optionally, you can check if all the values are present in the cell's content
-    // const cellContent = x.getContent().get_value();
-    // values.forEach(value => {
-    //     expect(cellContent.has(value)).toBe(true);
-    // });
+        p_multiply(x, y, product)
 
 
-    // set_immediate_execute(false)
-});
+        tell(x, 8, "fst");
+        tell(y, 5, "snd")
+
+        await execute_all_tasks_sequential((error: Error) => {}).task
+
+        expect(cell_strongest_base_value(product)).toBe(40)
+
+    })
 
 
-test('primitive propagator is working with multiply', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
+    test('primitive propagator is working with subtract', async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
 
-    p_multiply(x, y, product)
-
-
-    tell(x, 8, "fst");
-    tell(y, 5, "snd")
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(cell_strongest_base_value(product)).toBe(40)
-
-})
+        p_subtract(x, y, product)
 
 
-test('primitive propagator is working with subtract', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
+        tell(x, 8, "fst");
+        tell(y, 2, "snd")
 
-    p_subtract(x, y, product)
+        await execute_all_tasks_sequential((error: Error) => {}).task
 
+        expect(cell_strongest_base_value(product)).toBe(6)
 
-    tell(x, 8, "fst");
-    tell(y, 2, "snd")
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(cell_strongest_base_value(product)).toBe(6)
-
-})
+    })
 
 
 
-test('primitive propagator is working with divide', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
+    test('primitive propagator is working with divide', async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
 
-    p_divide(x, y, product)
-
-
-    tell(x, 8, "fst");
-    tell(y, 2, "snd")
-
-    await execute_all_tasks_sequential((error: Error) => {}).task
-
-    expect(cell_strongest_base_value(product)).toBe(4)
-
-})
-
-test('primitive propagator is working with add', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-
-    p_add(x, y, product)
+        p_divide(x, y, product)
 
 
-    tell(x, 8, "fst");
-    tell(y, 2, "snd")
+        tell(x, 8, "fst");
+        tell(y, 2, "snd")
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+        await execute_all_tasks_sequential((error: Error) => {}).task
 
-    expect(cell_strongest_base_value(product)).toBe(10)
+        expect(cell_strongest_base_value(product)).toBe(4)
 
-})
+    })
 
+    test('primitive propagator is working with add', async () => {
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
 
-test('contradiction is properly propagated with primitive propagator', async () => {
-    
-
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-
-    p_add(x, y, product)
+        p_add(x, y, product)
 
 
-    tell(x, 8, "fst");
-    // tell(y, 2, "snd")
-    // tell(product, 12, "third")
+        tell(x, 8, "fst");
+        tell(y, 2, "snd")
 
-    // await execute_all_tasks_sequential((error: Error) => {}).task
+        await execute_all_tasks_sequential((error: Error) => {}).task
 
-    // expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
-    
-    // const support_value = get_support_layer_value(cell_strongest_value(product))
-    // expect(set_get_length(support_value)).toBe(3)
+        expect(cell_strongest_base_value(product)).toBe(10)
 
-    // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
-})
-
-test('contradiction would be activated in primitive propagator', async () => {
-
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const product = new Cell("product");
-
-    p_add(x, y, product)
+    })
 
 
-    tell(x, 8, "fst");
-    tell(y, 2, "snd")
-    
+    test('contradiction is properly propagated with primitive propagator', async () => {
+        
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
 
-    tell(product, 12, "third")
+        p_add(x, y, product)
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
 
-    expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
-    
-    const support_value = get_support_layer_value(cell_strongest_value(product))
-    expect(set_get_length(support_value)).toBe(3)
+        tell(x, 8, "fst");
+        // tell(y, 2, "snd")
+        // tell(product, 12, "third")
 
-    // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+        // await execute_all_tasks_sequential((error: Error) => {}).task
+
+        // expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
+        
+        // const support_value = get_support_layer_value(cell_strongest_value(product))
+        // expect(set_get_length(support_value)).toBe(3)
+
+        // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+    })
+
+    test('contradiction would be activated in primitive propagator', async () => {
+
+        const x = new Cell("x");
+        const y = new Cell("y");
+        const product = new Cell("product");
+
+        p_add(x, y, product)
+
+
+        tell(x, 8, "fst");
+        tell(y, 2, "snd")
+        
+
+        await execute_all_tasks_sequential((error: Error) => {}).task
+
+        tell(product, 12, "third")
+
+        await execute_all_tasks_sequential((error: Error) => {}).task
+
+        expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
+        
+        const support_value = get_support_layer_value(cell_strongest_value(product))
+        expect(set_get_length(support_value)).toBe(3)
+
+        // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+    })
+
 })
 // test("test kicking", async () => {
 //     const x = new Cell("x");

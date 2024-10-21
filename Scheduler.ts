@@ -87,7 +87,7 @@ export function simple_scheduler(): Scheduler {
             } catch (e) {
                 error_handler(e as Error);
                 // Optionally re-throw the error if you want it to propagate
-                // throw e;
+                throw e;
             }
         }
     }
@@ -157,6 +157,11 @@ export function simple_scheduler(): Scheduler {
 }
 
 export const SimpleScheduler = simple_scheduler()
+
+
+export function clear_all_tasks(){
+    SimpleScheduler.clear_all_tasks()
+}
 
 export function summarize_scheduler_state(){
     return SimpleScheduler.summarize()
