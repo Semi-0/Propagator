@@ -14,7 +14,7 @@ import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
 
 import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
-import { execute_all_tasks_simultaneous } from "../Scheduler";
+import { execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
 export enum BeliefState {
     Believed,
     NotBelieved,
@@ -64,7 +64,7 @@ export class PremiseMetaData {
     
         // TODO: force update propagators
         premises_has_changed.next(true);
-       //TODO:  alert amb propagator
+       //TODO:  alert amb propagatorm
     }
 
     get_roots(): BetterSet<any>{
@@ -87,15 +87,15 @@ export class PremiseMetaData {
         return `${this.name}: ${this.belief_state}`;
     }
 
-}
+}////////////////
 
 // TODO: maybe using a map could making altering quicker 
 export var premises_list : StatefulReactor<Map<string, PremiseMetaData>> = construct_stateful_reactor(new Map()); 
-var premises_has_changed: StandardReactor<boolean> = construct_reactor();
+//@ts-ignore
+var premises_has_changed: StandardReactor<boolean> = scheduled_reactor<boolean>();
 var track_premises_changed: boolean = false;
 
 export function summarize_premises_list(): string {
-    console.log("caught summarize")
     const premisesMap = premises_list.get_value();
     const summaries: string[] = [];
     
@@ -306,8 +306,9 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
         summarize,
         get_id,
     }
-
-    console.log("registered hypothetical", "name:", id, "value:", value)
+    if (track_premises_changed){
+        console.log("add hypothetical", id)
+    }
 
     set_global_state(PublicStateCommand.ADD_CHILD, relation, output)
     register_hypothesis(id, self)

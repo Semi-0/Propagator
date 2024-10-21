@@ -25,6 +25,13 @@ function construct_execution_handler(task: Promise<void>, cancel: () => void): E
     }
 }
 
+
+var debug_scheduler = false; 
+
+export function configure_debug_scheduler(debug: boolean){
+    debug_scheduler = debug;
+}
+
 export function simple_scheduler(): Scheduler {
     var queue: Array<[string, () => Promise<void>]> = []
     var executed: Map<string, () => Promise<void>> = new Map()
@@ -35,6 +42,12 @@ export function simple_scheduler(): Scheduler {
     function schedule(f: () => Promise<void>) {
         const taskId = uuidv4();
         queue.push([taskId, f]);
+
+
+        if (debug_scheduler){
+            console.log("scheduled", taskId)
+        }
+
         if (immediate_execute) {
             execute_sequential(error_handler => {
                 console.error("Error during immediate execution:", error_handler);
@@ -64,6 +77,11 @@ export function simple_scheduler(): Scheduler {
     function execute_task(taskId: string, task: () => Promise<void>, error_handler: (e: Error) => void): () => Promise<void> {
         return async () => {
             try {
+
+                if (debug_scheduler){
+                    console.log("executing", taskId)
+                }
+
                 await task();
                 executed.set(taskId, task);
             } catch (e) {
@@ -80,7 +98,6 @@ export function simple_scheduler(): Scheduler {
 
         async function exec() {
             while (queue.length !== 0 && running) {
-                console.log("executing sequential: ", queue.length)
                 const [taskId, task] = dequeue();
                 currentTask = execute_task(taskId, task, error_handler)();
                 await currentTask;
@@ -173,7 +190,7 @@ export function steppable_run_task(error_handler: (e: Error) => void) {
       SimpleScheduler.steppable_run(error_handler)
 }
 
-export const scheduled_reactor = construct_scheduled_reactor(SimpleScheduler.schedule)
+export const scheduled_reactor = construct_scheduled_reactor<any>(SimpleScheduler.schedule)
 
 export const scheduled_reactive_state = construct_scheduled_stateful_reactor(SimpleScheduler.schedule)
 

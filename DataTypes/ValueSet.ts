@@ -16,6 +16,7 @@ import { map, filter, reduce } from "generic-handler/built_in_generics/generic_a
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
 import { generic_merge, merge_layered } from "../Cell/Merge";
+import { guard } from "generic-handler/built_in_generics/other_generic_helper";
 // ValueSet class definition
 export class ValueSet<A> {
     elements: BetterSet<A>;
@@ -106,6 +107,9 @@ define_generic_procedure_handler(construct_value_set,
 
 
 export function value_set_length<A>(set: ValueSet<A>): number {
+    guard(is_value_set(set), () => {
+        throw new Error("Expected a ValueSet, got: " + set);
+    });
     return set.elements.meta_data.size;
 }
 // ValueSet utilities
@@ -167,16 +171,12 @@ function strongest_consequence<A>(set: ValueSet<A>): A {
     return pipe(
         set.elements,
         (elements) => filter(elements, (elt: LayeredObject) => {
-            // console.log("elt: ", is_layered_object(elt) ?  elt.describe_self() : elt)
-            // console.log("elt in: ", is_premises_in(get_support_layer_value(elt)))
             return is_premises_in(get_support_layer_value(elt))
         }),
         (filtered) => reduce(
             filtered,
             (acc: LayeredObject, item: LayeredObject) => {
 
-                // console.log("merge_layered, acc: ", acc, "item: ", item)
-                // console.log("result", merge_layered(acc, item).describe_self())
                 return merge_layered(acc, item)},
             the_nothing,
         )

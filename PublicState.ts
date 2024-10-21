@@ -76,7 +76,7 @@ function is_propagator(o: any): boolean{
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
         case PublicStateCommand.UPDATE_FAILED_COUNT:
-            console.log("update failed count:", failed_count.get_value())
+          
             failed_count.next(failed_count.get_value() + 1)
             break;
         case PublicStateCommand.FORCE_UPDATE_ALL:

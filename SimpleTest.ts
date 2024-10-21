@@ -1,8 +1,8 @@
 // import { isNumber } from "effect/Predicate";
 import { Cell, test_cell_content } from "./Cell/Cell";
-import { do_nothing, kick_out, monitor_change, observe_cell, tell } from "./ui";
 import { force_load_arithmatic } from "./Cell/GenericArith";
-import { c_add, c_multiply, p_add, p_amb, p_multiply } from "./BuiltInProps";
+import { c_add, c_multiply, p_add, p_multiply } from "./BuiltInProps";
+import { p_amb } from "./search";
 import { execute_all_tasks_sequential, steppable_run_task, summarize_scheduler_state } from "./Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
 import { failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./PublicState";
@@ -17,9 +17,9 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 // track_premise();
 
-const log_in_console = observe_cell((str: string) => console.log(str));
+// const log_in_console = observe_cell((str: string) => console.log(str));
 
-monitor_change(do_nothing, log_in_console);
+// monitor_change(do_nothing, log_in_console);
 
 observe_failed_count.subscribe((count: number) => {
     console.log("failed count", count)
@@ -70,9 +70,9 @@ p_add(x, y, z)
 
 //TODO: SEEMS CONTRADICTION IS NOT ACTIVATED
 
-await execute_all_tasks_sequential(() => {
-    console.log("done")
-}).task
+// await execute_all_tasks_sequential(() => {
+//     console.log("done")
+// }).task
 
 // for (let i = 0; i < 37111; i++){
 //     console.log(i)
@@ -82,10 +82,10 @@ await execute_all_tasks_sequential(() => {
 //     })
 // }
 
-console.log("failed count:", failed_count.get_value())
-console.log("x:" + x.summarize())
-console.log("y:" + y.summarize())
-console.log("z:" + z.summarize())
+// console.log("failed count:", failed_count.get_value())
+// console.log("x:" + x.summarize())
+// console.log("y:" + y.summarize())
+// console.log("z:" + z.summarize())
 
 // c_multiply(x, y, z)
 

@@ -1,15 +1,14 @@
 import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
 import { Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { combine_latest, compact_map,  construct_stateful_reactor,  filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
+import {   construct_stateful_reactor, filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
-import { process_contradictions } from "../BuiltInProps";
+import { process_contradictions } from "../search";
 import { construct_better_set, make_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
@@ -27,14 +26,13 @@ export const general_contradiction = is_layered_contradiction
 
 
 
+
 export function handle_cell_contradiction(cell: Cell) {
   const nogoods = pipe(
     cell,
     cell_strongest_value,
     get_support_layer_value,
   );
-  console.log("handling contradiction")
-  console.log("nogood", nogoods)
   
   process_contradictions(make_better_set([nogoods]), cell)
 }
@@ -45,7 +43,7 @@ export const handle_contradiction = handle_cell_contradiction;
 export class Cell{
   private relation : Relation 
   private neighbors : Map<string, Propagator> = new Map();
-  private content : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
+  private content : StatefulReactor<any> = construct_stateful_reactor(the_nothing);
   private strongest : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
 
   constructor(name: string){
@@ -54,25 +52,15 @@ export class Cell{
     pipe(
       this.content,
       map((content: any) => this.testContent(content, this.strongest.get_value())),
-      // tap((content: any) => console.log("cell name:", this.relation.get_name())),
-      // tap((content: any) => console.log("content update:", content, "previous strongest:", this.strongest.get_value())),
       filter((content: any) => !is_equal(content, this.strongest.get_value())),
-      // tap((content: any) => console.log("is not equal:")),
       subscribe((content: any) => {
         this.strongest.next(content)
 
-    
-        // if (general_contradiction(content)){
-       
-        //   handle_cell_contradiction(this)
-        // }
       })
     )
 
     this.strongest.subscribe((v: any) => {
-      // console.log("strongest value update!:", v)
       if (general_contradiction(v)){
-        // console.log("contradiction handling:", v)
         handle_cell_contradiction(this)
       }
     })
@@ -85,7 +73,6 @@ export class Cell{
 
   observe_update(observer:(cellValues: any) => void){
     this.strongest.subscribe(observer);
-    // combine_latest(this.content, this.strongest).subscribe(observer);
   }
 
   getRelation(){
@@ -112,25 +99,20 @@ export class Cell{
 
 
   testContent(content: any, strongest: any): any | null {
-    // console.log("testing content", content)
     const _strongest = strongest_value(content);
     if (general_contradiction(_strongest)){
-      // console.log("contradiction: cell name = " + this.getRelation().get_name())
-      // console.log("previous strongest:", strongest)
-      // console.log("contradiction:", _strongest)
+
       return _strongest;
     }
     else {
-      // console.log("no contradiction:" +inspect(_strongest))
       return _strongest
     }
   }
 
   force_update(){
-    // console.log(this.relation.get_name())
-    // console.log("force update:", this.content.get_value())
+
     this.content.next(this.content.get_value());
-    // this.strongest.next(this.strongest.get_value());
+
   }
 
   addNeighbor(propagator: Propagator){
@@ -145,8 +127,13 @@ export class Cell{
   }
 }
 
+export function track_content(cell: Cell){
+  return cell.getContent()
+} 
 
-
+export function track_strongest(cell: Cell){
+  return cell.getStrongest()
+}
 
 export function test_cell_content(cell: Cell){
   return cell.force_update();

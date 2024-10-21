@@ -24,7 +24,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
         }
         else {
             
-            console.log("contradiction caused by content:", content, "increment:", increment)
+           
             return the_contradiction
         }
     }
