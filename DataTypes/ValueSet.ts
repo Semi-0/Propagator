@@ -38,6 +38,26 @@ export class ValueSet<A> {
     }
 }
 
+export function value_set_find_existed<A>(set: ValueSet<A>, elt: A): A | undefined {
+    return set_find((e: A) => get_base_value(e) === get_base_value(elt), set.elements);
+}
+
+export function value_set_has<A>(set: ValueSet<A>, elt: A): boolean {
+    return value_set_find_existed(set, elt) !== undefined;
+}
+
+export function value_set_remove<A>(set: ValueSet<A>, elt: A): ValueSet<A> {
+    return new ValueSet(set_remove(set.elements, elt));
+} 
+
+export function value_set_add<A>(set: ValueSet<A>, elt: A): ValueSet<A> {
+    return new ValueSet(set_add_item(set.elements, elt));
+} 
+
+export function value_set_substitute<A>(set: ValueSet<A>, old_elt: A, new_elt: A): ValueSet<A> {
+    return value_set_has(set, old_elt) ? value_set_add(value_set_remove(set, old_elt), new_elt) : set;
+}
+
 
 // Predicates and handlers
 const is_value_set = register_predicate("is_value_set", (value: any) => value instanceof ValueSet);
@@ -158,11 +178,19 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
 function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
     // TODO: SUBSTITUTE ELEMENT MIGHT NOT WORK HERE!!!
     // @ts-ignore
-    if (set_some(set.elements, (e: LayeredObject) => element_subsumes(e, elt))){
-        return set;
+    const existed_elt = value_set_find_existed(set, elt);
+    if (existed_elt){
+        // @ts-ignore
+        if (element_subsumes(elt, existed_elt)){
+            return set;
+        } else {
+            return value_set_substitute(set, existed_elt, elt);
+        }
     } else {
         return new ValueSet(set_add_item(set.elements, elt));
     }
+
+
 }
 
 export function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
