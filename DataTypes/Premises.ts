@@ -61,7 +61,7 @@ export class PremiseMetaData {
 
     wake_up_roots(){
         set_global_state(PublicStateCommand.FORCE_UPDATE_ALL)
-
+    
         // TODO: force update propagators
         premises_has_changed.next(true);
        //TODO:  alert amb propagator
@@ -251,12 +251,11 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
     }
 }
 
-export async function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): Promise<BetterSet<string>>{
+export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
 
-    const peers = await set_map(values, async (value: A) => {
-        console.log("value", value)
-        return await _make_hypothetical(output, value)});
-    console.log("peers", peers)
+    const peers = set_map(values, (value: A) => {
+        return _make_hypothetical(output, value)});
+
     for_each( (peer: string) => {
         const peer_metadata = _hypothesis_metadata(peer);
         if(peer_metadata){
@@ -266,7 +265,7 @@ export async function make_hypotheticals<A>(output: Cell, values: BetterSet<A>):
     return peers;
 }
 
-async function _make_hypothetical<A>(output: Cell, value: A): Promise<string> {
+function _make_hypothetical<A>(output: Cell, value: A): string {
     // ADD VALUE SUPPORT BY HYPOTHESIS TO CELL
     // IN SHORT EACH HYPOTHESIS BECOMES COMBINATION OF VALUES
     // TODO: extend to_string with generic
@@ -315,7 +314,7 @@ async function _make_hypothetical<A>(output: Cell, value: A): Promise<string> {
     register_premise(id, output);
     // console.log("add_cell_content",  support_by(value, id))
     add_cell_content(output, support_by(value, id));
-    await execute_all_tasks_simultaneous((error: Error) => {});
+
     return id;       
 }
 
