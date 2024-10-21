@@ -5,7 +5,7 @@ import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../BuiltInProps";
 import { configure_log_process_contradictions, find_premise_to_choose } from "../Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
-import { clear_all_tasks, execute_all_tasks_sequential } from "../Scheduler";
+import { clear_all_tasks, configure_debug_scheduler, execute_all_tasks_sequential } from "../Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { observe_cell, tell } from "../ui";
 import { set_merge } from "@/cell/Merge";
@@ -53,10 +53,13 @@ describe("Premises and Hypotheticals", () => {
         expect(triggered).toBe(true);
     });
 
-    it("hypotheticals should all been added to cell content", async () => {
+    it("hypotheticals should be automatically handled", async () => {
+        // configure_debug_scheduler(true);
         make_hypotheticals(a, make_better_set([1, 2, 3, 4, 5, 6]));
-
-        expect(value_set_length(a.getContent().get_value())).toBe(7)
+        await execute_all_tasks_sequential((error: Error) => {
+            console.error("Error during task execution:", error);
+        }).task;
+        expect(value_set_length(a.getContent().get_value())).toBe(2)
     })
 
     it("should calculate hypotheticals like normal values", async () => {
@@ -71,7 +74,7 @@ describe("Premises and Hypotheticals", () => {
         expect(cell_strongest_base_value(sum)).toBe(3);
     });
 
-    it.only("should handle contradictions with hypotheticals", async () => {
+    it("should handle contradictions with hypotheticals", async () => {
         configure_log_process_contradictions(true);
         track_premise();
 

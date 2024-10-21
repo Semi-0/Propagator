@@ -30,8 +30,8 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 // track_premise(); 
 
 
-// configure_log_amb_choose(true);
-// configure_log_process_contradictions(true);
+configure_log_amb_choose(true);
+configure_log_process_contradictions(true);
 // configure_log_nogoods(true);
 
 const x = new Cell("x");
@@ -42,9 +42,9 @@ const z = new Cell("z");
 //     console.log("x strongest", to_string(value))
 // })
 
-track_content(z).subscribe((value: any) => {
-    console.log("z content", to_string(value))
-})
+// track_content(z).subscribe((value: any) => {
+//     console.log("z content", to_string(value))
+// })
 
 const x2 = new Cell("x2");
 const y2 = new Cell("y2");
@@ -65,5 +65,5 @@ p_add(x, y, z)
 //TODO: SEEMS CONTRADICTION IS NOT ACTIVATED
 
 await execute_all_tasks_sequential((error: Error) => {
-    console.log("error", error)
+   throw error;
 }).task

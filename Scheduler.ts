@@ -87,7 +87,7 @@ export function simple_scheduler(): Scheduler {
             } catch (e) {
                 error_handler(e as Error);
                 // Optionally re-throw the error if you want it to propagate
-                throw e;
+                // throw e;
             }
         }
     }

@@ -239,17 +239,17 @@ describe("test propagator", () => {
 
 
         tell(x, 8, "fst");
-        // tell(y, 2, "snd")
-        // tell(product, 12, "third")
+        tell(y, 2, "snd")
+        tell(product, 12, "third")
 
-        // await execute_all_tasks_sequential((error: Error) => {}).task
+        await execute_all_tasks_sequential((error: Error) => {}).task
 
-        // expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
+        expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
         
-        // const support_value = get_support_layer_value(cell_strongest_value(product))
-        // expect(set_get_length(support_value)).toBe(3)
+        const support_value = get_support_layer_value(cell_strongest_value(product))
+        expect(set_get_length(support_value)).toBe(3)
 
-        // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+        expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
     })
 
     test('contradiction would be activated in primitive propagator', async () => {
@@ -276,7 +276,7 @@ describe("test propagator", () => {
         const support_value = get_support_layer_value(cell_strongest_value(product))
         expect(set_get_length(support_value)).toBe(3)
 
-        // expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+        expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
     })
 
 })

@@ -44,7 +44,7 @@ export const handle_contradiction = handle_cell_contradiction;
 export class Cell{
   private relation : Relation 
   private neighbors : Map<string, Propagator> = new Map();
-  private content : StatefulReactor<any> = construct_stateful_reactor(the_nothing);
+  private content : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
   private strongest : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
 
   constructor(name: string){
