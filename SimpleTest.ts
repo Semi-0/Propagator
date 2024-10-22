@@ -60,17 +60,17 @@ const log_string = compose(to_string, console.log)
 
 
 
-const possibilities = enum_num_set(1, 30)
+const possibilities = enum_num_set(1, 20)
 
 p_amb(x, possibilities)
 p_amb(y, possibilities) 
 p_amb(z, possibilities) 
 
-p_multiply(x, x, x2)
-p_multiply(y, y, y2)
-p_multiply(z, z, z2) 
+// p_multiply(x, x, x2)
+// p_multiply(y, y, y2)
+// p_multiply(z, z, z2) 
 
-p_add(x2, y2, z2) 
+p_add(x, y, z) 
 
 // //TODO: SEEMS CONTRADICTION IS NOT ACTIVATED
 
