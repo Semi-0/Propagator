@@ -23,45 +23,11 @@ import { map as generic_map, filter as generic_filter } from "generic-handler/bu
 force_load_arithmatic();
 
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
-// set_trace_merge(true)
 
-// track_premise();
-
-// // const log_in_console = observe_cell((str: string) => console.log(str));
-
-// // monitor_change(do_nothing, log_in_console);
-
-// // observe_failed_count.subscribe((count: number) => {
-// //     console.log("failed count", count)
-// // })
-
-// // track_premise(); 
-
-// configure_log_nogoods(true);
-// configure_log_amb_choose(true);
-// configure_log_process_contradictions(true);
-// configure_trace_scheduler_state_updates(true);
-// // configure_log_nogoods(true);
 
 const x = new Cell("x");
 const y = new Cell("y");
 const z = new Cell("z"); 
-
-
-// const amb1 = binary_amb(x)
-
-// const amb2 = binary_amb(y)
-
-// p_not(x, y)
-
-// execute_all_tasks_sequential((e) => {
-//     throw e;
-// })
-// console.log(y.summarize())
-// console.log(y.summarize())
-
-// console.log(summarize_scheduler_state())
-
 
 
 
@@ -90,36 +56,10 @@ observe_failed_count.subscribe((count: number) => {
 const track_nothing = compose(track_strongest, reactor_filter(is_nothing)) 
 const log_strongest = compose(cell_strongest_base_value, console.log)
 const log_string = compose(to_string, console.log)
-// track_nothing(z2).subscribe((v) => {
-//     console.log("find nothing:" + v)
-//     log_strongest(z2)
-//     log_strongest(z)
-//     log_strongest(x2)
-//     log_strongest(y2)
-// })
 
 
 
-// track_content(z2).subscribe((value: any) => {
-//     console.log("z", to_string(value))
-// })
-
-// track_strongest(x2).subscribe((value: any) => {
-//     console.log("x2", to_string(value))
-// })
-
-// track_strongest(y2).subscribe((value: any) => {
-//     console.log("y2", to_string(value))
-// })
-
-// track_strongest(z2).subscribe((value: any) => {
-//     console.log("z2", to_string(value))
-// })
-// track_content(z).subscribe((value: any) => {
-//     console.log("z content", to_string(value))
-// })
-
-const possibilities = make_better_set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+const possibilities = make_better_set([11, 12, 13, 14, 15, 16, 17, 18, 19, 20])
 
 p_amb(x, possibilities)
 p_amb(y, possibilities) 
@@ -138,18 +78,6 @@ execute_all_tasks_sequential((error: Error) => {
 })
 
 
-
-// const get_no_goods = compose(get_support_layer_value, )
-
-// const no_goods = pipe(z.getContent().get_value(),
-//     (v) => generic_map(v, get_support_layer_value),
-//     (v) => generic_map(v, (value: any) => set_map(value, (se: any) => _premises_metadata(se).get_no_goods()))) 
-
-
-// console.log("content", to_string(z.getContent().get_value()))
-// console.log("no goods", to_string(no_goods))
-// console.log(y.summarize())
-// console.log(y2.summarize())
 console.log(y.summarize())
 console.log(z.summarize())
 console.log(x.summarize())
