@@ -68,9 +68,9 @@ export class Propagator{
 export function primitive_propagator(f: (...inputs: any[]) => any, name: string){
     return (...cells: Cell[]): Propagator => {
         if (cells.length > 1){
-
-            const output = cells[cells.length - 1];
-            const inputs = cells.slice(0, -1);
+            const last_index = cells.length - 1;
+            const output = cells[last_index];
+            const inputs = cells.slice(0, last_index);
             const inputs_reactors = inputs.map(cell => cell_strongest(cell));
             
             // @ts-ignore

@@ -12,15 +12,24 @@ export const p_not = primitive_propagator((input: any) => {
     return not(input);
 }, "not");
 
-export const p_add =  primitive_propagator((...inputs: any[]) => {
-    const result = inputs.slice(1).reduce((acc, curr) => add(acc, curr), inputs[0]);
-
-    return result;
+export const p_add = primitive_propagator((...inputs: any[]) => {
+    // Check if there are inputs
+    if (inputs.length === 0) {
+        return 0; // Return 0 for empty input, or consider throwing an error
+    }
+    return inputs.reduce((acc, curr) => add(acc, curr));
 }, "add");
 
-export const p_subtract =  primitive_propagator((...inputs: any[]) => {
-    const result = inputs.slice(1).reduce((acc, curr) => subtract(acc, curr), inputs[0]);
-    return result;
+export const p_subtract = primitive_propagator((...inputs: any[]) => {
+    // Check if there are inputs
+    if (inputs.length === 0) {
+        return 0; // Return 0 for empty input, or consider throwing an error
+    }
+    if (inputs.length === 1) {
+        return inputs[0]; // Return the single input if only one is provided
+    }
+    // Subtract all subsequent inputs from the first input
+    return inputs.slice(1).reduce((acc, curr) => subtract(acc, curr), inputs[0]);
 }, "subtract");
 
 export const p_multiply =  primitive_propagator((...inputs: any[]) => {

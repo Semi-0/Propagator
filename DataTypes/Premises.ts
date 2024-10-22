@@ -25,7 +25,7 @@ export enum BeliefState {
 export class PremiseMetaData {
     name : string;
     belief_state: BeliefState = BeliefState.Believed; 
-    no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([], (item) => JSON.stringify(item));
+    no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([], to_string);
     roots: BetterSet<any> = construct_better_set<any>([], (item) => item);
 
     constructor(name: string){
@@ -86,6 +86,9 @@ export class PremiseMetaData {
     }
 
     set_no_goods(no_goods: BetterSet<BetterSet<string>>){
+
+        // TODO: no goods should be multi dimensional set
+ 
         this.no_goods = no_goods;
     } 
 
@@ -245,6 +248,10 @@ export function clean_hypothetical_store(){
     hypotheticals_store = new Map()
 }
 
+
+
+
+
 export function register_hypothesis(id: string, hypothesis: Hypothesis<any>){
     hypotheticals_store.set(id, hypothesis);
 }
@@ -303,7 +310,7 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     }
     
     function summarize(): string{
-        return "hypothetical:" + to_string(value);
+        return "hypothetical: " + to_string(value) + "in?: " + is_premise_in(id);
     }
 
     function get_id(): string{
@@ -321,6 +328,8 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     if (track_premises_changed){
         console.log("add hypothetical", id)
     }
+
+
 
     set_global_state(PublicStateCommand.ADD_CHILD, relation, output)
     register_hypothesis(id, self)

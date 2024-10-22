@@ -2,7 +2,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { is_array, is_function } from "generic-handler/built_in_generics/generic_predicates"
 import { guard, throw_error, throw_type_mismatch } from "generic-handler/built_in_generics/other_generic_helper"
 import { first as _first } from "generic-handler/built_in_generics/generic_array_operation"
-import { is_better_set, set_for_each, set_get_length, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { is_better_set, set_find, set_for_each, set_get_length, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
 export const for_each = construct_simple_generic_procedure("for_each", 2,
     (array: any[], procedure: (a: any) => any) => {
@@ -13,6 +13,10 @@ export const for_each = construct_simple_generic_procedure("for_each", 2,
     }
 )
 
+
+export function set_any(predicate: (a: any) => boolean, set: BetterSet<any>): any{
+    return set_find(predicate, set)
+}
 
 
 

@@ -1,6 +1,6 @@
 import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
-import { Cell } from "./Cell/Cell";
+import { Cell, cell_name } from "./Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
 import { first, for_each, second } from "./helper";
 import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";
@@ -83,11 +83,11 @@ export function find_premise_to_choose(premises: BetterSet<string>): string | un
 }
 
 export function mark_only_chosen_premise(premises: BetterSet<string>, chosen_premise: string){
+
+    mark_premise_in(chosen_premise)
+
     set_for_each((premise: string) => {
-        if (premise === chosen_premise){
-           mark_premise_in(premise)
-        }
-        else{
+        if (premise !== chosen_premise){
             mark_premise_out(premise)
         }
     }, premises)
@@ -110,19 +110,23 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
 
 
             if (log_amb_choose){
-                console.log("premise_to_choose", premise_to_choose)
+                console.log("premise_to_choose: ", premise_to_choose, "cell: ", cell_name(cell))
             }
 
             if (premise_to_choose !== undefined){
                mark_only_chosen_premise(premises, premise_to_choose)
             }
             else{
+
                 const nogoods = cross_product_union(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
                     is_premises_in)))
                  mark_all_premises_out(premises)
 
                  if(log_nogoods){
-                    console.log(nogoods)
+                    // console.log("raw no goods: ", to_string(set_map(premises, (p: string) => premises_nogoods(p))))
+                    // console.log("premises in nogoods: ", to_string(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
+                    // is_premises_in))))
+                    // console.log("outside nogoods: ", to_string(nogoods))
                  }
       
                 process_contradictions(nogoods, cell)
@@ -171,6 +175,11 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    if (toDisbelieve !== undefined){
        maybe_kick_out([toDisbelieve], nogood, complaining_cell)
    }
+   else{
+        throw Error("contradiction is unsolvable, no hypo premises is find, nogoods: " + 
+                    to_string(nogoods) +
+                    " cell_name: " + cell_name(complaining_cell))
+   }
 
    
 }
@@ -178,7 +187,14 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
 function save_nogood(nogood: BetterSet<string>){
     // no good is the combination of premises that failed
     set_for_each((premise: string) => {
-        set_premises_nogoods(premise, set_add_item(premises_nogoods(premise), set_remove_item(nogood, premise)))
+        //TODO: BUGS LIES IN HERE, PREVIOUS NO GOODS SHOULD BE A MULTI DIMENSIONAL SET
+        console.log("nogood: ", to_string(nogood), "premise: ", premise)
+        const previous_nogoods = premises_nogoods(premise)
+        const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
+        console.log("merged_nogoods: ", to_string(merged_nogoods))
+        console.log("merged_nogoods index", Array.from(merged_nogoods.meta_data.keys()))
+
+        set_premises_nogoods(premise, merged_nogoods)
     }, nogood)
 }
 
@@ -231,8 +247,8 @@ function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, compl
         // ONE SMART WAY IS TO SET REACTIVITY FROM PREMISES STORE TO CELL STORE
         mark_premise_out(toDisbelieve[0])
     } 
-    // else{
-    //     throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
-    // }
+    else{
+        throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
+    }
 }
 

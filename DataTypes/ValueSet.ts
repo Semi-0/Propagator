@@ -74,9 +74,9 @@ define_generic_procedure_handler(to_string,
      
         const meta_data = set.meta_data;
         const keys = Array.from(meta_data.keys());
-        const values = keys.map(key => to_string(meta_data.get(key)));
+        const values = keys.map(key => to_string(meta_data.get(key))).join(", ");
 
-        return values;
+        return `[${values}]`;
     }
 );
 
@@ -91,14 +91,14 @@ define_generic_procedure_handler(to_string,
 define_generic_procedure_handler(map,
     match_args(is_value_set, is_function),
     (set: ValueSet<any>, procedure: (a: any) => any) => {
-        return new ValueSet(map(procedure, set.elements));
+        return new ValueSet(map(set.elements, procedure));
     }
 );
 
 define_generic_procedure_handler(filter,
     match_args(is_value_set, is_function),
     (set: ValueSet<any>, predicate: (a: any) => boolean) => {
-        return new ValueSet(filter(predicate, set.elements));
+        return new ValueSet(filter(set.elements, predicate));
     }
 );
 
@@ -119,7 +119,7 @@ export const construct_value_set = construct_simple_generic_procedure("construct
 
 define_generic_procedure_handler(construct_value_set,
     match_args(is_array),
-    (elements: any[]) => {return construct_value_set(construct_better_set(elements.filter(e => e !== undefined && is_nothing(e)), to_string));}
+    (elements: any[]) => {return construct_value_set(construct_better_set(elements.filter(e => e !== undefined && !is_nothing(e)), to_string));}
 );
 
 define_generic_procedure_handler(construct_value_set,

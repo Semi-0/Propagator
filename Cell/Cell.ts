@@ -163,6 +163,10 @@ export function cell_id(cell: Cell){
   return cell.getRelation().get_id();
 }
 
+export function cell_name(cell: Cell){
+  return cell.getRelation().get_name()
+}
+
 export function cell_strongest_value(cell: Cell){
   return cell.getStrongest().get_value();
 }

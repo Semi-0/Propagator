@@ -13,38 +13,30 @@ import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 const is_layered_object = register_predicate("is_layered_object", _is_layered_object)
 
 
-
-
-
-define_generic_procedure_handler(_add,
-    one_of_args_match(is_nothing),
-
+const define_nothing_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
+    one_of_args_match(is_nothing), 
     (a: any, b: any) => {
-        return the_nothing
-    }
-)
+        // if (is_nothing(a)){
+        //     return the_nothing
+        // }
+        // else if (is_nothing(b)){
+        //     return a 
+        // }
+        // else{
+            return the_nothing
 
-define_generic_procedure_handler(_subtract,
-    one_of_args_match(is_nothing),
-    (a: any, b: any) => {
-        return the_nothing
-    }
-) 
+    })
 
-define_generic_procedure_handler(_multiply,
-    one_of_args_match(is_nothing),
-    (a: any, b: any) => {
 
-        return the_nothing
-    }
-)
 
-define_generic_procedure_handler(_divide,
-    one_of_args_match(is_nothing),
-    (a: any, b: any) => {
-        return the_nothing
-    }
-) 
+define_nothing_arithmetic_handler(_add)
+
+define_nothing_arithmetic_handler(_subtract)
+
+
+define_nothing_arithmetic_handler(_multiply)
+
+define_nothing_arithmetic_handler(_divide)
 
 define_generic_procedure_handler(_add,
     one_of_args_match(is_contradiction),
