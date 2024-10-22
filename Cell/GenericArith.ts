@@ -2,17 +2,23 @@
 // import { ValueSet } from "./ValueSet";
 // import { match_args } from "generic-handler/Predicates";
 import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide } from "generic-handler/built_in_generics/generic_arithmetic";
-import { all_match, one_of_args_match, register_predicate } from "generic-handler/Predicates";
+import { all_match, match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_layered_object  as _is_layered_object} from "sando-layer/Basic/LayeredObject";
+import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 
 
 const is_layered_object = register_predicate("is_layered_object", _is_layered_object)
 
+
+
+
+
 define_generic_procedure_handler(_add,
     one_of_args_match(is_nothing),
+
     (a: any, b: any) => {
         return the_nothing
     }

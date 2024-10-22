@@ -2,7 +2,7 @@
 
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal } from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal, BetterSetImpl, set_filter } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";
@@ -17,6 +17,7 @@ import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
 import { generic_merge, merge_layered } from "../Cell/Merge";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
+import { inspect } from "bun";
 // ValueSet class definition
 export class ValueSet<A> {
     elements: BetterSet<A>;
@@ -26,7 +27,7 @@ export class ValueSet<A> {
     }
 
     add_item(item: A): ValueSet<A> {
-        return new ValueSet<A>(set_add_item(this.elements, item));
+        return construct_value_set(set_add_item(this.elements, item));
     }
 
     to_array(): A[] {
@@ -47,11 +48,11 @@ export function value_set_has<A>(set: ValueSet<A>, elt: A): boolean {
 }
 
 export function value_set_remove<A>(set: ValueSet<A>, elt: A): ValueSet<A> {
-    return new ValueSet(set_remove(set.elements, elt));
+    return construct_value_set(set_remove(set.elements, elt));
 } 
 
 export function value_set_add<A>(set: ValueSet<A>, elt: A): ValueSet<A> {
-    return new ValueSet(set_add_item(set.elements, elt));
+    return construct_value_set(set_add_item(set.elements, elt));
 } 
 
 export function value_set_substitute<A>(set: ValueSet<A>, old_elt: A, new_elt: A): ValueSet<A> {
@@ -70,12 +71,16 @@ define_generic_procedure_handler(to_string,
 define_generic_procedure_handler(to_string,
     match_args(is_better_set),
     (set: BetterSet<any>) => {
+     
         const meta_data = set.meta_data;
         const keys = Array.from(meta_data.keys());
         const values = keys.map(key => to_string(meta_data.get(key)));
-        return `${values.join(", ")}`;
+
+        return values;
     }
 );
+
+
 
 define_generic_procedure_handler(to_string,
     match_args(is_value_set),
@@ -114,20 +119,24 @@ export const construct_value_set = construct_simple_generic_procedure("construct
 
 define_generic_procedure_handler(construct_value_set,
     match_args(is_array),
-    (elements: any[]) => {return construct_value_set(construct_better_set(elements, to_string));}
+    (elements: any[]) => {return construct_value_set(construct_better_set(elements.filter(e => e !== undefined && is_nothing(e)), to_string));}
 );
 
 define_generic_procedure_handler(construct_value_set,
     match_args(is_atom),
     (element: any) => {
-        return construct_value_set([element]);
+        if (is_nothing(element)){
+            return construct_value_set([]);
+        } else {
+            return construct_value_set([element]);
+        }
     }
 );
 
 define_generic_procedure_handler(construct_value_set,
     match_args(is_better_set),
     (set: BetterSet<any>) => {
-        return new ValueSet(set);
+        return new ValueSet(set_filter(set, (elt: any) => !is_nothing(elt)));
     }
 );
 

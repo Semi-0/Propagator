@@ -3,7 +3,7 @@ import { multiply, divide } from "./Cell/GenericArith";
 import { Cell } from "./Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
 import { first, for_each, second } from "./helper";
-import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union} from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";
 import { set_reduce_right } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand, set_global_state } from "./PublicState";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
@@ -13,7 +13,7 @@ import { merge, tap, type Reactor } from "./Reactivity/Reactor";
 import { map } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
 import { inspect } from "bun";
-
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 var log_amb_choose = false; 
 var log_process_contradictions = false;
@@ -117,8 +117,14 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
                mark_only_chosen_premise(premises, premise_to_choose)
             }
             else{
-                const nogoods = mark_all_premises_out(premises)
+                const nogoods = cross_product_union(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
+                    is_premises_in)))
+                 mark_all_premises_out(premises)
 
+                 if(log_nogoods){
+                    console.log(nogoods)
+                 }
+      
                 process_contradictions(nogoods, cell)
             }
         }
@@ -147,10 +153,14 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
 
+
+   if(log_nogoods){
+        console.log("nogoods", to_string(nogoods), " complaining cell: ",  complaining_cell.getRelation().get_name())
+   }
+
    set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
-   maybe_kick_out([toDisbelieve], nogood, complaining_cell)
 
    if (log_process_contradictions){
         console.log("complaining cell", complaining_cell.summarize())
@@ -158,9 +168,11 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
         console.log("disbelieved premise", toDisbelieve)
    }
 
-   if(log_nogoods){
-        console.log("nogoods", nogoods, " complaining cell: ",  complaining_cell.getRelation().get_name())
+   if (toDisbelieve !== undefined){
+       maybe_kick_out([toDisbelieve], nogood, complaining_cell)
    }
+
+   
 }
 
 function save_nogood(nogood: BetterSet<string>){
@@ -182,6 +194,8 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
         return arr
     }
 
+    // console.log("nogoods", to_string(nogoods))
+
     return pipe(
         nogoods,
         (set) => sort_by(set, (nogood: BetterSet<string>) => count(is_hypothetical, nogood)),                               
@@ -197,7 +211,7 @@ function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
         return [first(hyps), nogood]
     }
     else{
-        throw Error("contradiction can't be resolved, no hypothetical premises found " )
+       return [undefined, nogood]
     }     
 }
 
@@ -217,8 +231,8 @@ function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, compl
         // ONE SMART WAY IS TO SET REACTIVITY FROM PREMISES STORE TO CELL STORE
         mark_premise_out(toDisbelieve[0])
     } 
-    else{
-        throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
-    }
+    // else{
+    //     throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
+    // }
 }
 

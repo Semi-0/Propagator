@@ -9,7 +9,7 @@ import { PublicStateCommand } from "../PublicState";
 import { describe } from "../ui";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../Search";
-import { construct_better_set, make_better_set, map_to_new_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, make_better_set, map_to_new_set, set_get_length, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
 import { strongest_value } from "./StrongestValue";
@@ -34,6 +34,8 @@ export function handle_cell_contradiction(cell: Cell) {
     cell_strongest_value,
     get_support_layer_value,
   );
+
+
   
   process_contradictions(make_better_set([nogoods]), cell)
 }
