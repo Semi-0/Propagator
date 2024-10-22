@@ -175,11 +175,11 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    if (toDisbelieve !== undefined){
        maybe_kick_out([toDisbelieve], nogood, complaining_cell)
    }
-   else{
-        throw Error("contradiction is unsolvable, no hypo premises is find, nogoods: " + 
-                    to_string(nogoods) +
-                    " cell_name: " + cell_name(complaining_cell))
-   }
+//    else{
+//         throw Error("contradiction is unsolvable, no hypo premises is find, nogoods: " + 
+//                     to_string(nogoods) +
+//                     " cell_name: " + cell_name(complaining_cell))
+//    }
 
    
 }
@@ -242,8 +242,6 @@ function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, compl
         // ONE SMART WAY IS TO SET REACTIVITY FROM PREMISES STORE TO CELL STORE
         mark_premise_out(toDisbelieve[0])
     } 
-    else{
-        throw new Error("contradiction can't be resolved, cell: " + complaining_cell.summarize())
-    }
+  
 }
 

@@ -14,9 +14,11 @@ import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { scheduled_reactive_state } from "../Scheduler";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
-import { match_args } from "generic-handler/Predicates";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 import { tap } from "../Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { is_string } from "generic-handler/built_in_generics/generic_predicates";
 // TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
 // WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
 // 2. DEFINE WHAT IS THE STRONGEST VALUE FOR THIS SPECIFIC KIND OF DATASET
@@ -24,7 +26,6 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
 
 export const general_contradiction = is_layered_contradiction
-
 
 
 
@@ -131,6 +132,10 @@ export class Cell{
   }
 }
 
+export const is_cell = register_predicate("is_cell", (a: any) => a instanceof Cell)
+
+define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell) => cell.summarize())
+
 export function track_content(cell: Cell){
   return cell.getContent()
 } 
@@ -172,3 +177,6 @@ export function cell_strongest_value(cell: Cell){
 }
 
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
+
+
+export const user_cell = new Cell("user_cell")

@@ -108,8 +108,6 @@ export function simple_scheduler(): Scheduler {
                 executed.set(taskId, task);
             } catch (e) {
                 error_handler(e as Error);
-                // Optionally re-throw the error if you want it to propagate
-                // throw e;
             }
         }
     }
