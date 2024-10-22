@@ -33,24 +33,24 @@ track_premise();
 
 // configure_log_amb_choose(true);
 configure_log_process_contradictions(true);
-configure_trace_scheduler_state_updates(true);
+// configure_trace_scheduler_state_updates(true);
 // // configure_log_nogoods(true);
 
 const x = new Cell("x");
-// const y = new Cell("y");
-// const z = new Cell("z"); 
+const y = new Cell("y");
+const z = new Cell("z"); 
 
 
-const amb1 = binary_amb(x)
+// const amb1 = binary_amb(x)
 
 // const amb2 = binary_amb(y)
 
 // p_not(x, y)
 
-execute_all_tasks_sequential((e) => {
-    throw e;
-})
-console.log(x.summarize())
+// execute_all_tasks_sequential((e) => {
+//     throw e;
+// })
+// console.log(y.summarize())
 // console.log(y.summarize())
 
 // console.log(summarize_scheduler_state())

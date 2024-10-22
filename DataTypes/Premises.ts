@@ -14,7 +14,7 @@ import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
 
 import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
-import { execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
+import { execute_all_tasks_sequential, execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
 import { inspect } from "util";
 export enum BeliefState {
     Believed,
@@ -49,7 +49,9 @@ export class PremiseMetaData {
         if(track_premises_changed){
            console.log("premises:", this.name, "is believed")
         }
-        this.set_belief_state(BeliefState.Believed);
+        if (this.belief_state == BeliefState.NotBelieved){
+            this.set_belief_state(BeliefState.Believed);
+        }
   
     }
 
@@ -57,13 +59,15 @@ export class PremiseMetaData {
         if(track_premises_changed){
             console.log("premises:", this.name, "is not believed")
          }
-        this.set_belief_state(BeliefState.NotBelieved);
+        if (this.belief_state == BeliefState.Believed){
+            this.set_belief_state(BeliefState.NotBelieved);
+        }
     } 
 
     wake_up_roots(){
         // if add content is scheduled cannot make sure amb is only notified after all the current content has been all propagated
         set_global_state(PublicStateCommand.FORCE_UPDATE_ALL)
-    
+
         // TODO: force update propagators
         premises_has_changed.next(true);
        //TODO:  alert amb propagatorm
