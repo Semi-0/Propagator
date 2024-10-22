@@ -13,7 +13,7 @@ i made a customized push based reactive system,
 which difference from the scheme impl,
 and a more generic simple scheduler supports promise.
 So both the cell and propagator could be observed by external observer,
-this could opens up some possibilitise for visualization.
+this could opens up some possibilities for visualization.
 
 
 
