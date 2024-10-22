@@ -37,8 +37,8 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 // // track_premise(); 
 
-configure_log_nogoods(true);
-configure_log_amb_choose(true);
+// configure_log_nogoods(true);
+// configure_log_amb_choose(true);
 // configure_log_process_contradictions(true);
 // configure_trace_scheduler_state_updates(true);
 // // configure_log_nogoods(true);
@@ -129,7 +129,7 @@ p_multiply(x, x, x2)
 p_multiply(y, y, y2)
 p_multiply(z, z, z2) 
 
-p_add(x2, y, z2) 
+p_add(x2, y2, z2) 
 
 // //TODO: SEEMS CONTRADICTION IS NOT ACTIVATED
 

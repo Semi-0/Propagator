@@ -123,10 +123,10 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
                  mark_all_premises_out(premises)
 
                  if(log_nogoods){
-                    // console.log("raw no goods: ", to_string(set_map(premises, (p: string) => premises_nogoods(p))))
-                    // console.log("premises in nogoods: ", to_string(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
-                    // is_premises_in))))
-                    // console.log("outside nogoods: ", to_string(nogoods))
+                    console.log("raw no goods: ", to_string(set_map(premises, (p: string) => premises_nogoods(p))))
+                    console.log("premises in nogoods: ", to_string(set_map(premises, (p: string) => set_filter(premises_nogoods(p), 
+                    is_premises_in))))
+                    console.log("outside nogoods: ", to_string(nogoods))
                  }
       
                 process_contradictions(nogoods, cell)
@@ -142,15 +142,15 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
 function pairwise_union(nogoods1: BetterSet<any>, nogoods2: BetterSet<any>) : BetterSet<any>{
     // why flatmap?
     return set_flat_map(nogoods1,(nogood1: any) => {
-        return set_map(nogoods2, (nogood2: any) => {
-            return set_union(nogood1, nogood2)
+        return set_flat_map(nogoods2, (nogood2: any) => {
+            return construct_better_set([nogood1, nogood2], to_string)
         })
     }) 
 }
 
 function cross_product_union(nogoodss: BetterSet<BetterSet<BetterSet<string>>>): BetterSet<BetterSet<string>>{
     // TODO: implement
-    return set_reduce_right(pairwise_union, nogoodss, construct_better_set([], JSON.stringify))
+    return set_reduce_right(pairwise_union, nogoodss, construct_better_set([[]], to_string))
 }
 
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
@@ -186,14 +186,9 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
 
 function save_nogood(nogood: BetterSet<string>){
     // no good is the combination of premises that failed
-    set_for_each((premise: string) => {
-        //TODO: BUGS LIES IN HERE, PREVIOUS NO GOODS SHOULD BE A MULTI DIMENSIONAL SET
-        console.log("nogood: ", to_string(nogood), "premise: ", premise)
-        const previous_nogoods = premises_nogoods(premise)
+    set_for_each((premise: string) => {        const previous_nogoods = premises_nogoods(premise)
         const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
-        console.log("merged_nogoods: ", to_string(merged_nogoods))
-        console.log("merged_nogoods index", Array.from(merged_nogoods.meta_data.keys()))
-
+  
         set_premises_nogoods(premise, merged_nogoods)
     }, nogood)
 }
