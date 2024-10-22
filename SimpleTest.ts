@@ -47,7 +47,9 @@ const amb1 = binary_amb(x)
 
 // p_not(x, y)
 
-await execute_all_tasks_simultaneous((e) => {}).task
+execute_all_tasks_sequential((e) => {
+    throw e;
+})
 console.log(x.summarize())
 // console.log(y.summarize())
 

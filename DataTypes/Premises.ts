@@ -15,6 +15,7 @@ import { construct_better_set } from "generic-handler/built_in_generics/generic_
 
 import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
 import { execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
+import { inspect } from "util";
 export enum BeliefState {
     Believed,
     NotBelieved,
@@ -167,10 +168,12 @@ export function _premises_metadata(name: string): PremiseMetaData{
 } 
 
 export function is_premise_in(name: string): boolean{
+
     return _premises_metadata(name).is_believed();
 }
 
 export function is_premise_out(name: string): boolean{
+
     return !_premises_metadata(name).is_believed();
 }
 
@@ -185,11 +188,13 @@ export function is_premises_out(names: BetterSet<string>): boolean{
 } 
 
 export function mark_premise_in(name: string){
+
     _premises_metadata(name).set_believed();
 
 } 
 
 export function mark_premise_out(name: string){
+
     _premises_metadata(name).set_not_believed();
 } 
 
@@ -202,10 +207,12 @@ export function mark_premise_out(name: string){
 
 
 export function premises_nogoods(name: string): BetterSet<any>{
+
     return _premises_metadata(name).get_no_goods();
 } 
 
 export function set_premises_nogoods(name: string, nogoods: BetterSet<any>){
+
     _premises_metadata(name).set_no_goods(nogoods);
 } 
 

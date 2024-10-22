@@ -41,50 +41,48 @@ describe("Premises and Hypotheticals", () => {
         register_premise("test", a);
         
         mark_premise_out("test");
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
         expect(triggered).toBe(true);
     
         mark_premise_in("test");
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
         expect(triggered).toBe(true);
     });
 
     it("hypotheticals should be automatically handled", async () => {
         // configure_debug_scheduler(true);
         make_hypotheticals(a, make_better_set([1, 2, 3, 4, 5, 6]));
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
-        expect(value_set_length(a.getContent().get_value())).toBe(2)
+        });
+        expect(value_set_length(a.getContent().get_value())).toBe(7)
     })
 
     it("should calculate hypotheticals like normal values", async () => {
         make_hypotheticals(a, make_better_set([1]));
         tell(b, 2, "b_value");
 
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
 
         expect(cell_strongest_base_value(a)).toBe(1);
         expect(cell_strongest_base_value(sum)).toBe(3);
     });
 
     it("should handle contradictions with hypotheticals", async () => {
-        configure_log_process_contradictions(true);
-        track_premise();
 
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1, 2, 3]));
         tell(b, 2, "b_value");
         tell(sum, 6, "sum_value");
 
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
 
         let some_premise_kicked_out = false;
         subscribe((m: Map<string, PremiseMetaData>) => {
@@ -101,9 +99,9 @@ describe("Premises and Hypotheticals", () => {
         // tell(a, 1, "a_value");
         
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1,  3]));
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
 
 
         const chosen_premise = find_premise_to_choose(a_hypotheticals);
@@ -126,9 +124,9 @@ describe("Premises and Hypotheticals", () => {
         tell(b, 2, "b_value");
         tell(sum, 6, "sum_value");
 
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
 
         const chosen_premise = find_premise_to_choose(a_hypotheticals);
         expect(chosen_premise).not.toBe(undefined);
@@ -142,9 +140,9 @@ describe("Premises and Hypotheticals", () => {
         // @ts-ignore
         mark_only_chosen_premise(a_hypotheticals, chosen_premise);
        
-        await execute_all_tasks_sequential((error: Error) => {
+        execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
-        }).task;
+        });
 
     
         

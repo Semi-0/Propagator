@@ -37,8 +37,8 @@ describe("test propagator", () => {
         tell(product, 40, "snd");
 
 
-    await  execute_all_tasks_sequential((error: Error) => {
-        }).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
         
     
             expect(cell_strongest_base_value(y)).toBe(5);
@@ -60,8 +60,8 @@ describe("test propagator", () => {
         tell(product, 40, "snd");
 
 
-        await execute_all_tasks_sequential((error: Error) => {
-        }).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
         
     
         expect(cell_strongest_base_value(y)).toBe(5);
@@ -69,7 +69,8 @@ describe("test propagator", () => {
 
         tell(product, 5, "red");
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
     }) 
@@ -89,8 +90,8 @@ describe("test propagator", () => {
         tell(product, 40, "snd");
 
 
-        await execute_all_tasks_sequential((error: Error) => {
-        }).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
         
     
         expect(cell_strongest_base_value(y)).toBe(5);
@@ -98,14 +99,16 @@ describe("test propagator", () => {
 
         tell(product, 5, "red");
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
 
         kick_out("red")
 
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(false)
     }) 
@@ -148,7 +151,7 @@ describe("test propagator", () => {
             i++;
         }
 
-        await execute_all_tasks_simultaneous((error: Error) => {});
+        execute_all_tasks_simultaneous((error: Error) => {});
         // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
         expect(value_set_length(x.getContent().get_value())).toBe(numValues + 1); // +1 for the contradiction value
 
@@ -167,7 +170,8 @@ describe("test propagator", () => {
         tell(x, 8, "fst");
         tell(y, 5, "snd")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(cell_strongest_base_value(product)).toBe(40)
 
@@ -185,7 +189,8 @@ describe("test propagator", () => {
         tell(x, 8, "fst");
         tell(y, 2, "snd")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(cell_strongest_base_value(product)).toBe(6)
 
@@ -204,7 +209,8 @@ describe("test propagator", () => {
         tell(x, 8, "fst");
         tell(y, 2, "snd")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(cell_strongest_base_value(product)).toBe(4)
 
@@ -221,7 +227,8 @@ describe("test propagator", () => {
         tell(x, 8, "fst");
         tell(y, 2, "snd")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(cell_strongest_base_value(product)).toBe(10)
 
@@ -242,7 +249,8 @@ describe("test propagator", () => {
         tell(y, 2, "snd")
         tell(product, 12, "third")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
         
@@ -265,18 +273,20 @@ describe("test propagator", () => {
         tell(y, 2, "snd")
         
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         tell(product, 12, "third")
 
-        await execute_all_tasks_sequential((error: Error) => {}).task
+        execute_all_tasks_sequential((error: Error) => {
+        });
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
         
         const support_value = get_support_layer_value(cell_strongest_value(product))
         expect(set_get_length(support_value)).toBe(3)
 
-        expect(to_string(to_array(support_value))).toBe( "[\"third\",\"fst\",\"snd\"]")
+        expect(to_string(to_array(support_value))).toBe( "[\"fst\",\"snd\",\"third\"]")
     })
 
 })
@@ -367,13 +377,15 @@ test('contradiction with multiple propagators and resolution', async () => {
     tell(c, 2, "c_val");
     tell(product, 15, "prod_val");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(product))).toBe(true);
 
     kick_out("prod_val");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(product))).toBe(false);
     expect(cell_strongest_base_value(product)).toBe(14);
@@ -391,14 +403,16 @@ test('resolving contradiction with multiple conflicting inputs', async () => {
     tell(z, 10, "z_val_1");
     tell(z, 7, "z_val_2");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(z))).toBe(true);
 
     kick_out("z_val_1");
     kick_out("z_val_2");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(z))).toBe(false);
     expect(cell_strongest_base_value(z)).toBe(8);
@@ -439,7 +453,8 @@ test('resolving contradiction with floating-point precision issues', async () =>
     tell(y, 0.2, "y_val");
     tell(z, 0.020000000000000004, "z_val"); // JavaScript floating-point precision issue
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     // This should not be a contradiction due to floating-point precision
     expect(is_contradiction(cell_strongest_base_value(z))).toBe(false);
@@ -447,13 +462,15 @@ test('resolving contradiction with floating-point precision issues', async () =>
     // Now let's introduce a real contradiction
     tell(z, 0.025, "z_val_2");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(z))).toBe(true);
 
     kick_out("z_val_2");
 
-    await execute_all_tasks_sequential((error: Error) => {}).task
+    execute_all_tasks_sequential((error: Error) => {
+    });
 
     expect(is_contradiction(cell_strongest_base_value(z))).toBe(false);
     expect(cell_strongest_base_value(z)).toBeCloseTo(0.02, 5);

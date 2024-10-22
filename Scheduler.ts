@@ -3,9 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 // MAIN PROBLEM LIES IN EXECUTION ORDER
 export interface Scheduler{
-    schedule: (f: () => Promise<void>) => void;
-    execute_sequential: (error_handler: (e: Error) => void) => ExecutionHandler;
-    execute_simultaneous: (error_handler: (e: Error) => void) => ExecutionHandler;
+    schedule: (f: () => void) => void;
+    execute_sequential: (error_handler: (e: Error) => void) => () => void;
+    execute_simultaneous: (error_handler: (e: Error) => void) => () => void;
     steppable_run:  (error_handler: (e: Error) => void) => void;
     summarize: () => string;
     clear_all_tasks: () => void;
@@ -13,17 +13,17 @@ export interface Scheduler{
 }
 
 
-export interface ExecutionHandler{
-    task: Promise<void>;
-    cancel: () => void;
-}
+// export interface ExecutionHandler{
+//     task: Promise<void>;
+//     cancel: () => void;
+// }
 
-function construct_execution_handler(task: Promise<void>, cancel: () => void): ExecutionHandler{
-    return {
-        task,
-        cancel
-    }
-}
+// function construct_execution_handler(task: Promise<void>, cancel: () => void): ExecutionHandler{
+//     return {
+//         task,
+//         cancel
+//     }
+// }
 
 
 var trace_scheduler = false; 
@@ -51,13 +51,13 @@ export function configure_trace_scheduler_state_updates(trace: boolean){
 } 
 
 export function simple_scheduler(): Scheduler {
-    var queue: Array<[string, () => Promise<void>]> = []
-    var executed: Map<string, () => Promise<void>> = new Map()
+    var queue: Array<[string, () => void]> = []
+    var executed: Map<string, () => void> = new Map()
     var immediate_execute: boolean = false
 
 
 
-    function schedule(f: () => Promise<void>) {
+    function schedule(f: () => void) {
         const taskId = uuidv4();
         queue.push([taskId, f]);
 
@@ -77,7 +77,7 @@ export function simple_scheduler(): Scheduler {
         immediate_execute = value
     }
 
-    function dequeue(): [string, () => Promise<void>] {
+    function dequeue(): [string, () => void] {
         const [taskId, f] = queue.shift()!
         return [taskId, f]
     } 
@@ -92,8 +92,8 @@ export function simple_scheduler(): Scheduler {
         executed.clear()
     }
 
-    function execute_task(taskId: string, task: () => Promise<void>, error_handler: (e: Error) => void): () => Promise<void> {
-        return async () => {
+    function execute_task(taskId: string, task: () => void, error_handler: (e: Error) => void): () => void {
+        return () => {
             try {
 
                 if (trace_executed_task){
@@ -104,7 +104,7 @@ export function simple_scheduler(): Scheduler {
                     console.log("state:", summarize())
                 }
 
-                await task();
+                task();
                 executed.set(taskId, task);
             } catch (e) {
                 error_handler(e as Error);
@@ -114,25 +114,24 @@ export function simple_scheduler(): Scheduler {
         }
     }
 
-    function execute_sequential(error_handler: (e: Error) => void): ExecutionHandler {
+    function execute_sequential(error_handler: (e: Error) => void): () => void {
         let running = true;
 
         async function exec() {
             while (queue.length !== 0 && running) {
                 const [taskId, task] = dequeue();
-                await execute_task(taskId, task, error_handler)();
+                 execute_task(taskId, task, error_handler)();
             }
         }
 
-        const promise = exec();
+        exec();
 
-        return construct_execution_handler(promise, () => {
+        return () => {
             running = false;
-
-        });
+        }
     }
 
-    function execute_simultaneous(error_handler: (e: Error) => void): ExecutionHandler {
+    function execute_simultaneous(error_handler: (e: Error) => void): () => void {
         let running = true;
 
         async function exec() {
@@ -147,9 +146,9 @@ export function simple_scheduler(): Scheduler {
 
         const exec_promise = exec(); // Start execution
 
-        return construct_execution_handler(exec_promise, () => {
+        return () => {
             running = false;
-        });
+        }
     }
 
     function steppable_run(error_handler: (e: Error) => void){ 

@@ -95,9 +95,7 @@ export class Cell{
   }
 
   addContent(increment:any){
-    console.log("before merge", to_string(this.content.get_value()), to_string(increment))
     const result = cell_merge(this.content.get_value(), increment);
-    console.log("merged", to_string(result))
     this.content.next(result);
   }
 
@@ -148,7 +146,6 @@ export function add_cell_neighbour(cell: Cell, propagator: Propagator){
 }
 
 export function add_cell_content(cell: Cell, content: any){
-  console.log("add_cell_content", cell.summarize())
   cell.addContent(content);
 }
 

@@ -179,19 +179,15 @@ function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: Laye
     // TODO: SUBSTITUTE ELEMENT MIGHT NOT WORK HERE!!!
     // @ts-ignore
     const existed_elt = value_set_find_existed(set, elt);
-    console.log("value_set_adjoin", to_string(set), to_string(elt), to_string(existed_elt))
     if (existed_elt){
         // @ts-ignore
         if (element_subsumes(elt, existed_elt)){
-            console.log("subsumed")
             return set;
         } else {
-            console.log("substitute")
             return value_set_substitute(set, existed_elt, elt);
         }
     } else {
         const result = value_set_add(set, elt);
-        console.log("add",to_string(result))
         return result;
     }
 

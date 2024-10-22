@@ -52,8 +52,8 @@ export function binary_amb(cell: Cell): Propagator{
 
     function amb_choose(){
         // is filter support set in here? or perhaps i should set premises_nogoods to return BetterSet<LayeredObject>
-        const reason_against_true = set_filter(premises_nogoods(true_premise), is_premise_in)
-        const reason_against_false = set_filter(premises_nogoods(false_premise), is_premise_in)
+        const reason_against_true = set_filter(premises_nogoods(true_premise), is_premises_in)
+        const reason_against_false = set_filter(premises_nogoods(false_premise), is_premises_in)
 
         if(set_get_length(reason_against_true) == 0){
             mark_premise_in(true_premise)
@@ -129,16 +129,16 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
     return self
 }
 
-function pairwise_union(nogoods1: BetterSet<string>, nogoods2: BetterSet<string>) : BetterSet<string>{
+function pairwise_union(nogoods1: BetterSet<any>, nogoods2: BetterSet<any>) : BetterSet<any>{
     // why flatmap?
-    return set_flat_map(nogoods1,(nogood1: string) => {
-        return set_map(nogoods2, (nogood2: string) => {
+    return set_flat_map(nogoods1,(nogood1: any) => {
+        return set_map(nogoods2, (nogood2: any) => {
             return set_union(nogood1, nogood2)
         })
     }) 
 }
 
-function cross_product_union(nogoodss: BetterSet<BetterSet<string>>): BetterSet<BetterSet<string>>{
+function cross_product_union(nogoodss: BetterSet<BetterSet<BetterSet<string>>>): BetterSet<BetterSet<string>>{
     // TODO: implement
     return set_reduce_right(pairwise_union, nogoodss, construct_better_set([], JSON.stringify))
 }

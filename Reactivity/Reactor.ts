@@ -39,18 +39,15 @@ function default_next<T>(error_handler: (e: any) => void): (observers: ((...args
     }
 }
 
-function scheduled_modifer<T>(scheduling: (task: () => Promise<void>) => void){
+function scheduled_modifer<T>(scheduling: (task: () => void) => void){
     return (next: (v: T) => void) => {
         return (v: T) => {
             scheduling(() => {
-                return new Promise<void>(resolve => {
-                    next(v)
-                    resolve()
-                })
+                next(v)
             })
         }
+        }
     }
-}
 
 function stateful_modifer<T>(set_value: (v: T) => void){
     return (next: (v: T) => void) => {
@@ -110,7 +107,7 @@ export function construct_reactor<T>(): StandardReactor<T>{
     }) as StandardReactor<T>
 }
 
-export function construct_scheduled_reactor<T>(scheduling: (task: () => Promise<void>) => void): () => StandardReactor<T>{
+export function construct_scheduled_reactor<T>(scheduling: (task: () => void) => void): () => StandardReactor<T>{
     return () => construct_prototype_reactor<T>((observers: ((...args: any[]) => void)[], 
                                         subscribe: (observer: (...args: any[]) => void) => void, 
                                         unsubscribe: (observer: (...args: any[]) => void) => void) => {
@@ -237,7 +234,7 @@ export function construct_replay_reactor<T>(): StandardReactor<T>{
 
 
 export function construct_scheduled_stateful_reactor<T>(
-  scheduling: (task: () => Promise<void>) => void
+  scheduling: (task: () => void) => void
 ): (initial_value: any) => StatefulReactor<T> {
   return (initial_value: any) =>
     construct_prototype_reactor<T>(
@@ -261,8 +258,8 @@ export function construct_scheduled_stateful_reactor<T>(
           observers,
           next: pipe(observers,
             default_next(throw_error("stateful_reactor")),
-            stateful_modifer((v) => {value = v }), 
-            scheduled_modifer(scheduling)
+            scheduled_modifer(scheduling),
+            stateful_modifer((v) => {value = v })
           ),
           summarize: () => summarize("stateful_reactor", observers),
           subscribe: subscribe_and_notify_initial_state,
