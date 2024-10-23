@@ -15,7 +15,6 @@ import { construct_better_set } from "generic-handler/built_in_generics/generic_
 
 import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
 import { execute_all_tasks_sequential, execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
-import { inspect } from "util";
 export enum BeliefState {
     Believed,
     NotBelieved,

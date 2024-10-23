@@ -12,7 +12,6 @@ import { pipe } from "fp-ts/lib/function";
 import { merge, tap, type Reactor } from "./Reactivity/Reactor";
 import { map } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
-import { inspect } from "bun";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 var log_amb_choose = false; 

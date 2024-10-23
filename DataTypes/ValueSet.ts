@@ -17,7 +17,6 @@ import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
 import { generic_merge, merge_layered } from "../Cell/Merge";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import { inspect } from "bun";
 // ValueSet class definition
 export class ValueSet<A> {
     elements: BetterSet<A>;
