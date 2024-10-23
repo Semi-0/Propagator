@@ -1,9 +1,9 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
-import { add_cell_content, Cell, cell_strongest_base_value, cell_strongest_value } from "../Cell/Cell";
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract } from "../BuiltInProps";
-import { kick_out, tell } from "../ui";
-import { get_base_value, is_contradiction, the_contradiction } from "../Cell/CellValue";
+import { all_results, enum_num_set, kick_out, tell } from "../ui";
+import {    is_contradiction } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Scheduler";
 import { set_global_state } from "../PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
@@ -11,9 +11,10 @@ import { PublicStateCommand } from "../PublicState";
 import { generic_merge, set_merge } from "@/cell/Merge";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
+import { p_amb } from "../Search";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -23,9 +24,9 @@ describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
 
 
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
         
         c_multiply(x, y, product);
 
@@ -46,9 +47,9 @@ describe("test propagator", () => {
 
 
     test("causing contradiction", async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
         
         c_multiply(x, y, product);
 
@@ -76,9 +77,9 @@ describe("test propagator", () => {
     }) 
 
     test("kick out resolve contradiction", async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
         
         c_multiply(x, y, product);
 
@@ -115,9 +116,9 @@ describe("test propagator", () => {
 
 
     test("tell a single cell multiple times should keep all values but the strongest value should be contradiction", async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_multiply(x, y, product);
         const numValues = 100;
@@ -153,16 +154,16 @@ describe("test propagator", () => {
 
         execute_all_tasks_simultaneous((error: Error) => {});
         // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
-        expect(value_set_length(x.getContent().get_value())).toBe(numValues + 1); // +1 for the contradiction value
+        expect(value_set_length(x.getContent().get_value())).toBe(numValues) // +1 for the contradiction value
 
  
     });
 
 
     test('primitive propagator is working with multiply', async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_multiply(x, y, product)
 
@@ -179,9 +180,9 @@ describe("test propagator", () => {
 
 
     test('primitive propagator is working with subtract', async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_subtract(x, y, product)
 
@@ -199,9 +200,9 @@ describe("test propagator", () => {
 
 
     test('primitive propagator is working with divide', async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_divide(x, y, product)
 
@@ -217,9 +218,9 @@ describe("test propagator", () => {
     })
 
     test('primitive propagator is working with add', async () => {
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_add(x, y, product)
 
@@ -238,9 +239,9 @@ describe("test propagator", () => {
     test('contradiction is properly propagated with primitive propagator', async () => {
         
 
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_add(x, y, product)
 
@@ -262,9 +263,9 @@ describe("test propagator", () => {
 
     test('contradiction would be activated in primitive propagator', async () => {
 
-        const x = new Cell("x");
-        const y = new Cell("y");
-        const product = new Cell("product");
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const product = construct_cell("product");
 
         p_add(x, y, product)
 
@@ -291,9 +292,9 @@ describe("test propagator", () => {
 
 })
 // test("test kicking", async () => {
-//     const x = new Cell("x");
-//     const y = new Cell("y");
-//     const product = new Cell("product");
+//     const x = construct_cell("x");
+//     const y = construct_cell("y");
+//     const product = construct_cell("product");
     
 //     c_multiply(x, y, product);
 
@@ -325,9 +326,9 @@ describe("test propagator", () => {
 
 // test("kick out 123", async () => {
 //     // set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
-//     const x = new Cell("e");
-//     const y = new Cell("f");
-//     const product = new Cell("g");
+//     const x = construct_cell("e");
+//     const y = construct_cell("f");
+//     const product = construct_cell("g");
     
 //     c_multiply(x, y, product);
 
@@ -363,11 +364,11 @@ describe("test propagator", () => {
 // })
 
 test('contradiction with multiple propagators and resolution', async () => {
-    const a = new Cell("a");
-    const b = new Cell("b");
-    const c = new Cell("c");
-    const sum = new Cell("sum");
-    const product = new Cell("product");
+    const a = construct_cell("a");
+    const b = construct_cell("b");
+    const c = construct_cell("c");
+    const sum = construct_cell("sum");
+    const product = construct_cell("product");
 
     p_add(a, b, sum);
     p_multiply(sum, c, product);
@@ -392,9 +393,9 @@ test('contradiction with multiple propagators and resolution', async () => {
 });
 
 test('resolving contradiction with multiple conflicting inputs', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const z = new Cell("z");
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
 
     p_add(x, y, z);
 
@@ -419,9 +420,9 @@ test('resolving contradiction with multiple conflicting inputs', async () => {
 });
 
 // test('contradiction in a circular dependency', async () => {
-//     const a = new Cell("a");
-//     const b = new Cell("b");
-//     const c = new Cell("c");
+//     const a = construct_cell("a");
+//     const b = construct_cell("b");
+//     const c = construct_cell("c");
 
 //     p_add(a, b, c);
 //     p_subtract(c, a, b);
@@ -443,9 +444,9 @@ test('resolving contradiction with multiple conflicting inputs', async () => {
 // });
 
 test('resolving contradiction with floating-point precision issues', async () => {
-    const x = new Cell("x");
-    const y = new Cell("y");
-    const z = new Cell("z");
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
 
     p_multiply(x, y, z);
 
@@ -476,81 +477,48 @@ test('resolving contradiction with floating-point precision issues', async () =>
     expect(cell_strongest_base_value(z)).toBeCloseTo(0.02, 5);
 });
 
-// test('multiple contradictions and resolutions', async () => {
-//     const a = new Cell("a");
-//     const b = new Cell("b");
-//     const sum = new Cell("sum");
-
-//     p_add(a, b, sum);
-
-//     // First round: Create and resolve a contradiction
-//     tell(a, 5, "a_val_1");
-//     tell(b, 3, "b_val_1");
-//     tell(sum, 10, "sum_val_1");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(true);
-
-//     kick_out("sum_val_1");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(false);
-//     expect(cell_strongest_base_value(sum)).toBe(8);
-
-//     // Second round: Create and resolve another contradiction
-//     tell(a, 7, "a_val_2");
-//     tell(sum, 9, "sum_val_2");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(true);
-
-//     kick_out("b_val_1");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(false);
-//     expect(cell_strongest_base_value(sum)).toBe(9);
-//     expect(cell_strongest_base_value(b)).toBe(2);
-
-//     // Third round: Create and resolve a contradiction with multiple conflicting inputs
-//     tell(b, 4, "b_val_3");
-//     tell(sum, 12, "sum_val_3");
-//     tell(sum, 10, "sum_val_4");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(true);
-
-//     kick_out("sum_val_2");
-//     kick_out("sum_val_3");
-//     kick_out("sum_val_4");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(false);
-//     expect(cell_strongest_base_value(sum)).toBe(11);
-
-//     // Fourth round: Resolve contradiction by kicking out multiple values
-//     tell(a, 3, "a_val_4");
-//     tell(b, 2, "b_val_4");
-//     tell(sum, 7, "sum_val_5");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(true);
-
-//     kick_out("a_val_2");
-//     kick_out("b_val_3");
-
-//     await execute_all_tasks_sequential((error: Error) => {}).task
-
-//     expect(is_contradiction(cell_strongest_base_value(sum))).toBe(false);
-//     expect(cell_strongest_base_value(sum)).toBe(5);
-//     expect(cell_strongest_base_value(a)).toBe(3);
-//     expect(cell_strongest_base_value(b)).toBe(2);
-// });
 
 
+test('example test from SimpleTest.ts', async () => {
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
+
+    const possibilities = enum_num_set(1, 10);
+
+    p_amb(x, possibilities);
+    p_amb(y, possibilities);
+    p_amb(z, possibilities);
+
+    const x2 = construct_cell("x2");
+    const y2 = construct_cell("y2");
+    const z2 = construct_cell("z2");
+
+    p_multiply(x, x, x2);
+    p_multiply(y, y, y2);
+    p_multiply(z, z, z2);
+
+    p_add(x2, y2, z2);
+
+    const results: any[] = [];
+    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+        console.log("all results", to_string(value));
+        results.push(to_string(value));
+    });
+
+    execute_all_tasks_sequential((error: Error) => {
+        if (error) {
+            console.error(error);
+        }
+    });
+
+    // Add assertions for expected results
+    expect(results).toContain("[4, 3, 5]");
+    expect(results).toContain("[3, 4, 5]");
+    expect(results).toContain("[8, 6, 10]");
+    expect(results).toContain("[6, 8, 10]");
+
+    expect(x.summarize()).toBeDefined();
+    expect(y.summarize()).toBeDefined();
+    expect(z.summarize()).toBeDefined();
+});

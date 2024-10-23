@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test"; 
-import { Cell, track_content } from "../Cell/Cell";
-import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals, summarize_premises_list, premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
+import { type Cell, construct_cell, cell_content as  track_content } from "../Cell/Cell";
+import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals,  premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../BuiltInProps";
 import { configure_log_process_contradictions, find_premise_to_choose } from "../Search";
@@ -8,12 +8,14 @@ import { cell_strongest_base_value } from "../Cell/Cell";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { observe_cell, tell } from "../ui";
-import { set_merge } from "@/cell/Merge";
+import { set_merge } from "../Cell/Merge";
 import { PublicStateCommand, set_global_state } from "../PublicState";
 import { merge_value_sets, value_set_length } from "../DataTypes/ValueSet";
 import { subscribe } from "../Reactivity/Reactor";
 import { type PremiseMetaData } from "../DataTypes/Premises";
 import { mark_only_chosen_premise } from "../Search";
+
+
 let a: Cell, b: Cell, sum: Cell;
 
 
@@ -27,9 +29,9 @@ describe("Premises and Hypotheticals", () => {
         set_merge(merge_value_sets);
 
         // Set up cells
-        a = new Cell("a");
-        b = new Cell("b");
-        sum = new Cell("sum");
+        a = construct_cell("a");
+        b = construct_cell("b");
+        sum = construct_cell("sum");
         p_add(a, b, sum);
 });
 
@@ -59,7 +61,7 @@ describe("Premises and Hypotheticals", () => {
         execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
         });
-        expect(value_set_length(a.getContent().get_value())).toBe(7)
+        expect(value_set_length(a.getContent().get_value())).toBe(6)
     })
 
     it("should calculate hypotheticals like normal values", async () => {

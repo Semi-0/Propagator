@@ -1,4 +1,4 @@
-import { add_cell_content, Cell, test_cell_content } from "../Cell/Cell";
+import { add_cell_content, type Cell } from "../Cell/Cell";
 import { set_global_state } from "../PublicState";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";

@@ -1,7 +1,7 @@
 
-import { Cell } from './Cell/Cell';
-import {  make_relation, Relation } from './DataTypes/Relation';
-import { Propagator } from './Propagator';
+import { type Cell } from './Cell/Cell';
+import {  make_relation, type Relation } from './DataTypes/Relation';
+import { type Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 
 import { all_match, match_args } from 'generic-handler/Predicates';
@@ -40,7 +40,7 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
     } 
 
     function summarize(){
-        const args_summarize = ( args[0] instanceof Cell) || (args[0] instanceof Propagator) ? args[0].summarize() : "unknown args";
+        const args_summarize = ( is_cell(args[0]) ) || (is_propagator(args[0])) ? args[0].summarize() : "unknown args";
 
         return  "command: " + get_command() + " args: " + args_summarize;
     }
@@ -132,7 +132,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             break;
        
         case PublicStateCommand.ADD_AMB_PROPAGATOR:
-            if (msg.args.every(o => o instanceof Propagator)) {
+            if (msg.args.every(o => is_propagator(o))) {
                 all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
             }
             else{
@@ -185,14 +185,14 @@ export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessag
                                   observeCell: (cell: Cell) => void) => {
     pipe(receiver,
         filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
-        filter((msg: PublicStateMessage) => msg.args.length == 1 && msg.args[0] instanceof Cell),
+        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_cell(msg.args[0])),
         tap((msg: PublicStateMessage) => {
             observeCommand(msg);
             return msg
         }))
     .subscribe((msg: PublicStateMessage) => {
         const cell = msg.args[0]; 
-        guard((cell instanceof Cell), throw_error(
+        guard((is_cell(cell)), throw_error(
             "observe_all_cells", 
             "observe_all_cells expects a cell, got " + cell, 
             msg.summarize()

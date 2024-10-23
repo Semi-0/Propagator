@@ -1,7 +1,7 @@
-import {  set_global_state,  get_global_parent, is_equal } from "../PublicState";
-import { Propagator } from "../Propagator";
+import { set_global_state, get_global_parent, is_equal } from "../PublicState";
+import { type Propagator } from "../Propagator";
 import { pipe } from 'fp-ts/function'
-import {   construct_stateful_reactor, filter,  map,  subscribe, type StatefulReactor } from "../Reactivity/Reactor";
+import { construct_stateful_reactor, filter, map, subscribe, type StatefulReactor } from "../Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
@@ -19,15 +19,8 @@ import { tap } from "../Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
-// TO ALLOW SPECIFIC TYPE OF VALUE BEEN PROPAGATED
-// WE NEED TO 1. DEFINE HOW THE OLD VALUE MERGE WITH THE NEW ONE
-// 2. DEFINE WHAT IS THE STRONGEST VALUE FOR THIS SPECIFIC KIND OF DATASET
-// 3. (OPTIONAL) WHAT TO DO WHEN CONTRADICTON IS FOUND
-
 
 export const general_contradiction = is_layered_contradiction
-
-
 
 export function handle_cell_contradiction(cell: Cell) {
   const nogoods = pipe(
@@ -35,78 +28,51 @@ export function handle_cell_contradiction(cell: Cell) {
     cell_strongest_value,
     get_support_layer_value,
   );
-
-
   
   process_contradictions(make_better_set([nogoods]), cell)
 }
 
-
 export const handle_contradiction = handle_cell_contradiction;
 
+export interface Cell {
+  getRelation: () => Relation;
+  getContent: () => StatefulReactor<any>;
+  getStrongest: () => StatefulReactor<any>;
+  getNeighbors: () => Map<string, Propagator>;
+  addContent: (increment: any) => void;
+  testContent: (content: any, strongest: any) => any | null;
+  force_update: () => void;
+  addNeighbor: (propagator: Propagator) => void;
+  summarize: () => string;
+  observe_update: (observer: (cellValues: any) => void) => void;
+}
 
-export class Cell{
-  private relation : Relation 
-  private neighbors : Map<string, Propagator> = new Map();
-  private content : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
-  private strongest : StatefulReactor<any> = scheduled_reactive_state(the_nothing);
+export function construct_cell(name: string): Cell {
+  const relation = make_relation(name, get_global_parent());
+  const neighbors: Map<string, Propagator> = new Map();
+  const content: StatefulReactor<any> = scheduled_reactive_state(the_nothing);
+  const strongest: StatefulReactor<any> = scheduled_reactive_state(the_nothing);
 
-  constructor(name: string){
-    this.relation = make_relation(name, get_global_parent());
-
-    pipe(
-      this.content,
-      map((content: any) => this.testContent(content, this.strongest.get_value())),
-      filter((content: any) => !is_equal(content, this.strongest.get_value())),
-      subscribe((content: any) => {
-        this.strongest.next(content)
-
-      })
-    )
-
-    this.strongest.subscribe((v: any) => {
-      if (general_contradiction(v)){
-        handle_cell_contradiction(this)
-      }
+  pipe(
+    content,
+    map((content: any) => testContent(content, strongest.get_value())),
+    filter((content: any) => !is_equal(content, strongest.get_value())),
+    subscribe((content: any) => {
+      strongest.next(content)
     })
-  
-  
-   
-    set_global_state(PublicStateCommand.ADD_CELL, this);
-    set_global_state(PublicStateCommand.ADD_CHILD, this.relation);
-  }
+  )
 
-  observe_update(observer:(cellValues: any) => void){
-    this.strongest.subscribe(observer);
-  }
-
-  getRelation(){
-    return this.relation;
-  }
-
-  getContent(){
-    return this.content;
-  } 
-
-  getStrongest(){
-    return this.strongest;
-  } 
+  strongest.subscribe((v: any) => {
+    if (general_contradiction(v)){
+      handle_cell_contradiction(cell)
+    }
+  })
 
 
-  getNeighbors(){
-    return this.neighbors;
-  }
 
-  addContent(increment:any){
-    const result = cell_merge(this.content.get_value(), increment);
-    this.content.next(result);
-  }
-
-
-  testContent(content: any, strongest: any): any | null {
+  function testContent(content: any, strongest: any): any | null {
     const _strongest = strongest_value(content);
     if (general_contradiction(_strongest)){
-
       return _strongest;
     }
     else {
@@ -114,39 +80,51 @@ export class Cell{
     }
   }
 
-  force_update(){
 
-    this.content.next(this.content.get_value());
+  
 
-  }
+  const cell: Cell = {
+    getRelation: () => relation,
+    getContent: () => content,
+    getStrongest: () => strongest,
+    getNeighbors: () => neighbors,
+    addContent: (increment: any) => {
+      const result = cell_merge(content.get_value(), increment);
+      content.next(result);
+    },
+    testContent,
+    force_update: () => {
+      content.next(content.get_value());
+    },
+    addNeighbor: (propagator: Propagator) => {
+      neighbors.set(propagator.getRelation().get_id(), propagator);
+    },
+    summarize: () => {
+      const name = relation.get_name();
+      const strongestValue = strongest.get_value();
+      const contentValue = content.get_value();
+      return `name: ${name}\nstrongest: ${describe(strongestValue)}\ncontent: ${describe(contentValue)}`;
+    },
+    observe_update: (observer: (cellValues: any) => void) => {
+      strongest.subscribe(observer);
+    }
+  };
 
-  addNeighbor(propagator: Propagator){
-    this.neighbors.set(propagator.getRelation().get_id(), propagator);
-  }
 
-  summarize(){
-    const name = this.relation.get_name();
-    const strongest = this.strongest.get_value();
-    const content = this.content.get_value();
-    return `name: ${name}\nstrongest: ${describe(strongest)}\ncontent: ${describe(content)}`;
-  }
+  set_global_state(PublicStateCommand.ADD_CELL, cell);
+  set_global_state(PublicStateCommand.ADD_CHILD, relation);
+  return cell;
 }
 
-export const is_cell = register_predicate("is_cell", (a: any) => a instanceof Cell)
+export const is_cell = register_predicate("is_cell", (a: any): a is Cell => 
+  typeof a === 'object' && a !== null &&
+  'getRelation' in a && 'getContent' in a && 'getStrongest' in a &&
+  'getNeighbors' in a && 'addContent' in a && 'testContent' in a &&
+  'force_update' in a && 'addNeighbor' in a && 'summarize' in a &&
+  'observe_update' in a
+)
 
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell) => cell.summarize())
-
-export function track_content(cell: Cell){
-  return cell.getContent()
-} 
-
-export function track_strongest(cell: Cell){
-  return cell.getStrongest()
-}
-
-export function test_cell_content(cell: Cell){
-  return cell.force_update();
-}
 
 export function add_cell_neighbour(cell: Cell, propagator: Propagator){
   cell.addNeighbor(propagator);
@@ -158,6 +136,10 @@ export function add_cell_content(cell: Cell, content: any){
 
 export function cell_strongest(cell: Cell){
   return cell.getStrongest();
+}
+
+export function cell_content(cell: Cell){
+  return cell.getContent();
 }
 
 export function cell_id(cell: Cell){
@@ -178,5 +160,4 @@ export function cell_strongest_value(cell: Cell){
 
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
 
-
-export const user_cell = new Cell("user_cell")
+export const user_cell = construct_cell("user_cell")

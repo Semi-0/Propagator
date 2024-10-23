@@ -1,6 +1,6 @@
-import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
+import { primitive_propagator, constraint_propagator, type Propagator, construct_propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
-import { Cell, cell_name } from "./Cell/Cell";
+import { type Cell, cell_name } from "./Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
 import { first, for_each, second } from "./helper";
 import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";
@@ -70,7 +70,7 @@ export function binary_amb(cell: Cell): Propagator{
         }
     }
     // when amb propagato is activated?
-    const self = new Propagator("binary_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator("binary_amb", [cell], [cell], construct_amb_reactor(amb_choose))
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -134,7 +134,7 @@ export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
         }
 
 
-    const self = new Propagator("p_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator("p_amb", [cell], [cell], construct_amb_reactor(amb_choose))
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }

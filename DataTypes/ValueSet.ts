@@ -2,7 +2,7 @@
 
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal, BetterSetImpl, set_filter } from "generic-handler/built_in_generics/generic_better_set";
+import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal,  set_filter } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { is_layered_object } from "../temp_predicates";

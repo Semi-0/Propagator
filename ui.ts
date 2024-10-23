@@ -1,5 +1,4 @@
-import { register_predicate } from "generic-handler/Predicates";
-import { add_cell_content, Cell, cell_strongest_base_value, cell_strongest_value, user_cell } from "./Cell/Cell"; 
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, user_cell } from "./Cell/Cell"; 
 import { for_each } from "./helper";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "./DataTypes/Premises";
@@ -7,7 +6,6 @@ import { failed_count, observe_all_cells_update, PublicStateCommand } from "./Pu
 import {  type PublicStateMessage } from "./PublicState";
 import { is_layered_object } from "./temp_predicates";
 import { execute_all_tasks_sequential, steppable_run_task } from "./Scheduler";
-import { construct_value_set } from "./DataTypes/ValueSet";
 import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
 import { pipe } from "fp-ts/lib/function";
 import { construct_better_set, map_to_new_set, merge_set, set_add_item, set_map, set_reduce, set_some, set_union, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";

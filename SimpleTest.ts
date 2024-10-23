@@ -1,5 +1,5 @@
 // import { isNumber } from "effect/Predicate";
-import { Cell, cell_strongest_base_value, test_cell_content, track_content, track_strongest } from "./Cell/Cell";
+import { cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
 import { force_load_arithmatic } from "./Cell/GenericArith";
 import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract } from "./BuiltInProps";
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Search";
@@ -25,16 +25,16 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 
-const x = new Cell("x");
-const y = new Cell("y");
-const z = new Cell("z"); 
+const x = construct_cell("x");
+const y = construct_cell("y");
+const z = construct_cell("z"); 
 
 
 
 
-const x2 = new Cell("x2");
-const y2 = new Cell("y2");
-const z2 = new Cell("z2");
+const x2 = construct_cell("x2");
+const y2 = construct_cell("y2");
+const z2 = construct_cell("z2");
 
 // track_strongest(z).subscribe((value: any) => {
 //     console.log("z strongest", to_string(value))
@@ -53,24 +53,24 @@ const z2 = new Cell("z2");
 // })
 
 
-const track_nothing = compose(track_strongest, reactor_filter(is_nothing)) 
+const track_nothing = compose(cell_strongest, reactor_filter(is_nothing)) 
 const log_strongest = compose(cell_strongest_base_value, console.log)
 const log_string = compose(to_string, console.log)
 
 
 
 
-const possibilities = enum_num_set(1, 20)
+const possibilities = enum_num_set(1, 10)
 
 p_amb(x, possibilities)
 p_amb(y, possibilities) 
 p_amb(z, possibilities) 
 
-// p_multiply(x, x, x2)
-// p_multiply(y, y, y2)
-// p_multiply(z, z, z2) 
+p_multiply(x, x, x2)
+p_multiply(y, y, y2)
+p_multiply(z, z, z2) 
 
-p_add(x, y, z) 
+p_add(x2, y2, z2) 
 
 // //TODO: SEEMS CONTRADICTION IS NOT ACTIVATED
 
