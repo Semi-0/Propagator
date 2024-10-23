@@ -1,6 +1,6 @@
 {
   "name": "ppropogator",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -12,6 +12,7 @@
   "dependencies": {
     "async-mutex": "^0.5.0",
     "cancelable-promise": "^4.3.1",
+    "dependency-cruiser": "^16.5.0",
     "effect-ts": "^0.0.1",
     "fp-ts": "^2.16.9",
     "generic-handler": "0.3.13",

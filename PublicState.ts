@@ -1,7 +1,5 @@
 
-import { type Cell } from './Cell/Cell';
 import {  make_relation, type Relation } from './DataTypes/Relation';
-import { type Propagator } from './Propagator';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 
 import { all_match, match_args } from 'generic-handler/Predicates';
@@ -11,7 +9,7 @@ import { construct_readonly_reactor, construct_stateful_reactor, type StatefulRe
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactivity/Reactor';
 import { generic_merge, set_merge } from './Cell/Merge';
-
+//@ts-nocheck
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",
@@ -55,15 +53,15 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
 
 var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
 // Todo: make this read only
-const all_cells: StatefulReactor<Cell[]> = construct_stateful_reactor<Cell[]>([]);
-const all_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
-const all_amb_propagators: StatefulReactor<Propagator[]> = construct_stateful_reactor<Propagator[]>([]);
+const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
+const all_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
+const all_amb_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
 export const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
 
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
-
+// avoid circular references
 function is_cell(o: any): boolean{
     return o.getContent !== undefined && o.getRelation !== undefined && o.getStrongest !== undefined && o.getNeighbors !== undefined;
 }
@@ -80,7 +78,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             failed_count.next(failed_count.get_value() + 1)
             break;
         case PublicStateCommand.FORCE_UPDATE_ALL:
-            all_cells.get_value().forEach((cell: Cell) => {
+            all_cells.get_value().forEach((cell: any) => {
                 cell.force_update();
             });
             break;
@@ -182,7 +180,7 @@ export function get_global_parent(){
 }
 
 export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessage) => void, 
-                                  observeCell: (cell: Cell) => void) => {
+                                  observeCell: (cell: any) => void) => {
     pipe(receiver,
         filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
         filter((msg: PublicStateMessage) => msg.args.length == 1 && is_cell(msg.args[0])),
