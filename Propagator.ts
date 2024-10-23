@@ -10,6 +10,7 @@ import { combine_latest, construct_reactor, tap, type Reactor } from "./Reactivi
 import { pipe } from "fp-ts/function";
 import { map, subscribe } from "./Reactivity/Reactor";
 import type { StringLiteralType } from "typescript";
+import { register_predicate } from "generic-handler/Predicates";
 force_load_arithmatic();
 
 export interface Propagator {
@@ -20,6 +21,10 @@ export interface Propagator {
   getActivator: () => Reactor<any>;
   summarize: () => string;
 }
+
+export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
+    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator;
+})
 
 export function construct_propagator(name: string, 
                                  inputs: Cell[], 
