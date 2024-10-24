@@ -18,7 +18,10 @@ this could opens up some possibilities for visualization.
 
 
 
-
+todo:
+1. simplify premise->cell->amb subs
+2. integrate with socket/libp2p for distributed computation
+3. localize premises maintain system(means premises also should add subs to what ever cell it propagates to) 
 
 
 
