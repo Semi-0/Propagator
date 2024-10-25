@@ -9,8 +9,8 @@ propagates, supported value,
 generic arithmetic, as well as
 simple backtracking(amb op).
 
-i made a customized push based reactive system,
-which difference from the scheme impl,
+i made a customized observer based reactive system,
+which is different from the scheme implementation,
 and a more generic simple scheduler supports promise.
 So both the cell and propagator could be observed by external observer,
 this could opens up some possibilities for visualization.
