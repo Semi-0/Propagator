@@ -10,7 +10,7 @@ simple backtracking(amb op).
 
 I made a customized observer-based reactive system,
 which is different from the scheme implementation,
-and a more generic, simple scheduler supports promise.
+and a more generic scheduler supports promise.
 So, both the cell and propagator could be observed by external observers,
 this could open up some possibilities for visualization.
 
