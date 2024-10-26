@@ -16,7 +16,7 @@ So, both the cell and propagator could be observed by external observers,
 this could potentially open up some possibilities for visualization.
 
 
-todo:
+Todos:
 1. simplify premise->cell->amb subs
 2. integrate with socket/libp2p for distributed computation
 3. localize premises maintainance system(means premises also should notify whatever 
