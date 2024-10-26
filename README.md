@@ -10,7 +10,7 @@ simple backtracking(amb op).
 
 Also, a customized observer-based reactive system has been included for 
 transmitting values between cells and propagators, and a more generic scheduler supports promise,
-which is different from the scheme implementation,
+which is different from the scheme implementation.
 
 So, both the cell and propagator could be observed by external observers,
 this could potentially open up some possibilities for visualization.
