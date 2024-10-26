@@ -8,7 +8,8 @@ propagaters, support layer,
 generic arithmetic, as well as
 simple backtracking(amb op).
 
-I made a customized observer-based reactive system,
+Also a customized observer-based reactive system has been included for 
+transmitting values between cells and propagators,
 which is different from the scheme implementation,
 and a more generic scheduler supports promise.
 So, both the cell and propagator could be observed by external observers,
