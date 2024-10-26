@@ -1,27 +1,25 @@
 # ppropogator
 
-
 Typescript implementation of propagator system
 from the art of propagator & SDF.
 
-Includes implementation of basic cell, 
-propagates, supported value, 
+including the implementation of basic cells, 
+propagaters, support layer, 
 generic arithmetic, as well as
 simple backtracking(amb op).
 
-i made a customized observer based reactive system,
+I made a customized observer-based reactive system,
 which is different from the scheme implementation,
-and a more generic simple scheduler supports promise.
-So both the cell and propagator could be observed by external observer,
-this could opens up some possibilities for visualization.
-
+and a more generic, simple scheduler supports promise.
+So, both the cell and propagator could be observed by external observers,
+this could open up some possibilities for visualization.
 
 
 
 todo:
 1. simplify premise->cell->amb subs
 2. integrate with socket/libp2p for distributed computation
-3. localize premises maintain system(means premises also should notify whatever 
+3. localize premises maintainance system(means premises also should notify whatever 
 cell it was propagated to for update)
 
 
