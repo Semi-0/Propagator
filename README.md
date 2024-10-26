@@ -4,7 +4,7 @@ Typescript implementation of propagator system
 from the art of propagator & SDF.
 
 including the implementation of basic cells, 
-propagaters, support layer, 
+propogators, support layer, 
 generic arithmetic, as well as
 simple backtracking(amb op).
 
