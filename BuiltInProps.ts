@@ -1,6 +1,6 @@
-import { primitive_propagator, constraint_propagator, Propagator } from "./Propagator"; 
+import { primitive_propagator, constraint_propagator,type Propagator } from "./Propagator"; 
 import { multiply, divide } from "./Cell/GenericArith";
-import { Cell } from "./Cell/Cell";
+import { type Cell } from "./Cell/Cell";
 import { merge,  type Reactor } from "./Reactivity/Reactor";
 import { add, subtract} from "./Cell/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";

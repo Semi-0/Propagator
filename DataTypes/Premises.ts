@@ -64,7 +64,9 @@ export class PremiseMetaData {
     } 
 
     wake_up_roots(){
+        // TODO: this can be even simplified with define relationship between premises cells and ambs
         // if add content is scheduled cannot make sure amb is only notified after all the current content has been all propagated
+
         set_global_state(PublicStateCommand.FORCE_UPDATE_ALL)
 
         // TODO: force update propagators
