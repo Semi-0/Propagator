@@ -1,20 +1,20 @@
 import { add_cell_content, type Cell } from "../Cell/Cell";
-import { set_global_state } from "../PublicState";
+import { set_global_state } from "../Shared/PublicState";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { make_better_set, set_add_item, set_equal, set_map } from "generic-handler/built_in_generics/generic_better_set";
 import { set_every, set_for_each as for_each } from "generic-handler/built_in_generics/generic_better_set";
-import { PublicStateCommand } from "../PublicState";
+import { PublicStateCommand } from "../Shared/PublicState";
 import { Relation } from "./Relation";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { v4 as uuidv4 } from 'uuid';
 import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
 
-import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Reactivity/Reactor";
-import { execute_all_tasks_sequential, execute_all_tasks_simultaneous, scheduled_reactor } from "../Scheduler";
+import { construct_reactor, construct_readonly_reactor, construct_stateful_reactor, type Reactor, type ReadOnlyReactor, type StandardReactor, type StatefulReactor } from "../Shared/Reactivity/Reactor";
+import { execute_all_tasks_sequential, execute_all_tasks_simultaneous, scheduled_reactor } from "../Shared/Reactivity/Scheduler";
 export enum BeliefState {
     Believed,
     NotBelieved,

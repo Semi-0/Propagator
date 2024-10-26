@@ -1,14 +1,14 @@
 
-import {  make_relation, type Relation } from './DataTypes/Relation';
+import {  make_relation, type Relation } from '../DataTypes/Relation';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 
 import { all_match, match_args } from 'generic-handler/Predicates';
 import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
-import { is_layered_object } from './temp_predicates';
+import { is_layered_object } from '../Helper/Predicate';
 import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactivity/Reactor';
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactivity/Reactor';
-import { generic_merge, set_merge } from './Cell/Merge';
+import { generic_merge, set_merge } from '../Cell/Merge';
 //@ts-nocheck
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
@@ -50,7 +50,7 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
     }
 }
 
-
+//@ts-ignore
 var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
 // Todo: make this read only
 const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
@@ -201,7 +201,7 @@ export const observe_failed_count = construct_readonly_reactor(failed_count)
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
-import { clean_hypothetical_store, clean_premises_store, observe_premises_has_changed } from './DataTypes/Premises';
+import { clean_hypothetical_store, clean_premises_store, observe_premises_has_changed } from '../DataTypes/Premises';
 
 export const is_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {

@@ -1,4 +1,4 @@
-import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactivity/Reactor";
+import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactor";
 import { v4 as uuidv4 } from 'uuid';
 
 // MAIN PROBLEM LIES IN EXECUTION ORDER

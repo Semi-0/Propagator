@@ -1,5 +1,5 @@
 import { expect, test, jest } from "bun:test";
-import { reset_scheduler, schedule_task, execute_all_tasks_sequential, simple_scheduler, steppable_run_task } from "../Scheduler";
+import { reset_scheduler, schedule_task, execute_all_tasks_sequential, simple_scheduler, steppable_run_task } from "../Shared/Reactivity/Scheduler";
 
 // test("cancellable_execute", async () => {
 //     reset_scheduler()
@@ -61,7 +61,7 @@ test("simple_scheduler with steppable_run", async () => {
 });
 
 // ... existing imports ...
-import { scheduled_reactor, scheduled_reactive_state,  } from "../Scheduler";
+import { scheduled_reactor, scheduled_reactive_state,  } from "../Shared/Reactivity/Scheduler";
 
 // ... existing tests ...
 

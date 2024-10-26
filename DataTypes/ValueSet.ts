@@ -5,7 +5,7 @@ import { match_args, register_predicate } from "generic-handler/Predicates";
 import { set_add_item, type BetterSet, construct_better_set, set_find, set_flat_map, set_for_each, set_has, is_better_set,  set_remove, set_every, set_some, to_array, set_map, set_smaller_than, set_equal,  set_filter } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { is_layered_object } from "../temp_predicates";
+import { is_layered_object } from "../Helper/Predicate";
 import { add, divide, is_equal, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
 import { is_atom, is_function, is_array, is_any } from "generic-handler/built_in_generics/generic_predicates";
 import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";

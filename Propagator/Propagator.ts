@@ -1,14 +1,14 @@
-import { Relation, make_relation } from "./DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_strongest } from "./Cell/Cell";
-import { set_global_state, get_global_parent } from "./PublicState";
+import { Relation, make_relation } from "../DataTypes/Relation";
+import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
+import { set_global_state, get_global_parent } from "../Shared/PublicState";
 
 import { type Either, right, left } from "fp-ts/Either";
-import { force_load_arithmatic } from "./Cell/GenericArith";
-import { PublicStateCommand } from "./PublicState";
-import { scheduled_reactor } from "./Scheduler";
-import { combine_latest, construct_reactor, tap, type Reactor } from "./Reactivity/Reactor";
+import { force_load_arithmatic } from "../Cell/GenericArith";
+import { PublicStateCommand } from "../Shared/PublicState";
+import { scheduled_reactor } from "../Shared/Reactivity/Scheduler";
+import { combine_latest, construct_reactor, tap, type Reactor } from "../Shared/Reactivity/Reactor";
 import { pipe } from "fp-ts/function";
-import { map, subscribe } from "./Reactivity/Reactor";
+import { map, subscribe } from "../Shared/Reactivity/Reactor";
 import type { StringLiteralType } from "typescript";
 import { register_predicate } from "generic-handler/Predicates";
 force_load_arithmatic();

@@ -1,5 +1,5 @@
 import {  register_predicate } from "generic-handler/Predicates"
-import { is_layered_object } from "../temp_predicates"
+import { is_layered_object } from "../Helper/Predicate"
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";

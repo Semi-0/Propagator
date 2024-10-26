@@ -1,21 +1,21 @@
-import { set_global_state, get_global_parent, is_equal } from "../PublicState";
-import { type Propagator } from "../Propagator";
+import { set_global_state, get_global_parent, is_equal } from "../Shared/PublicState";
+import { type Propagator } from "../Propagator/Propagator";
 import { pipe } from 'fp-ts/function'
-import { construct_stateful_reactor, filter, map, subscribe, type StatefulReactor } from "../Reactivity/Reactor";
+import { construct_stateful_reactor, filter, map, subscribe, type StatefulReactor } from "../Shared/Reactivity/Reactor";
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
-import { PublicStateCommand } from "../PublicState";
-import { describe } from "../ui";
+import { PublicStateCommand } from "../Shared/PublicState";
+import { describe } from "../Helper/UI";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
-import { process_contradictions } from "../Search";
+import { process_contradictions } from "../Propagator/Search";
 import { construct_better_set, make_better_set, map_to_new_set, set_get_length, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-import { scheduled_reactive_state } from "../Scheduler";
+import { scheduled_reactive_state } from "../Shared/Reactivity/Scheduler";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { tap } from "../Reactivity/Reactor";
+import { tap } from "../Shared/Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";

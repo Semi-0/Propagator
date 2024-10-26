@@ -1,22 +1,22 @@
 // import { isNumber } from "effect/Predicate";
 import { cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
 import { force_load_arithmatic } from "./Cell/GenericArith";
-import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract } from "./BuiltInProps";
-import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Search";
-import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Scheduler";
+import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract } from "./Propagator/BuiltInProps";
+import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
+import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
-import { failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./PublicState";
+import { failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./Shared/PublicState";
 import { merge_value_sets } from "./DataTypes/ValueSet";
 import { construct_better_set, is_better_set, make_better_set, set_get_length, set_map, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { combine_latest } from "./Reactivity/Reactor";
+import { combine_latest } from "./Shared/Reactivity/Reactor";
 import { _premises_metadata, is_premises_in, track_premise } from "./DataTypes/Premises";
-import { all_results, enum_num_set, force_failure, observe_cell, tell } from "./ui";
+import { all_results, enum_num_set, force_failure, observe_cell, tell } from "./Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_trace_merge } from "./Cell/Merge";
-import { filter as reactor_filter } from "./Reactivity/Reactor"
+import { filter as reactor_filter } from "./Shared/Reactivity/Reactor"
 import { is_nothing, the_contradiction } from "./Cell/CellValue";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-import { for_each } from "./helper";
+import { for_each } from "./Helper/Helper";
 import { pipe } from "fp-ts/lib/function";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { map as generic_map, filter as generic_filter } from "generic-handler/built_in_generics/generic_array_operation";

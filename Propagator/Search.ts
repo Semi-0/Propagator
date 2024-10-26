@@ -1,17 +1,17 @@
 import { primitive_propagator, constraint_propagator, type Propagator, construct_propagator } from "./Propagator"; 
-import { multiply, divide } from "./Cell/GenericArith";
-import { type Cell, cell_name } from "./Cell/Cell";
-import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "./DataTypes/Premises";
-import { first, for_each, second } from "./helper";
+import { multiply, divide } from "../Cell/GenericArith";
+import { type Cell, cell_name } from "../Cell/Cell";
+import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
+import { first, for_each, second } from "../Helper/Helper";
 import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";
 import { set_reduce_right } from "generic-handler/built_in_generics/generic_better_set";
-import { PublicStateCommand, set_global_state } from "./PublicState";
+import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
-import { merge, tap, type Reactor } from "./Reactivity/Reactor";
-import { map } from "./Reactivity/Reactor";
-import { add, subtract} from "./Cell/GenericArith";
+import { merge, tap, type Reactor } from "../Shared/Reactivity/Reactor";
+import { map } from "../Shared/Reactivity/Reactor";
+import { add, subtract} from "../Cell/GenericArith";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 var log_amb_choose = false; 

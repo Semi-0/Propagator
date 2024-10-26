@@ -1,6 +1,6 @@
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
-import { is_equal } from "../PublicState";
+import { is_equal } from "../Shared/PublicState";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 var trace_merge = false; 

@@ -2,18 +2,18 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { type Cell, construct_cell, cell_content as  track_content } from "../Cell/Cell";
 import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals,  premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
-import { p_add } from "../BuiltInProps";
-import { configure_log_process_contradictions, find_premise_to_choose } from "../Search";
+import { p_add } from "../Propagator/BuiltInProps";
+import { configure_log_process_contradictions, find_premise_to_choose } from "../Propagator/Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
-import { clear_all_tasks, execute_all_tasks_sequential } from "../Scheduler";
+import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import { observe_cell, tell } from "../ui";
+import { observe_cell, tell } from "../Helper/UI";
 import { set_merge } from "../Cell/Merge";
-import { PublicStateCommand, set_global_state } from "../PublicState";
+import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { merge_value_sets, value_set_length } from "../DataTypes/ValueSet";
-import { subscribe } from "../Reactivity/Reactor";
+import { subscribe } from "../Shared/Reactivity/Reactor";
 import { type PremiseMetaData } from "../DataTypes/Premises";
-import { mark_only_chosen_premise } from "../Search";
+import { mark_only_chosen_premise } from "../Propagator/Search";
 
 
 let a: Cell, b: Cell, sum: Cell;
