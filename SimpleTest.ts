@@ -60,7 +60,7 @@ const log_string = compose(to_string, console.log)
 
 
 
-const possibilities = enum_num_set(1, 10)
+const possibilities = enum_num_set(1, 20)
 
 p_amb(x, possibilities)
 p_amb(y, possibilities) 
@@ -77,6 +77,7 @@ p_add(x2, y2, z2)
 
 all_results(construct_better_set([x, y, z], to_string), (value: any) => {
     console.log("all results", to_string(value))
+    console.log("failed count", failed_count.get_value())
 })
 
 // execute_all_tasks_sequential((error: Error) => {

@@ -1,4 +1,4 @@
-import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, user_cell } from "../Cell/Cell"; 
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell"; 
 import { for_each } from "./Helper";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "../DataTypes/Premises";
@@ -64,9 +64,10 @@ export function do_nothing(){
 }
 
 export function force_failure(cells: BetterSet<Cell>){
+    
     // TODO: set union is not correct
     const nogoods = set_reduce(set_map(cells, (cell) => get_support_layer_value(cell_strongest_value(cell))), merge_set, construct_better_set([], to_string))
-    process_contradictions(construct_better_set([nogoods], to_string), user_cell)
+    process_contradictions(construct_better_set([nogoods], to_string), construct_cell("user_cell"))
 }
 
 export function all_results(cells: BetterSet<Cell>, value_receiver: (value: any) => void){

@@ -159,5 +159,3 @@ export function cell_strongest_value(cell: Cell){
 }
 
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
-
-export const user_cell = construct_cell("user_cell")
