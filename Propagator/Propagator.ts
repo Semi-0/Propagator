@@ -32,7 +32,6 @@ export function construct_propagator(name: string,
                                  activate: () => Reactor<any>): Propagator {
   const relation = make_relation(name, get_global_parent()) 
 
-
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
 
@@ -46,7 +45,8 @@ export function construct_propagator(name: string,
     getActivator: () => activator,
     summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`
   };
-  set_global_state(PublicStateCommand.ADD_CHILD, propagator)
+  
+  set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
   return propagator;
 }

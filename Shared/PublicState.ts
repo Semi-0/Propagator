@@ -9,7 +9,20 @@ import { construct_readonly_reactor, construct_stateful_reactor, type StatefulRe
 import { pipe } from 'fp-ts/function';
 import { filter, tap, map } from './Reactivity/Reactor';
 import { generic_merge, set_merge } from '../Cell/Merge';
-//@ts-nocheck
+
+
+
+//@ts-ignore
+var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
+// Todo: make this read only
+const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
+const all_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
+const all_amb_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
+export const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
+
+
+
+
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",
@@ -50,30 +63,11 @@ export function public_state_message(command: PublicStateCommand, ...args: any[]
     }
 }
 
-//@ts-ignore
-var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
-// Todo: make this read only
-const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-const all_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-const all_amb_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-export const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
+
 
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
-
-
-
-export function parameterize_parent(a: any){
-    return (do_something: () => any) => {
-        const old_parent = parent.get_value();
-        
-        set_global_state(PublicStateCommand.SET_PARENT, a);
-        const temp = do_something();
-        set_global_state(PublicStateCommand.SET_PARENT, old_parent);
-        return temp
-    }
-}
 
 
 // avoid circular references
@@ -183,6 +177,16 @@ export function set_global_state(type: PublicStateCommand, ...args: any[]){
     receiver.next(msg);
 } 
 
+export function parameterize_parent(a: any){
+    return (do_something: () => any) => {
+        const old_parent = parent.get_value();
+        
+        parent.next(a); 
+        const temp = do_something();
+        parent.next(old_parent);
+        return temp
+    }
+}
 
 export function get_global_parent(){
     return parent.get_value();

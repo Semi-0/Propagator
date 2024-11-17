@@ -1,20 +1,25 @@
-// @ts-nocheck
 import { v4 as uuidv4 } from 'uuid';
-import { type Cell } from '../Cell/Cell';
-import { type Propagator } from '../Propagator/Propagator';
-import { type Relation } from './Relation';
 
-export type InterestedType = Cell | Propagator | Relation;
+export type InterestedType = Relation;
 
 export class Relation{
     name: string;
     uuid: string;
-    parent: InterestedType;
-    children: InterestedType[] = [];
+    level: number = 0;
+    parent: Relation | null;
+    children: Relation[] = [];
 
-    constructor(name: string, parent: InterestedType){
+    constructor(name: string, parent: Relation |  null ){
         this.name = name;
         this.parent = parent;
+
+        if (parent === null){
+            this.level = 0;
+        }
+        else{
+            this.level = parent.level  + 1;
+        }
+        
         this.uuid = uuidv4(); 
     }
 
