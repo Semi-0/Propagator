@@ -61,6 +61,21 @@ export const failed_count : StatefulReactor<number> = construct_stateful_reactor
 
 const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
 
+
+
+
+export function parameterize_parent(a: any){
+    return (do_something: () => any) => {
+        const old_parent = parent.get_value();
+        
+        set_global_state(PublicStateCommand.SET_PARENT, a);
+        const temp = do_something();
+        set_global_state(PublicStateCommand.SET_PARENT, old_parent);
+        return temp
+    }
+}
+
+
 // avoid circular references
 function is_cell(o: any): boolean{
     return o.getContent !== undefined && o.getRelation !== undefined && o.getStrongest !== undefined && o.getNeighbors !== undefined;

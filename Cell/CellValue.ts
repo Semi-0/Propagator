@@ -16,10 +16,6 @@ export const value_imples = construct_simple_generic_procedure("value_imples", 2
     }
 )
 
-
-
-
-
 export const get_base_value = construct_simple_generic_procedure("get_base_value", 1, (a: LayeredObject) => {
     if (is_layered_object(a)){
         return get_base_value_layer(a)

@@ -1,6 +1,6 @@
 import { Relation, make_relation } from "../DataTypes/Relation";
 import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
-import { set_global_state, get_global_parent } from "../Shared/PublicState";
+import { set_global_state, get_global_parent, parameterize_parent } from "../Shared/PublicState";
 
 import { type Either, right, left } from "fp-ts/Either";
 import { force_load_arithmatic } from "../Cell/GenericArith";
@@ -30,8 +30,8 @@ export function construct_propagator(name: string,
                                  inputs: Cell[], 
                                  outputs: Cell[], 
                                  activate: () => Reactor<any>): Propagator {
-  const relation = get_global_parent();
-  set_global_state(PublicStateCommand.ADD_CHILD, relation);
+  const relation = make_relation(name, get_global_parent()) 
+
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
@@ -46,7 +46,7 @@ export function construct_propagator(name: string,
     getActivator: () => activator,
     summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`
   };
-
+  set_global_state(PublicStateCommand.ADD_CHILD, propagator)
   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
   return propagator;
 }
@@ -80,8 +80,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 
 export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => Reactor<any>, name: string): Propagator{
     const propagator = construct_propagator(name, inputs, outputs, () => {
-        set_global_state(PublicStateCommand.SET_PARENT, propagator.getRelation());
-        return to_build();
+        return parameterize_parent(propagator.getRelation())(to_build)
     });
     return propagator;
 }
@@ -90,4 +89,12 @@ export function constraint_propagator(cells: Cell[],  to_build: () => Reactor<an
     return construct_propagator(name, cells, cells, () => {
         return to_build();
     });
+}
+
+export function propagator_id(propagator: Propagator): string{
+    return propagator.getRelation().get_id();
+}
+
+export function propagator_name(propagator: Propagator): string{
+    return propagator.get_name();
 }
