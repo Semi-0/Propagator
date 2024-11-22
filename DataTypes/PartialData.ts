@@ -42,7 +42,7 @@ define_generic_procedure_handler(generic_merge,
     }
 )
 
-function make_partial_data_arith(op: (a: number, b: number) => number){
+function make_partial_data_arith(op: (a: number, b: number) => number){ 
     return (a: Partial<number>, b: Partial<number>): Partial<number> => {
         return make_partial_data(op(a.data, b.data))
     }
