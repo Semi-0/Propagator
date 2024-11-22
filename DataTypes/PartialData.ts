@@ -19,7 +19,7 @@ interface Partial<E>{
 
 export const is_partial_data = register_predicate("is_partial_data",
     (v: any) => {
-        return v.identifier && v.identifier === "partial data" && v.data
+        return v.identifier !== undefined && v.identifier === "partial data" 
     }
 )
 

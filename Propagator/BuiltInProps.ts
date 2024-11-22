@@ -12,11 +12,13 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
 
 export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
-
+    console.log(condition)
     if (base_equal(condition, true)){
+        console.log("switch true")
         return value;
     }
     else{
+        console.log("switch false")
         return the_nothing
     }
 }, "switcher")

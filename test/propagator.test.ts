@@ -15,6 +15,8 @@ import { construct_better_set, set_get_length, to_array } from "generic-handler/
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
+import { f_add, f_switcher } from "../Propagator/Sugar";
+import { make_partial_data } from "../DataTypes/PartialData";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -288,6 +290,33 @@ describe("test propagator", () => {
         expect(set_get_length(support_value)).toBe(3)
 
         expect(to_string(to_array(support_value))).toBe( "[\"fst\",\"snd\",\"third\"]")
+    })
+
+    test("switch", async () => {
+        set_merge(merge_value_sets)
+// TODO: RECURSION
+
+        const a = construct_cell("a");
+        const b = construct_cell("b");
+        const c = construct_cell("c");
+
+        const result  = f_switcher(c, f_add(a, b))
+
+        tell(a, make_partial_data(1), "a")
+        tell(b, make_partial_data(2), "b")
+        tell(c, make_partial_data(true), "c")
+
+        execute_all_tasks_sequential((e) => {})
+        // @ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(3)
+
+
+        tell(c, make_partial_data(false), "c")
+        tell(a, make_partial_data(4), "a")
+        tell(b, make_partial_data(2), "b")
+        execute_all_tasks_sequential((e) => {})
+        // @ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(3)
     })
 
 })

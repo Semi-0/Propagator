@@ -33,7 +33,7 @@ import { make_partial_data } from "./DataTypes/PartialData";
 import { f_add, f_subtract, f_switcher } from "./Propagator/Sugar";
 
 
-
+// set_trace_merge(true)
 set_merge(merge_value_sets)
 // TODO: RECURSION
 
@@ -45,14 +45,14 @@ const result  = f_switcher(c, f_add(a, b))
 
 tell(a, make_partial_data(1), "a")
 tell(b, make_partial_data(2), "b")
-
 tell(c, make_partial_data(true), "c")
 
 execute_all_tasks_sequential((e) => {})
 
-tell(a, make_partial_data(3), "a")
-tell(b, make_partial_data(2), "b")
+
 tell(c, make_partial_data(false), "c")
+tell(a, make_partial_data(4), "a")
+tell(b, make_partial_data(2), "b")
 execute_all_tasks_sequential((e) => {})
 
 console.log(to_string(cell_strongest_base_value(result)))
