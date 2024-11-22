@@ -64,6 +64,10 @@ export const p_divide = primitive_propagator((...inputs: any[]) => {
 
 
 export function c_multiply(x: Cell, y: Cell, product: Cell){
+    // Some Weird bug if i try to figure out y through constraint it would always failed into infinite loop
+    // i think it was happened due to execution order in here
+    // if there is a moment when m and s1 has established but s2 not 
+    // then it would cause infinite loop
     return constraint_propagator([x, y, product], () => {
         const m = p_multiply(x, y, product).getActivator();
         const s1 = p_divide(product, x, y).getActivator();

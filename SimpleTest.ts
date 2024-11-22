@@ -1,7 +1,7 @@
 // import { isNumber } from "effect/Predicate";
 import { cell_content, cell_content_value, cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
 import { force_load_arithmatic } from "./Cell/GenericArith";
-import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract, p_switcher, switcher } from "./Propagator/BuiltInProps";
+import { c_add, c_multiply, c_subtract, p_add, p_divide, p_multiply, p_not, p_subtract, p_switcher, switcher } from "./Propagator/BuiltInProps";
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
 import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
@@ -31,27 +31,40 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
 import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/Sugar";
+// TODO:
+//1.arrays
+//2.constraint programming with partial data still not work
+// or is it suppose to work?
+
 
 set_global_state(PublicStateCommand.CLEAN_UP)
-// set_trace_merge(true)
+set_trace_merge(true)
 set_merge(merge_value_sets)
 
 const a = construct_cell("a");
 const b = construct_cell("b");
-const target = construct_cell("target")
-const sum = f_add(a, b)
+const c = construct_cell("c");
 
-p_switcher(f_less_than(sum, target),  f_add(a, b), a)
+c_multiply(a, b, c)
 
-tell(target, make_partial_data(10), "target")
+tell(a, make_partial_data(5), "fst")
+tell(b, make_partial_data(3), "3st")
+// tell(c, make_partial_data(5), "3st")
 
-tell(a, make_partial_data(1), "a")
-tell(b, make_partial_data(2), "b")
+
+cell_strongest(a).subscribe((value: any) => {
+    console.log("a strongest", to_string(value))
+})
+
+
+cell_strongest(b).subscribe((value: any) => {
+    console.log("b strongest", to_string(value))
+})
+
 
 execute_all_tasks_sequential((e) => {})
 
-console.log(to_string(cell_strongest_base_value(a)))
-
+// tell(c, make_partial_data(4), "fst")
 
 // const x = construct_cell("x");
 // const y = construct_cell("y");

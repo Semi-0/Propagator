@@ -89,8 +89,6 @@ export function all_results(cells: BetterSet<Cell>, value_receiver: (value: any)
    }
 }
 
-
-
 export function enum_num_set(min: number, max: number){
     return set_reduce(range(min, max), (acc: BetterSet<number>, value: number) => {
         return set_add_item(acc, value)

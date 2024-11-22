@@ -221,8 +221,10 @@ export const observe_failed_count = construct_readonly_reactor(failed_count)
 
 import { layered_deep_equal } from 'sando-layer/Equality';
 import { clean_hypothetical_store, clean_premises_store, observe_premises_has_changed } from '../DataTypes/Premises';
-import { get_base_value } from 'sando-layer/Basic/Layer';
+import { get_base_value, type Layer } from 'sando-layer/Basic/Layer';
 import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
+import { set_every, set_get_length, type BetterSet } from 'generic-handler/built_in_generics/generic_better_set';
+import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
@@ -230,11 +232,28 @@ export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     }
 )
 
+export function layers_equal(o1: LayeredObject, o2: LayeredObject){
+    const layers1 = o1.annotation_layers();
+    const layers2 = o2.annotation_layers();
+
+    if (set_get_length(layers1) !== set_get_length(layers2)) {
+        return false;
+    }
+
+    // Check if all layers are equal
+    return set_every(layers1, (layer: Layer) => {
+        return layer.is_equal(o1, o2)
+    }) && set_every(layers2, (layer: Layer) => {
+        return layer.is_equal(o1, o2)
+    })
+}
+
 define_generic_procedure_handler(deep_equal,
     all_match(is_layered_object),
     (a: any, b: any) => {
-        // console.log("is_equal:", a, b)
-        return layered_deep_equal(a, b);
+        const result = layered_deep_equal(a, b);
+    
+        return result
     }
 )
 

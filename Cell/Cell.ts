@@ -19,6 +19,7 @@ import { tap } from "../Shared/Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
+import { layered_deep_equal } from "sando-layer/Equality";
 
 export const general_contradiction = is_layered_contradiction
 

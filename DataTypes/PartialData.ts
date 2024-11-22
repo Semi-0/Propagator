@@ -10,7 +10,7 @@ import { is_layered_object } from "sando-layer/Basic/LayeredObject"
 import { base_equal } from "../Shared/PublicState"
 import { is_any } from "generic-handler/built_in_generics/generic_predicates"
 
-
+// Partial data perhaps should still be a layer 
 interface Partial<E>{
     identifier: string,
     data: any
