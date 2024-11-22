@@ -23,38 +23,14 @@ import { map as generic_map, filter as generic_filter } from "generic-handler/bu
 import { all_match, register_predicate } from "generic-handler/Predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { add } from "generic-handler/built_in_generics/generic_arithmetic";
+import { is_layered_object } from "sando-layer/Basic/LayeredObject";
+import { get_base_value } from "sando-layer/Basic/Layer";
 force_load_arithmatic();
 
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
-class inComplete{
-    value: any;
-    constructor(value: any){
-        this.value = value;
-    }
-}
+import { make_partial_data } from "./DataTypes/PartialData";
 
-function incomplete(value: any): inComplete{
-    return new inComplete(value);
-}
-
-const is_inComplete = register_predicate("is_inComplete", 
-    (value: any): value is inComplete => value instanceof inComplete)
-
-
-define_generic_procedure_handler(generic_merge,
-    all_match(is_inComplete),
-    (content: any, increment: any) => {
-        return increment;
-    }
-)
-
-define_generic_procedure_handler(add,
-    all_match(is_inComplete),
-    (a: inComplete, b: inComplete) =>{
-        return incomplete(a.value + b.value)
-    }
-)
 
 
 
@@ -64,23 +40,23 @@ const z = construct_cell("z");
 
 p_add(x, y, z)
 
-tell(x, incomplete(1), "fst")
-tell(y, incomplete(2), "snd")
+tell(x, make_partial_data(1), "fst")
+tell(y, make_partial_data(2), "snd")
 
 
 execute_all_tasks_sequential((e) => {})
 
 console.log(cell_strongest_base_value(z))
 
-tell(x, incomplete(3), "3st")
+tell(x, make_partial_data(3), "3st")
 
 execute_all_tasks_sequential((e) => {})
 
-tell(x, incomplete(5), "ast")
+tell(x,  make_partial_data(5), "ast")
 
 execute_all_tasks_sequential((e) => {})
 
-console.log(to_string(cell_strongest_base_value(z)))
+console.log(to_string(cell_content_value(z)))
 
 // const x2 = construct_cell("x2");
 // const y2 = construct_cell("y2");

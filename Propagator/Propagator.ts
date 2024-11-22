@@ -61,7 +61,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             const output = cells[last_index];
             const inputs = cells.slice(0, last_index);
             const inputs_reactors = inputs.map(cell => cell_strongest(cell));
-            
+            // this has different meaning than filtered out nothing from compound propagator
             return construct_propagator(name, inputs, [output], () => {
                 const activator = pipe(combine_latest(...inputs_reactors),
                     filter(every((a: any) => !is_nothing(a))),
