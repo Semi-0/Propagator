@@ -290,6 +290,7 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     // IN SHORT EACH HYPOTHESIS BECOMES COMBINATION OF VALUES
     // TODO: extend to_string with generic
     // TODO: initialize cell with contradiction
+    // @ts-ignore
     const relation = new Relation("hypothetical:" + to_string(value), output);
     var peers: BetterSet<string> = make_better_set<string>([]);
     var id = uuidv4();
