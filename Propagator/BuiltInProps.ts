@@ -11,7 +11,6 @@ import { base_equal } from "../Shared/PublicState";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 
-
 export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
     if (base_equal(condition, true)){
         return value;
@@ -30,7 +29,6 @@ export const p_not = primitive_propagator((input: any) => {
 }, "not");
 
 export const p_less_than = primitive_propagator((x: any, y: any) => {
-    console.log("less than", less_than(x, y))
     return less_than(x, y);
 }, "less_than");
 

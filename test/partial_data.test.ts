@@ -58,5 +58,5 @@ describe('partialData', () => {
     expect(cell_strongest_base_value(sum).data).toBe(4)
   });
 
-
+  
 });

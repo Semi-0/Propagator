@@ -1,7 +1,7 @@
 // import { isNumber } from "effect/Predicate";
 import { cell_content, cell_content_value, cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
 import { force_load_arithmatic } from "./Cell/GenericArith";
-import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract, switcher } from "./Propagator/BuiltInProps";
+import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract, p_switcher, switcher } from "./Propagator/BuiltInProps";
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
 import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
@@ -35,23 +35,22 @@ import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/
 set_global_state(PublicStateCommand.CLEAN_UP)
 // set_trace_merge(true)
 set_merge(merge_value_sets)
-// TODO: RECURSION
 
 const a = construct_cell("a");
 const b = construct_cell("b");
+const target = construct_cell("target")
+const sum = f_add(a, b)
 
-const result = f_less_than(a, b)
+p_switcher(f_less_than(sum, target),  f_add(a, b), a)
 
-tell(a, make_partial_data(2), "a")
-tell(b, make_partial_data(1), "b")
+tell(target, make_partial_data(10), "target")
+
+tell(a, make_partial_data(1), "a")
+tell(b, make_partial_data(2), "b")
 
 execute_all_tasks_sequential((e) => {})
 
-console.log(cell_strongest_base_value(result))
-
-
-
-
+console.log(to_string(cell_strongest_base_value(a)))
 
 
 // const x = construct_cell("x");

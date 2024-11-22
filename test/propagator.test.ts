@@ -1,7 +1,7 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
-import { c_multiply, p_add, p_divide, p_multiply, p_subtract } from "../Propagator/BuiltInProps";
+import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switcher } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import {    is_contradiction } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Reactivity/Scheduler";
@@ -15,7 +15,7 @@ import { construct_better_set, set_get_length, to_array } from "generic-handler/
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
-import { f_add, f_equal, f_switch } from "../Propagator/Sugar";
+import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
 
 beforeEach(() => {
@@ -341,6 +341,26 @@ describe("test propagator", () => {
 
     })
 
+    test("less than", async () => {
+        const a = construct_cell("a");
+        const b = construct_cell("b");
+
+        const result = f_less_than(a, b)
+
+        tell(a, make_partial_data(1), "a")
+        tell(b, make_partial_data(2), "b")
+
+        execute_all_tasks_sequential((e) => {})
+
+        //@ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(true)
+
+        tell(a, make_partial_data(3), "a")
+        execute_all_tasks_sequential((e) => {})
+        //@ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(false)
+    })
+
 })
 // test("test kicking", async () => {
 //     const x = construct_cell("x");
@@ -573,3 +593,25 @@ test('example test from SimpleTest.ts', async () => {
     expect(y.summarize()).toBeDefined();
     expect(z.summarize()).toBeDefined();
 });
+
+
+test("tail recursion", async () => {
+
+    const a = construct_cell("a");
+    const b = construct_cell("b");
+    const target = construct_cell("target")
+    const sum = f_add(a, b)
+
+    p_switcher(f_less_than(sum, target),  f_add(a, b), a)
+
+    tell(target, make_partial_data(10), "target")
+
+    tell(a, make_partial_data(1), "a")
+    tell(b, make_partial_data(2), "b")
+
+    execute_all_tasks_sequential((e) => {})
+    //@ts-ignore
+    expect(cell_strongest_base_value(a).data).toBe(11)
+
+
+})
