@@ -5,6 +5,17 @@ import { merge,  type Reactor } from "../Shared/Reactivity/Reactor";
 import { add, subtract} from "../Cell/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../Cell/GenericArith";
+import { the_nothing } from "@/cell/CellValue";
+
+
+export const switcher = primitive_propagator((condition: boolean, value: any) => {
+    if (condition){
+        return value;
+    }
+    else{
+        return the_nothing
+    }
+}, "switcher")
 
 
 export const p_not = primitive_propagator((input: any) => {
@@ -18,7 +29,7 @@ export const p_add = primitive_propagator((...inputs: any[]) => {
         return 0; // Return 0 for empty input, or consider throwing an error
     }
     return inputs.reduce((acc, curr) => add(acc, curr));
-}, "add");
+}, "+");
 
 export const p_subtract = primitive_propagator((...inputs: any[]) => {
     // Check if there are inputs
@@ -30,17 +41,17 @@ export const p_subtract = primitive_propagator((...inputs: any[]) => {
     }
     // Subtract all subsequent inputs from the first input
     return inputs.slice(1).reduce((acc, curr) => subtract(acc, curr), inputs[0]);
-}, "subtract");
+}, "-");
 
 export const p_multiply =  primitive_propagator((...inputs: any[]) => {
     const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
    
     return result;
-}, "multiply");
+}, "*");
 
 export const p_divide = primitive_propagator((...inputs: any[]) => {
     return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
-}, "subdivide"); 
+}, "/"); 
 
 
 export function c_multiply(x: Cell, y: Cell, product: Cell){
