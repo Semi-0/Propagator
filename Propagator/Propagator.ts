@@ -6,11 +6,14 @@ import { type Either, right, left } from "fp-ts/Either";
 import { force_load_arithmatic } from "../Cell/GenericArith";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { scheduled_reactor } from "../Shared/Reactivity/Scheduler";
-import { combine_latest, construct_reactor, tap, type Reactor } from "../Shared/Reactivity/Reactor";
+import { combine_latest, construct_reactor, filter, tap, type Reactor } from "../Shared/Reactivity/Reactor";
 import { pipe } from "fp-ts/function";
 import { map, subscribe } from "../Shared/Reactivity/Reactor";
 import type { StringLiteralType } from "typescript";
 import { register_predicate } from "generic-handler/Predicates";
+import { values } from "fp-ts/lib/Map";
+import { is_nothing } from "@/cell/CellValue";
+import { every } from "fp-ts/lib/Array";
 force_load_arithmatic();
 
 export interface Propagator {
@@ -61,6 +64,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             
             return construct_propagator(name, inputs, [output], () => {
                 const activator = pipe(combine_latest(...inputs_reactors),
+                    filter(every((a: any) => !is_nothing(a))),
                     map(values => {
                         return f(...values);
                     }))
@@ -77,6 +81,8 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
         }
     }
 }
+
+
 
 export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => Reactor<any>, name: string): Propagator{
     const propagator = construct_propagator(name, inputs, outputs, () => {

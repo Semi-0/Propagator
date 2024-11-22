@@ -158,4 +158,8 @@ export function cell_strongest_value(cell: Cell){
   return cell.getStrongest().get_value();
 }
 
+export function cell_content_value(cell: Cell){
+  return cell.getContent().get_value();
+}
+
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
