@@ -17,6 +17,9 @@ export const switcher = primitive_propagator((condition: boolean, value: any) =>
     }
 }, "switcher")
 
+export const p_equal = primitive_propagator((x: any, y: any) => {
+    return x === y;
+}, "equal")
 
 export const p_not = primitive_propagator((input: any) => {
 

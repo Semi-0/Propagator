@@ -68,8 +68,6 @@ export function construct_cell(name: string): Cell {
     }
   })
 
-
-
   function testContent(content: any, strongest: any): any | null {
     const _strongest = strongest_value(content);
     if (general_contradiction(_strongest)){
@@ -79,9 +77,6 @@ export function construct_cell(name: string): Cell {
       return _strongest
     }
   }
-
-
-  
 
   const cell: Cell = {
     getRelation: () => relation,
@@ -109,7 +104,6 @@ export function construct_cell(name: string): Cell {
       strongest.subscribe(observer);
     }
   };
-
 
   set_global_state(PublicStateCommand.ADD_CELL, cell);
   set_global_state(PublicStateCommand.ADD_CHILD, relation);

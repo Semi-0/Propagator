@@ -1,7 +1,7 @@
 // import { isNumber } from "effect/Predicate";
 import { cell_content, cell_content_value, cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
 import { force_load_arithmatic } from "./Cell/GenericArith";
-import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract } from "./Propagator/BuiltInProps";
+import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract, switcher } from "./Propagator/BuiltInProps";
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
 import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
@@ -12,7 +12,7 @@ import { combine_latest } from "./Shared/Reactivity/Reactor";
 import { _premises_metadata, is_premises_in, track_premise } from "./DataTypes/Premises";
 import { all_results, enum_num_set, force_failure, observe_cell, tell } from "./Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { generic_merge, set_trace_merge } from "./Cell/Merge";
+import { generic_merge, set_merge, set_trace_merge } from "./Cell/Merge";
 import { filter as reactor_filter } from "./Shared/Reactivity/Reactor"
 import { is_nothing, the_contradiction } from "./Cell/CellValue";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
@@ -30,33 +30,54 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
+import { f_add, f_subtract } from "./Propagator/Sugar";
 
 
 
+set_merge(merge_value_sets)
+// TODO: RECURSION
 
-const x = construct_cell("x");
-const y = construct_cell("y");
-const z = construct_cell("z"); 
+const a = construct_cell("a");
 
-p_add(x, y, z)
+const b = construct_cell("b");
 
-tell(x, make_partial_data(1), "fst")
-tell(y, make_partial_data(2), "snd")
+const c = construct_cell("c");
 
 
-execute_all_tasks_sequential((e) => {})
+const result = f_subtract(f_add(a, b), c)
 
-console.log(cell_strongest_base_value(z))
-
-tell(x, make_partial_data(3), "3st")
-
-execute_all_tasks_sequential((e) => {})
-
-tell(x,  make_partial_data(5), "ast")
+tell(a, make_partial_data(1), "a")
+tell(b, make_partial_data(2), "b")
+tell(c, make_partial_data(3), "c")
 
 execute_all_tasks_sequential((e) => {})
 
-console.log(to_string(cell_content_value(z)))
+console.log(cell_strongest_base_value(result))
+
+
+// const x = construct_cell("x");
+// const y = construct_cell("y");
+// const z = construct_cell("z"); 
+
+// p_add(x, y, z)
+
+// tell(x, make_partial_data(1), "fst")
+// tell(y, make_partial_data(2), "snd")
+
+
+// execute_all_tasks_sequential((e) => {})
+
+// console.log(cell_strongest_base_value(z))
+
+// tell(x, make_partial_data(3), "3st")
+
+// execute_all_tasks_sequential((e) => {})
+
+// tell(x,  make_partial_data(5), "ast")
+
+// execute_all_tasks_sequential((e) => {})
+
+// console.log(to_string(cell_content_value(z)))
 
 // const x2 = construct_cell("x2");
 // const y2 = construct_cell("y2");
@@ -118,8 +139,6 @@ console.log(to_string(cell_content_value(z)))
 // console.log(y.summarize())
 // console.log(z.summarize())
 // console.log(x.summarize())
-
-
 
 
 
