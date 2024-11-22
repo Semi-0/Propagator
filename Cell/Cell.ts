@@ -1,4 +1,4 @@
-import { set_global_state, get_global_parent, is_equal } from "../Shared/PublicState";
+import { set_global_state, get_global_parent, deep_equal } from "../Shared/PublicState";
 import { type Propagator } from "../Propagator/Propagator";
 import { pipe } from 'fp-ts/function'
 import { construct_stateful_reactor, filter, map, subscribe, type StatefulReactor } from "../Shared/Reactivity/Reactor";
@@ -56,7 +56,7 @@ export function construct_cell(name: string): Cell {
   pipe(
     content,
     map((content: any) => testContent(content, strongest.get_value())),
-    filter((content: any) => !is_equal(content, strongest.get_value())),
+    filter((content: any) => !deep_equal(content, strongest.get_value())),
     subscribe((content: any) => {
       strongest.next(content)
     })

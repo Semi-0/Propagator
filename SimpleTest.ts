@@ -5,7 +5,7 @@ import { c_add, c_multiply, p_add, p_divide, p_multiply, p_not, p_subtract, swit
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
 import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
 import { compact } from "fp-ts/lib/Compactable";
-import { failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./Shared/PublicState";
+import { base_equal, failed_count, observe_failed_count, PublicStateCommand, set_global_state } from "./Shared/PublicState";
 import { merge_value_sets } from "./DataTypes/ValueSet";
 import { construct_better_set, is_better_set, make_better_set, set_get_length, set_map, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { combine_latest } from "./Shared/Reactivity/Reactor";
@@ -30,7 +30,7 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
-import { f_add, f_subtract } from "./Propagator/Sugar";
+import { f_add, f_subtract, f_switcher } from "./Propagator/Sugar";
 
 
 
@@ -38,21 +38,24 @@ set_merge(merge_value_sets)
 // TODO: RECURSION
 
 const a = construct_cell("a");
-
 const b = construct_cell("b");
-
 const c = construct_cell("c");
 
-
-const result = f_subtract(f_add(a, b), c)
+const result  = f_switcher(c, f_add(a, b))
 
 tell(a, make_partial_data(1), "a")
 tell(b, make_partial_data(2), "b")
-tell(c, make_partial_data(3), "c")
+
+tell(c, make_partial_data(true), "c")
 
 execute_all_tasks_sequential((e) => {})
 
-console.log(cell_strongest_base_value(result))
+tell(a, make_partial_data(3), "a")
+tell(b, make_partial_data(2), "b")
+tell(c, make_partial_data(false), "c")
+execute_all_tasks_sequential((e) => {})
+
+console.log(to_string(cell_strongest_base_value(result)))
 
 
 // const x = construct_cell("x");

@@ -64,10 +64,10 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             // this has different meaning than filtered out nothing from compound propagator
             return construct_propagator(name, inputs, [output], () => {
                 const activator = pipe(combine_latest(...inputs_reactors),
-                    filter(every((a: any) => !is_nothing(a))),
                     map(values => {
                         return f(...values);
-                    }))
+                    }),
+                    filter(values => !is_nothing(values)))
 
                 subscribe((result: any) => {
                     add_cell_content(output, result);

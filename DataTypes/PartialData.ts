@@ -7,6 +7,8 @@ import { define_generic_procedure_handler } from "generic-handler/GenericProcedu
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates"
 import { get_base_value } from "sando-layer/Basic/Layer"
 import { is_layered_object } from "sando-layer/Basic/LayeredObject"
+import { base_equal } from "../Shared/PublicState"
+import { is_any } from "generic-handler/built_in_generics/generic_predicates"
 
 
 interface Partial<E>{
@@ -34,6 +36,24 @@ export function make_partial_data<E>(data: E): Partial<E>{
         data: data
     }
 }
+
+define_generic_procedure_handler(base_equal, match_args(is_partial_data, is_any),
+    (a: Partial<any>, b: any) => {
+        return base_equal(a.data, b)
+    }
+)
+
+define_generic_procedure_handler(base_equal, match_args(is_any, is_partial_data),
+    (a: any, b: Partial<any>) => {
+        return base_equal(a, b.data)
+    }
+)
+
+define_generic_procedure_handler(base_equal, all_match(is_partial_data),
+    (a: Partial<any>, b: Partial<any>) => {
+        return base_equal(a.data, b.data)
+    }
+)
 
 define_generic_procedure_handler(generic_merge,
     all_match(is_partial_data),

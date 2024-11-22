@@ -6,10 +6,14 @@ import { add, subtract} from "../Cell/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../Cell/GenericArith";
 import { the_nothing } from "@/cell/CellValue";
+import { get_base_value } from "sando-layer/Basic/Layer";
+import { base_equal } from "../Shared/PublicState";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
-export const switcher = primitive_propagator((condition: boolean, value: any) => {
-    if (condition){
+export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
+
+    if (base_equal(condition, true)){
         return value;
     }
     else{

@@ -221,14 +221,16 @@ export const observe_failed_count = construct_readonly_reactor(failed_count)
 
 import { layered_deep_equal } from 'sando-layer/Equality';
 import { clean_hypothetical_store, clean_premises_store, observe_premises_has_changed } from '../DataTypes/Premises';
+import { get_base_value } from 'sando-layer/Basic/Layer';
+import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
 
-export const is_equal = construct_simple_generic_procedure("is_equal", 2,
+export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
         return a === b;
     }
 )
 
-define_generic_procedure_handler(is_equal,
+define_generic_procedure_handler(deep_equal,
     all_match(is_layered_object),
     (a: any, b: any) => {
         // console.log("is_equal:", a, b)
@@ -237,7 +239,25 @@ define_generic_procedure_handler(is_equal,
 )
 
 
+export const base_equal = construct_simple_generic_procedure("shallow_equal", 2,
+    (a: any, b: any) => {
+        return a === b;
+    }
+)
 
+
+define_generic_procedure_handler(base_equal,
+    match_args(is_layered_object, is_any),
+    (a: any, b: any) => {
+        return base_equal(get_base_value(a), b);
+    })
+
+define_generic_procedure_handler(base_equal,
+    all_match(is_layered_object),
+    (a: any, b: any) => {
+        return base_equal(get_base_value(a), get_base_value(b));
+    }
+)
 
 
 

@@ -1,5 +1,5 @@
 import { construct_cell, type Cell } from "@/cell/Cell";
-import { p_add, p_divide, p_multiply, p_subtract } from "./BuiltInProps";
+import { p_add, p_divide, p_equal, p_multiply, p_subtract, p_switcher } from "./BuiltInProps";
 import type { Propagator } from "./Propagator";
 
 var count = 0
@@ -29,3 +29,6 @@ export const f_multiply = make_f_arithmetical(p_multiply);
 
 export const f_divide = make_f_arithmetical(p_divide);
 
+export const f_equal = make_f_arithmetical(p_equal);
+
+export const f_switcher = make_f_arithmetical(p_switcher);
