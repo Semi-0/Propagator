@@ -30,9 +30,9 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
-import { f_add, f_subtract, f_switcher } from "./Propagator/Sugar";
+import { f_add, f_equal, f_subtract, f_switch } from "./Propagator/Sugar";
 
-
+set_global_state(PublicStateCommand.CLEAN_UP)
 // set_trace_merge(true)
 set_merge(merge_value_sets)
 // TODO: RECURSION
@@ -41,21 +41,16 @@ const a = construct_cell("a");
 const b = construct_cell("b");
 const c = construct_cell("c");
 
-const result  = f_switcher(c, f_add(a, b))
+const result  = f_equal(a, b)
+console.log(cell_strongest_base_value(result))
 
-tell(a, make_partial_data(1), "a")
-tell(b, make_partial_data(2), "b")
-tell(c, make_partial_data(true), "c")
+tell(a, make_partial_data(1), "c1")
+tell(b, make_partial_data(2), "c2")
 
 execute_all_tasks_sequential((e) => {})
 
+console.log(cell_strongest_base_value(result))
 
-tell(c, make_partial_data(false), "c")
-tell(a, make_partial_data(4), "a")
-tell(b, make_partial_data(2), "b")
-execute_all_tasks_sequential((e) => {})
-
-console.log(to_string(cell_strongest_base_value(result)))
 
 
 // const x = construct_cell("x");

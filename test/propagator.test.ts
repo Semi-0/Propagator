@@ -15,7 +15,7 @@ import { construct_better_set, set_get_length, to_array } from "generic-handler/
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
-import { f_add, f_switcher } from "../Propagator/Sugar";
+import { f_add, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
 
 beforeEach(() => {
@@ -300,7 +300,7 @@ describe("test propagator", () => {
         const b = construct_cell("b");
         const c = construct_cell("c");
 
-        const result  = f_switcher(c, f_add(a, b))
+        const result  = f_switch(c, f_add(a, b))
 
         tell(a, make_partial_data(1), "a")
         tell(b, make_partial_data(2), "b")

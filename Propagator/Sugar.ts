@@ -31,4 +31,4 @@ export const f_divide = make_f_arithmetical(p_divide);
 
 export const f_equal = make_f_arithmetical(p_equal);
 
-export const f_switcher = make_f_arithmetical(p_switcher);
+export const f_switch = make_f_arithmetical(p_switcher);

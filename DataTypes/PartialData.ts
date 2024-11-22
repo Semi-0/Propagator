@@ -51,9 +51,16 @@ define_generic_procedure_handler(base_equal, match_args(is_any, is_partial_data)
 
 define_generic_procedure_handler(base_equal, all_match(is_partial_data),
     (a: Partial<any>, b: Partial<any>) => {
-        return base_equal(a.data, b.data)
+        return make_partial_data(base_equal(a.data, b.data))
     }
 )
+
+define_generic_procedure_handler(generic_merge,
+    match_args(is_any, is_partial_data),
+    (a: any, b: Partial<any>) => {
+        return b
+    })
+
 
 define_generic_procedure_handler(generic_merge,
     all_match(is_partial_data),
@@ -61,6 +68,7 @@ define_generic_procedure_handler(generic_merge,
         return b
     }
 )
+
 
 function make_partial_data_arith(op: (a: number, b: number) => number){ 
     return (a: Partial<number>, b: Partial<number>): Partial<number> => {
