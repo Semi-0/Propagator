@@ -15,7 +15,7 @@ import { construct_better_set, set_get_length, to_array } from "generic-handler/
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
-import { f_add, f_switch } from "../Propagator/Sugar";
+import { f_add, f_equal, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
 
 beforeEach(() => {
@@ -317,6 +317,28 @@ describe("test propagator", () => {
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
         expect(cell_strongest_base_value(result).data).toBe(3)
+    })
+
+
+    test("equality", async () => {
+
+        const x = construct_cell("x");
+        const y = construct_cell("y");
+        const result = f_equal(x, y)
+
+        tell(x, make_partial_data(1), "x")
+        tell(y, make_partial_data(1), "y")
+
+        execute_all_tasks_sequential((e) => {})
+        // @ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(true)
+
+        tell(x, make_partial_data(2), "x")
+
+        execute_all_tasks_sequential((e) => {})
+        // @ts-ignore
+        expect(cell_strongest_base_value(result).data).toBe(false)
+
     })
 
 })

@@ -30,7 +30,7 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
-import { f_add, f_equal, f_subtract, f_switch } from "./Propagator/Sugar";
+import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/Sugar";
 
 set_global_state(PublicStateCommand.CLEAN_UP)
 // set_trace_merge(true)
@@ -39,17 +39,18 @@ set_merge(merge_value_sets)
 
 const a = construct_cell("a");
 const b = construct_cell("b");
-const c = construct_cell("c");
 
-const result  = f_equal(a, b)
-console.log(cell_strongest_base_value(result))
+const result = f_less_than(a, b)
 
-tell(a, make_partial_data(1), "c1")
-tell(b, make_partial_data(2), "c2")
+tell(a, make_partial_data(2), "a")
+tell(b, make_partial_data(1), "b")
 
 execute_all_tasks_sequential((e) => {})
 
 console.log(cell_strongest_base_value(result))
+
+
+
 
 
 

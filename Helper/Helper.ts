@@ -4,9 +4,7 @@ import { guard, throw_error, throw_type_mismatch } from "generic-handler/built_i
 import { first as _first } from "generic-handler/built_in_generics/generic_array_operation"
 import { is_better_set, set_find, set_for_each, set_get_length, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
-import type { LayeredObject } from "sando-layer/Basic/LayeredObject"
-import { is_layered_object } from "./Predicate"
-import { get_base_value } from "sando-layer/Basic/Layer"
+
 export const for_each = construct_simple_generic_procedure("for_each", 2,
     (array: any[], procedure: (a: any) => any) => {
         guard(is_array(array), throw_type_mismatch("for_each", "array", typeof array))

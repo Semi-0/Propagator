@@ -1,7 +1,7 @@
 // Partial Data for continiously using the network
 
 import { generic_merge } from "@/cell/Merge"
-import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
+import { add, divide, less_than, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates"
@@ -52,6 +52,12 @@ define_generic_procedure_handler(base_equal, match_args(is_any, is_partial_data)
 define_generic_procedure_handler(base_equal, all_match(is_partial_data),
     (a: Partial<any>, b: Partial<any>) => {
         return make_partial_data(base_equal(a.data, b.data))
+    }
+)
+
+define_generic_procedure_handler(less_than, all_match(is_partial_data),
+    (a: Partial<any>, b: Partial<any>) => {
+        return make_partial_data(less_than(a.data, b.data))
     }
 )
 

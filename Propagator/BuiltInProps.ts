@@ -9,6 +9,7 @@ import { the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { base_equal } from "../Shared/PublicState";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 
 
 export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
@@ -25,9 +26,13 @@ export const p_equal = primitive_propagator((x: any, y: any) => {
 }, "equal")
 
 export const p_not = primitive_propagator((input: any) => {
-
     return not(input);
 }, "not");
+
+export const p_less_than = primitive_propagator((x: any, y: any) => {
+    console.log("less than", less_than(x, y))
+    return less_than(x, y);
+}, "less_than");
 
 export const p_add = primitive_propagator((...inputs: any[]) => {
     // Check if there are inputs
