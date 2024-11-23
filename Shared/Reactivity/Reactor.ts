@@ -89,7 +89,7 @@ export function construct_prototype_reactor<T>(constructor: (
 
     function subscribe(observer: (...v: any[]) => void){
         observers.push(observer)
-    }
+    }\
 
     function unsubscribe(observer: (...v: any[]) => void){
         observers = observers.filter(o => o !== observer)

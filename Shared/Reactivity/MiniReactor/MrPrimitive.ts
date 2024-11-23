@@ -32,7 +32,6 @@ export function get_node(id: number): Node<any>{
     }
 }
 
-
 export function construct_node<E>(value: E): Node<E>{
     const id: number = get_reference();
     var v: E = value;
