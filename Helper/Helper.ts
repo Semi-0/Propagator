@@ -5,6 +5,19 @@ import { first as _first } from "generic-handler/built_in_generics/generic_array
 import { is_better_set, set_find, set_for_each, set_get_length, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
 
+
+
+export function reference_store(){
+    var reference = 0;
+
+    return () =>{
+        let r = reference;
+        reference += 1;
+        return r;
+    }
+}
+
+
 export const for_each = construct_simple_generic_procedure("for_each", 2,
     (array: any[], procedure: (a: any) => any) => {
         guard(is_array(array), throw_type_mismatch("for_each", "array", typeof array))

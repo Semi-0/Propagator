@@ -2,11 +2,13 @@
 // the visualization would be very limited
 
 import { pipe } from "fp-ts/lib/function";
+import type { State } from "fp-ts/lib/State";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 
 export type Reactor<T> =  ReadOnlyReactor<T>
 
-
+//TODO: Dispose?
+// allow circular reference (but how to dispose?)
 
 // PERHAPS SHOULD USE SET FOR PERFORMANCE
 export interface StandardReactor<T> extends ReadOnlyReactor<T>{
@@ -19,6 +21,11 @@ export interface ReadOnlyReactor<T>{
     subscribe: (observer: (...args: T[]) => void) => void;
     unsubscribe: (observer: (...args: T[]) => void) => void;
     summarize: () => string;
+}
+
+
+function connect(A: Reactor<any>, B: StandardReactor<any>){
+    A.subscribe(B.next)
 }
 
 
@@ -160,6 +167,10 @@ export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor
             get_value: () => value
         }
     }) as StatefulReactor<T>
+}
+
+export function force_update(state: StatefulReactor<any>){
+    state.next(state.get_value())
 }
 
 
