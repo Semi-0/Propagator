@@ -85,11 +85,9 @@ export function construct_prototype_reactor<T>(constructor: (
     unsubscribe: (observer: (...args: any[]) => void) => void) => Reactor<T>): Reactor<T>{
     var observers: ((...args: any[]) => void)[] = [];
 
- 
-
     function subscribe(observer: (...v: any[]) => void){
         observers.push(observer)
-    }\
+    }
 
     function unsubscribe(observer: (...v: any[]) => void){
         observers = observers.filter(o => o !== observer)
@@ -172,8 +170,6 @@ export function construct_stateful_reactor<T>(initial_value: T): StatefulReactor
 export function force_update(state: StatefulReactor<any>){
     state.next(state.get_value())
 }
-
-
 
 export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadOnlyReactor<T>{
    return construct_prototype_reactor(( 

@@ -76,6 +76,10 @@ function store_reference_pair(edge: Edge<any, any>){
     edge_store.set([edge.parents_ids, edge.children_ids], edge)
 }
 
+export function remove_edge(edge: Edge<any, any>){
+    edge_store.delete([edge.parents_ids, edge.children_ids])
+}
+
 export function fetch_edge<A, B>(source: Node<A>, target: Node<B>): Edge<A, B>{
     const v = edge_store.get([source.id, target.id])
     if (v !== undefined){

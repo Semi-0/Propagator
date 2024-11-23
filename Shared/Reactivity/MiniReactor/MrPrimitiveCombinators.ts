@@ -1,5 +1,5 @@
 import { type Node, type EdgeCallback } from './MrType';
-import { construct_edge, construct_node, fetch_edge, get_children,  get_parents, remove_node } from './MrPrimitive';
+import { construct_edge, construct_node, fetch_edge, get_children,  get_parents, remove_edge, remove_node } from './MrPrimitive';
 import {  set_for_each } from 'generic-handler/built_in_generics/generic_better_set';
 
 export function connect<A, B>(parent: Node<A>, child: Node<B>, f: EdgeCallback<A, B>){
@@ -14,6 +14,8 @@ export function disconnect<A, B>(parent: Node<A>, child: Node<B>){
      
     parent.remove_child_edge(edge);
     child.remove_parent_edge(edge);
+
+    remove_edge(edge);
 }
 
 export function apply<A, B>(f: EdgeCallback<A, B>){
