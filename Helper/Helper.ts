@@ -17,6 +17,7 @@ export function reference_store(){
     }
 }
 
+export let get_new_reference_count = reference_store()
 
 export const for_each = construct_simple_generic_procedure("for_each", 2,
     (array: any[], procedure: (a: any) => any) => {

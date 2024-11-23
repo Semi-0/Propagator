@@ -8,7 +8,7 @@ export type EdgeCallback<A, B> = (notify: (update: B) => void, update: A) => voi
 
 export interface Node<E>{
     id: number;
-    v: E;
+    receive: (v: E) => void;
     readonly children_edges: BetterSet<Edge<E, any>>;
     readonly parent_edges: BetterSet<Edge<any, E>>;
     add_child_edge: (node: Edge<E, any>) => void;
@@ -30,7 +30,7 @@ export function is_reference_pair(a: any): a is ReferencePair{
 export interface Edge<A, B>{
     parents_ids: number;
     children_ids: number;
-    activate: () => void; 
+    activate: (v: any) => void; 
 }
 
 export const is_edge = register_predicate("is_edge", (a: any) => {

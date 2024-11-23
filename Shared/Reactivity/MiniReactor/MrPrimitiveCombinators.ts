@@ -20,23 +20,43 @@ export function disconnect<A, B>(parent: Node<A>, child: Node<B>){
 
 export function apply<A, B>(f: EdgeCallback<A, B>){
     return (parent: Node<A>) => {
-        const child = construct_node(parent.v);
+        const child = construct_node();
         //@ts-ignore
         connect(parent, child, f);
         return child;
     }
 }
 
-export function combine(f: (notify: (update: any) => void, update: any, sources: Node<any>[]) => void) {
+interface Stepper<A>{
+    value: A,
+    node: Node<A>
+}
+
+export function stepper<A>(initial: A){
+    var value: A = initial;
+    return  (node: Node<A>) => {
+        return {
+            value:  value,
+            node:   apply((notify, update: A) => {
+                        value = update;
+                        notify(update);
+                })(node)
+    }}
+}
+
+
+export function combine(f: (notify: (update: any) => void, update: any, sources: Stepper<any>[]) => void) {
     return (...parents: Node<any>[]) => {
-        const child = construct_node([]);
+        const child = construct_node();
+        const parent_steppers = parents.map(stepper(undefined));
         parents.forEach((parent, index) => {
-            connect(parent, child, (notify, update) => f(notify, update, parents));
+            connect(parent, child, (notify, update) => f(notify, update, parent_steppers));
         })
     }
 }
 
 export function dispose(node: Node<any>){
+    // TODO: should track the dependency
     set_for_each((parents: Node<any>) => {
         disconnect(parents, node);
     }, get_children(node))

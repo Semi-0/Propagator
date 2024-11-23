@@ -1,7 +1,7 @@
 import type { Node, Edge, EdgeCallback } from './MrType';
 import { reference_store } from '../../../Helper/Helper';
 import type { ReferencePair } from './MrType';
-import { make_better_set, set_add_item,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
+import { make_better_set, set_add_item,  set_for_each,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
 
@@ -32,15 +32,19 @@ export function get_node(id: number): Node<any>{
     }
 }
 
-export function construct_node<E>(value: E): Node<E>{
+export function construct_node<E>(): Node<E>{
     const id: number = get_reference();
-    var v: E = value;
 
     var children_edges = make_better_set<any>([])
     var parents_edges = make_better_set<any>([])
+
     return {
         id,
-        v,
+        receive(v: E) {
+            set_for_each((e: any) => {
+                e.activate(v)
+            }, children_edges)
+        },
         get children_edges() {return children_edges},
         get parent_edges() {return parents_edges},
         add_child_edge: (edge: any) => {
@@ -91,14 +95,14 @@ export function fetch_edge<A, B>(source: Node<A>, target: Node<B>): Edge<A, B>{
 }
 
 export function construct_edge<A, B>(source: Node<A>, target: Node<B>, f: EdgeCallback<A, B>): Edge<A, B>{
-    var to_activate = () => f(notify, source.v)
+    var to_activate = (v: any) => f(notify, v)
 
-    function activate(){
-        to_activate()
+    function activate(v: any){
+        to_activate(v)
     }
 
     function notify(v: any){
-        target.v = v
+        target.receive(v)
     }
 
     const edge = {

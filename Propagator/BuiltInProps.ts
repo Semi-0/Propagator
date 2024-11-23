@@ -1,6 +1,6 @@
-import { primitive_propagator, constraint_propagator,type Propagator } from "./Propagator"; 
+import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator } from "./Propagator"; 
 import { multiply, divide } from "../Cell/GenericArith";
-import { type Cell } from "../Cell/Cell";
+import { make_temp_cell, type Cell } from "../Cell/Cell";
 import { merge,  type Reactor } from "../Shared/Reactivity/Reactor";
 import { add, subtract} from "../Cell/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -62,6 +62,21 @@ export const p_divide = primitive_propagator((...inputs: any[]) => {
     return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
 }, "/"); 
 
+// function make_pair(fst: any, snd: any){
+//     return [fst, snd];
+// }
+
+// export const p_pair = primitive_propagator((fst: any, snd: any) => {
+//     return [fst, snd];
+// }, "p:pair")
+
+// export function c_pair(fst: Cell, snd: Cell, pair: Cell){
+//     return compound_propagator([fst, snd],  [pair], () => {
+        
+        
+//     }, "c:pair")
+// }
+
 
 export function c_multiply(x: Cell, y: Cell, product: Cell){
     // Some Weird bug if i try to figure out y through constraint it would always failed into infinite loop
@@ -106,6 +121,9 @@ export function c_add(x: Cell, y: Cell, sum: Cell){
         return merge(m, s1, s2) as Reactor<any>
     }, "c:+")
 }
+
+
+
 
 
 

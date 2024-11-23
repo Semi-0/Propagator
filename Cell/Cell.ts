@@ -20,7 +20,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { layered_deep_equal } from "sando-layer/Equality";
-
+import { get_new_reference_count } from "../Helper/Helper";
 export const general_contradiction = is_layered_contradiction
 
 export function handle_cell_contradiction(cell: Cell) {
@@ -119,7 +119,13 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell =>
   'observe_update' in a
 )
 
-define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell) => cell.summarize())
+define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell) => cell_id(cell))
+
+    
+export function make_temp_cell(){
+    let name = "#temp_cell_" + get_new_reference_count();
+    return construct_cell(name);
+}
 
 export function add_cell_neighbour(cell: Cell, propagator: Propagator){
   cell.addNeighbor(propagator);

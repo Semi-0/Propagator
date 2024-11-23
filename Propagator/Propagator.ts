@@ -14,6 +14,9 @@ import { register_predicate } from "generic-handler/Predicates";
 import { values } from "fp-ts/lib/Map";
 import { is_nothing } from "@/cell/CellValue";
 import { every } from "fp-ts/lib/Array";
+
+//TODO: analogous to lambda for c_prop?
+
 force_load_arithmatic();
 
 export interface Propagator {
@@ -83,13 +86,13 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 }
 
 
-
 export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => Reactor<any>, name: string): Propagator{
     const propagator = construct_propagator(name, inputs, outputs, () => {
         return parameterize_parent(propagator.getRelation())(to_build)
     });
     return propagator;
 }
+
 
 export function constraint_propagator(cells: Cell[],  to_build: () => Reactor<any>, name: string): Propagator{
     return construct_propagator(name, cells, cells, () => {

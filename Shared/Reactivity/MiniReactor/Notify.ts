@@ -3,12 +3,7 @@ import { get_children } from './MrPrimitive';
 import type { Node } from './MrType';
 
 export function next(node: Node<any>, value: any){
-    node.v = value;
-    update(node);
-}
-
-export function update(node: any){
-    set_for_each(update,  activate_all_child(node))
+   node.receive(value) 
 }
 
 export function activate_all_child(n: any){
