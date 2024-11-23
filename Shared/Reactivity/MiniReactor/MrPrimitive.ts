@@ -1,7 +1,7 @@
 import type { Node, Edge, EdgeCallback } from './MrType';
 import { reference_store } from '../../../Helper/Helper';
 import type { ReferencePair } from './MrType';
-import { make_better_set, set_add_item,  set_for_each,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
+import { make_better_set, set_add_item,  set_every,  set_for_each,  set_get_length,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
 
@@ -72,6 +72,12 @@ export function get_parents(n: any){
     return set_map(n.parent_edges, (e: any) => {
         return e.parent
     })
+}
+
+export function have_only_one_parent_of(child: Node<any>, parent: Node<any>){
+    const parents = get_parents(child)
+    return set_get_length(parents) === 1 && 
+           set_every(parents, (p: any) => p.id === parent.id)
 }
 
 var edge_store = new Map<ReferencePair, Edge<any, any>>();
