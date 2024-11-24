@@ -70,12 +70,12 @@ export const p_divide = primitive_propagator((...inputs: any[]) => {
 //     return [fst, snd];
 // }, "p:pair")
 
-// export function c_pair(fst: Cell, snd: Cell, pair: Cell){
-//     return compound_propagator([fst, snd],  [pair], () => {
+export function c_pair(fst: Cell, snd: Cell, visitor: propagator){
+    return compound_propagator([fst, snd],  [pair], () => {
         
         
-//     }, "c:pair")
-// }
+    }, "c:pair")
+}
 
 
 export function c_multiply(x: Cell, y: Cell, product: Cell){

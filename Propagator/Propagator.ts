@@ -15,6 +15,7 @@ import { values } from "fp-ts/lib/Map";
 import { is_nothing } from "@/cell/CellValue";
 import { every } from "fp-ts/lib/Array";
 
+//TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 
 force_load_arithmatic();

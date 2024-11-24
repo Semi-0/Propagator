@@ -21,15 +21,10 @@ export const is_node = register_predicate("is_node", (a: any) => {
     return a.id !== undefined && a.children_id !== undefined && a.parents_id !== undefined;
 })
 
-export type ReferencePair = [number, number];
-
-export function is_reference_pair(a: any): a is ReferencePair{
-    return a.length === 2 && typeof a[0] === "number" && typeof a[1] === "number";
-}
 
 export interface Edge<A, B>{
-    parents_ids: number;
-    children_ids: number;
+    parent_id: number;
+    child_id: number;
     activate: (v: any) => void; 
 }
 
@@ -42,5 +37,5 @@ define_generic_procedure_handler(to_string, match_args(is_node), (node: Node<any
 })
 
 define_generic_procedure_handler(to_string, match_args(is_edge), (edge: Edge<any, any>) => {
-    return `Edge(${edge.parents_ids}, ${edge.children_ids})`
+    return `Edge(${edge.parent_id}, ${edge.child_id})`
 })

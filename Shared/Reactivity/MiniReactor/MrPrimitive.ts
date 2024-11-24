@@ -1,6 +1,5 @@
 import type { Node, Edge, EdgeCallback } from './MrType';
 import { reference_store } from '../../../Helper/Helper';
-import type { ReferencePair } from './MrType';
 import { make_better_set, set_add_item,  set_every,  set_for_each,  set_get_length,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
@@ -80,24 +79,34 @@ export function have_only_one_parent_of(child: Node<any>, parent: Node<any>){
            set_every(parents, (p: any) => p.id === parent.id)
 }
 
-var edge_store = new Map<ReferencePair, Edge<any, any>>();
+var edge_store = new Map<string, Edge<any, any>>();
 
 function store_reference_pair(edge: Edge<any, any>){
-    edge_store.set([edge.parents_ids, edge.children_ids], edge)
+    edge_store.set(edge_to_key(edge), edge)
 }
 
 export function remove_edge(edge: Edge<any, any>){
-    edge_store.delete([edge.parents_ids, edge.children_ids])
+    edge_store.delete(edge_to_key(edge))
+
 }
 
 export function fetch_edge<A, B>(source: Node<A>, target: Node<B>): Edge<A, B>{
-    const v = edge_store.get([source.id, target.id])
+    const v = edge_store.get(to_edge_key(source.id, target.id))
+    console.log(v)
     if (v !== undefined){
         return v
     }
     else{
-        throw new Error("Edge not found: " + to_string(source) + " " + to_string(target))
+        throw new Error("Edge not found: " + to_string(source.id) + " " + to_string(target.id))
     }
+}
+
+export function edge_to_key(edge: Edge<any, any>){
+    return to_edge_key(edge.parent_id, edge.child_id)
+}
+
+export function to_edge_key<A, B>(source_id: number, target_id: number){
+    return "k:" + source_id+ " " + target_id
 }
 
 export function construct_edge<A, B>(source: Node<A>, target: Node<B>, f: EdgeCallback<A, B>): Edge<A, B>{
@@ -112,8 +121,8 @@ export function construct_edge<A, B>(source: Node<A>, target: Node<B>, f: EdgeCa
     }
 
     const edge = {
-        parents_ids: source.id,
-        children_ids: target.id,
+        parent_id: source.id,
+        child_id: target.id,
         activate
     }    
 
