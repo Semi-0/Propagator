@@ -114,7 +114,7 @@ export function construct_edge<A, B>(source: Node<A>, target: Node<B>, f: EdgeCa
 
     function activate(v: any){
         to_activate(v)
-    }
+    }                                                                                                                
 
     function notify(v: any){
         target.receive(v)

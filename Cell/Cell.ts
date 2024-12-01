@@ -17,11 +17,17 @@ import { cell_merge } from "./Merge";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { tap } from "../Shared/Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { layered_deep_equal } from "sando-layer/Equality";
 import { get_new_reference_count } from "../Helper/Helper";
-export const general_contradiction = is_layered_contradiction
+
+export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
+   1, (value: any) => {
+    return is_contradiction(value) || is_layered_contradiction(value)
+  })
+
+
 
 export function handle_cell_contradiction(cell: Cell) {
   const nogoods = pipe(
@@ -33,7 +39,12 @@ export function handle_cell_contradiction(cell: Cell) {
   process_contradictions(make_better_set([nogoods]), cell)
 }
 
-export const handle_contradiction = handle_cell_contradiction;
+export var handle_contradiction = handle_cell_contradiction;
+
+export function set_handle_contradiction(func: (cell: Cell) => void){
+  handle_contradiction = func;
+}
+
 
 export interface Cell {
   getRelation: () => Relation;

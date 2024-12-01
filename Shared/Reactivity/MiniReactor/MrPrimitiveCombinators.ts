@@ -27,30 +27,32 @@ export function apply<A, B>(f: EdgeCallback<A, B>){
     }
 }
 
-interface Stepper<A>{
-    value: A,
+export interface Stepper<A>{
+    get_value: () => A,
     node: Node<A>
 }
 
-export function stepper<A>(initial: A){
-    var value: A = initial;
+export function stepper<A>(initial: A): (node: Node<A>) => Stepper<A>{
+    var value: A =  initial
     return  (node: Node<A>) => {
         return {
-            value:  value,
+            get_value: () => {return value},
             node:   apply((notify, update: A) => {
                         value = update;
+
                         notify(update);
                 })(node)
     }} 
 }
 
-export function combine(f: (notify: (update: any) => void, update: any, sources: Stepper<any>[]) => void) {
+export function combine(f: (notify: (update: any) => void, update: any, sources: Stepper<any>[]) => void): (...parents: Node<any>[]) =>  Node<any> {
     return (...parents: Node<any>[]) => {
         const child = construct_node();
         const parent_steppers = parents.map(stepper(undefined));
-        parents.forEach((parent, index) => {
-            connect(parent, child, (notify, update) => f(notify, update, parent_steppers));
+        parent_steppers.forEach((parent) => {
+            connect(parent.node, child, (notify, update) => f(notify, update, parent_steppers));
         })
+        return child;
     }
 }
 

@@ -18,7 +18,7 @@ export interface Node<E>{
 }
 
 export const is_node = register_predicate("is_node", (a: any) => {
-    return a.id !== undefined && a.children_id !== undefined && a.parents_id !== undefined;
+    return a !== undefined && a.id !== undefined && a.children_id !== undefined && a.parents_id !== undefined;
 })
 
 
@@ -29,7 +29,8 @@ export interface Edge<A, B>{
 }
 
 export const is_edge = register_predicate("is_edge", (a: any) => {
-    return a.source_id !== undefined && a.target_id !== undefined && a.f !== undefined;
+    return a !== undefined &&  a.source_id !== undefined && a.target_id !== undefined && a.f !== undefined;
+
 })
 
 define_generic_procedure_handler(to_string, match_args(is_node), (node: Node<any>) => {

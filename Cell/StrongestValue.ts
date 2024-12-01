@@ -3,3 +3,5 @@ import { construct_simple_generic_procedure } from "generic-handler/GenericProce
 export const strongest_value = construct_simple_generic_procedure("strongest_value", 1, (a: any[]) => {
     return a;
 })
+
+

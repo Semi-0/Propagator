@@ -1,7 +1,8 @@
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
 import { deep_equal } from "../Shared/PublicState";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import type { Applicability } from "generic-handler/Applicatability";
 
 var trace_merge = false; 
 
@@ -42,3 +43,5 @@ export var cell_merge = generic_merge;
 export function set_merge(merge_func: (a: any, b: any) => any){
    cell_merge = merge_func;
 }
+
+export const define_handler = define_generic_procedure_handler;
