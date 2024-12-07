@@ -11,6 +11,13 @@ import { base_equal } from "../Shared/PublicState";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 
+
+
+// Cons Cdr Pair 
+// Stategy instead of directly passing the value 
+// passing a pointer to the value ( with curried propagator or reactor)
+// so pair atom could be seperated from the value it point to
+
 export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
     if (base_equal(condition, true)){
         return value;
