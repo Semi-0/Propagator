@@ -14,6 +14,7 @@ import { register_predicate } from "generic-handler/Predicates";
 import { values } from "fp-ts/lib/Map";
 import { is_nothing } from "@/cell/CellValue";
 import { every } from "fp-ts/lib/Array";
+import { is_no_compute } from "../Helper/noCompute";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -71,7 +72,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
                     map(values => {
                         return f(...values);
                     }),
-                    filter(values => !is_nothing(values)))
+                    filter(values => !is_no_compute(values)))
 
                 subscribe((result: any) => {
                     add_cell_content(output, result);
