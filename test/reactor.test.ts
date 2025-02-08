@@ -156,3 +156,63 @@ test("compact_map", () => {
     expect(observer).toHaveBeenNthCalledWith(2, 4);
     expect(observer).toHaveBeenNthCalledWith(3, 6);
 });
+
+
+
+test("reactor dispose stops calling observers", () => {
+    const reactor = construct_reactor<number>();
+    const observer = jest.fn();
+    reactor.subscribe(observer);
+
+    // Call next before dispose: observer should be triggered.
+    reactor.next(10);
+    expect(observer).toHaveBeenCalledTimes(1);
+    expect(observer).toHaveBeenCalledWith(10);
+
+    // Dispose the reactor.
+    reactor.dispose();
+
+    // Further calls to next should not invoke any observers.
+    reactor.next(20);
+    expect(observer).toHaveBeenCalledTimes(1);
+
+    // Subscribing a new observer after dispose should have no effect.
+    const observer2 = jest.fn();
+    reactor.subscribe(observer2);
+    reactor.next(30);
+    expect(observer2).toHaveBeenCalledTimes(0);
+});
+
+test("subscribe no-op after dispose", () => {
+    const reactor = construct_reactor<number>();
+
+    // Dispose immediately.
+    reactor.dispose();
+
+    // Attempt to subscribe an observer after disposal.
+    const observer = jest.fn();
+    reactor.subscribe(observer);
+
+    // Calling next should not trigger the new observer.
+    reactor.next(100);
+    expect(observer).toHaveBeenCalledTimes(0);
+});
+
+test("multiple dispose calls are safe", () => {
+    const reactor = construct_reactor<number>();
+    const observer = jest.fn();
+    reactor.subscribe(observer);
+
+    reactor.next(5);
+    expect(observer).toHaveBeenCalledTimes(1);
+
+    // Calling dispose more than once should not throw an error.
+    expect(() => {
+        reactor.dispose();
+        reactor.dispose();
+    }).not.toThrow();
+
+    // After disposal, further next calls have no effect.
+    reactor.next(10);
+    expect(observer).toHaveBeenCalledTimes(1);
+});

@@ -29,7 +29,7 @@ export const general_contradiction =  construct_simple_generic_procedure("genera
 
 
 
-export function handle_cell_contradiction(cell: Cell) {
+export function handle_cell_contradiction(cell: Cell<A>) {
   const nogoods = pipe(
     cell,
     cell_strongest_value,
@@ -41,25 +41,25 @@ export function handle_cell_contradiction(cell: Cell) {
 
 export var handle_contradiction = handle_cell_contradiction;
 
-export function set_handle_contradiction(func: (cell: Cell) => void){
+export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
   handle_contradiction = func;
 }
 
 
-export interface Cell {
+export interface Cell<A> {
   getRelation: () => Relation;
-  getContent: () => StatefulReactor<any>;
-  getStrongest: () => StatefulReactor<any>;
+  getContent: () => StatefulReactor<A>;
+  getStrongest: () => StatefulReactor<A>;
   getNeighbors: () => Map<string, Propagator>;
-  addContent: (increment: any) => void;
-  testContent: (content: any, strongest: any) => any | null;
+  addContent: (increment: A) => void;
+  testContent: (content: A, strongest: A) => A | null;
   force_update: () => void;
   addNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
-  observe_update: (observer: (cellValues: any) => void) => void;
+  observe_update: (observer: (cellValues: A) => void) => void;
 }
 
-export function construct_cell(name: string): Cell {
+export function construct_cell<A>(name: string): Cell<A> {
   const relation = make_relation(name, get_global_parent());
   const neighbors: Map<string, Propagator> = new Map();
   const content: StatefulReactor<any> = scheduled_reactive_state(the_nothing);
@@ -90,12 +90,12 @@ export function construct_cell(name: string): Cell {
     }
   }
 
-  const cell: Cell = {
+  const cell: Cell<A> = {
     getRelation: () => relation,
     getContent: () => content,
     getStrongest: () => strongest,
     getNeighbors: () => neighbors,
-    addContent: (increment: any) => {
+    addContent: (increment: A) => {
       const result = cell_merge(content.get_value(), increment);
       content.next(result);
     },
@@ -122,7 +122,7 @@ export function construct_cell(name: string): Cell {
   return cell;
 }
 
-export const is_cell = register_predicate("is_cell", (a: any): a is Cell => 
+export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   typeof a === 'object' && a !== null &&
   'getRelation' in a && 'getContent' in a && 'getStrongest' in a &&
   'getNeighbors' in a && 'addContent' in a && 'testContent' in a &&
@@ -130,7 +130,7 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell =>
   'observe_update' in a
 )
 
-define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell) => cell_id(cell))
+define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => cell_id(cell))
 
     
 export function make_temp_cell(){
@@ -138,23 +138,23 @@ export function make_temp_cell(){
     return construct_cell(name);
 }
 
-export function add_cell_neighbour(cell: Cell, propagator: Propagator){
+export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator){
   cell.addNeighbor(propagator);
 }
 
-export function add_cell_content(cell: Cell, content: any){
+export function add_cell_content<A>(cell: Cell<A>, content: A){
   cell.addContent(content);
 }
 
-export function cell_strongest(cell: Cell){
+export function cell_strongest<A>(cell: Cell<A>){
   return cell.getStrongest();
 }
 
-export function cell_content(cell: Cell){
+export function cell_content<A>(cell: Cell<A>){
   return cell.getContent();
 }
 
-export function cell_id(cell: Cell){
+export function cell_id<A>(cell: Cell<A>){
   if (cell === undefined){
     return "undefined";
   }
@@ -162,15 +162,15 @@ export function cell_id(cell: Cell){
   return cell.getRelation().get_id();
 }
 
-export function cell_name(cell: Cell){
+export function cell_name<A>(cell: Cell<A>){
   return cell.getRelation().get_name()
 }
 
-export function cell_strongest_value(cell: Cell){
+export function cell_strongest_value<A>(cell: Cell<A>){
   return cell.getStrongest().get_value();
 }
 
-export function cell_content_value(cell: Cell){
+export function cell_content_value<A>(cell: Cell<A>){
   return cell.getContent().get_value();
 }
 

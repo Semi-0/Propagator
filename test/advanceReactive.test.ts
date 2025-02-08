@@ -100,6 +100,7 @@ test("subscribe should trigger callback upon cell update", async () => {
 
   update(cell, 77, undefined);
   await execute_all_tasks_sequential((error: Error) => {});
+  // @ts-ignore
   expect(captured).toBe(77);
 });
 

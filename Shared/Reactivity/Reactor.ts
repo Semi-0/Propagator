@@ -21,6 +21,7 @@ export interface ReadOnlyReactor<T>{
     subscribe: (observer: (...args: T[]) => void) => void;
     unsubscribe: (observer: (...args: T[]) => void) => void;
     summarize: () => string;
+    dispose: () => void;
 }
 
 
@@ -82,7 +83,7 @@ function summarize<T>(name: string, observers: ((...args: T[]) => void)[]){
 export function construct_prototype_reactor<T>(constructor: (
     observers: ((...args: any[]) => void)[],
     subscribe: (observer: (...args: any[]) => void) => void,
-    unsubscribe: (observer: (...args: any[]) => void) => void) => Reactor<T>): Reactor<T>{
+    unsubscribe: (observer: (...args: any[]) => void) => void) => any): Reactor<T>{
     var observers: ((...args: any[]) => void)[] = [];
 
     function subscribe(observer: (...v: any[]) => void){
@@ -95,13 +96,26 @@ export function construct_prototype_reactor<T>(constructor: (
 
     const self = constructor(observers, subscribe, unsubscribe)
 
+     // Attach the dispose function to clear references and disable further calls.
+    self.dispose = () => {
+        // Clear the internal observers.
+        observers.length = 0;
+        // Override subscribe and unsubscribe to no-ops.
+        self.subscribe = () => {};
+        self.unsubscribe = () => {};
+        // Optionally disable the next method if present.
+        if ("next" in self) {
+        (self as any).next = () => {};
+        }
+    };
+
     return self
 }
 
 export function construct_reactor<T>(): StandardReactor<T>{
     return construct_prototype_reactor<T>((observers: ((...args: any[]) => void)[], 
                                         subscribe: (observer: (...args: any[]) => void) => void, 
-                                        unsubscribe: (observer: (...args: any[]) => void) => void): StandardReactor<T> => {
+                                        unsubscribe: (observer: (...args: any[]) => void) => void): any => {
     return {
         observers,
         next:  default_next(throw_error("default_next"))(observers),

@@ -15,7 +15,7 @@ export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generi
 
 export const make_operator = (name: string, f: (a: LayeredObject) => any) => {
     // syntax sugar
-    return (...inputs: Cell[]) => {
+    return (...inputs: Cell<any>[]) => {
         const output = construct_cell(name);
         const rf = (a: LayeredObject) => f(get_base_value(a));
 
@@ -25,7 +25,7 @@ export const make_operator = (name: string, f: (a: LayeredObject) => any) => {
     }
 }
 
-export const subscribe = (f: (a: any) => void) => (a: Cell) => {
+export const subscribe = (f: (a: any) => void) => (a: Cell<any>) => {
     cell_strongest(a).subscribe(compose(get_base_value, f));
 }
 
@@ -61,7 +61,7 @@ export const reduce_e = (f: (a: any, b: any) => any, initial: any) => {
 }
 
 
-export const until = (when: Cell, then: Cell) => {
+export const until = (when: Cell<any>, then: Cell<any>) => {
     const output = construct_cell("until");
     construct_reactive_propagator((w: LayeredObject, t: LayeredObject) => {
         if (get_base_value(w) === true){
@@ -74,7 +74,7 @@ export const until = (when: Cell, then: Cell) => {
     return output;
 }
 
-export const or = (a: Cell, b: Cell) => {
+export const or = (a: Cell<any>, b: Cell<any>) => {
     const output = construct_cell("or");
     construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
         if (fresher(a, b)){
