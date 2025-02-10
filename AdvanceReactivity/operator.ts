@@ -18,7 +18,7 @@ export const make_operator = (name: string, f: (a: LayeredObject) => any) => {
     return (...inputs: Cell<any>[]) => {
         const output = construct_cell(name);
         const rf = (a: LayeredObject) => f(get_base_value(a));
-
+        // @ts-ignore
         construct_reactive_propagator(rf, name)(...inputs, output);
         
         return output;
@@ -63,6 +63,7 @@ export const reduce_e = (f: (a: any, b: any) => any, initial: any) => {
 
 export const until = (when: Cell<any>, then: Cell<any>) => {
     const output = construct_cell("until");
+    // @ts-ignore
     construct_reactive_propagator((w: LayeredObject, t: LayeredObject) => {
         if (get_base_value(w) === true){
             return t
@@ -70,12 +71,14 @@ export const until = (when: Cell<any>, then: Cell<any>) => {
         else{
             return no_compute
         }
+        // @ts-ignore
     }, "until")(when, then, output);
     return output;
 }
 
 export const or = (a: Cell<any>, b: Cell<any>) => {
     const output = construct_cell("or");
+    // @ts-ignore
     construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
         if (fresher(a, b)){
             return a;
@@ -86,6 +89,7 @@ export const or = (a: Cell<any>, b: Cell<any>) => {
         else{
             return a
         }
+        // @ts-ignore
     }, "or")(a, b, output);
     return output;
 }

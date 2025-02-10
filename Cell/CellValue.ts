@@ -59,5 +59,6 @@ export function force_load_CellValue(){
 
 
 
+export type CellValue<A> = A | typeof the_nothing | typeof the_contradiction
 
 

@@ -35,10 +35,11 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
 })
 
 export function construct_propagator(name: string, 
-                                 inputs: Cell[], 
-                                 outputs: Cell[], 
+                                 inputs: Cell<any>[], 
+                                 outputs: Cell<any>[], 
                                  activate: () => Reactor<any>): Propagator {
   const relation = make_relation(name, get_global_parent()) 
+
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
@@ -60,12 +61,13 @@ export function construct_propagator(name: string,
 }
 
 export function primitive_propagator(f: (...inputs: any[]) => any, name: string){
-    return (...cells: Cell[]): Propagator => {
+    return (...cells: Cell<any>[]): Propagator => {
         if (cells.length > 1){
             const last_index = cells.length - 1;
             const output = cells[last_index];
             const inputs = cells.slice(0, last_index);
             const inputs_reactors = inputs.map(cell => cell_strongest(cell));
+
             // this has different meaning than filtered out nothing from compound propagator
             return construct_propagator(name, inputs, [output], () => {
                 const activator = pipe(combine_latest(...inputs_reactors),
@@ -88,7 +90,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 }
 
 
-export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: () => Reactor<any>, name: string): Propagator{
+export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => Reactor<any>, name: string): Propagator{
     const propagator = construct_propagator(name, inputs, outputs, () => {
         return parameterize_parent(propagator.getRelation())(to_build)
     });
@@ -96,11 +98,12 @@ export function compound_propagator(inputs: Cell[], outputs: Cell[], to_build: (
 }
 
 
-export function constraint_propagator(cells: Cell[],  to_build: () => Reactor<any>, name: string): Propagator{
+export function constraint_propagator(cells: Cell<any>[],  to_build: () => Reactor<any>, name: string): Propagator{
     return construct_propagator(name, cells, cells, () => {
         return to_build();
     });
 }
+
 
 export function propagator_id(propagator: Propagator): string{
     return propagator.getRelation().get_id();

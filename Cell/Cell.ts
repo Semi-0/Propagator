@@ -21,6 +21,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { layered_deep_equal } from "sando-layer/Equality";
 import { get_new_reference_count } from "../Helper/Helper";
+import type { CellValue } from "./CellValue";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -29,7 +30,7 @@ export const general_contradiction =  construct_simple_generic_procedure("genera
 
 
 
-export function handle_cell_contradiction(cell: Cell<A>) {
+export function handle_cell_contradiction<A>(cell: Cell<A>) {
   const nogoods = pipe(
     cell,
     cell_strongest_value,
@@ -42,28 +43,38 @@ export function handle_cell_contradiction(cell: Cell<A>) {
 export var handle_contradiction = handle_cell_contradiction;
 
 export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
+  // @ts-ignore
   handle_contradiction = func;
 }
 
 
 export interface Cell<A> {
   getRelation: () => Relation;
-  getContent: () => StatefulReactor<A>;
-  getStrongest: () => StatefulReactor<A>;
+  getContent: () => StatefulReactor<CellValue<A>>;
+  getStrongest: () => StatefulReactor<CellValue<A>>;
   getNeighbors: () => Map<string, Propagator>;
-  addContent: (increment: A) => void;
-  testContent: (content: A, strongest: A) => A | null;
+  addContent: (increment: CellValue<A>) => void;
+  testContent: (content: CellValue<A>, strongest: CellValue<A>) => CellValue<A> | null;
+
+
   force_update: () => void;
   addNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
   observe_update: (observer: (cellValues: A) => void) => void;
+  dispose: () => void;  // <-- new dispose method
 }
 
 export function construct_cell<A>(name: string): Cell<A> {
   const relation = make_relation(name, get_global_parent());
   const neighbors: Map<string, Propagator> = new Map();
-  const content: StatefulReactor<any> = scheduled_reactive_state(the_nothing);
-  const strongest: StatefulReactor<any> = scheduled_reactive_state(the_nothing);
+  // @ts-ignore
+  const content: StatefulReactor<CellValue<A>> = scheduled_reactive_state(the_nothing);
+  // @ts-ignore
+  const strongest: StatefulReactor<CellValue<A>> = scheduled_reactive_state(the_nothing);
+
+
+
+
 
   pipe(
     content,
@@ -95,7 +106,7 @@ export function construct_cell<A>(name: string): Cell<A> {
     getContent: () => content,
     getStrongest: () => strongest,
     getNeighbors: () => neighbors,
-    addContent: (increment: A) => {
+    addContent: (increment: CellValue<A>) => {
       const result = cell_merge(content.get_value(), increment);
       content.next(result);
     },
@@ -114,6 +125,11 @@ export function construct_cell<A>(name: string): Cell<A> {
     },
     observe_update: (observer: (cellValues: any) => void) => {
       strongest.subscribe(observer);
+    },
+    dispose: () => {
+      content.dispose();
+      strongest.dispose();
+      neighbors.clear();
     }
   };
 
@@ -127,7 +143,7 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> =>
   'getRelation' in a && 'getContent' in a && 'getStrongest' in a &&
   'getNeighbors' in a && 'addContent' in a && 'testContent' in a &&
   'force_update' in a && 'addNeighbor' in a && 'summarize' in a &&
-  'observe_update' in a
+  'observe_update' in a && 'dispose' in a
 )
 
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => cell_id(cell))

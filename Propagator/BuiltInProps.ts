@@ -85,7 +85,7 @@ export const p_divide = primitive_propagator((...inputs: any[]) => {
 // }
 
 
-export function c_multiply(x: Cell, y: Cell, product: Cell){
+export function c_multiply(x: Cell<number>, y: Cell<number>, product: Cell<number>){
     // Some Weird bug if i try to figure out y through constraint it would always failed into infinite loop
     // i think it was happened due to execution order in here
     // if there is a moment when m and s1 has established but s2 not 
@@ -99,7 +99,7 @@ export function c_multiply(x: Cell, y: Cell, product: Cell){
     }, "c:*")
 }
 
-export function c_subtract(x: Cell, y: Cell, difference: Cell){
+export function c_subtract(x: Cell<number>, y: Cell<number>, difference: Cell<number>){
     return constraint_propagator([x, y, difference], () => {
         const m = p_subtract(x, y, difference).getActivator();
         const s1 = p_divide(difference, x, y).getActivator();
@@ -109,7 +109,7 @@ export function c_subtract(x: Cell, y: Cell, difference: Cell){
     }, "c:-")
 }
 
-export function c_divide(x: Cell, y: Cell, quotient: Cell){
+export function c_divide(x: Cell<number>, y: Cell<number>, quotient: Cell<number>){
     return constraint_propagator([x, y, quotient], () => {
         const m = p_divide(x, y, quotient).getActivator();
         const s1 = p_divide(quotient, x, y).getActivator();
@@ -119,7 +119,7 @@ export function c_divide(x: Cell, y: Cell, quotient: Cell){
     }, "c:/")
 }   
 
-export function c_add(x: Cell, y: Cell, sum: Cell){
+export function c_add(x: Cell<number>, y: Cell<number>, sum: Cell<number>){
     return constraint_propagator([x, y, sum], () => {
         const m = p_add(x, y, sum).getActivator();
         const s1 = p_subtract(sum, x, y).getActivator();

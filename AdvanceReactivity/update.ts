@@ -9,7 +9,7 @@ import { pipe } from "fp-ts/lib/function";
 import { get_base_value } from "sando-layer/Basic/Layer";
 
 
-export function update<A>(a: Cell, v: A, s: string | undefined = undefined){
+export function update<A>(a: Cell<A>, v: A, s: string | undefined = undefined){
     // TODO: support the premise
     // refresh the old dependencies
     stale(cell_strongest_value(a))
@@ -20,10 +20,10 @@ export function update<A>(a: Cell, v: A, s: string | undefined = undefined){
             (v) => support_by(v, s),
             annotate_now
         )
-        add_cell_content(a, new_value)
+        add_cell_content(a, new_value as A)
     }
     else{
-        add_cell_content(a, annotate_now(v));
+        add_cell_content(a, annotate_now(v) as A);
     }
 }
 

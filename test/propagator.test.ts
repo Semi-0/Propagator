@@ -32,8 +32,6 @@ describe("test propagator", () => {
         
         c_multiply(x, y, product);
 
-
-
         tell(x, 8, "fst");
 
 
