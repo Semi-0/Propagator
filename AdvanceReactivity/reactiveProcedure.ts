@@ -27,6 +27,6 @@ export function reactive_procedure<T extends LayeredObject[], A extends LayeredO
 export function construct_reactive_propagator<T extends LayeredObject[], A extends LayeredObject>(
   f: (...args: T) => A,
   name: string
-): (...cells: [...{ [K in keyof T]: Cell<T[K]> }, Cell<A>]) => Propagator {
+): (...cells: Cell<any>[]) => Propagator {
   return primitive_propagator(reactive_procedure(f), name);
 }

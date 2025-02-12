@@ -6,7 +6,6 @@ import { stale } from "./tracedTimestampLayer";
 import { register_premise } from "../DataTypes/Premises";
 import { support_by } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
-import { get_base_value } from "sando-layer/Basic/Layer";
 
 
 export function update<A>(a: Cell<A>, v: A, s: string | undefined = undefined){

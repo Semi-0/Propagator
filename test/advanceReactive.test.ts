@@ -1,28 +1,35 @@
-import { describe, test, expect } from "bun:test";
+import { describe, test, expect, beforeEach } from "bun:test";
 import {
   curried_generic_map,
-  map_e,
+  subscribe,
   filter_e,
   reduce_e,
-  subscribe,
-  func_e,
   apply_e,
   until,
-  or
+  or,
+  compose_r,
+  pipe_r
 } from "../AdvanceReactivity/operator";
 import { update } from "../AdvanceReactivity/update";
-import { construct_cell, cell_strongest_value, cell_strongest_base_value } from "@/cell/Cell";
+import {
+  construct_cell,
+  cell_strongest_value,
+  cell_strongest_base_value
+} from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
-import { beforeEach } from "bun:test";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
+
 beforeEach(() => {
-  set_global_state(PublicStateCommand.CLEAN_UP)
+  set_global_state(PublicStateCommand.CLEAN_UP);
 });
 
-// Test curried_generic_map
+// -------------------------
+// Basic helper - not using composition.
+// -------------------------
+
 test("curried_generic_map should map array correctly", () => {
   const addOne = (x: number) => x + 1;
   const mapAddOne = curried_generic_map(addOne);
@@ -30,51 +37,9 @@ test("curried_generic_map should map array correctly", () => {
   expect(result).toEqual([2, 3, 4]);
 });
 
-// Test map_e operator
-test("map_e operator should transform cell value by doubling it", async () => {
-  const input = construct_cell("input");
-  const doubleOp = map_e((x: number) => x * 2);
-  const output = doubleOp(input);
-
-  update(input, 5, undefined);
-  await execute_all_tasks_sequential((error: Error) => { if(error) throw error; });
-  expect(get_base_value(cell_strongest_value(output))).toBe(10);
-});
-
-// Test filter_e operator
-test("filter_e operator should filter out odd numbers", async () => {
-  const input = construct_cell("input");
-  const evenFilter = filter_e((x: number) => x % 2 === 0);
-  const output = evenFilter(input);
-
-  update(input, 4, undefined);
-  await execute_all_tasks_sequential((error: Error) => {});
-  expect(get_base_value(cell_strongest_value(output))).toBe(4);
-
-  update(input, 3, undefined);
-  await execute_all_tasks_sequential((error: Error) => {});
-  // When the predicate fails, the operator returns no_compute.
-  expect(cell_strongest_base_value(output)).toBe(4);
-});
-
-// Test reduce_e operator
-test("reduce_e operator should accumulate values", async () => {
-  const input = construct_cell("input");
-  const sumOp = reduce_e((acc: number, x: number) => acc + x, 0);
-  const output = sumOp(input);
-
-  update(input, 1, undefined);
-  await execute_all_tasks_sequential((error: Error) => {});
-  expect(get_base_value(cell_strongest_value(output))).toBe(1);
-
-  update(input, 2, undefined);
-  await execute_all_tasks_sequential((error: Error) => {});
-  expect(get_base_value(cell_strongest_value(output))).toBe(3);
-
-  update(input, 3, undefined);
-  await execute_all_tasks_sequential((error: Error) => {});
-  expect(get_base_value(cell_strongest_value(output))).toBe(6);
-});
+// -------------------------
+// Check update and subscribe functionality directly.
+// -------------------------
 
 // Test update function without premise
 test("update (no premise) should update a cell with the annotated value", async () => {
@@ -96,13 +61,19 @@ test("update (with premise) should update a cell with support info", async () =>
 test("subscribe should trigger callback upon cell update", async () => {
   const cell = construct_cell("subscribeTest");
   let captured: number | null = null;
-  subscribe((val: number) => { captured = val; })(cell);
+  subscribe((val: number) => {
+    captured = val;
+  })(cell);
 
   update(cell, 77, undefined);
   await execute_all_tasks_sequential((error: Error) => {});
   // @ts-ignore
   expect(captured).toBe(77);
 });
+
+// -------------------------
+// Check non-chainable operators that use multiple inputs.
+// -------------------------
 
 // Test until operator
 test("until operator should output 'then' cell's value when condition is true", async () => {
@@ -127,43 +98,96 @@ test("or operator should select the fresher cell value", async () => {
   const cellB = construct_cell("B");
   const output = or(cellA, cellB);
 
-  // Update cellA, wait for tasks and then wait 1 second before asserting.
   update(cellA, "first", undefined);
-  await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
-  await new Promise(resolve => setTimeout(resolve, 1000)); // explicit 1s delay
+  await execute_all_tasks_sequential((error: Error) => {
+    if (error) throw error;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   expect(get_base_value(cell_strongest_value(output))).toBe("first");
 
-  // Update cellB, wait for tasks and then wait 1 second before asserting.
   update(cellB, "second", undefined);
-  await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
-  await new Promise(resolve => setTimeout(resolve, 1000)); // explicit 1s delay
+  await execute_all_tasks_sequential((error: Error) => {
+    if (error) throw error;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   expect(get_base_value(cell_strongest_value(output))).toBe("second");
 
-  // Update cellA again, wait for tasks and then wait 1 second before asserting.
   update(cellA, "third", undefined);
-  await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
-  await new Promise(resolve => setTimeout(resolve, 1000)); // explicit 1s delay
+  await execute_all_tasks_sequential((error: Error) => {
+    if (error) throw error;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   expect(get_base_value(cell_strongest_value(output))).toBe("third");
 });
 
-// Test apply_e operator
-test("apply_e operator should apply function to cell value", async () => {
-  const input = construct_cell("applyInput");
-  const applyOp = apply_e((x: number) => x + 10);
-  const output = applyOp(input);
+// -------------------------
+// Composable, chainable operators using compose_r and pipe_r.
+// -------------------------
+
+// Test pipe_r with a single operator (apply_e).
+test("pipe_r with apply_e operator should apply function to cell value", async () => {
+  const input = construct_cell("applyPipeTest");
+  const output = pipe_r(input, apply_e((x: number) => x + 10));
 
   update(input, 5, undefined);
   await execute_all_tasks_sequential((error: Error) => {});
   expect(get_base_value(cell_strongest_value(output))).toBe(15);
 });
 
-// Test func_e operator
-test("func_e operator should work like make_operator", async () => {
-  const input = construct_cell("funcInput");
-  const funcOp = func_e("func", (x: number) => x * 3);
-  const output = funcOp(input);
+// Test compose_r by chaining two apply_e operators.
+test("compose_r should chain multiple operators", async () => {
+  const input = construct_cell("composeTest");
+  const composed = compose_r(
+    apply_e((x: number) => x * 2),
+    apply_e((x: number) => x + 1)
+  )(input);
+
+  update(input, 3, undefined);
+  await execute_all_tasks_sequential((error: Error) => {});
+  // Expected: (3 * 2) + 1 = 7
+  expect(get_base_value(cell_strongest_value(composed))).toBe(7);
+});
+
+// Test pipe_r by chaining two operators.
+test("pipe_r should chain multiple operators", async () => {
+  const input = construct_cell("pipeTest");
+  const piped = pipe_r(
+    input,
+    apply_e((x: number) => x * 3),
+    apply_e((x: number) => x - 2)
+  );
 
   update(input, 4, undefined);
   await execute_all_tasks_sequential((error: Error) => {});
-  expect(get_base_value(cell_strongest_value(output))).toBe(12);
+  // Expected: (4 * 3) - 2 = 10
+  expect(get_base_value(cell_strongest_value(piped))).toBe(10);
+});
+
+// Test pipe_r with filter_e.
+// If the value does not pass the predicate, the output stays at the_nothing.
+test("pipe_r with filter_e should filter cell value", async () => {
+  const input = construct_cell("filterTest");
+  const filtered = pipe_r(input, filter_e((x: number) => x > 10));
+
+  update(input, 5, undefined);
+  await execute_all_tasks_sequential((error: Error) => {});
+  expect(cell_strongest_base_value(filtered)).toBe(the_nothing);
+
+  update(input, 15, undefined);
+  await execute_all_tasks_sequential((error: Error) => {});
+  expect(get_base_value(cell_strongest_value(filtered))).toBe(15);
+});
+
+// Test pipe_r with reduce_e, which accumulates updates over time.
+test("pipe_r with reduce_e should accumulate values", async () => {
+  const input = construct_cell("reduceTest");
+  const reduced = pipe_r(input, reduce_e((acc: number, x: number) => acc + x, 0));
+
+  update(input, 5, undefined);
+  await execute_all_tasks_sequential((error: Error) => {});
+  expect(get_base_value(cell_strongest_value(reduced))).toBe(5);
+
+  update(input, 3, undefined);
+  await execute_all_tasks_sequential((error: Error) => {});
+  expect(get_base_value(cell_strongest_value(reduced))).toBe(8);
 });

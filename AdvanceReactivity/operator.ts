@@ -1,4 +1,3 @@
-
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 
 import { no_compute } from "../Helper/noCompute";
@@ -6,7 +5,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
 import { fresher, get_traced_timestamp } from "./tracedTimestampLayer";
 
-import { cell_strongest, construct_cell, type Cell } from "@/cell/Cell";
+import { cell_strongest, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 
@@ -14,31 +13,42 @@ import { construct_reactive_propagator } from "./reactiveProcedure";
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
 
 export const make_operator = (name: string, f: (a: LayeredObject) => any) => {
-    // syntax sugar
-    return (...inputs: Cell<any>[]) => {
-        const output = construct_cell(name);
-        const rf = (a: LayeredObject) => f(get_base_value(a));
-        // @ts-ignore
-        construct_reactive_propagator(rf, name)(...inputs, output);
-        
-        return output;
+    const rf = (a: LayeredObject) => f(get_base_value(a));
+
+    return construct_reactive_propagator(rf, name)
+} 
+
+export const compose_r = (...operators: ((...cells: Cell<any>[]) => void)[]) => {
+    return (initial: Cell<any>) => {
+        let current = initial;
+        let result: Cell<any>;
+
+        // For every operator except the last one, create a new temporary cell.
+        operators.forEach((operator, index) => {
+            // For the last operator, reuse the current temporary cell.
+            if (index === operators.length - 1) {
+                result = make_temp_cell();
+                operator(current, result);
+            } else {
+                const next = make_temp_cell();
+                operator(current, next);
+                current = next;
+            }
+        });
+        return result!;
     }
+}
+
+export const pipe_r = (arg_cell: Cell<any>, ...operators: ((...cells: Cell<any>[]) => void)[]) => {
+    return compose_r(...operators)(arg_cell);
 }
 
 export const subscribe = (f: (a: any) => void) => (a: Cell<any>) => {
     cell_strongest(a).subscribe(compose(get_base_value, f));
 }
 
-export const func_e = (name: string, f: (a: any) => any) => {
-    return make_operator(name, f);
-}
-
 export const apply_e = (f: (a: any) => any) => {
     return make_operator("apply", f);
-}
-
-export const map_e = (f: (a: any) => any) => {
-   return make_operator("map", f);
 }
 
 export const filter_e = (f: (a: any) => boolean) => {
