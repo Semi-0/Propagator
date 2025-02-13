@@ -83,7 +83,8 @@ describe("Advance Reactive Tests", () => {
     test("until operator should output 'then' cell's value when condition is true", async () => {
       const condition = construct_cell("condition");
       const thenCell = construct_cell("then");
-      const output = until(condition, thenCell);
+      const output = construct_cell("output");
+      until(condition, thenCell, output);
 
       update(condition, false, undefined);
       update(thenCell, "initial", undefined);
@@ -100,7 +101,8 @@ describe("Advance Reactive Tests", () => {
     test("or operator should select the fresher cell value", async () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
-      const output = or(cellA, cellB);
+      const output = construct_cell("output");
+      or(output, cellA, cellB);
 
       update(cellA, "first", undefined);
       await execute_all_tasks_sequential((error: Error) => {

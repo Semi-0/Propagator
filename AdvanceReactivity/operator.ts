@@ -3,14 +3,15 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { no_compute } from "../Helper/noCompute";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
-import { fresher, get_traced_timestamp_layer } from "./tracedTimestampLayer";
+import { annotate_timestamp, fresher, get_traced_timestamp_layer } from "./tracedTimestampLayer";
 
-import { cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
+import { add_cell_content, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 import { compound_propagator } from "../Propagator/Propagator";
 import { p_add, p_divide, p_multiply } from "../Propagator/BuiltInProps";
 import { update } from "./update";
+import { is_nothing } from "@/cell/CellValue";
 
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
@@ -74,39 +75,35 @@ export const reduce_e = (f: (a: any, b: any) => any, initial: any) => {
 }
 
 
-export const until = (when: Cell<any>, then: Cell<any>) => {
-    const output = construct_cell("until");
+export const until = construct_reactive_propagator(
     // @ts-ignore
-    construct_reactive_propagator((w: LayeredObject, t: LayeredObject) => {
+    (w: LayeredObject, t: LayeredObject) => {
         if (get_base_value(w) === true){
             return t
         }
         else{
             return no_compute
         }
-        // @ts-ignore
-    }, "until")(when, then, output);
-    return output;
-}
 
-export const or = (a: Cell<any>, b: Cell<any>) => {
-    const output = construct_cell("or");
+    }, "until")
+
+
+
+export const or = (output: Cell<any>, ...args: Cell<any>[]) => {
     // hack to force the cells to be fresh
-    update(a, cell_strongest_base_value(a))
-    update(b, cell_strongest_base_value(b))
+    args.forEach((arg) => {
+       const value = cell_strongest_base_value(arg)
+       if(is_nothing(value)){
+         add_cell_content(arg, annotate_timestamp(arg, 0))
+       }
+    })
     // @ts-ignore
-    construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
-        if (fresher(a, b)){
-            return a;
-        }
-        else if (fresher(b, a)){
-            return b;
-        }
-        else{
-            return a
-        }
-        // @ts-ignore
-    }, "or")(a, b, output);
+    construct_reactive_propagator((...args: LayeredObject[]) => {
+        // calculate the freshest cell
+        const freshest = args.reduce((a, b) => fresher(a, b) ? a : b);
+     
+        return freshest;
+    }, "or")(...args, output);
     return output;
 }
 
