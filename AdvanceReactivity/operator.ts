@@ -3,11 +3,12 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { no_compute } from "../Helper/noCompute";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
-import { fresher, get_traced_timestamp } from "./tracedTimestampLayer";
+import { fresher, get_traced_timestamp_layer } from "./tracedTimestampLayer";
 
 import { cell_strongest, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
+import { compound_propagator } from "../Propagator/Propagator";
 
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
@@ -104,3 +105,15 @@ export const or = (a: Cell<any>, b: Cell<any>) => {
     return output;
 }
 
+// export const c_sum_propotional = (inputs: Cell<number>[], output: Cell<number>) => compound_propagator(inputs, [output], 
+//     () => {
+//         const sum_cell = make_temp_cell(); 
+//         const ratios = inputs.map((input) => {
+//             const ratio_cell = make_temp_cell();
+//             return pr_first(p_divide(input, sum_cell, ratio_cell))
+//         })
+//         const reducer =  p_reduce((acc, curr) => add(acc, (multiply(curr, ratios))), sum_cell) 
+//       return [...ratios, reducer]
+//     }
+    
+//     "sum_propotional")

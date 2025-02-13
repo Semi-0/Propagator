@@ -9,7 +9,7 @@ import { tell } from "../Helper/UI";
 import { type Cell } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 describe('partialData', () => {
-    let a: Cell, b: Cell, sum: Cell
+    let a: Cell<number>, b: Cell<number>, sum: Cell<number>
 
     beforeEach(() => {
 
