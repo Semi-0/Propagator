@@ -1,5 +1,5 @@
 import { Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
+import { type Cell, add_cell_content, cell_id, cell_name, cell_strongest } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent } from "../Shared/PublicState";
 
 import { type Either, right, left } from "fp-ts/Either";
@@ -84,6 +84,8 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             })
         }
         else{
+           console.log("Primitive propagator must have at least two inputs");
+           console.log(cells.map(cell_name));
            throw new Error("Primitive propagator must have at least two inputs");
         }
     }

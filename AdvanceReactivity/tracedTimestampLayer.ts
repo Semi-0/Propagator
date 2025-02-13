@@ -27,11 +27,48 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
         return typeof a === "object" && a !== null && "id" in a && "timestamp" in a && "fresh" in a;
     })
 
+
+
+    const _timestamp_equal = construct_simple_generic_procedure("timestamp_equal", 2, (a: traced_timestamp, b: traced_timestamp) => {
+        if (is_traced_timestamp(a) && is_traced_timestamp(b)){
+            return a.id === b.id && a.timestamp === b.timestamp && a.fresh === b.fresh;
+        }
+        else{
+            return false;
+        }
+    })
+
+    export const timestamp_equal = register_predicate("timestamp_equal", _timestamp_equal)
+
+    
+
     export function same_source(a: traced_timestamp, b: traced_timestamp): boolean {
         return a.id === b.id
     }
 
     export const is_timestamp_set = register_predicate("is_timestamp_set", (a: any) => is_better_set(a) && set_every(a, is_traced_timestamp))
+
+
+    define_generic_procedure_handler(_timestamp_equal, all_match(is_timestamp_set),
+        (a: BetterSet<traced_timestamp>, b: BetterSet<traced_timestamp>) => {
+            return set_every(a, (at: traced_timestamp) => _timestamp_equal(get(b, at), at)) && 
+                   set_every(b, (bt: traced_timestamp) => _timestamp_equal(get(a, bt), bt));
+        }
+    )
+
+    define_generic_procedure_handler(_timestamp_equal, all_match(is_array),
+        (as: BetterSet<traced_timestamp>[], bs: BetterSet<traced_timestamp>[]) => {
+            for (let index = 0; index < as.length; index++) {
+                const at = as[index];
+                const bt = bs[index];
+                if (!_timestamp_equal(at, bt)){
+                    return false;
+                }
+            }
+            return true;
+        }
+
+    )
 
     export function to_timestamp_set(timestamp: traced_timestamp): BetterSet<traced_timestamp> {
         return construct_better_set([timestamp], (a: traced_timestamp) => a.id.toString())

@@ -1,14 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import {
   curried_generic_map,
-  subscribe,
-  filter_e,
-  reduce_e,
-  apply_e,
-  until,
-  or,
-  compose_r,
-  pipe_r
+  r_subscribe,
+  r_filter,
+  r_reduce,
+  r_apply,
+  r_until,
+  r_or,
+  r_compose,
+  r_pipe
 } from "../AdvanceReactivity/operator";
 import { update } from "../AdvanceReactivity/update";
 import {
@@ -64,7 +64,7 @@ describe("Advance Reactive Tests", () => {
     test("subscribe should trigger callback upon cell update", async () => {
       const cell = construct_cell("subscribeTest");
       let captured: number | null = null;
-      subscribe((val: number) => {
+      r_subscribe((val: number) => {
         captured = val;
       })(cell);
 
@@ -84,7 +84,7 @@ describe("Advance Reactive Tests", () => {
       const condition = construct_cell("condition");
       const thenCell = construct_cell("then");
       const output = construct_cell("output");
-      until(condition, thenCell, output);
+      r_until(condition, thenCell, output);
 
       update(condition, false, undefined);
       update(thenCell, "initial", undefined);
@@ -102,7 +102,7 @@ describe("Advance Reactive Tests", () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
       const output = construct_cell("output");
-      or(output, cellA, cellB);
+      r_or(output, cellA, cellB);
 
       update(cellA, "first", undefined);
       await execute_all_tasks_sequential((error: Error) => {
@@ -134,7 +134,7 @@ describe("Advance Reactive Tests", () => {
     // Test pipe_r with a single operator (apply_e).
     test("pipe_r with apply_e operator should apply function to cell value", async () => {
       const input = construct_cell("applyPipeTest");
-      const output = pipe_r(input, apply_e((x: number) => x + 10));
+      const output = r_pipe(input, r_apply((x: number) => x + 10));
 
       update(input, 5, undefined);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -144,9 +144,9 @@ describe("Advance Reactive Tests", () => {
     // Test compose_r by chaining two apply_e operators.
     test("compose_r should chain multiple operators", async () => {
       const input = construct_cell("composeTest");
-      const composed = compose_r(
-        apply_e((x: number) => x * 2),
-        apply_e((x: number) => x + 1)
+      const composed = r_compose(
+        r_apply((x: number) => x * 2),
+        r_apply((x: number) => x + 1)
       )(input);
 
       update(input, 3, undefined);
@@ -158,10 +158,10 @@ describe("Advance Reactive Tests", () => {
     // Test pipe_r by chaining two operators.
     test("pipe_r should chain multiple operators", async () => {
       const input = construct_cell("pipeTest");
-      const piped = pipe_r(
+      const piped = r_pipe(
         input,
-        apply_e((x: number) => x * 3),
-        apply_e((x: number) => x - 2)
+        r_apply((x: number) => x * 3),
+        r_apply((x: number) => x - 2)
       );
 
       update(input, 4, undefined);
@@ -174,7 +174,7 @@ describe("Advance Reactive Tests", () => {
     // If the value does not pass the predicate, the output stays at the_nothing.
     test("pipe_r with filter_e should filter cell value", async () => {
       const input = construct_cell("filterTest");
-      const filtered = pipe_r(input, filter_e((x: number) => x > 10));
+      const filtered = r_pipe(input, r_filter((x: number) => x > 10));
 
       update(input, 5, undefined);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -188,7 +188,7 @@ describe("Advance Reactive Tests", () => {
     // Test pipe_r with reduce_e, which accumulates updates over time.
     test("pipe_r with reduce_e should accumulate values", async () => {
       const input = construct_cell("reduceTest");
-      const reduced = pipe_r(input, reduce_e((acc: number, x: number) => acc + x, 0));
+      const reduced = r_pipe(input, r_reduce((acc: number, x: number) => acc + x, 0));
 
       update(input, 5, undefined);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -214,26 +214,26 @@ describe("Advance Reactive Tests", () => {
         [celsius, fahrenheit],
         () => {
           // Watch both cells
-          const c_to_f = pipe_r(
+          const c_to_f = r_pipe(
             celsius,
-            filter_e(x => x !== the_nothing),
-            apply_e((c: number) => c * 9/5 + 32)
+            r_filter(x => x !== the_nothing),
+            r_apply((c: number) => c * 9/5 + 32)
           );
 
-          const f_to_c = pipe_r(
+          const f_to_c = r_pipe(
             fahrenheit,
-            filter_e(x => x !== the_nothing),
-            apply_e((f: number) => (f - 32) * 5/9)
+            r_filter(x => x !== the_nothing),
+            r_apply((f: number) => (f - 32) * 5/9)
           );
 
           // Subscribe to update the other cell when one changes
-          subscribe((f: number) => {
+          r_subscribe((f: number) => {
             if (get_base_value(cell_strongest_value(fahrenheit)) !== f) {
               update(fahrenheit, f, "c_to_f");
             }
           })(c_to_f);
 
-          subscribe((c: number) => {
+          r_subscribe((c: number) => {
             if (get_base_value(cell_strongest_value(celsius)) !== c) {
               update(celsius, c, "f_to_c");
             }
@@ -275,50 +275,50 @@ describe("Advance Reactive Tests", () => {
         [meters, feet, inches],
         () => {
           // Conversion factors
-          const m_to_ft = pipe_r(
+          const m_to_ft = r_pipe(
             meters,
-            filter_e(x => x !== the_nothing),
-            apply_e((m: number) => m * 3.28084)
+            r_filter(x => x !== the_nothing),
+            r_apply((m: number) => m * 3.28084)
           );
 
-          const ft_to_in = pipe_r(
+          const ft_to_in = r_pipe(
             feet,
-            filter_e(x => x !== the_nothing),
-            apply_e((ft: number) => ft * 12)
+            r_filter(x => x !== the_nothing),
+            r_apply((ft: number) => ft * 12)
           );
 
-          const in_to_ft = pipe_r(
+          const in_to_ft = r_pipe(
             inches,
-            filter_e(x => x !== the_nothing),
-            apply_e((inch: number) => inch / 12)
+            r_filter(x => x !== the_nothing),
+            r_apply((inch: number) => inch / 12)
           );
 
-          const ft_to_m = pipe_r(
+          const ft_to_m = r_pipe(
             feet,
-            filter_e(x => x !== the_nothing),
-            apply_e((ft: number) => ft / 3.28084)
+            r_filter(x => x !== the_nothing),
+            r_apply((ft: number) => ft / 3.28084)
           );
 
           // Set up subscriptions
-          subscribe((ft: number) => {
+          r_subscribe((ft: number) => {
             if (get_base_value(cell_strongest_value(feet)) !== ft) {
               update(feet, ft, "m_to_ft");
             }
           })(m_to_ft);
 
-          subscribe((m: number) => {
+          r_subscribe((m: number) => {
             if (get_base_value(cell_strongest_value(meters)) !== m) {
               update(meters, m, "ft_to_m");
             }
           })(ft_to_m);
 
-          subscribe((inch: number) => {
+          r_subscribe((inch: number) => {
             if (get_base_value(cell_strongest_value(inches)) !== inch) {
               update(inches, inch, "ft_to_in");
             }
           })(ft_to_in);
 
-          subscribe((ft: number) => {
+          r_subscribe((ft: number) => {
             if (get_base_value(cell_strongest_value(feet)) !== ft) {
               update(feet, ft, "in_to_ft");
             }

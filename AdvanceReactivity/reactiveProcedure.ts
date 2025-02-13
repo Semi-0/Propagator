@@ -12,7 +12,7 @@ import  type { traced_timestamp } from "./tracedTimestampLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_nothing } from "@/cell/CellValue";
 
-export function reactive_procedure<T extends LayeredObject[], A extends LayeredObject>(
+export function reactive_procedure<T extends [], A >(
   f: (...args: T) => A
 ): (...args: T) => A | typeof no_compute {
   return (...args: T) => {
@@ -30,7 +30,7 @@ export function reactive_procedure<T extends LayeredObject[], A extends LayeredO
 }
 
 
-export function construct_reactive_propagator<T extends LayeredObject[], A extends LayeredObject>(
+export function construct_reactive_propagator<T extends [], A>(
   f: (...args: T) => A,
   name: string
 ): (...cells: Cell<any>[]) => Propagator {
