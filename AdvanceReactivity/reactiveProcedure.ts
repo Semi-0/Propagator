@@ -22,6 +22,7 @@ export function reactive_procedure<T extends [], A >(
       const merge_timestamps = args.reduce((acc, curr) => generic_timestamp_set_merge(acc, get_traced_timestamp_layer(curr)), 
          construct_better_set<traced_timestamp>([], (a: traced_timestamp) => a.id.toString()))
       // You may need to assert that the annotated value is of type A.
+ 
       return annotate_timestamp(f(...args), merge_timestamps) as A;
     } else {
       return no_compute;

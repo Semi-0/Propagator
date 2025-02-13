@@ -17,10 +17,14 @@ import type { BetterSet } from "generic-handler/built_in_generics/generic_better
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
 
-export const make_operator = (name: string, f: (...a: LayeredObject[]) => any) => {
+export const make_operator = (name: string, f: (...a: any[]) => any) => {
     const rf = (...a: LayeredObject[]) => f(...a.map((a) => get_base_value(a)));
     
-    return construct_reactive_propagator(rf, name)
+    return (output: Cell<any>, ...args: Cell<any>[]) => {
+        return construct_reactive_propagator(rf, name)(...args, output);
+    }
+    
+    
 } 
 
 export const r_compose = (...operators: ((...cells: Cell<any>[]) => void)[]) => {
@@ -35,11 +39,11 @@ export const r_compose = (...operators: ((...cells: Cell<any>[]) => void)[]) => 
             if (index === operators.length - 1) {
                
                 result = make_temp_cell();
-                operator(...[current, result]);
+                operator(...[result, current]);
             } else {
                 const next = make_temp_cell();
          
-                operator(...[current, next]);
+                operator(...[next, current]);
                 current = next;
             }
         });
@@ -91,7 +95,7 @@ export const r_until = construct_reactive_propagator(
 
     }, "until")
 
-export const r_first = (arg: Cell<any>) => {
+export const r_first = (output: Cell<any>, arg: Cell<any>) => {
     var first_arg: LayeredObject | undefined = undefined;
 
     return construct_reactive_propagator((...args: LayeredObject[]) => {
@@ -102,15 +106,17 @@ export const r_first = (arg: Cell<any>) => {
         else{
             return first_arg;
         }
-    }, "first")(arg);
+    }, "first")(arg, output);
 }
 
-export const r_zip = (...args: Cell<any>[]) => {
+export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
     var last_timestamps:  BetterSet<traced_timestamp>[] | undefined = undefined
     return construct_reactive_propagator((...args: LayeredObject[]) => {
         const timestamps = args.map((arg) => get_traced_timestamp_layer(arg));
+        const base_values = args.map((arg) => get_base_value(arg));
         if(last_timestamps === undefined){
             last_timestamps = timestamps;
+            return base_values;
         }
         // if the timestamps are the same return no_compute 
         else if(timestamp_equal(last_timestamps, timestamps)){
@@ -118,9 +124,9 @@ export const r_zip = (...args: Cell<any>[]) => {
         }
         else{
             last_timestamps = timestamps;
-            return args;
+            return base_values;
         }
-    }, "zip")(...args);
+    }, "zip")(...args, output);
 }
 
 export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
@@ -132,15 +138,40 @@ export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
        }
     })
     // @ts-ignore
-    construct_reactive_propagator((...args: LayeredObject[]) => {
+    return construct_reactive_propagator((...args: LayeredObject[]) => {
         // calculate the freshest cell
         const freshest = args.reduce((a, b) => fresher(a, b) ? a : b);
      
         return freshest;
     }, "or")(...args, output);
-    return output;
+    
 }
 
+
+export const r_add = (output: Cell<any>, ...args: Cell<any>[]) => {
+    return make_operator("add", (...args: number[]) => args.reduce((a, b) => a + b, 0))(output, ...args);
+}
+
+export const r_subtract = (output: Cell<any>, ...args: Cell<any>[]) => {
+    return make_operator("subtract", (...args: number[]) => args.slice(1).reduce((a, b) => a - b, args[0]))(output, ...args);
+}
+
+export const r_multiply = (output: Cell<any>, ...args: Cell<any>[]) => {
+    return make_operator("multiply", (...args: number[]) => args.slice(1).reduce((a, b) => a * b, args[0]))(output, ...args);
+}
+
+export const r_divide = (output: Cell<any>, ...args: Cell<any>[]) => {
+    return make_operator("divide", (...args: number[]) => args.slice(1).reduce((a, b) => a / b, args[0]))(output, ...args);
+}
+
+
+export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
+    return compound_propagator(inputs, [output], () => {
+        const add = r_add(output, ...inputs);
+        const ratios = inputs.map((input) => r_divide(input, add));
+
+    }, "c_sum_propotional")
+}
 
 
 // export const c_sum_propotional = (inputs: Cell<number>[], output: Cell<number>) =>

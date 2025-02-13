@@ -84,8 +84,6 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             })
         }
         else{
-           console.log("Primitive propagator must have at least two inputs");
-           console.log(cells.map(cell_name));
            throw new Error("Primitive propagator must have at least two inputs");
         }
     }

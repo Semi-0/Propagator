@@ -8,7 +8,13 @@ import {
   r_until,
   r_or,
   r_compose,
-  r_pipe
+  r_pipe,
+  r_first,
+  r_zip,
+  r_add,
+  r_subtract,
+  r_multiply,
+  r_divide
 } from "../AdvanceReactivity/operator";
 import { update } from "../AdvanceReactivity/update";
 import {
@@ -346,34 +352,128 @@ describe("Advance Reactive Tests", () => {
   });
 })
 
-//   describe("c_sum_propotional tests", () => {
-//     test("c_sum_propotional computes weighted sum correctly", async () => {
-//       const input1 = construct_cell("input1");
-//       const input2 = construct_cell("input2");
-//       const output = construct_cell("output");
+describe("Zip and First operator tests", () => {
+  test("r_first operator should return the first value and ignore subsequent updates", async () => {
+    const cell = construct_cell("firstOpTest");
+    const output = construct_cell("firstOpTestOutput");
+    const firstOutput = r_first(output, cell);
+    
+    // Set the initial value.
+    update(cell, 100, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(100);
+    
+    // Change the cell value.
+    update(cell, 200, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    // Expect the first propagator to continue returning the initial value.
+    expect(get_base_value(cell_strongest_value(output))).toBe(100);
+  });
 
-//       // Create the c_sum_propotional propagator.
-//       c_sum_propotional([input1, input2], output);
+  test("r_zip operator should output an array of values when cell values change", async () => {
+    const cell1 = construct_cell("zipOpTest1");
+    const cell2 = construct_cell("zipOpTest2");
+    const output = construct_cell("zipOpTestOutput");
+    const zipped = r_zip(output, cell1, cell2);
 
-//       // Test case 1:
-//       // For inputs 2 and 4:
-//       // sum = 2 + 4 = 6
-//       // For each input, product = x * (x/sum) → (2²/6 + 4²/6) = (4 + 16)/6 = 20/6 ≈ 3.3333
-//       update(input1, 2, undefined);
-//       update(input2, 4, undefined);
-//       await execute_all_tasks_sequential((error: Error) => {});
-//       const result1 = get_base_value(cell_strongest_value(output));
-//       expect(result1).toBeCloseTo(20 / 6, 5);
+    // First update: both cells are updated.
+    update(cell1, "x", undefined);
+    update(cell2, "y", undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    let result = get_base_value(cell_strongest_value(output));
+    expect(result).toEqual(["x", "y"]);
 
-//       // Test case 2:
-//       // For inputs 3 and 6:
-//       // sum = 3 + 6 = 9
-//       // product for each: (3²/9 + 6²/9) = (9 + 36)/9 = 45/9 = 5
-//       update(input1, 3, undefined);
-//       update(input2, 6, undefined);
-//       await execute_all_tasks_sequential((error: Error) => {});
-//       const result2 = get_base_value(cell_strongest_value(output));
-//       expect(result2).toBeCloseTo(5, 5);
-//     });
-//   });
-// });
+    // Update one cell with a new value.
+    update(cell1, "x2", undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    result = get_base_value(cell_strongest_value(output));
+    expect(result).toEqual(["x2", "y"]);
+
+    // Update with the same values (i.e. no change in the underlying timestamps)
+    update(cell1, "x2", undefined);
+    update(cell2, "y", undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    // The output should remain the same since no new computation should be triggered.
+    const sameResult = get_base_value(cell_strongest_value(output))
+    expect(sameResult).toEqual(["x2", "y"]);
+  });
+});
+
+describe("Arithmetic Operators Tests", () => {
+  test("r_add should correctly add the values of input cells", async () => {
+    const cell1 = construct_cell("rAddInput1");
+    const cell2 = construct_cell("rAddInput2");
+    const output = construct_cell("rAddOutput");
+    // Connect the add operator to the inputs and output.
+    r_add(output, cell1, cell2);
+
+    update(cell1, 10, undefined);
+    update(cell2, 15, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(25);
+  });
+
+  test("r_subtract should correctly subtract the second cell from the first", async () => {
+    const cell1 = construct_cell("rSubtractInput1");
+    const cell2 = construct_cell("rSubtractInput2");
+    const output = construct_cell("rSubtractOutput");
+    r_subtract(output, cell1, cell2);
+
+    update(cell1, 20, undefined);
+    update(cell2, 5, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(15);
+  });
+
+  test("r_multiply should correctly multiply the values of two input cells", async () => {
+    const cell1 = construct_cell("rMultiplyInput1");
+    const cell2 = construct_cell("rMultiplyInput2");
+    const output = construct_cell("rMultiplyOutput");
+    r_multiply(output, cell1, cell2);
+
+    update(cell1, 3, undefined);
+    update(cell2, 7, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(21);
+  });
+
+  test("r_multiply should correctly multiply the values of three input cells", async () => {
+    const cell1 = construct_cell("rMultiply3Input1");
+    const cell2 = construct_cell("rMultiply3Input2");
+    const cell3 = construct_cell("rMultiply3Input3");
+    const output = construct_cell("rMultiply3Output");
+    r_multiply(output, cell1, cell2, cell3);
+
+    update(cell1, 2, undefined);
+    update(cell2, 3, undefined);
+    update(cell3, 4, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(24);
+  });
+
+  test("r_divide should correctly divide the first cell by the second", async () => {
+    const cell1 = construct_cell("rDivideInput1");
+    const cell2 = construct_cell("rDivideInput2");
+    const output = construct_cell("rDivideOutput");
+    r_divide(output, cell1, cell2);
+
+    update(cell1, 100, undefined);
+    update(cell2, 4, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(25);
+  });
+
+  test("r_divide should correctly handle multiple divisions when more cells are supplied", async () => {
+    const cell1 = construct_cell("rDivideInputA");
+    const cell2 = construct_cell("rDivideInputB");
+    const cell3 = construct_cell("rDivideInputC");
+    const output = construct_cell("rDivideOutputMultiple");
+    r_divide(output, cell1, cell2, cell3);
+
+    update(cell1, 120, undefined);  // 120 / 2 = 60, then 60 / 3 = 20
+    update(cell2, 2, undefined);
+    update(cell3, 3, undefined);
+    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
+    expect(get_base_value(cell_strongest_value(output))).toBe(20);
+  });
+});
