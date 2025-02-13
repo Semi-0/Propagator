@@ -48,7 +48,6 @@ export const r_compose = (...operators: ((...cells: Cell<any>[]) => void)[]) => 
 }
 
 export const r_pipe = (arg_cell: Cell<any>, ...operators: ((...cells: Cell<any>[]) => void)[]) => {
-    console.log("operators", operators)
     return r_compose(...operators)(arg_cell);
 }
 
