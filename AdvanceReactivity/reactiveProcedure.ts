@@ -1,4 +1,4 @@
-import { fresher, get_traced_timestamp_layer, generic_timestamp_set_merge } from "./tracedTimestampLayer";
+import { fresher, get_traced_timestamp_layer, generic_timestamp_set_merge, annotate_now } from "./tracedTimestampLayer";
 import { is_fresh } from "./tracedTimestampLayer";
 import { no_compute } from "../Helper/noCompute";
 import { annotate_timestamp } from "./tracedTimestampLayer";
@@ -10,11 +10,14 @@ import { reduce } from "fp-ts/lib/pipeable";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import  type { traced_timestamp } from "./tracedTimestampLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { is_nothing } from "@/cell/CellValue";
 
 export function reactive_procedure<T extends LayeredObject[], A extends LayeredObject>(
   f: (...args: T) => A
 ): (...args: T) => A | typeof no_compute {
   return (...args: T) => {
+
+
     if (is_fresh(args)) {
       const merge_timestamps = args.reduce((acc, curr) => generic_timestamp_set_merge(acc, get_traced_timestamp_layer(curr)), 
          construct_better_set<traced_timestamp>([], (a: traced_timestamp) => a.id.toString()))

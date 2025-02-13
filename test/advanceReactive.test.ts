@@ -21,6 +21,8 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
+import { compound_propagator } from "../Propagator/Propagator";
+import { construct_reactor } from "../Shared/Reactivity/Reactor";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -195,4 +197,181 @@ describe("Advance Reactive Tests", () => {
       expect(get_base_value(cell_strongest_value(reduced))).toBe(8);
     });
   });
-});
+
+  // -------------------------
+  // Bi-directional reactive propagator tests
+  // -------------------------
+  describe("Bi-directional reactive propagator tests", () => {
+    test("should maintain temperature conversion relationship bi-directionally", async () => {
+      const celsius = construct_cell("celsius");
+      const fahrenheit = construct_cell("fahrenheit");
+
+      // Create bi-directional conversion using compound_propagator
+      compound_propagator(
+        [celsius, fahrenheit],
+        [celsius, fahrenheit],
+        () => {
+          // Watch both cells
+          const c_to_f = pipe_r(
+            celsius,
+            filter_e(x => x !== the_nothing),
+            apply_e((c: number) => c * 9/5 + 32)
+          );
+
+          const f_to_c = pipe_r(
+            fahrenheit,
+            filter_e(x => x !== the_nothing),
+            apply_e((f: number) => (f - 32) * 5/9)
+          );
+
+          // Subscribe to update the other cell when one changes
+          subscribe((f: number) => {
+            if (get_base_value(cell_strongest_value(fahrenheit)) !== f) {
+              update(fahrenheit, f, "c_to_f");
+            }
+          })(c_to_f);
+
+          subscribe((c: number) => {
+            if (get_base_value(cell_strongest_value(celsius)) !== c) {
+              update(celsius, c, "f_to_c");
+            }
+          })(f_to_c);
+
+          // Return a combined reactor
+          return construct_reactor();
+        },
+        "temperature_converter"
+      );
+
+      // Test Celsius to Fahrenheit conversion
+      update(celsius, 0, undefined);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(celsius))).toBe(0);
+      expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(32);
+
+      // Test Fahrenheit to Celsius conversion
+      update(fahrenheit, 212, undefined);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(celsius))).toBe(100);
+      expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(212);
+
+      // Test another Celsius to Fahrenheit conversion
+      update(celsius, 25, undefined);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(celsius))).toBe(25);
+      expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(77);
+    });
+
+    test("should handle multiple linked cells in a bi-directional chain", async () => {
+      const meters = construct_cell("meters");
+      const feet = construct_cell("feet");
+      const inches = construct_cell("inches");
+
+      // Create bi-directional conversions between all three units
+      compound_propagator(
+        [meters, feet, inches],
+        [meters, feet, inches],
+        () => {
+          // Conversion factors
+          const m_to_ft = pipe_r(
+            meters,
+            filter_e(x => x !== the_nothing),
+            apply_e((m: number) => m * 3.28084)
+          );
+
+          const ft_to_in = pipe_r(
+            feet,
+            filter_e(x => x !== the_nothing),
+            apply_e((ft: number) => ft * 12)
+          );
+
+          const in_to_ft = pipe_r(
+            inches,
+            filter_e(x => x !== the_nothing),
+            apply_e((inch: number) => inch / 12)
+          );
+
+          const ft_to_m = pipe_r(
+            feet,
+            filter_e(x => x !== the_nothing),
+            apply_e((ft: number) => ft / 3.28084)
+          );
+
+          // Set up subscriptions
+          subscribe((ft: number) => {
+            if (get_base_value(cell_strongest_value(feet)) !== ft) {
+              update(feet, ft, "m_to_ft");
+            }
+          })(m_to_ft);
+
+          subscribe((m: number) => {
+            if (get_base_value(cell_strongest_value(meters)) !== m) {
+              update(meters, m, "ft_to_m");
+            }
+          })(ft_to_m);
+
+          subscribe((inch: number) => {
+            if (get_base_value(cell_strongest_value(inches)) !== inch) {
+              update(inches, inch, "ft_to_in");
+            }
+          })(ft_to_in);
+
+          subscribe((ft: number) => {
+            if (get_base_value(cell_strongest_value(feet)) !== ft) {
+              update(feet, ft, "in_to_ft");
+            }
+          })(in_to_ft);
+
+          return construct_reactor();
+        },
+        "length_converter"
+      );
+
+      // Test meters to feet to inches
+      update(meters, 1, undefined);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(meters))).toBeCloseTo(1);
+      expect(get_base_value(cell_strongest_value(feet))).toBeCloseTo(3.28084);
+      expect(get_base_value(cell_strongest_value(inches))).toBeCloseTo(39.37008);
+
+      // Test inches back to feet and meters
+      update(inches, 12, undefined);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(inches))).toBe(12);
+      expect(get_base_value(cell_strongest_value(feet))).toBe(1);
+      expect(get_base_value(cell_strongest_value(meters))).toBeCloseTo(0.3048);
+    });
+  });
+})
+
+//   describe("c_sum_propotional tests", () => {
+//     test("c_sum_propotional computes weighted sum correctly", async () => {
+//       const input1 = construct_cell("input1");
+//       const input2 = construct_cell("input2");
+//       const output = construct_cell("output");
+
+//       // Create the c_sum_propotional propagator.
+//       c_sum_propotional([input1, input2], output);
+
+//       // Test case 1:
+//       // For inputs 2 and 4:
+//       // sum = 2 + 4 = 6
+//       // For each input, product = x * (x/sum) → (2²/6 + 4²/6) = (4 + 16)/6 = 20/6 ≈ 3.3333
+//       update(input1, 2, undefined);
+//       update(input2, 4, undefined);
+//       await execute_all_tasks_sequential((error: Error) => {});
+//       const result1 = get_base_value(cell_strongest_value(output));
+//       expect(result1).toBeCloseTo(20 / 6, 5);
+
+//       // Test case 2:
+//       // For inputs 3 and 6:
+//       // sum = 3 + 6 = 9
+//       // product for each: (3²/9 + 6²/9) = (9 + 36)/9 = 45/9 = 5
+//       update(input1, 3, undefined);
+//       update(input2, 6, undefined);
+//       await execute_all_tasks_sequential((error: Error) => {});
+//       const result2 = get_base_value(cell_strongest_value(output));
+//       expect(result2).toBeCloseTo(5, 5);
+//     });
+//   });
+// });

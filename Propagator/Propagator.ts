@@ -92,7 +92,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => Reactor<any>, name: string): Propagator{
     const propagator = construct_propagator(name, inputs, outputs, () => {
-        return parameterize_parent(propagator.getRelation())(to_build)
+        return to_build();
     });
     return propagator;
 }

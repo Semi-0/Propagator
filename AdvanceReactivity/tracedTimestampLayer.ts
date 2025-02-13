@@ -316,7 +316,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
         }
     }
 
-    export function generic_timestamp_set_merge(setA: BetterSet<traced_timestamp> | traced_timestamp | string, setB: BetterSet<traced_timestamp> | traced_timestamp | string): BetterSet<traced_timestamp> {
+    export function generic_timestamp_set_merge(setA: BetterSet<traced_timestamp> | traced_timestamp , setB: BetterSet<traced_timestamp> | traced_timestamp ): BetterSet<traced_timestamp> {
         if (is_timestamp_set(setA) && is_timestamp_set(setB)){
             return timestamp_set_merge(setA as BetterSet<traced_timestamp>, setB as BetterSet<traced_timestamp>);
         }
