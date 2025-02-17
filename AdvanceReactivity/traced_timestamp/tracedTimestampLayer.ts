@@ -1,22 +1,23 @@
     import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
-    import { reference_store, set_any } from "../Helper/Helper";
+    import { reference_store, set_any } from "../../Helper/Helper";
     import { get_base_value, layer_accessor, make_annotation_layer } from "sando-layer/Basic/Layer";
-    import {  is_layered_object} from "../Helper/Predicate";
+    import {  is_layered_object} from "../../Helper/Predicate";
     import { construct_layer_ui, type LayeredObject } from "sando-layer/Basic/LayeredObject";
     import {  } from "sando-layer/Basic/Layer";
-    import { define_handler, generic_merge, set_merge } from "../Cell/Merge";
+    import { define_handler, generic_merge, set_merge } from "../../Cell/Merge";
     import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-    import { no_compute } from "../Helper/noCompute";
-    import { construct_better_set, difference_set, get, is_better_set, map_to_same_set, merge_set, set_add_item, set_equal, set_every, set_for_each, set_has, set_map, set_remove_item, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+    import { no_compute } from "../../Helper/noCompute";
+    import { construct_better_set, difference_set, get, is_better_set, map_to_same_set, merge_set, set_add_item, set_equal, set_every, set_flat_map, set_for_each, set_has, set_map, set_reduce, set_remove_item, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
     import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
     import { is_nothing } from "@/cell/CellValue";
     import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import type { traced } from "fp-ts";
     const get_new_id = reference_store()
     const get_new_relative_time = reference_store()
 
     export interface traced_timestamp {
-        id: number;
+        id: string;
         timestamp: number;
         fresh: boolean;
     }
@@ -27,6 +28,9 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
         return typeof a === "object" && a !== null && "id" in a && "timestamp" in a && "fresh" in a;
     })
 
+    define_generic_procedure_handler(to_string, match_args(is_traced_timestamp), (a: traced_timestamp) => {
+        return "traced_timestamp: " + a.id + " " + a.timestamp + " " + a.fresh
+    })
 
 
     const _timestamp_equal = construct_simple_generic_procedure("timestamp_equal", 2, (a: traced_timestamp, b: traced_timestamp) => {
@@ -49,6 +53,12 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
     export const is_timestamp_set = register_predicate("is_timestamp_set", (a: any) => is_better_set(a) && set_every(a, is_traced_timestamp))
 
 
+    define_generic_procedure_handler(to_string, match_args(is_timestamp_set), (a: BetterSet<traced_timestamp>) => {
+        return to_string(set_reduce(a, (a: string, b: traced_timestamp) => {
+            return a + to_string(b)
+        }, ""))
+    })
+
     define_generic_procedure_handler(_timestamp_equal, all_match(is_timestamp_set),
         (a: BetterSet<traced_timestamp>, b: BetterSet<traced_timestamp>) => {
             return set_every(a, (at: traced_timestamp) => _timestamp_equal(get(b, at), at)) && 
@@ -70,28 +80,49 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
     )
 
-    export function to_timestamp_set(timestamp: traced_timestamp): BetterSet<traced_timestamp> {
+    export function to_traced_timestamp_set(timestamp: traced_timestamp): BetterSet<traced_timestamp> {
         return construct_better_set([timestamp], (a: traced_timestamp) => a.id.toString())
     }
 
 
-    export function create_timestamp_set(timestamps: traced_timestamp[]): BetterSet<traced_timestamp> {
+    export function create_traced_timestamp_set(timestamps: traced_timestamp[]): BetterSet<traced_timestamp> {
         return construct_better_set(timestamps, (a: traced_timestamp) => a.id.toString())
     }
 
 
-    export function construct_traced_timestamp(timestamp: number): traced_timestamp {
-        return {  timestamp, fresh: true, id: get_new_id() }
+    export function construct_traced_timestamp(timestamp: number, id: string):  traced_timestamp {
+        return {  timestamp, fresh: true, id: id }
     }
 
-    export function construct_traced_timestamp_set(base_value: any, timestamp: traced_timestamp | BetterSet<traced_timestamp>): BetterSet<traced_timestamp> {
-        if (is_timestamp_set(timestamp)){
+    export function construct_new_traced_timestamp_set(id: string) : (id: string) => (base_value: any, timestamp: number | BetterSet<traced_timestamp>) => BetterSet<traced_timestamp> {
+       // @ts-ignore
+       return (base_value: any, timestamp: number | BetterSet<traced_timestamp>) => {
+            if (is_timestamp_set(timestamp)){
+                // @ts-ignore
+                return timestamp;
+            }
+            else{
+                // @ts-ignore
+                return construct_better_set([construct_traced_timestamp(timestamp, id)], (a: traced_timestamp) => a.id.toString())
+            }
+        }
+    }
+
+    export function patch_traced_timestamp_set(base_value: any, ...traced_timestamps: traced_timestamp[]): BetterSet<traced_timestamp> {
+        // explicitly checking it is a timestamp set
+        // this is not the most performant way to do this, but lets have this for now 
+        // TODO: make this more performant
+        if (is_timestamp_set(traced_timestamps)){
             // @ts-ignore
-            return timestamp;
+            return  set_flat_map(timestamp, (a: traced_timestamp) => {
+                return a
+            });
         }
         else{
-            // @ts-ignore
-            return construct_better_set([construct_traced_timestamp(timestamp)], (a: traced_timestamp) => a.id.toString())
+          return set_flat_map(construct_better_set(traced_timestamps, (a: traced_timestamp) => a.id.toString()), 
+            (a: traced_timestamp) => {
+                return a 
+            });  
         }
     }
 
@@ -132,19 +163,23 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
         }})
 
 
-    export function construct_time_stamp_set(base_value: any, timestamp: number): any {
-        return construct_traced_timestamp(timestamp);
-    }
+   
 
     export function _has_timestamp_layer(a: any): boolean {
         return a && timestamp_layer.has_value(a);
     }
 
-
-
-    export const annotate_timestamp = construct_layer_ui(
+    export const annotate_identified_timestamp = (id: string) => construct_layer_ui(
         timestamp_layer,
-        construct_traced_timestamp_set,
+        construct_new_traced_timestamp_set(id),
+        (new_value: any, old_value: any) => {
+            return new_value;
+        }
+    );
+
+    export const patch_traced_timestamps = construct_layer_ui(
+        timestamp_layer,
+        patch_traced_timestamp_set,
         (new_value: any, old_value: any) => {
             return new_value;
         }
@@ -152,10 +187,15 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
     export const get_traced_timestamp_layer = layer_accessor(timestamp_layer);
 
-    export const annotate_now = (a: any) => annotate_timestamp(a, Date.now());
-    export const annotate_with_reference = (a: any) => annotate_timestamp(a, get_new_relative_time());
+    export const annotate_now = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, Date.now());
+    export const annotate_with_reference = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, get_new_relative_time());
 
     export const has_timestamp_layer = register_predicate("has_timestamp_layer", (a: any) => is_layered_object(a) && _has_timestamp_layer(a));
+
+    define_generic_procedure_handler(to_string, match_args(has_timestamp_layer), (a: LayeredObject) => {
+        return to_string(get_traced_timestamp_layer(a)) + " " 
+        + "value: " + to_string(get_base_value(a)) + "\n"
+    })
 
 
     export const fresher = construct_simple_generic_procedure("fresher", 2, (a: LayeredObject, b: LayeredObject) => {
@@ -235,19 +275,10 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
         return fresher(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b));
     });
 
-    define_handler(generic_merge, all_match(has_timestamp_layer), (a: LayeredObject, b: LayeredObject) => {
-        // todo merge other layers
-        // this needs to redesign layered procedure i think...
-        if (fresher(a, b)) {
-            return a;
-        } 
-        else if (fresher(b, a)) {
-            return b;
-        }
-        else{
-            return b;
-        }
-    })
+   
+    
+
+    export const smallest_timestamped_value = annotate_identified_timestamp("null")(0, -Infinity)
 
     function _stale(a: any) {
         return a
@@ -329,18 +360,28 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
 
     export function timestamp_set_merge(setA: BetterSet<traced_timestamp>, setB: BetterSet<traced_timestamp>): BetterSet<traced_timestamp> {
-        const difference = difference_set(setA, setB); 
-        const same_source =  map_to_same_set(difference_set(setA, difference),
-            (a: traced_timestamp) => {
-                const item_in_set = get(setB, a);
-                if (item_in_set){
-                    return merge_same_source_timestamp(a, item_in_set) as traced_timestamp;
-                }
-                else{
-                    return a;
-                }
-            })
-        return merge_set(same_source, difference);
+        var result = construct_better_set([], (a: traced_timestamp) => a.id.toString());
+   
+
+        set_for_each((a: traced_timestamp) => {
+            if (set_has(setB, a)){
+                result = set_add_item(result, merge_same_source_timestamp(a, get(setB, a) as traced_timestamp));
+            }
+            else{
+                result = set_add_item(result, a);
+            }
+        }, setA);
+
+        set_for_each((a: traced_timestamp) => {
+            if (set_has(setA, a)){
+                result = set_add_item(result, merge_same_source_timestamp(a, get(setA, a) as traced_timestamp));
+            }
+            else{
+                result = set_add_item(result, a);
+            }
+        }, setB);
+
+        return result
     }
 
     export function timestamp_set_adjoin(set: BetterSet<traced_timestamp>, timestamp: traced_timestamp): BetterSet<traced_timestamp> {

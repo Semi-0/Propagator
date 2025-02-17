@@ -64,78 +64,88 @@ export interface Cell<A> {
   dispose: () => void;  // <-- new dispose method
 }
 
-export function construct_cell<A>(name: string): Cell<A> {
-  const relation = make_relation(name, get_global_parent());
-  const neighbors: Map<string, Propagator> = new Map();
-  // @ts-ignore
-  const content: StatefulReactor<CellValue<A>> = scheduled_reactive_state(the_nothing);
-  // @ts-ignore
-  const strongest: StatefulReactor<CellValue<A>> = scheduled_reactive_state(the_nothing);
 
+export function cell_constructor<A>(
+      value: any, 
+      strongest_value: (x: any) => any, 
+      cell_merge: (content: any, increment: any) => any
+  ){
 
+  return (name: string) => {
+      const relation = make_relation(name, get_global_parent());
+      const neighbors: Map<string, Propagator> = new Map();
+      // @ts-ignore
+      const content: StatefulReactor<CellValue<A>> = scheduled_reactive_state(value);
+      // @ts-ignore
+      const strongest: StatefulReactor<CellValue<A>> = scheduled_reactive_state(value);
 
+      pipe(
+        content,
+        map((content: any) => testContent(content, strongest.get_value())),
+        filter((content: any) => !deep_equal(content, strongest.get_value())),
+        subscribe((content: any) => {
+          strongest.next(content)
+        })
+      )
 
+      strongest.subscribe((v: any) => {
+        if (general_contradiction(v)){
+          handle_cell_contradiction(cell)
+        }
+      })
 
-  pipe(
-    content,
-    map((content: any) => testContent(content, strongest.get_value())),
-    filter((content: any) => !deep_equal(content, strongest.get_value())),
-    subscribe((content: any) => {
-      strongest.next(content)
-    })
-  )
+      function testContent(content: any, strongest: any): any | null {
+        const _strongest = strongest_value(content);
+        if (general_contradiction(_strongest)){
+          return _strongest;
+        }
+        else {
+          return _strongest
+        }
+      }
 
-  strongest.subscribe((v: any) => {
-    if (general_contradiction(v)){
-      handle_cell_contradiction(cell)
-    }
-  })
+      const cell: Cell<A> = {
+        getRelation: () => relation,
+        getContent: () => content,
+        getStrongest: () => strongest,
+        getNeighbors: () => neighbors,
+        addContent: (increment: CellValue<A>) => {
+          const result = cell_merge(content.get_value(), increment);
 
-  function testContent(content: any, strongest: any): any | null {
-    const _strongest = strongest_value(content);
-    if (general_contradiction(_strongest)){
-      return _strongest;
-    }
-    else {
-      return _strongest
-    }
+          content.next(result);
+        },
+        testContent,
+        force_update: () => {
+          content.next(content.get_value());
+        },
+        addNeighbor: (propagator: Propagator) => {
+          neighbors.set(propagator.getRelation().get_id(), propagator);
+        },
+        summarize: () => {
+          const name = relation.get_name();
+          const strongestValue = strongest.get_value();
+          const contentValue = content.get_value();
+          return `name: ${name}\nstrongest: ${describe(strongestValue)}\ncontent: ${describe(contentValue)}`;
+        },
+        observe_update: (observer: (cellValues: any) => void) => {
+          strongest.subscribe(observer);
+        },
+        dispose: () => {
+          content.dispose();
+          strongest.dispose();
+          neighbors.clear();
+        }
+      };
+
+      set_global_state(PublicStateCommand.ADD_CELL, cell);
+      set_global_state(PublicStateCommand.ADD_CHILD, relation);
+      return cell; 
   }
+}
 
-  const cell: Cell<A> = {
-    getRelation: () => relation,
-    getContent: () => content,
-    getStrongest: () => strongest,
-    getNeighbors: () => neighbors,
-    addContent: (increment: CellValue<A>) => {
-      const result = cell_merge(content.get_value(), increment);
-      content.next(result);
-    },
-    testContent,
-    force_update: () => {
-      content.next(content.get_value());
-    },
-    addNeighbor: (propagator: Propagator) => {
-      neighbors.set(propagator.getRelation().get_id(), propagator);
-    },
-    summarize: () => {
-      const name = relation.get_name();
-      const strongestValue = strongest.get_value();
-      const contentValue = content.get_value();
-      return `name: ${name}\nstrongest: ${describe(strongestValue)}\ncontent: ${describe(contentValue)}`;
-    },
-    observe_update: (observer: (cellValues: any) => void) => {
-      strongest.subscribe(observer);
-    },
-    dispose: () => {
-      content.dispose();
-      strongest.dispose();
-      neighbors.clear();
-    }
-  };
 
-  set_global_state(PublicStateCommand.ADD_CELL, cell);
-  set_global_state(PublicStateCommand.ADD_CHILD, relation);
-  return cell;
+export function construct_cell<A>(name: string): Cell<A> {
+  return cell_constructor<A>(the_nothing, strongest_value, cell_merge)(name)
 }
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 

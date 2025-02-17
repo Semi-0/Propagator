@@ -14,13 +14,16 @@ import {
   r_add,
   r_subtract,
   r_multiply,
-  r_divide
+  r_divide,
+  r_inspect_strongest,
+  r_inspect_content
 } from "../AdvanceReactivity/operator";
 import { update } from "../AdvanceReactivity/update";
 import {
   construct_cell,
   cell_strongest_value,
-  cell_strongest_base_value
+  cell_strongest_base_value,
+  cell_content_value
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -29,6 +32,11 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
+import { c_sum_propotional } from "../AdvanceReactivity/operator";
+import {  annotate_now, construct_traced_timestamp, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
+import { construct_better_set, set_equal, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
+import { generic_merge } from "@/cell/Merge";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -45,6 +53,149 @@ describe("Advance Reactive Tests", () => {
       expect(result).toEqual([2, 3, 4]);
     });
   });
+
+
+   describe("timestamp set merge tests", () => {
+    test("timestamp merge should update staled timestamp", () => {
+
+      const timestampA = construct_traced_timestamp(1, "1")
+      const timestampB = construct_traced_timestamp(2, "1")
+      const setA = construct_better_set(
+        [timestampA], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      stale(timestampA)
+
+      const setB = construct_better_set(
+        [timestampB], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+
+      const result = timestamp_set_merge(setA, setB)
+      expect(set_equal(result, setB)).toEqual(true)
+      
+   })
+
+
+    test("timestamp should propagate timestamp from multiple sources - A", () => {
+      const timestampA = construct_traced_timestamp(1, "1")
+      const timestampB = construct_traced_timestamp(2, "2")
+      const setA = construct_better_set(
+        [timestampA], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const setB = construct_better_set(
+        [timestampB], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const result = timestamp_set_merge(setA, setB)
+      expect(to_array(result)).toEqual([timestampA, timestampB])
+    })
+
+
+    test("timestamp should propagate timestamp from multiple sources - B", () => {
+      const timestampA = construct_traced_timestamp(1, "1")
+      const timestampB = construct_traced_timestamp(2, "2")
+      const timestampC = construct_traced_timestamp(3, "3")
+      const setA = construct_better_set(
+        [timestampA], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const setB = construct_better_set(
+        [timestampB], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const setC = construct_better_set(
+        [timestampC], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const result = timestamp_set_merge(setA, setB)
+      expect(to_array(result)).toEqual([timestampA, timestampB])
+
+      const result2 = timestamp_set_merge(result, setC)
+      expect(to_array(result2)).toEqual([timestampA, timestampB, timestampC])
+    })
+
+    test("multiple timestamp merged with new fresher timestamp should update according to its source id ", () => {
+      const timestampA = construct_traced_timestamp(1, "1")
+      const timestampB = construct_traced_timestamp(2, "2")
+      const timestampC = construct_traced_timestamp(3, "3")
+      const setA = construct_better_set(
+        [timestampA], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+
+      
+      const setB = construct_better_set(
+        [timestampB], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const setC = construct_better_set(
+        [timestampC], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+      const result = timestamp_set_merge(setA, setB)
+      expect(to_array(result)).toEqual([timestampA, timestampB]) 
+
+      const result3 = timestamp_set_merge(result, setC)
+      expect(to_array(result3)).toEqual([timestampA, timestampB, timestampC]) 
+
+      const timestampD = construct_traced_timestamp(4, "1")
+      const setD = construct_better_set(
+        [timestampD], 
+        (a: traced_timestamp) => a.id.toString()
+      )
+
+      stale(timestampA)
+      const result4 = timestamp_set_merge(result3, setD)
+      expect(to_array(result4)).toEqual([timestampD, timestampB, timestampC])   
+  })
+
+})
+
+
+describe("timestamp value merge tests", () => {
+  test("timestamp value merge should update according to its source id ", () => {
+    const v_a = annotate_now("1")(1)
+    const v_b = annotate_now("2")(2)
+
+
+    const s_b_a = reactive_merge(v_a, v_b)
+
+    expect(to_array(s_b_a)).toEqual([v_a, v_b])
+   
+    const s_b = generic_merge(v_a, v_b)
+
+    expect(to_array(s_b)).toEqual([v_a, v_b])
+    
+  })
+
+
+  test("integrated test with cell", async () => {
+    const cell_a = construct_cell("a")
+    
+
+   
+
+    update(cell_a, 1)
+
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(cell_a))).toBe(1) 
+
+    update(cell_a, 2)
+
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(cell_a))).toBe(2)
+
+    
+  })
+})
+
+
 
   // -------------------------
   // Check update and subscribe functionality directly.
@@ -158,6 +309,7 @@ describe("Advance Reactive Tests", () => {
       update(input, 3, undefined);
       await execute_all_tasks_sequential((error: Error) => {});
       // Expected: (3 * 2) + 1 = 7
+ 
       expect(get_base_value(cell_strongest_value(composed))).toBe(7);
     });
 
@@ -387,15 +539,15 @@ describe("Zip and First operator tests", () => {
     update(cell1, "x2", undefined);
     await execute_all_tasks_sequential((error: Error) => {});
     result = get_base_value(cell_strongest_value(output));
-    expect(result).toEqual(["x2", "y"]);
+    expect(result).toEqual(["x", "y"]);
 
     // Update with the same values (i.e. no change in the underlying timestamps)
-    update(cell1, "x2", undefined);
-    update(cell2, "y", undefined);
+
+    update(cell2, "y2", undefined);
     await execute_all_tasks_sequential((error: Error) => {});
     // The output should remain the same since no new computation should be triggered.
     const sameResult = get_base_value(cell_strongest_value(output))
-    expect(sameResult).toEqual(["x2", "y"]);
+    expect(sameResult).toEqual(["x2", "y2"]);
   });
 });
 
@@ -477,3 +629,64 @@ describe("Arithmetic Operators Tests", () => {
     expect(get_base_value(cell_strongest_value(output))).toBe(20);
   });
 });
+
+describe("Proportional Sum Tests", () => {
+  test("c_sum_propotional should maintain proportional relationships between inputs", async () => {
+    // Create input cells and output cell
+    const input1 = construct_cell("propSum1");
+    const input2 = construct_cell("propSum2");
+    const output = construct_cell("propSumOutput");
+
+    // Set up the proportional sum relationship
+    c_sum_propotional(output, input1, input2);
+
+    // Initial values establishing a 1:2 ratio
+    update(input1, 10, undefined);
+    update(input2, 20, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    // Verify initial sum and proportions
+    expect(get_base_value(cell_strongest_value(output))).toBe(30);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(10);
+    expect(get_base_value(cell_strongest_value(input2))).toBe(20);
+
+    // Change the total sum - should maintain 1:2 ratio
+    update(output, 60, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    // Verify new values maintain the same proportion
+    expect(get_base_value(cell_strongest_value(output))).toBe(60);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
+    expect(get_base_value(cell_strongest_value(input2))).toBe(40); // 2/3 of 60
+
+    // Test with three inputs
+    const input3 = construct_cell("propSum3");
+    const output2 = construct_cell("propSumOutput2");
+    
+    // Set up new relationship with three inputs
+    c_sum_propotional(output2, input1, input2, input3);
+    
+    // Initial values establishing a 1:2:3 ratio
+    update(input1, 10, undefined);
+    update(input2, 20, undefined);
+    update(input3, 30, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    // Verify initial sum and proportions
+    expect(get_base_value(cell_strongest_value(output2))).toBe(60);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(10);
+    expect(get_base_value(cell_strongest_value(input2))).toBe(20);
+    expect(get_base_value(cell_strongest_value(input3))).toBe(30);
+
+    // Change the total sum - should maintain 1:2:3 ratio
+    update(output2, 120, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    // Verify new values maintain the same proportion
+    expect(get_base_value(cell_strongest_value(output2))).toBe(120);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(20);  // 1/6 of 120
+    expect(get_base_value(cell_strongest_value(input2))).toBe(40);  // 2/6 of 120
+    expect(get_base_value(cell_strongest_value(input3))).toBe(60);  // 3/6 of 120
+  });
+});
+

@@ -3,9 +3,9 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { no_compute } from "../Helper/noCompute";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
-import { annotate_timestamp, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp } from "./tracedTimestampLayer";
+import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp } from "./traced_timestamp/tracedTimestampLayer";
 
-import { add_cell_content, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
+import { add_cell_content, cell_content, cell_name, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 import { compound_propagator } from "../Propagator/Propagator";
@@ -13,6 +13,10 @@ import { p_add, p_divide, p_multiply } from "../Propagator/BuiltInProps";
 import { update } from "./update";
 import { is_nothing } from "@/cell/CellValue";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_reactor } from "../Shared/Reactivity/Reactor";
+import { get_new_reference_count, reference_store } from "../Helper/Helper";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { is_timestamp_value_set } from "./traced_timestamp/generic_patch";
 
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
@@ -26,6 +30,24 @@ export const make_operator = (name: string, f: (...a: any[]) => any) => {
     
     
 } 
+
+
+export const r_inspect_strongest = (cell: Cell<any>) => {
+    return cell_strongest(cell).subscribe((value) => {
+        console.log("cell name:" + cell_name(cell) + " updated")
+        console.log("cell strongest value:")
+        console.log(to_string(value));
+    })
+}
+
+export const r_inspect_content = (cell: Cell<any>) => {
+    return cell_content(cell).subscribe((value) => {
+        console.log("cell name:" + cell_name(cell) + " updated")
+        console.log("cell content:")
+        console.log(to_string(value));
+    })
+}
+
 
 export const r_compose = (...operators: ((...cells: Cell<any>[]) => void)[]) => {
     return (initial: Cell<any>) => {
@@ -109,6 +131,25 @@ export const r_first = (output: Cell<any>, arg: Cell<any>) => {
     }, "first")(arg, output);
 }
 
+export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: BetterSet<traced_timestamp>[]) => {
+    
+
+    if (a.length !== b.length){
+        return false;
+    }
+
+    for (let index = 0; index < a.length; index++) {
+        const element_a = a[index];
+        const element_b = b[index];
+        if(timestamp_equal(element_a, element_b)){
+            return true;
+        }
+    }
+
+
+    return false;
+}
+
 export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
     var last_timestamps:  BetterSet<traced_timestamp>[] | undefined = undefined
     return construct_reactive_propagator((...args: LayeredObject[]) => {
@@ -134,7 +175,7 @@ export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
     args.forEach((arg) => {
        const value = cell_strongest_base_value(arg)
        if(is_nothing(value)){
-         add_cell_content(arg, annotate_timestamp(arg, 0))
+         add_cell_content(arg, patch_traced_timestamps(arg, 0))
        }
     })
     // @ts-ignore
@@ -157,19 +198,52 @@ export const r_subtract = (output: Cell<any>, ...args: Cell<any>[]) => {
 }
 
 export const r_multiply = (output: Cell<any>, ...args: Cell<any>[]) => {
-    return make_operator("multiply", (...args: number[]) => args.slice(1).reduce((a, b) => a * b, args[0]))(output, ...args);
+    return make_operator("multiply", (...args: number[]) => {
+        const result = args.slice(1).reduce((a, b) => a * b, args[0]);
+        console.log("multiply");
+        console.log(args);
+        console.log(result);
+        return result;
+    })(output, ...args);
 }
 
 export const r_divide = (output: Cell<any>, ...args: Cell<any>[]) => {
     return make_operator("divide", (...args: number[]) => args.slice(1).reduce((a, b) => a / b, args[0]))(output, ...args);
 }
 
+export const r_reduce_array = (f: (a: any, b: any) => any, initial: any) => {
+    return make_operator("reduce_array", (base: any[]) =>{
+        const result = base.slice(1).reduce(f, base[0]);
+        console.log(base);
+        console.log(result);
+        return result;
+    });
+}
+
+
 
 export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
     return compound_propagator(inputs, [output], () => {
-        const add = r_add(output, ...inputs);
-        const ratios = inputs.map((input) => r_divide(input, add));
+        r_add(output, ...inputs);
 
+        //calculate the ratio of each input to the sum by zip
+       
+        const ratios =  inputs.map((input) => {
+            const zip_out = construct_cell("zip" + get_new_reference_count())  
+            r_zip(zip_out, input, output);
+            // @ts-ignore
+            const ratio_out = construct_cell("ratio" +  get_new_reference_count())
+            r_reduce_array((a, b) => a / b, 0)(ratio_out, zip_out);
+            return ratio_out;
+        });
+
+        //calculate the product of each input and its ratio by zip
+        inputs.forEach((input, index) => {
+            r_multiply(input, output, ratios[index]);
+        });
+
+
+        return construct_reactor();
     }, "c_sum_propotional")
 }
 
