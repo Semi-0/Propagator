@@ -151,23 +151,31 @@ export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: Better
 }
 
 export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
-    var last_timestamps:  BetterSet<traced_timestamp>[] | undefined = undefined
-    return construct_reactive_propagator((...args: LayeredObject[]) => {
-        const timestamps = args.map((arg) => get_traced_timestamp_layer(arg));
-        const base_values = args.map((arg) => get_base_value(arg));
-        if(last_timestamps === undefined){
-            last_timestamps = timestamps;
-            return base_values;
-        }
-        // if the timestamps are the same return no_compute 
-        else if(timestamp_equal(last_timestamps, timestamps)){
-            return no_compute;
-        }
-        else{
-            last_timestamps = timestamps;
-            return base_values;
-        }
-    }, "zip")(...args, output);
+  // For each input cell, maintain a queue for pending new values.
+  const queues: any[][] = args.map(() => []);
+  // Keep track of the last observed timestamp for each input.
+  const lastTimestamps: Array<BetterSet<traced_timestamp> | undefined> = args.map(() => undefined);
+
+  return construct_reactive_propagator((...inputs: LayeredObject[]) => {
+    const currentTimestamps = inputs.map(arg => get_traced_timestamp_layer(arg));
+    const baseValues = inputs.map(arg => get_base_value(arg));
+
+    // Check each input: if its timestamp has changed compared to the last observed one,
+    // add its new base value to the corresponding queue.
+    for (let i = 0; i < inputs.length; i++) {
+      if (!lastTimestamps[i] || !timestamp_equal(lastTimestamps[i], currentTimestamps[i])) {
+        queues[i].push(baseValues[i]);
+        lastTimestamps[i] = currentTimestamps[i];
+      }
+    }
+
+    // Only if every cell has produced at least one new value (i.e. every queue is non-empty),
+    // pop one value from each queue and emit the zipped array.
+    if (queues.every(queue => queue.length > 0)) {
+      return queues.map(queue => queue.shift());
+    }
+    return no_compute;
+  }, "zip")(...args, output);
 }
 
 export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
@@ -214,8 +222,6 @@ export const r_divide = (output: Cell<any>, ...args: Cell<any>[]) => {
 export const r_reduce_array = (f: (a: any, b: any) => any, initial: any) => {
     return make_operator("reduce_array", (base: any[]) =>{
         const result = base.slice(1).reduce(f, base[0]);
-        console.log(base);
-        console.log(result);
         return result;
     });
 }

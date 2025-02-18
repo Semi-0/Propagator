@@ -549,6 +549,7 @@ test('resolving contradiction with floating-point precision issues', async () =>
 
 
 test('example test from SimpleTest.ts', async () => {
+ 
     const x = construct_cell("x");
     const y = construct_cell("y");
     const z = construct_cell("z");
