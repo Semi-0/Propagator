@@ -33,6 +33,7 @@ function _is_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): b
 export const is_timestamp_value_set = register_predicate("is_timestamp_value_set", _is_timestamp_value_set)
 
 export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
+   
     return set_reduce(a, (a: LayeredObject, b: LayeredObject) => {
         return fresher(a, b) ? a : b
     }, smallest_timestamped_value)
@@ -56,3 +57,10 @@ define_handler(generic_merge, match_args(has_timestamp_layer, has_timestamp_laye
 
 
 define_handler(strongest_value, match_args(is_timestamp_value_set), freshest_value)
+
+
+define_handler(strongest_value, match_args(has_timestamp_layer), 
+(a: any) => {
+    return a
+})
+

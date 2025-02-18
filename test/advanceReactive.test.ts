@@ -33,10 +33,11 @@ import { the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import { c_sum_propotional } from "../AdvanceReactivity/operator";
-import {  annotate_now, construct_traced_timestamp, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
+import {  annotate_now, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { construct_better_set, set_equal, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
+import { is_timestamp_value_set, reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
 import { generic_merge } from "@/cell/Merge";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -173,9 +174,6 @@ describe("timestamp value merge tests", () => {
 
   test("integrated test with cell", async () => {
     const cell_a = construct_cell("a")
-    
-
-   
 
     update(cell_a, 1)
 
@@ -190,8 +188,6 @@ describe("timestamp value merge tests", () => {
 
     await execute_all_tasks_sequential((error: Error) => {});
     expect(get_base_value(cell_strongest_value(cell_a))).toBe(2)
-
-    
   })
 })
 
@@ -290,11 +286,23 @@ describe("timestamp value merge tests", () => {
   describe("Composable, chainable operators tests", () => {
     // Test pipe_r with a single operator (apply_e).
     test("pipe_r with apply_e operator should apply function to cell value", async () => {
-      const input = construct_cell("applyPipeTest");
-      const output = r_pipe(input, r_apply((x: number) => x + 10));
 
-      update(input, 5, undefined);
+      const input = construct_cell("applyPipeTest");
+      update(input, 5);
+      const output = r_pipe(input, r_apply((x: number) => {
+        console.log("applyPipeTest")
+        console.log(to_string(x))
+        return x + 10
+      }));
+
+
+      // r_inspect_strongest(input)
+      // r_inspect_content(input)
+      r_inspect_content(output)
       await execute_all_tasks_sequential((error: Error) => {});
+      // console.log(cell_content_value(input))
+      console.log("cell content")
+      console.log(to_string(cell_content_value(output)))
       expect(get_base_value(cell_strongest_value(output))).toBe(15);
     });
 

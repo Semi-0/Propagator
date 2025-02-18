@@ -112,17 +112,19 @@ import type { traced } from "fp-ts";
         // explicitly checking it is a timestamp set
         // this is not the most performant way to do this, but lets have this for now 
         // TODO: make this more performant
-        if (is_timestamp_set(traced_timestamps)){
-            // @ts-ignore
-            return  set_flat_map(timestamp, (a: traced_timestamp) => {
-                return a
-            });
+        
+        if (traced_timestamps.length === 1 && is_timestamp_set(traced_timestamps[0])){
+            return traced_timestamps[0]
         }
         else{
-          return set_flat_map(construct_better_set(traced_timestamps, (a: traced_timestamp) => a.id.toString()), 
-            (a: traced_timestamp) => {
-                return a 
-            });  
+            // TODO: this branch might cause weird behavior
+            const result = set_flat_map(construct_better_set(traced_timestamps, (a: traced_timestamp) => a.id.toString()), 
+                (a: traced_timestamp) => {
+                    return a 
+                });  
+   
+            return result;
+
         }
     }
 

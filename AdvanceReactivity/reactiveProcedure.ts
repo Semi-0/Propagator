@@ -17,14 +17,16 @@ export function reactive_procedure<T extends [], A >(
 ): (...args: T) => A | typeof no_compute {
   return (...args: T) => {
 
-
     if (is_fresh(args)) {
+
       const merge_timestamps = args.reduce((acc, curr) => generic_timestamp_set_merge(acc, get_traced_timestamp_layer(curr)), 
          construct_better_set<traced_timestamp>([], (a: traced_timestamp) => a.id.toString()))
-      // You may need to assert that the annotated value is of type A.
- 
-      return patch_traced_timestamps(f(...args), merge_timestamps) as A;
+
+      const result = patch_traced_timestamps(f(...args), merge_timestamps)
+
+      return result as A;
     } else {
+
       return no_compute;
     }
   };

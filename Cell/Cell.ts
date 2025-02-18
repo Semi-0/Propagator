@@ -95,7 +95,9 @@ export function cell_constructor<A>(
       })
 
       function testContent(content: any, strongest: any): any | null {
+ 
         const _strongest = strongest_value(content);
+
         if (general_contradiction(_strongest)){
           return _strongest;
         }
