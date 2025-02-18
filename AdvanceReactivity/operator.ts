@@ -10,7 +10,7 @@ import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 import { compound_propagator } from "../Propagator/Propagator";
 import { p_add, p_divide, p_multiply } from "../Propagator/BuiltInProps";
-import { update } from "./update";
+import { initialize, update } from "./update";
 import { is_nothing } from "@/cell/CellValue";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
@@ -175,7 +175,7 @@ export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
     args.forEach((arg) => {
        const value = cell_strongest_base_value(arg)
        if(is_nothing(value)){
-         add_cell_content(arg, patch_traced_timestamps(arg, 0))
+         initialize(arg, value)
        }
     })
     // @ts-ignore

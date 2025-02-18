@@ -116,8 +116,9 @@ import type { traced } from "fp-ts";
         if (traced_timestamps.length === 1 && is_timestamp_set(traced_timestamps[0])){
             return traced_timestamps[0]
         }
-        else{
+        else if (traced_timestamps.every((a: any) => is_traced_timestamp(a))) {
             // TODO: this branch might cause weird behavior
+         
             const result = set_flat_map(construct_better_set(traced_timestamps, (a: traced_timestamp) => a.id.toString()), 
                 (a: traced_timestamp) => {
                     return a 
@@ -125,6 +126,9 @@ import type { traced } from "fp-ts";
    
             return result;
 
+        }
+        else{
+            throw new Error("Invalid timestamp set: " + to_string(traced_timestamps))
         }
     }
 
@@ -190,6 +194,8 @@ import type { traced } from "fp-ts";
     export const get_traced_timestamp_layer = layer_accessor(timestamp_layer);
 
     export const annotate_now = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, Date.now());
+
+    export const annotate_smallest = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, -Infinity);
     export const annotate_with_reference = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, get_new_relative_time());
 
     export const has_timestamp_layer = register_predicate("has_timestamp_layer", (a: any) => is_layered_object(a) && _has_timestamp_layer(a));

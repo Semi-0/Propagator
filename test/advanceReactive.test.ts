@@ -200,7 +200,7 @@ describe("timestamp value merge tests", () => {
     // Test update function without premise
     test("update (no premise) should update a cell with the annotated value", async () => {
       const cell = construct_cell("updateNoPremise");
-      update(cell, 42, undefined);
+      update(cell, 42);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(cell))).toBe(42);
     });
@@ -208,7 +208,7 @@ describe("timestamp value merge tests", () => {
     // Test update function with premise
     test("update (with premise) should update a cell with support info", async () => {
       const cell = construct_cell("updateWithPremise");
-      update(cell, 100, "premise1");
+      update(cell, 100);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(cell))).toBe(100);
     });
@@ -221,7 +221,7 @@ describe("timestamp value merge tests", () => {
         captured = val;
       })(cell);
 
-      update(cell, 77, undefined);
+      update(cell, 77);
       await execute_all_tasks_sequential((error: Error) => {});
       // @ts-ignore
       expect(captured).toBe(77);
@@ -239,13 +239,13 @@ describe("timestamp value merge tests", () => {
       const output = construct_cell("output");
       r_until(condition, thenCell, output);
 
-      update(condition, false, undefined);
-      update(thenCell, "initial", undefined);
+      update(condition, false);
+      update(thenCell, "initial");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(the_nothing);
 
-      update(condition, true, undefined);
-      update(thenCell, "updated", undefined);
+      update(condition, true);
+      update(thenCell, "updated");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(output))).toBe("updated");
     });
@@ -257,21 +257,23 @@ describe("timestamp value merge tests", () => {
       const output = construct_cell("output");
       r_or(output, cellA, cellB);
 
-      update(cellA, "first", undefined);
+
+      // await new Promise((resolve) => setTimeout(resolve, 2));
+      update(cellA, "first");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
       await new Promise((resolve) => setTimeout(resolve, 1000));
       expect(get_base_value(cell_strongest_value(output))).toBe("first");
 
-      update(cellB, "second", undefined);
+      update(cellB, "second");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
       await new Promise((resolve) => setTimeout(resolve, 1000));
       expect(get_base_value(cell_strongest_value(output))).toBe("second");
 
-      update(cellA, "third", undefined);
+      update(cellA, "third");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
@@ -296,13 +298,10 @@ describe("timestamp value merge tests", () => {
       }));
 
 
-      // r_inspect_strongest(input)
-      // r_inspect_content(input)
+
       r_inspect_content(output)
       await execute_all_tasks_sequential((error: Error) => {});
-      // console.log(cell_content_value(input))
-      console.log("cell content")
-      console.log(to_string(cell_content_value(output)))
+
       expect(get_base_value(cell_strongest_value(output))).toBe(15);
     });
 
@@ -314,7 +313,7 @@ describe("timestamp value merge tests", () => {
         r_apply((x: number) => x + 1)
       )(input);
 
-      update(input, 3, undefined);
+      update(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       // Expected: (3 * 2) + 1 = 7
  
@@ -330,7 +329,7 @@ describe("timestamp value merge tests", () => {
         r_apply((x: number) => x - 2)
       );
 
-      update(input, 4, undefined);
+      update(input, 4);
       await execute_all_tasks_sequential((error: Error) => {});
       // Expected: (4 * 3) - 2 = 10
       expect(get_base_value(cell_strongest_value(piped))).toBe(10);
@@ -342,11 +341,11 @@ describe("timestamp value merge tests", () => {
       const input = construct_cell("filterTest");
       const filtered = r_pipe(input, r_filter((x: number) => x > 10));
 
-      update(input, 5, undefined);
+      update(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(filtered)).toBe(the_nothing);
 
-      update(input, 15, undefined);
+      update(input, 15);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(filtered))).toBe(15);
     });
@@ -356,11 +355,11 @@ describe("timestamp value merge tests", () => {
       const input = construct_cell("reduceTest");
       const reduced = r_pipe(input, r_reduce((acc: number, x: number) => acc + x, 0));
 
-      update(input, 5, undefined);
+      update(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(reduced))).toBe(5);
 
-      update(input, 3, undefined);
+      update(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(reduced))).toBe(8);
     });
@@ -395,13 +394,13 @@ describe("timestamp value merge tests", () => {
           // Subscribe to update the other cell when one changes
           r_subscribe((f: number) => {
             if (get_base_value(cell_strongest_value(fahrenheit)) !== f) {
-              update(fahrenheit, f, "c_to_f");
+              update(fahrenheit, f);
             }
           })(c_to_f);
 
           r_subscribe((c: number) => {
             if (get_base_value(cell_strongest_value(celsius)) !== c) {
-              update(celsius, c, "f_to_c");
+              update(celsius, c);
             }
           })(f_to_c);
 
@@ -412,13 +411,13 @@ describe("timestamp value merge tests", () => {
       );
 
       // Test Celsius to Fahrenheit conversion
-      update(celsius, 0, undefined);
+      update(celsius, 0);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(celsius))).toBe(0);
       expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(32);
 
       // Test Fahrenheit to Celsius conversion
-      update(fahrenheit, 212, undefined);
+      update(fahrenheit, 212);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(celsius))).toBe(100);
       expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(212);
@@ -468,25 +467,25 @@ describe("timestamp value merge tests", () => {
           // Set up subscriptions
           r_subscribe((ft: number) => {
             if (get_base_value(cell_strongest_value(feet)) !== ft) {
-              update(feet, ft, "m_to_ft");
+              update(feet, ft);
             }
           })(m_to_ft);
 
           r_subscribe((m: number) => {
             if (get_base_value(cell_strongest_value(meters)) !== m) {
-              update(meters, m, "ft_to_m");
+              update(meters, m);
             }
           })(ft_to_m);
 
           r_subscribe((inch: number) => {
             if (get_base_value(cell_strongest_value(inches)) !== inch) {
-              update(inches, inch, "ft_to_in");
+              update(inches, inch);
             }
           })(ft_to_in);
 
           r_subscribe((ft: number) => {
             if (get_base_value(cell_strongest_value(feet)) !== ft) {
-              update(feet, ft, "in_to_ft");
+              update(feet, ft);
             }
           })(in_to_ft);
 
@@ -496,14 +495,14 @@ describe("timestamp value merge tests", () => {
       );
 
       // Test meters to feet to inches
-      update(meters, 1, undefined);
+      update(meters, 1);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(meters))).toBeCloseTo(1);
       expect(get_base_value(cell_strongest_value(feet))).toBeCloseTo(3.28084);
       expect(get_base_value(cell_strongest_value(inches))).toBeCloseTo(39.37008);
 
       // Test inches back to feet and meters
-      update(inches, 12, undefined);
+      update(inches, 12);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(inches))).toBe(12);
       expect(get_base_value(cell_strongest_value(feet))).toBe(1);
@@ -519,12 +518,12 @@ describe("Zip and First operator tests", () => {
     const firstOutput = r_first(output, cell);
     
     // Set the initial value.
-    update(cell, 100, undefined);
+    update(cell, 100);
     await execute_all_tasks_sequential((error: Error) => {});
     expect(get_base_value(cell_strongest_value(output))).toBe(100);
     
     // Change the cell value.
-    update(cell, 200, undefined);
+    update(cell, 200);
     await execute_all_tasks_sequential((error: Error) => {});
     // Expect the first propagator to continue returning the initial value.
     expect(get_base_value(cell_strongest_value(output))).toBe(100);
@@ -537,21 +536,21 @@ describe("Zip and First operator tests", () => {
     const zipped = r_zip(output, cell1, cell2);
 
     // First update: both cells are updated.
-    update(cell1, "x", undefined);
-    update(cell2, "y", undefined);
+    update(cell1, "x");
+    update(cell2, "y");
     await execute_all_tasks_sequential((error: Error) => {});
     let result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
 
     // Update one cell with a new value.
-    update(cell1, "x2", undefined);
+    update(cell1, "x2");
     await execute_all_tasks_sequential((error: Error) => {});
     result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
 
     // Update with the same values (i.e. no change in the underlying timestamps)
 
-    update(cell2, "y2", undefined);
+    update(cell2, "y2");
     await execute_all_tasks_sequential((error: Error) => {});
     // The output should remain the same since no new computation should be triggered.
     const sameResult = get_base_value(cell_strongest_value(output))
@@ -567,8 +566,8 @@ describe("Arithmetic Operators Tests", () => {
     // Connect the add operator to the inputs and output.
     r_add(output, cell1, cell2);
 
-    update(cell1, 10, undefined);
-    update(cell2, 15, undefined);
+    update(cell1, 10);
+    update(cell2, 15);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(25);
   });
@@ -579,8 +578,8 @@ describe("Arithmetic Operators Tests", () => {
     const output = construct_cell("rSubtractOutput");
     r_subtract(output, cell1, cell2);
 
-    update(cell1, 20, undefined);
-    update(cell2, 5, undefined);
+    update(cell1, 20);
+    update(cell2, 5);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(15);
   });
@@ -604,9 +603,9 @@ describe("Arithmetic Operators Tests", () => {
     const output = construct_cell("rMultiply3Output");
     r_multiply(output, cell1, cell2, cell3);
 
-    update(cell1, 2, undefined);
-    update(cell2, 3, undefined);
-    update(cell3, 4, undefined);
+    update(cell1, 2);
+    update(cell2, 3);
+    update(cell3, 4);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(24);
   });
@@ -617,8 +616,8 @@ describe("Arithmetic Operators Tests", () => {
     const output = construct_cell("rDivideOutput");
     r_divide(output, cell1, cell2);
 
-    update(cell1, 100, undefined);
-    update(cell2, 4, undefined);
+    update(cell1, 100);
+    update(cell2, 4);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(25);
   });
@@ -630,9 +629,9 @@ describe("Arithmetic Operators Tests", () => {
     const output = construct_cell("rDivideOutputMultiple");
     r_divide(output, cell1, cell2, cell3);
 
-    update(cell1, 120, undefined);  // 120 / 2 = 60, then 60 / 3 = 20
-    update(cell2, 2, undefined);
-    update(cell3, 3, undefined);
+    update(cell1, 120);  // 120 / 2 = 60, then 60 / 3 = 20
+    update(cell2, 2);
+    update(cell3, 3);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(20);
   });
@@ -649,8 +648,8 @@ describe("Proportional Sum Tests", () => {
     c_sum_propotional(output, input1, input2);
 
     // Initial values establishing a 1:2 ratio
-    update(input1, 10, undefined);
-    update(input2, 20, undefined);
+    update(input1, 10);
+    update(input2, 20);
     await execute_all_tasks_sequential((error: Error) => {});
 
     // Verify initial sum and proportions
@@ -659,7 +658,7 @@ describe("Proportional Sum Tests", () => {
     expect(get_base_value(cell_strongest_value(input2))).toBe(20);
 
     // Change the total sum - should maintain 1:2 ratio
-    update(output, 60, undefined);
+    update(output, 60);
     await execute_all_tasks_sequential((error: Error) => {});
 
     // Verify new values maintain the same proportion
@@ -675,9 +674,9 @@ describe("Proportional Sum Tests", () => {
     c_sum_propotional(output2, input1, input2, input3);
     
     // Initial values establishing a 1:2:3 ratio
-    update(input1, 10, undefined);
-    update(input2, 20, undefined);
-    update(input3, 30, undefined);
+    update(input1, 10);
+    update(input2, 20);
+    update(input3, 30);
     await execute_all_tasks_sequential((error: Error) => {});
 
     // Verify initial sum and proportions
@@ -687,7 +686,7 @@ describe("Proportional Sum Tests", () => {
     expect(get_base_value(cell_strongest_value(input3))).toBe(30);
 
     // Change the total sum - should maintain 1:2:3 ratio
-    update(output2, 120, undefined);
+    update(output2, 120);
     await execute_all_tasks_sequential((error: Error) => {});
 
     // Verify new values maintain the same proportion
