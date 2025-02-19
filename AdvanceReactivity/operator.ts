@@ -17,6 +17,7 @@ import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import { get_new_reference_count, reference_store } from "../Helper/Helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_timestamp_value_set } from "./traced_timestamp/generic_patch";
+import { set_every, set_has } from "generic-handler/built_in_generics/generic_better_set";
 
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
@@ -150,32 +151,39 @@ export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: Better
     return false;
 }
 
+// Classic queue-based implementation of r_zip operator with lastSent tracking
 export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
-  // For each input cell, maintain a queue for pending new values.
-  const queues: any[][] = args.map(() => []);
-  // Keep track of the last observed timestamp for each input.
-  const lastTimestamps: Array<BetterSet<traced_timestamp> | undefined> = args.map(() => undefined);
+    // Initialize a queue for each input cell
+    const queues: any[][] = args.map(() => []);
+    // last emitted zipped result; initially no_compute
+    let lastSent: any = no_compute;
 
-  return construct_reactive_propagator((...inputs: LayeredObject[]) => {
-    const currentTimestamps = inputs.map(arg => get_traced_timestamp_layer(arg));
-    const baseValues = inputs.map(arg => get_base_value(arg));
+    return construct_reactive_propagator((...values: LayeredObject[]) => {
+        // Exclude the output cell from the inputs
 
-    // Check each input: if its timestamp has changed compared to the last observed one,
-    // add its new base value to the corresponding queue.
-    for (let i = 0; i < inputs.length; i++) {
-      if (!lastTimestamps[i] || !timestamp_equal(lastTimestamps[i], currentTimestamps[i])) {
-        queues[i].push(baseValues[i]);
-        lastTimestamps[i] = currentTimestamps[i];
-      }
-    }
+        const currentValues = values.map(cell => get_base_value(cell));
 
-    // Only if every cell has produced at least one new value (i.e. every queue is non-empty),
-    // pop one value from each queue and emit the zipped array.
-    if (queues.every(queue => queue.length > 0)) {
-      return queues.map(queue => queue.shift());
-    }
-    return no_compute;
-  }, "zip")(...args, output);
+        // For each input, if currentValue is valid and it is new compared to the last queued value or the last emitted value,
+        // then push it into its respective queue
+        for (let i = 0; i < currentValues.length; i++) {
+            const curr = currentValues[i];
+            // If we haven't emitted any value yet, or the last emitted value for input i is different
+            if (lastSent === no_compute || (Array.isArray(lastSent) && lastSent[i] !== curr)) {
+                queues[i].push(curr);
+            }
+      
+        }
+
+        // If every input's queue has at least one element, consume one from each to produce a new zipped result
+        if (queues.every(queue => queue.length > 0)) {
+            const newZip = queues.map(queue => queue.shift());
+            lastSent = newZip;
+            return newZip;
+        }
+        
+        // Otherwise, return the previously emitted zipped result (or no_compute if none)
+        return lastSent;
+    }, "zip")(...args, output);
 }
 
 export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
@@ -233,18 +241,25 @@ export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[
         r_add(output, ...inputs);
 
         //calculate the ratio of each input to the sum by zip
+        r_inspect_strongest(output)
        
         const ratios =  inputs.map((input) => {
             const zip_out = construct_cell("zip" + get_new_reference_count())  
             r_zip(zip_out, input, output);
+            r_inspect_strongest(zip_out)
             // @ts-ignore
             const ratio_out = construct_cell("ratio" +  get_new_reference_count())
             r_reduce_array((a, b) => a / b, 0)(ratio_out, zip_out);
+
+            r_inspect_strongest(ratio_out)
+            r_inspect_content(ratio_out)
             return ratio_out;
         });
 
+    
         //calculate the product of each input and its ratio by zip
         inputs.forEach((input, index) => {
+            r_inspect_strongest(input) 
             r_multiply(input, output, ratios[index]);
         });
 

@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
+import type { Cell } from "@/cell/Cell";
 import {
   curried_generic_map,
   r_subscribe,
@@ -423,7 +424,7 @@ describe("timestamp value merge tests", () => {
       expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(212);
 
       // Test another Celsius to Fahrenheit conversion
-      update(celsius, 25, undefined);
+      update(celsius, 25);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(celsius))).toBe(25);
       expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(77);
@@ -548,13 +549,32 @@ describe("Zip and First operator tests", () => {
     result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
 
-    // Update with the same values (i.e. no change in the underlying timestamps)
-
+    // Update with the same values
     update(cell2, "y2");
     await execute_all_tasks_sequential((error: Error) => {});
-    // The output should remain the same since no new computation should be triggered.
-    const sameResult = get_base_value(cell_strongest_value(output))
+    const sameResult = get_base_value(cell_strongest_value(output));
     expect(sameResult).toEqual(["x2", "y2"]);
+  });
+
+  // New test: Verify that r_zip works with cells produced from other operators
+  test("r_zip operator should combine values produced by other operators", async () => {
+    const raw1 = construct_cell("zipTransformTest1") as Cell<number>;
+    const raw2 = construct_cell("zipTransformTest2") as Cell<number>;
+
+    // Create transformed cells using r_apply operator
+    const transformed1 = r_pipe(raw1, r_apply((x: number) => x * 2));
+    const transformed2 = r_pipe(raw2, r_apply((x: number) => x + 5));
+
+    const zipOutput = construct_cell("zipTransformOutput");
+    r_zip(zipOutput, transformed1, transformed2);
+
+    update(raw1, 10);
+    update(raw2, 20);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    const result = get_base_value(cell_strongest_value(zipOutput));
+    // Expected: transformed1 = 10 * 2 = 20, transformed2 = 20 + 5 = 25
+    expect(result).toEqual([20, 25]);
   });
 });
 
@@ -590,8 +610,8 @@ describe("Arithmetic Operators Tests", () => {
     const output = construct_cell("rMultiplyOutput");
     r_multiply(output, cell1, cell2);
 
-    update(cell1, 3, undefined);
-    update(cell2, 7, undefined);
+    update(cell1, 3);
+    update(cell2, 7);
     await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
     expect(get_base_value(cell_strongest_value(output))).toBe(21);
   });
@@ -640,9 +660,9 @@ describe("Arithmetic Operators Tests", () => {
 describe("Proportional Sum Tests", () => {
   test("c_sum_propotional should maintain proportional relationships between inputs", async () => {
     // Create input cells and output cell
-    const input1 = construct_cell("propSum1");
-    const input2 = construct_cell("propSum2");
-    const output = construct_cell("propSumOutput");
+    const input1 = construct_cell("propSum1") as Cell<number>;
+    const input2 = construct_cell("propSum2") as Cell<number>;
+    const output = construct_cell("propSumOutput") as Cell<number>;
 
     // Set up the proportional sum relationship
     c_sum_propotional(output, input1, input2);
@@ -658,17 +678,20 @@ describe("Proportional Sum Tests", () => {
     expect(get_base_value(cell_strongest_value(input2))).toBe(20);
 
     // Change the total sum - should maintain 1:2 ratio
+
     update(output, 60);
+
     await execute_all_tasks_sequential((error: Error) => {});
 
+    console.log(to_string(cell_content_value(output)))
     // Verify new values maintain the same proportion
     expect(get_base_value(cell_strongest_value(output))).toBe(60);
     expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
     expect(get_base_value(cell_strongest_value(input2))).toBe(40); // 2/3 of 60
 
     // Test with three inputs
-    const input3 = construct_cell("propSum3");
-    const output2 = construct_cell("propSumOutput2");
+    const input3 = construct_cell("propSum3") as Cell<number>;
+    const output2 = construct_cell("propSumOutput2") as Cell<number>;
     
     // Set up new relationship with three inputs
     c_sum_propotional(output2, input1, input2, input3);

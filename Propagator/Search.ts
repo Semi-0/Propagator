@@ -43,7 +43,7 @@ function construct_amb_reactor(f: () => void): () => Reactor<boolean>{
 }
 
 // TODO: this need be able to work only if the support set can be propagated first!!!
-export function binary_amb(cell: Cell): Propagator{
+export function binary_amb(cell: Cell<boolean>): Propagator{
     // 
     const premises =  make_hypotheticals<boolean>(cell, make_better_set([true, false]))
     const true_premise = first(premises)
@@ -101,7 +101,7 @@ export function mark_all_premises_out(premises: BetterSet<string>){
     return nogoods
 }
 
-export function p_amb(cell: Cell, values: BetterSet<any>): Propagator{
+export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
     const premises: BetterSet<string> = make_hypotheticals<any>(cell, values)
         function amb_choose(){
             // if all the premises is believed, it represent a contradiction
@@ -152,7 +152,7 @@ function cross_product_union(nogoodss: BetterSet<BetterSet<BetterSet<string>>>):
     return set_reduce_right(pairwise_union, nogoodss, construct_better_set([[]], to_string))
 }
 
-export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell){
+export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell<any>){
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
  //TODO: update-failure-count
 
@@ -226,7 +226,7 @@ function choose_first_hypothetical(nogood: BetterSet<string>): any[]{
 }
 
 
-function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, complaining_cell: Cell){ 
+function maybe_kick_out(toDisbelieve: string[], nogood: BetterSet<string>, complaining_cell: Cell<any>){ 
 
     if (log_process_contradictions){
 
