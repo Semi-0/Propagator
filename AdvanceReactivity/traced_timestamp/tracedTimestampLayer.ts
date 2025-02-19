@@ -13,6 +13,7 @@
     import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import type { traced } from "fp-ts";
+import { deep_equal } from "../../Shared/PublicState";
     const get_new_id = reference_store()
     const get_new_relative_time = reference_store()
 
@@ -46,12 +47,17 @@ import type { traced } from "fp-ts";
 
     
 
-    export function same_source(a: traced_timestamp, b: traced_timestamp): boolean {
+    export const same_source = construct_simple_generic_procedure("same_source", 2, () => {throw new Error("same_source is not defined for traced_timestamp")}) 
+    
+    define_generic_procedure_handler(same_source, all_match(is_traced_timestamp), (a: traced_timestamp, b: traced_timestamp) => {
         return a.id === b.id
-    }
+    })
 
     export const is_timestamp_set = register_predicate("is_timestamp_set", (a: any) => is_better_set(a) && set_every(a, is_traced_timestamp))
 
+    define_generic_procedure_handler(same_source, all_match(is_timestamp_set), (a: BetterSet<traced_timestamp>, b: BetterSet<traced_timestamp>) => {
+        return set_every(a, (at: traced_timestamp) => set_has(b, at)) && set_every(b, (bt: traced_timestamp) => set_has(a, bt))
+    })
 
     define_generic_procedure_handler(to_string, match_args(is_timestamp_set), (a: BetterSet<traced_timestamp>) => {
         return to_string(set_reduce(a, (a: string, b: traced_timestamp) => {
@@ -175,6 +181,18 @@ import type { traced } from "fp-ts";
         return a && timestamp_layer.has_value(a);
     }
 
+
+    export const has_timestamp_layer = register_predicate("has_timestamp_layer", (a: any) => is_layered_object(a) && _has_timestamp_layer(a));
+        
+
+    define_generic_procedure_handler(deep_equal,
+        all_match(has_timestamp_layer),
+        (a: LayeredObject, b: LayeredObject) => {
+            return timestamp_equal(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b))
+                && deep_equal(get_base_value(a), get_base_value(b))
+        }
+    )    
+
     export const annotate_identified_timestamp = (id: string) => construct_layer_ui(
         timestamp_layer,
         construct_new_traced_timestamp_set(id),
@@ -198,7 +216,6 @@ import type { traced } from "fp-ts";
     export const annotate_smallest = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, -Infinity);
     export const annotate_with_reference = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, get_new_relative_time());
 
-    export const has_timestamp_layer = register_predicate("has_timestamp_layer", (a: any) => is_layered_object(a) && _has_timestamp_layer(a));
 
     define_generic_procedure_handler(to_string, match_args(has_timestamp_layer), (a: LayeredObject) => {
         return to_string(get_traced_timestamp_layer(a)) + " " 
@@ -283,6 +300,10 @@ import type { traced } from "fp-ts";
         return fresher(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b));
     });
 
+    export const same_freshness = (a: LayeredObject, b: LayeredObject) => {
+        return !fresher(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b))
+            && !fresher(get_traced_timestamp_layer(b), get_traced_timestamp_layer(a))
+    }
    
     
 
@@ -357,10 +378,11 @@ import type { traced } from "fp-ts";
                 return b
             }
             else{
-                throw new Error("Same source, but fresher is same timestamp");
+               return a
             }
         }
         else{
+
             throw new Error("Different source");
         }
     
@@ -369,10 +391,9 @@ import type { traced } from "fp-ts";
 
     export function timestamp_set_merge(setA: BetterSet<traced_timestamp>, setB: BetterSet<traced_timestamp>): BetterSet<traced_timestamp> {
         var result = construct_better_set([], (a: traced_timestamp) => a.id.toString());
-   
 
         set_for_each((a: traced_timestamp) => {
-            if (set_has(setB, a)){
+            if (set_has(result, a)){
                 result = set_add_item(result, merge_same_source_timestamp(a, get(setB, a) as traced_timestamp));
             }
             else{
@@ -381,7 +402,7 @@ import type { traced } from "fp-ts";
         }, setA);
 
         set_for_each((a: traced_timestamp) => {
-            if (set_has(setA, a)){
+            if (set_has(result, a)){
                 result = set_add_item(result, merge_same_source_timestamp(a, get(setA, a) as traced_timestamp));
             }
             else{
@@ -403,10 +424,12 @@ import type { traced } from "fp-ts";
     }
 
     export function generic_timestamp_set_merge(setA: BetterSet<traced_timestamp> | traced_timestamp , setB: BetterSet<traced_timestamp> | traced_timestamp ): BetterSet<traced_timestamp> {
+        
         if (is_timestamp_set(setA) && is_timestamp_set(setB)){
             return timestamp_set_merge(setA as BetterSet<traced_timestamp>, setB as BetterSet<traced_timestamp>);
         }
         else if (is_timestamp_set(setA)){
+
             return timestamp_set_adjoin(setA as BetterSet<traced_timestamp>, setB as traced_timestamp);
         }
         else if (is_timestamp_set(setB)){

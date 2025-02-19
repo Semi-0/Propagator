@@ -1,14 +1,16 @@
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { fresher, get_traced_timestamp_layer, has_timestamp_layer, smallest_timestamped_value, type traced_timestamp } from "./tracedTimestampLayer";
+import { fresher, get_traced_timestamp_layer, has_timestamp_layer, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, is_better_set, set_add_item, set_every, set_reduce } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, is_better_set, set_add_item, set_every, set_for_each, set_reduce } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { define_handler, generic_merge } from "@/cell/Merge";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { strongest_value } from "@/cell/StrongestValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { is_contradiction, the_contradiction } from "@/cell/CellValue";
+import { deep_equal } from "../../Shared/PublicState";
 
 
 
@@ -32,11 +34,35 @@ function _is_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): b
 
 export const is_timestamp_value_set = register_predicate("is_timestamp_value_set", _is_timestamp_value_set)
 
+// TODO: handle contradiction
+
 export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
    
-    return set_reduce(a, (a: LayeredObject, b: LayeredObject) => {
-        return fresher(a, b) ? a : b
-    }, smallest_timestamped_value)
+    var freshest = smallest_timestamped_value
+    set_for_each((a: LayeredObject) => {
+     if (deep_equal(a, freshest)){
+        return
+       }
+       else if (same_freshness(a, freshest) ){
+        // @ts-ignore
+        // if has two value has the same freshness then cause a contradiction
+        const timestamp_set_a = get_traced_timestamp_layer(a)
+        const timestamp_set_freshest = get_traced_timestamp_layer(freshest)
+
+        if(same_source(timestamp_set_a, timestamp_set_freshest)){
+            freshest = patch_traced_timestamps(the_contradiction, timestamp_set_a)
+        }
+        else{
+            freshest = a
+        }
+       }
+       else if (fresher(a, freshest)){
+        freshest = a
+       }
+    }, a)
+
+
+    return freshest
 }
 
 

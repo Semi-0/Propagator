@@ -153,6 +153,7 @@ export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: Better
 
 // Classic queue-based implementation of r_zip operator with lastSent tracking
 export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
+    // todo generate new fresh cells
     // Initialize a queue for each input cell
     const queues: any[][] = args.map(() => []);
     // last emitted zipped result; initially no_compute
@@ -162,6 +163,7 @@ export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
         // Exclude the output cell from the inputs
 
         const currentValues = values.map(cell => get_base_value(cell));
+        console.log("ziped")
 
         // For each input, if currentValue is valid and it is new compared to the last queued value or the last emitted value,
         // then push it into its respective queue
@@ -216,9 +218,7 @@ export const r_subtract = (output: Cell<any>, ...args: Cell<any>[]) => {
 export const r_multiply = (output: Cell<any>, ...args: Cell<any>[]) => {
     return make_operator("multiply", (...args: number[]) => {
         const result = args.slice(1).reduce((a, b) => a * b, args[0]);
-        console.log("multiply");
-        console.log(args);
-        console.log(result);
+
         return result;
     })(output, ...args);
 }
@@ -237,6 +237,7 @@ export const r_reduce_array = (f: (a: any, b: any) => any, initial: any) => {
 
 
 export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
+    // wrong operator will cause contradiction
     return compound_propagator(inputs, [output], () => {
         r_add(output, ...inputs);
 
