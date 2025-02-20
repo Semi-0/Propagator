@@ -33,7 +33,7 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import { c_sum_propotional } from "../AdvanceReactivity/operator";
+import { c_sum_propotional_mistaken } from "../AdvanceReactivity/operator";
 import {  annotate_now, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { construct_better_set, set_equal, set_for_each, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { is_timestamp_value_set, reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
@@ -534,9 +534,11 @@ describe("Zip and First operator tests", () => {
     const cell1 = construct_cell("zipOpTest1");
     const cell2 = construct_cell("zipOpTest2");
     const output = construct_cell("zipOpTestOutput");
-    const zipped = r_zip(output, cell1, cell2);
+    const zip_func = construct_cell("zipOpTestFunc");
+    const zipped = r_zip(output, zip_func, cell1, cell2);
 
     // First update: both cells are updated.
+    update(zip_func, (a: string, b: string) => [a, b]);
     update(cell1, "x");
     update(cell2, "y");
     await execute_all_tasks_sequential((error: Error) => {});
@@ -560,13 +562,14 @@ describe("Zip and First operator tests", () => {
   test("r_zip operator should combine values produced by other operators", async () => {
     const raw1 = construct_cell("zipTransformTest1") as Cell<number>;
     const raw2 = construct_cell("zipTransformTest2") as Cell<number>;
-
+    const zip_func = construct_cell("zipTransformTestFunc");
     // Create transformed cells using r_apply operator
     const transformed1 = r_pipe(raw1, r_apply((x: number) => x * 2));
     const transformed2 = r_pipe(raw2, r_apply((x: number) => x + 5));
 
     const zipOutput = construct_cell("zipTransformOutput");
-    r_zip(zipOutput, transformed1, transformed2);
+    r_zip(zipOutput, zip_func, transformed1, transformed2);
+    update(zip_func, (a: number, b: number) => [a, b]);
 
     update(raw1, 10);
     update(raw2, 20);
@@ -665,7 +668,7 @@ describe("Proportional Sum Tests", () => {
     const output = construct_cell("propSumOutput") as Cell<number>;
 
     // Set up the proportional sum relationship
-    c_sum_propotional(output, input1, input2);
+    c_sum_propotional_mistaken(output, input1, input2);
 
     // Initial values establishing a 1:2 ratio
     update(input1, 10);

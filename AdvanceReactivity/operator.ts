@@ -3,14 +3,14 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { no_compute } from "../Helper/noCompute";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
-import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp } from "./traced_timestamp/tracedTimestampLayer";
+import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp, annotate_now, stale } from "./traced_timestamp/tracedTimestampLayer";
 
-import { add_cell_content, cell_content, cell_name, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
+import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 import { compound_propagator } from "../Propagator/Propagator";
 import { p_add, p_divide, p_multiply } from "../Propagator/BuiltInProps";
-import { initialize, update } from "./update";
+import { initialize, update, update_store } from "./update";
 import { is_nothing } from "@/cell/CellValue";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
@@ -118,20 +118,6 @@ export const r_until = construct_reactive_propagator(
 
     }, "until")
 
-export const r_first = (output: Cell<any>, arg: Cell<any>) => {
-    var first_arg: LayeredObject | undefined = undefined;
-
-    return construct_reactive_propagator((...args: LayeredObject[]) => {
-        if(first_arg === undefined){
-            first_arg = args[0];
-            return args[0];
-        }
-        else{
-            return first_arg;
-        }
-    }, "first")(arg, output);
-}
-
 export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: BetterSet<traced_timestamp>[]) => {
     
 
@@ -152,19 +138,18 @@ export const any_time_stamp_equal = (a: BetterSet<traced_timestamp>[], b: Better
 }
 
 // Classic queue-based implementation of r_zip operator with lastSent tracking
-export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
+export const r_zip = (output: Cell<any>, f: Cell<any>, ...args: Cell<any>[]) => {
     // todo generate new fresh cells
     // Initialize a queue for each input cell
     const queues: any[][] = args.map(() => []);
     // last emitted zipped result; initially no_compute
     let lastSent: any = no_compute;
-
-    return construct_reactive_propagator((...values: LayeredObject[]) => {
+    // @ts-ignore
+    return construct_reactive_propagator((f: (...a: any[]) => any, ...values: LayeredObject[]) => {
         // Exclude the output cell from the inputs
 
         const currentValues = values.map(cell => get_base_value(cell));
-        console.log("ziped")
-
+        const currentFunc = get_base_value(f);
         // For each input, if currentValue is valid and it is new compared to the last queued value or the last emitted value,
         // then push it into its respective queue
         for (let i = 0; i < currentValues.length; i++) {
@@ -180,12 +165,12 @@ export const r_zip = (output: Cell<any>, ...args: Cell<any>[]) => {
         if (queues.every(queue => queue.length > 0)) {
             const newZip = queues.map(queue => queue.shift());
             lastSent = newZip;
-            return newZip;
+            return currentFunc(...newZip);
         }
         
         // Otherwise, return the previously emitted zipped result (or no_compute if none)
         return lastSent;
-    }, "zip")(...args, output);
+    }, "zip")(f, ...args, output);
 }
 
 export const r_or = (output: Cell<any>, ...args: Cell<any>[]) => {
@@ -234,9 +219,52 @@ export const r_reduce_array = (f: (a: any, b: any) => any, initial: any) => {
     });
 }
 
+export const r_delay = (
+    output: Cell<any>,
+    arg: Cell<any>,
+    initial?: any
+) => {
+    // Initialize "last" with annotated initial value if provided, or leave undefined.
+    let last: LayeredObject | undefined =
+        initial !== undefined ? annotate_now(cell_id(output))(initial) : undefined;
+
+    return construct_reactive_propagator((...args: LayeredObject[]) => {
+        // Get the newest value from the input cell.
+        const curr = get_base_value(args[args.length - 1]);
+        // We annotate the current value with the output cell's id (for tracking/timestamp purposes).
+        const annotatedCurr = annotate_now(cell_id(output))(curr);
+
+        if (last === undefined) {
+            // First update: save the value but do not emit it.
+            last = annotatedCurr;
+            return no_compute;
+        } else {
+            // On subsequent updates, output the stored previous value,
+            // and then update "last" with the current annotated value.
+            const ret = last;
+            last = annotatedCurr;
+            return ret;
+        }
+    }, "delay")(arg, output);
+}
+
+export const r_first = (output: Cell<any>, arg: Cell<any>) => {
+    var first_arg: LayeredObject | undefined = undefined;
+    return construct_reactive_propagator((...args: LayeredObject[]) => {
+        if(first_arg === undefined){
+            first_arg = args[0];
+            return args[0];
+        }
+        else{
+            return annotate_now(cell_id(output))(first_arg);
+        }
+    }, "first")(arg, output);
+}
 
 
-export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
+export function c_sum_propotional_mistaken(output: Cell<number>, ...inputs: Cell<number>[]) {
+    // i think perhap it could be solve with more explicit timestamp
+    // such as last
     // wrong operator will cause contradiction
     return compound_propagator(inputs, [output], () => {
         r_add(output, ...inputs);
@@ -308,3 +336,59 @@ export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[
 //     },
 //     "c_sum_propotional"
 //   );
+
+// ------------------------------------------------------------
+// New correct proportional sum propagation operator
+// This operator works bidirectionally as follows:
+// 1. When any input is updated, it computes the new sum (= input1 + input2 + ...),
+//    calculates ratios (input_i / sum) and updates the output with the new sum.
+// 2. When the output is updated (and no input update is detected), it propagates the change back
+//    to each input proportionally using the previously computed ratios.
+
+// export function c_sum_proportional_correct(output: Cell<number>, ...inputs: Cell<number>[]) {
+//     // Create an internal ratio cell for each input
+//     let ratios = inputs.map(() => {
+//          const r = construct_cell("ratio" + get_new_reference_count());
+//          update(r, 0);
+//          return r;
+//     });
+//     // Closure variable to store the last propagated sum
+//     let prevSum: number | undefined = undefined;
+
+//     // Use a compound propagator to listen to changes from inputs and output
+//     return compound_propagator(inputs, [output], () => {
+//          const currentInputs = inputs.map(i => get_base_value(i));
+//          const forwardSum = currentInputs.reduce((acc, val) => acc + val, 0);
+//          const outVal = get_base_value(output);
+
+//          // If an input update is detected (forwardSum changed)
+//          if (prevSum === undefined || forwardSum !== prevSum) {
+//               if (forwardSum !== 0) {
+//                   ratios.forEach((r, i) => {
+//                       update(r, currentInputs[i] / forwardSum);
+//                   });
+//               } else {
+//                   // If the sum is 0, distribute equally among inputs
+//                   ratios.forEach((r, i) => {
+//                       update(r, 1 / inputs.length);
+//                   });
+//               }
+//               if (outVal !== forwardSum) {
+//                   update(output, forwardSum);
+//               }
+//               prevSum = forwardSum;
+//          } else {
+//               // No input update detected; if output changed, propagate backward to inputs
+//               if (outVal !== forwardSum) {
+//                   ratios.forEach((r, i) => {
+//                       const newInputVal = outVal * get_base_value(r);
+//                       if (newInputVal !== currentInputs[i]) {
+//                           update(inputs[i], newInputVal);
+//                       }
+//                   });
+//                   prevSum = outVal;
+//               }
+//          }
+//          return construct_reactor();
+//     }, "c_sum_proportional_correct");
+// }
