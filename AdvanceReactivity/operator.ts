@@ -17,7 +17,7 @@ import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import { get_new_reference_count, reference_store } from "../Helper/Helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_timestamp_value_set } from "./traced_timestamp/generic_patch";
-import { set_every, set_has } from "generic-handler/built_in_generics/generic_better_set";
+import { set_every, set_get_length, set_has } from "generic-handler/built_in_generics/generic_better_set";
 
 
 export const curried_generic_map  = (f: (a: any) => any) => (a: any[]) => generic_map(a, f);
@@ -261,8 +261,25 @@ export const r_first = (output: Cell<any>, arg: Cell<any>) => {
     }, "first")(arg, output);
 }
 
+export const r_cal_ratio = (output: Cell<any>, a: Cell<any>, b: Cell<any>) => {
+    // @ts-ignore
+    return construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
+        // ratio is calculated only when the input is updated from user aspect
+        // which means the strongest value of input only have one timestamp(not propagated)
+        const input_timestamp = get_traced_timestamp_layer(a)
+        const output_timestamp = get_traced_timestamp_layer(b)
+        if(set_get_length(input_timestamp) === 1 && set_get_length(output_timestamp) > 1) {
+            return get_base_value(a) / get_base_value(b)
+        }
+        else{
+            return no_compute
+        }
 
-export function c_sum_propotional_mistaken(output: Cell<number>, ...inputs: Cell<number>[]) {
+    }, "cal_ratio")(a, b, output);
+}
+
+
+export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
     // i think perhap it could be solve with more explicit timestamp
     // such as last
     // wrong operator will cause contradiction
@@ -273,13 +290,9 @@ export function c_sum_propotional_mistaken(output: Cell<number>, ...inputs: Cell
         r_inspect_strongest(output)
        
         const ratios =  inputs.map((input) => {
-            const zip_out = construct_cell("zip" + get_new_reference_count())  
-            const zip_func = constant_cell((a: number, b: number) => [a, b], "zipFunc" + get_new_reference_count())
-            r_zip(zip_out, zip_func, input, output);
-            r_inspect_strongest(zip_out)
-            // @ts-ignore
-            const ratio_out = construct_cell("ratio" +  get_new_reference_count())
-            r_reduce_array((a, b) => a / b, 0)(ratio_out, zip_out);
+            const ratio_out = construct_cell("ratio" + get_new_reference_count())
+            r_cal_ratio(ratio_out, input, output)
+
 
             r_inspect_strongest(ratio_out)
             r_inspect_content(ratio_out)

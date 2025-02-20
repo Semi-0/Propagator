@@ -1,8 +1,8 @@
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { fresher, get_traced_timestamp_layer, has_timestamp_layer, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
+import { fresher, get_traced_timestamp_layer, has_timestamp_layer, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, timestamp_equal, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, is_better_set, set_add_item, set_every, set_for_each, set_reduce } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, is_better_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { define_handler, generic_merge } from "@/cell/Merge";
@@ -11,6 +11,8 @@ import { strongest_value } from "@/cell/StrongestValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_contradiction, the_contradiction } from "@/cell/CellValue";
 import { deep_equal } from "../../Shared/PublicState";
+import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell";
+import { update } from "../update";
 
 
 
@@ -89,4 +91,27 @@ define_handler(strongest_value, match_args(has_timestamp_layer),
 (a: any) => {
     return a
 })
+
+
+
+
+export function handle_reactive_contradiction(cell: Cell<any>){
+
+    const contradiction = cell_strongest_value(cell)
+    const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
+    const contents = cell_content_value(cell)
+
+    const causes = set_filter(contents, (a: LayeredObject) => {
+        return timestamp_equal(get_traced_timestamp_layer(a), contradiction_timestamp)
+    })
+
+    // select the cause that was earliest emerged 
+    if (set_get_length(causes) > 0){
+        const earliest_emerged_value = to_array(causes)[0]
+        update(cell, get_base_value(earliest_emerged_value))
+    }
+    else{
+        throw new Error("No cause found for contradiction")
+    }
+}
 

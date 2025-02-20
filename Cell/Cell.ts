@@ -90,7 +90,7 @@ export function cell_constructor<A>(
 
       strongest.subscribe((v: any) => {
         if (general_contradiction(v)){
-          handle_cell_contradiction(cell)
+          handle_contradiction(cell)
         }
       })
 

@@ -17,14 +17,16 @@ import {
   r_multiply,
   r_divide,
   r_inspect_strongest,
-  r_inspect_content
+  r_inspect_content,
+  c_sum_propotional
 } from "../AdvanceReactivity/operator";
 import { update } from "../AdvanceReactivity/update";
 import {
   construct_cell,
   cell_strongest_value,
   cell_strongest_base_value,
-  cell_content_value
+  cell_content_value,
+  set_handle_contradiction
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -33,15 +35,16 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import { c_sum_propotional_mistaken } from "../AdvanceReactivity/operator";
 import {  annotate_now, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { construct_better_set, set_equal, set_for_each, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { is_timestamp_value_set, reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
+import { handle_reactive_contradiction, is_timestamp_value_set, reactive_merge } from "../AdvanceReactivity/traced_timestamp/generic_patch";
 import { generic_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
+
+  set_handle_contradiction(handle_reactive_contradiction)
 });
 describe("Advance Reactive Tests", () => {
   // -------------------------
@@ -663,14 +666,15 @@ describe("Arithmetic Operators Tests", () => {
 });
 
 describe("Proportional Sum Tests", () => {
-  test("same freshness could cause contradiction", async () => {
+  test("c_sum_propotional should correctly calculate the proportional sum of input cells", async () => {
     // Create input cells and output cell
+
     const input1 = construct_cell("propSum1") as Cell<number>;
     const input2 = construct_cell("propSum2") as Cell<number>;
     const output = construct_cell("propSumOutput") as Cell<number>;
 
     // Set up the proportional sum relationship
-    c_sum_propotional_mistaken(output, input1, input2);
+    c_sum_propotional(output, input1, input2);
 
     // Initial values establishing a 1:2 ratio
     update(input1, 10);
@@ -690,46 +694,49 @@ describe("Proportional Sum Tests", () => {
 
 
 
+    r_inspect_content(output)
+    r_inspect_strongest(output)
+    // Verify new values maintain the same proportion
+    expect(get_base_value(cell_strongest_value(output))).toBe(60);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
+    expect(get_base_value(cell_strongest_value(input2))).toBe(40); // 2/3 of 60
+
+
+
+    // Test with three inputs
+    const input3 = construct_cell("propSum3") as Cell<number>;
+    const output2 = construct_cell("propSumOutput2") as Cell<number>;
+    
+    // // Set up new relationship with three inputs
+    
+    c_sum_propotional(output2, input1, input2, input3);
+    
+    // Initial values establishing a 1:2:3 ratio
+    update(input1, 10);
+    update(input2, 20);
+    update(input3, 30);
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    // Verify initial sum and proportions
+    expect(get_base_value(cell_strongest_value(output2))).toBe(60);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(10);
+    expect(get_base_value(cell_strongest_value(input2))).toBe(20);
+    expect(get_base_value(cell_strongest_value(input3))).toBe(30);
+
+    // wait for 1 second
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Change the total sum - should maintain 1:2:3 ratio
+    update(output2, 120);
+    await execute_all_tasks_sequential((error: Error) => {});
+    set_for_each((a: LayeredObject) => {
+      console.log(to_string(a))
+    }, cell_content_value(input2))
 
     // Verify new values maintain the same proportion
-    expect(is_contradiction(get_base_value(cell_strongest_value(output)))).toBe(true);
-    // expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
-    // expect(get_base_value(cell_strongest_value(input2))).toBe(40); // 2/3 of 60
-
-    // // Test with three inputs
-    // const input3 = construct_cell("propSum3") as Cell<number>;
-    // const output2 = construct_cell("propSumOutput2") as Cell<number>;
-    
-    // // // Set up new relationship with three inputs
-    
-    // c_sum_propotional(output2, input1, input2, input3);
-    
-    // // Initial values establishing a 1:2:3 ratio
-    // update(input1, 10);
-    // update(input2, 20);
-    // update(input3, 30);
-    // await execute_all_tasks_sequential((error: Error) => {});
-
-    // // Verify initial sum and proportions
-    // expect(get_base_value(cell_strongest_value(output2))).toBe(60);
-    // expect(get_base_value(cell_strongest_value(input1))).toBe(10);
-    // expect(get_base_value(cell_strongest_value(input2))).toBe(20);
-    // expect(get_base_value(cell_strongest_value(input3))).toBe(30);
-
-    // // wait for 1 second
-    // await new Promise((resolve) => setTimeout(resolve, 1000));
-    // // Change the total sum - should maintain 1:2:3 ratio
-    // update(output2, 120);
-    // await execute_all_tasks_sequential((error: Error) => {});
-    // set_for_each((a: LayeredObject) => {
-    //   console.log(to_string(a))
-    // }, cell_content_value(input2))
-
-    // // Verify new values maintain the same proportion
-    // expect(get_base_value(cell_strongest_value(output2))).toBe(120);
-    // expect(get_base_value(cell_strongest_value(input1))).toBe(20);  // 1/6 of 120
-    // expect(get_base_value(cell_strongest_value(input2))).toBe(40);  // 2/6 of 120
-    // expect(get_base_value(cell_strongest_value(input3))).toBe(60);  // 3/6 of 120
+    expect(get_base_value(cell_strongest_value(output2))).toBe(120);
+    expect(get_base_value(cell_strongest_value(input1))).toBe(20);  // 1/6 of 120
+    expect(get_base_value(cell_strongest_value(input2))).toBe(40);  // 2/6 of 120
+    expect(get_base_value(cell_strongest_value(input3))).toBe(60);  // 3/6 of 120
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test"; 
-import { type Cell, construct_cell, cell_content as  track_content } from "../Cell/Cell";
+import { type Cell, construct_cell, handle_cell_contradiction, set_handle_contradiction, cell_content as  track_content } from "../Cell/Cell";
 import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals,  premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../Propagator/BuiltInProps";
@@ -23,7 +23,7 @@ let a: Cell, b: Cell, sum: Cell;
 describe("Premises and Hypotheticals", () => {
 
     beforeEach(() => {
-
+        set_handle_contradiction(handle_cell_contradiction)
         set_global_state(PublicStateCommand.CLEAN_UP);
         clear_all_tasks();
         set_merge(merge_value_sets);
