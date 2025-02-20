@@ -95,7 +95,7 @@ define_handler(strongest_value, match_args(has_timestamp_layer),
 
 
 
-export function handle_reactive_contradiction(cell: Cell<any>){
+export function trace_earliest_emerged_value(cell: Cell<any>){
 
     const contradiction = cell_strongest_value(cell)
     const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
