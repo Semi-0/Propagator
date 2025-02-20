@@ -15,7 +15,8 @@ import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell
 import { update } from "../update";
 
 
-
+// TODO: now is not realistic because cell would keep all the data
+// perhaps we need some strategy to clean up the data
 
 export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): BetterSet<LayeredObject> {
     if (is_better_set(a)){
