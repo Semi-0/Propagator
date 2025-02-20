@@ -544,12 +544,14 @@ describe("Zip and First operator tests", () => {
     await execute_all_tasks_sequential((error: Error) => {});
     let result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Update one cell with a new value.
     update(cell1, "x2");
     await execute_all_tasks_sequential((error: Error) => {});
     result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Update with the same values
     update(cell2, "y2");

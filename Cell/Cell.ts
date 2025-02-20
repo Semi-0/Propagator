@@ -150,6 +150,10 @@ export function construct_cell<A>(name: string): Cell<A> {
   return cell_constructor<A>(the_nothing, strongest_value, cell_merge)(name)
 }
 
+export function constant_cell<A>(value: A, name: string): Cell<A> {
+  return cell_constructor<A>(value, strongest_value, cell_merge)(name)
+}
+
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   typeof a === 'object' && a !== null &&
   'getRelation' in a && 'getContent' in a && 'getStrongest' in a &&

@@ -5,7 +5,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
 import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp, annotate_now, stale } from "./traced_timestamp/tracedTimestampLayer";
 
-import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
+import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, constant_cell, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_reactive_propagator } from "./reactiveProcedure";
 import { compound_propagator } from "../Propagator/Propagator";
@@ -274,7 +274,8 @@ export function c_sum_propotional_mistaken(output: Cell<number>, ...inputs: Cell
        
         const ratios =  inputs.map((input) => {
             const zip_out = construct_cell("zip" + get_new_reference_count())  
-            r_zip(zip_out, input, output);
+            const zip_func = constant_cell((a: number, b: number) => [a, b], "zipFunc" + get_new_reference_count())
+            r_zip(zip_out, zip_func, input, output);
             r_inspect_strongest(zip_out)
             // @ts-ignore
             const ratio_out = construct_cell("ratio" +  get_new_reference_count())
