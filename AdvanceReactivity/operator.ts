@@ -280,29 +280,19 @@ export const r_cal_ratio = (output: Cell<any>, a: Cell<any>, b: Cell<any>) => {
 
 
 export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
-    // i think perhap it could be solve with more explicit timestamp
-    // such as last
-    // wrong operator will cause contradiction
+    // for some reason c_sum can only work by setting handle_contradiction to trace_earliest_emerged_value
     return compound_propagator(inputs, [output], () => {
         r_add(output, ...inputs);
 
-        //calculate the ratio of each input to the sum by zip
-        r_inspect_strongest(output)
-       
-        const ratios =  inputs.map((input) => {
+        const ratios = inputs.map((input) => {
             const ratio_out = construct_cell("ratio" + get_new_reference_count())
             r_cal_ratio(ratio_out, input, output)
-
-
-            r_inspect_strongest(ratio_out)
-            r_inspect_content(ratio_out)
             return ratio_out;
         });
 
     
         //calculate the product of each input and its ratio by zip
         inputs.forEach((input, index) => {
-            r_inspect_strongest(input) 
             r_multiply(input, output, ratios[index]);
         });
 

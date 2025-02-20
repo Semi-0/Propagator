@@ -693,9 +693,6 @@ describe("Proportional Sum Tests", () => {
     await execute_all_tasks_sequential((error: Error) => {});
 
 
-
-    r_inspect_content(output)
-    r_inspect_strongest(output)
     // Verify new values maintain the same proportion
     expect(get_base_value(cell_strongest_value(output))).toBe(60);
     expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
@@ -728,9 +725,7 @@ describe("Proportional Sum Tests", () => {
     // Change the total sum - should maintain 1:2:3 ratio
     update(output2, 120);
     await execute_all_tasks_sequential((error: Error) => {});
-    set_for_each((a: LayeredObject) => {
-      console.log(to_string(a))
-    }, cell_content_value(input2))
+ 
 
     // Verify new values maintain the same proportion
     expect(get_base_value(cell_strongest_value(output2))).toBe(120);
