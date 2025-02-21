@@ -230,7 +230,7 @@ import { deep_equal } from "../../Shared/PublicState";
 
     // Helper function to reduce a BetterSet of traced_timestamps to its freshest timestamp.
     // Assumes that fresher(ts1, ts2) returns true when ts1 is fresher than ts2.
-    function max_timestamp(set: BetterSet<traced_timestamp>): traced_timestamp | null {
+    function get_max_timestamp(set: BetterSet<traced_timestamp>): traced_timestamp | null {
         const arr = to_array(set);
         if (arr.length === 0) return null;
         return arr.reduce((max, ts) => {
@@ -255,8 +255,8 @@ import { deep_equal } from "../../Shared/PublicState";
 
     // 2. Compare two timestamp sets by reducing each to a single representative timestamp.
     define_generic_procedure_handler(fresher, all_match(is_timestamp_set), (a: BetterSet<traced_timestamp>, b: BetterSet<traced_timestamp>) => {
-        const maxA = max_timestamp(a);
-        const maxB = max_timestamp(b);
+        const maxA = get_max_timestamp(a);
+        const maxB = get_max_timestamp(b);
         if (maxA === null && maxB === null) {
             // If both sets are empty, neither is fresher.
             return false;
@@ -272,14 +272,14 @@ import { deep_equal } from "../../Shared/PublicState";
 
     // 3. Compare a timestamp set with a traced timestamp by reducing the set.
     define_generic_procedure_handler(fresher, match_args(is_timestamp_set, is_traced_timestamp), (a: BetterSet<traced_timestamp>, b: traced_timestamp) => {
-        const maxA = max_timestamp(a);
+        const maxA = get_max_timestamp(a);
         if (maxA === null) return false;
         return fresher(maxA, b);
     });
 
     // 4. Compare a traced timestamp and a timestamp set by reducing the set.
     define_generic_procedure_handler(fresher, match_args(is_traced_timestamp, is_timestamp_set), (a: traced_timestamp, b: BetterSet<traced_timestamp>) => {
-        const maxB = max_timestamp(b);
+        const maxB = get_max_timestamp(b);
         if (maxB === null) return true;
         return fresher(a, maxB);
     });

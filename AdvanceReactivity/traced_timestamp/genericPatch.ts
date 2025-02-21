@@ -9,18 +9,23 @@ import { define_handler, generic_merge } from "@/cell/Merge";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { strongest_value } from "@/cell/StrongestValue";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_contradiction, the_contradiction } from "@/cell/CellValue";
+import { is_contradiction, is_unusable_value, the_contradiction } from "@/cell/CellValue";
 import { deep_equal } from "../../Shared/PublicState";
 import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell";
 import { update } from "../update";
+import { filter } from "fp-ts/lib/Filterable";
 
 
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
 export function construct_timestamp_value_set(a: LayeredObject): BetterSet<LayeredObject> {
+
+    // this is an ideal value set which keeps all the value
     return construct_better_set([a], (a: LayeredObject) => to_string(get_base_value(a)))
 }
+
+
 
 export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): BetterSet<LayeredObject> {
     if (is_better_set(a)){
@@ -73,13 +78,11 @@ export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
 }
 
 
-export function _reactive_merge(content: LayeredObject, increment: LayeredObject){
+export function _reactive_merge(content: LayeredObject, increment: LayeredObject): BetterSet<LayeredObject>{
     return set_add_item(to_timestamp_value_set(content), increment)
 }
 
 export const reactive_merge = construct_simple_generic_procedure("reactive_merge", 2, generic_merge) 
-
-
 
 define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject>) => {
 
@@ -93,23 +96,17 @@ define_handler(reactive_merge, match_args(is_timestamp_value_set, has_timestamp_
 define_handler(reactive_merge, match_args(has_timestamp_layer, has_timestamp_layer), _reactive_merge)
 
 export function _drop_staled_merge(content: LayeredObject, increment: LayeredObject){
-    const reactive_merge_result = reactive_merge(content, increment)
-    var result = construct_timestamp_value_set(reactive_merge_result)
-    if (is_timestamp_value_set(reactive_merge_result)){
-        set_for_each((a: LayeredObject) => {
-            if (is_fresh(a)){
-             set_add_item(result, a)
-            }
-        }, reactive_merge_result)
-        return result
+    const r = reactive_merge(content, increment)
+    if (is_timestamp_value_set(r)){
+        return set_filter(r, is_fresh)
     }
     else{
-        return reactive_merge_result
+        return r
     }
 }
 
 export const drop_staled_merge = _drop_staled_merge
-
+// drop staled merge is a 
 
 define_handler(strongest_value, match_args(is_timestamp_value_set), freshest_value)
 
