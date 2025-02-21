@@ -36,7 +36,7 @@ import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import {  annotate_now, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { construct_better_set, set_equal, set_for_each, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, drop_staled_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { generic_merge, set_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
@@ -45,7 +45,7 @@ beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
 
   // set_merge(reactive_merge)
-  set_merge(drop_staled_merge)
+  set_merge(reactive_fresh_merge)
   // set_handle_contradiction(trace_earliest_emerged_value)
 });
 describe("Advance Reactive Tests", () => {

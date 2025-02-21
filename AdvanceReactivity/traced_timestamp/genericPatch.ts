@@ -105,7 +105,7 @@ export function _drop_staled_merge(content: LayeredObject, increment: LayeredObj
     }
 }
 
-export const drop_staled_merge = _drop_staled_merge
+export const reactive_fresh_merges = _drop_staled_merge
 // drop staled merge is a 
 
 define_handler(strongest_value, match_args(is_timestamp_value_set), freshest_value)
