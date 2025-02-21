@@ -1,6 +1,6 @@
 import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { fresher, get_traced_timestamp_layer, has_timestamp_layer, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, timestamp_equal, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
+import { fresher, get_traced_timestamp_layer, has_timestamp_layer, is_fresh, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, stale, timestamp_equal, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set, is_better_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -8,7 +8,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { define_handler, generic_merge } from "@/cell/Merge";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { strongest_value } from "@/cell/StrongestValue";
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_contradiction, the_contradiction } from "@/cell/CellValue";
 import { deep_equal } from "../../Shared/PublicState";
 import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell";
@@ -18,6 +18,10 @@ import { update } from "../update";
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
+export function construct_timestamp_value_set(a: LayeredObject): BetterSet<LayeredObject> {
+    return construct_better_set([a], (a: LayeredObject) => to_string(get_base_value(a)))
+}
+
 export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): BetterSet<LayeredObject> {
     if (is_better_set(a)){
         // @ts-ignore
@@ -25,7 +29,7 @@ export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObje
     }
     else{
         // @ts-ignore
-        return construct_better_set([a], (a: traced_timestamp) => to_string(get_base_value(a)))
+        return construct_timestamp_value_set(a)
     }
 }
 
@@ -69,9 +73,13 @@ export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
 }
 
 
-export function reactive_merge(content: LayeredObject, increment: LayeredObject){
+export function _reactive_merge(content: LayeredObject, increment: LayeredObject){
     return set_add_item(to_timestamp_value_set(content), increment)
 }
+
+export const reactive_merge = construct_simple_generic_procedure("reactive_merge", 2, generic_merge) 
+
+
 
 define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject>) => {
 
@@ -80,9 +88,27 @@ define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), 
     }, ""))
 })
 
-define_handler(generic_merge, match_args(is_timestamp_value_set, has_timestamp_layer), reactive_merge)
+define_handler(reactive_merge, match_args(is_timestamp_value_set, has_timestamp_layer), _reactive_merge)
 
-define_handler(generic_merge, match_args(has_timestamp_layer, has_timestamp_layer), reactive_merge)
+define_handler(reactive_merge, match_args(has_timestamp_layer, has_timestamp_layer), _reactive_merge)
+
+export function _drop_staled_merge(content: LayeredObject, increment: LayeredObject){
+    const reactive_merge_result = reactive_merge(content, increment)
+    var result = construct_timestamp_value_set(reactive_merge_result)
+    if (is_timestamp_value_set(reactive_merge_result)){
+        set_for_each((a: LayeredObject) => {
+            if (is_fresh(a)){
+             set_add_item(result, a)
+            }
+        }, reactive_merge_result)
+        return result
+    }
+    else{
+        return reactive_merge_result
+    }
+}
+
+export const drop_staled_merge = _drop_staled_merge
 
 
 define_handler(strongest_value, match_args(is_timestamp_value_set), freshest_value)

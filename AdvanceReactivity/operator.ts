@@ -149,6 +149,7 @@ export const r_zip = (output: Cell<any>, f: Cell<any>, ...args: Cell<any>[]) => 
         // Exclude the output cell from the inputs
 
         const currentValues = values.map(cell => get_base_value(cell));
+        // @ts-ignore
         const currentFunc = get_base_value(f);
         // For each input, if currentValue is valid and it is new compared to the last queued value or the last emitted value,
         // then push it into its respective queue
@@ -261,45 +262,47 @@ export const r_first = (output: Cell<any>, arg: Cell<any>) => {
     }, "first")(arg, output);
 }
 
-export const r_cal_ratio = (output: Cell<any>, a: Cell<any>, b: Cell<any>) => {
-    // @ts-ignore
-    return construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
-        // ratio is calculated only when the input is updated from user aspect
-        // which means the strongest value of input only have one timestamp(not propagated)
-        const input_timestamp = get_traced_timestamp_layer(a)
-        const output_timestamp = get_traced_timestamp_layer(b)
-        if(set_get_length(input_timestamp) === 1 && set_get_length(output_timestamp) > 1) {
-            return get_base_value(a) / get_base_value(b)
-        }
-        else{
-            return no_compute
-        }
+// export const r_cal_ratio = (output: Cell<any>, a: Cell<any>, b: Cell<any>) => {
+//     // @ts-ignore
+//     return construct_reactive_propagator((a: LayeredObject, b: LayeredObject) => {
+//         // ratio is calculated only when the input is updated from user aspect
+//         // which means the strongest value of input only have one timestamp(not propagated)
+//         const input_timestamp = get_traced_timestamp_layer(a)
+//         const output_timestamp = get_traced_timestamp_layer(b)
+//         if(set_get_length(input_timestamp) === 1 && set_get_length(output_timestamp) > 1) {
+//             return get_base_value(a) / get_base_value(b)
+//         }
+//         else{
+//             return no_compute
+//         }
 
-    }, "cal_ratio")(a, b, output);
-}
+//     }, "cal_ratio")(a, b, output);
+// }
 
+// sum solver is temporarily gaved up 
+// because in real life situation to recalculate inputs could be triggered by drag event
+// then it would be very different
+// export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
+//     // for some reason c_sum can only work by setting handle_contradiction to trace_earliest_emerged_value
+//     return compound_propagator(inputs, [output], () => {
+//         r_add(output, ...inputs);
 
-export function c_sum_propotional(output: Cell<number>, ...inputs: Cell<number>[]) {
-    // for some reason c_sum can only work by setting handle_contradiction to trace_earliest_emerged_value
-    return compound_propagator(inputs, [output], () => {
-        r_add(output, ...inputs);
-
-        const ratios = inputs.map((input) => {
-            const ratio_out = construct_cell("ratio" + get_new_reference_count())
-            r_cal_ratio(ratio_out, input, output)
-            return ratio_out;
-        });
+//         const ratios = inputs.map((input) => {
+//             const ratio_out = construct_cell("ratio" + get_new_reference_count())
+//             r_cal_ratio(ratio_out, input, output)
+//             return ratio_out;
+//         });
 
     
-        //calculate the product of each input and its ratio by zip
-        inputs.forEach((input, index) => {
-            r_multiply(input, output, ratios[index]);
-        });
+//         //calculate the product of each input and its ratio by zip
+//         inputs.forEach((input, index) => {
+//             r_multiply(input, output, ratios[index]);
+//         });
 
 
-        return construct_reactor();
-    }, "c_sum_propotional")
-}
+//         return construct_reactor();
+//     }, "c_sum_propotional")
+// }
 
 
 // export const c_sum_propotional = (inputs: Cell<number>[], output: Cell<number>) =>
