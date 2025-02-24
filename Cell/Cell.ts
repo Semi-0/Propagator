@@ -2,7 +2,7 @@ import { set_global_state, get_global_parent, deep_equal } from "../Shared/Publi
 import { type Propagator } from "../Propagator/Propagator";
 import { pipe } from 'fp-ts/function'
 import { construct_stateful_reactor, filter, map, subscribe, type StatefulReactor } from "../Shared/Reactivity/Reactor";
-import { Relation, make_relation } from "../DataTypes/Relation";
+import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
 import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../Shared/PublicState";
@@ -22,6 +22,7 @@ import { is_string } from "generic-handler/built_in_generics/generic_predicates"
 import { layered_deep_equal } from "sando-layer/Equality";
 import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
+import { NIL } from "uuid";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -49,7 +50,7 @@ export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
 
 
 export interface Cell<A> {
-  getRelation: () => Relation;
+  getRelation: () => Primitive_Relation;
   getContent: () => StatefulReactor<CellValue<A>>;
   getStrongest: () => StatefulReactor<CellValue<A>>;
   getNeighbors: () => Map<string, Propagator>;
@@ -71,8 +72,8 @@ export function cell_constructor<A>(
       cell_merge: (content: any, increment: any) => any
   ){
 
-  return (name: string) => {
-      const relation = make_relation(name, get_global_parent());
+  return (name: string, id: string | null = null) => {
+      const relation = make_relation(name, get_global_parent(), id);
       const neighbors: Map<string, Propagator> = new Map();
       // @ts-ignore
       const content: StatefulReactor<CellValue<A>> = scheduled_reactive_state(value);
@@ -150,8 +151,8 @@ export function construct_cell<A>(name: string): Cell<A> {
   return cell_constructor<A>(the_nothing, strongest_value, cell_merge)(name)
 }
 
-export function constant_cell<A>(value: A, name: string): Cell<A> {
-  return cell_constructor<A>(value, strongest_value, cell_merge)(name)
+export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
+  return cell_constructor<A>(value, strongest_value, cell_merge)(name, id)
 }
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 

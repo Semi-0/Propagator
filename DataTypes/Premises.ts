@@ -7,7 +7,7 @@ import type { BetterSet } from "generic-handler/built_in_generics/generic_better
 import { make_better_set, set_add_item, set_equal, set_map } from "generic-handler/built_in_generics/generic_better_set";
 import { set_every, set_for_each as for_each } from "generic-handler/built_in_generics/generic_better_set";
 import { PublicStateCommand } from "../Shared/PublicState";
-import { Relation } from "./Relation";
+import { Primitive_Relation } from "./Relation";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { v4 as uuidv4 } from 'uuid';
 import { map } from "generic-handler/built_in_generics/generic_array_operation"
@@ -230,8 +230,8 @@ export function set_premises_nogoods(name: string, nogoods: BetterSet<any>){
 
 
 export interface Hypothesis<A>{
-    get_relations(): Relation[];
-    get_output(): Cell;
+    get_relations(): Primitive_Relation[];
+    get_output(): Cell<A>;
     get_peers(): BetterSet<string>;
     set_peers(peers: BetterSet<string>): void;
     get_id(): string;
@@ -271,7 +271,7 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
     }
 }
 
-export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): BetterSet<string>{
+export function make_hypotheticals<A>(output: Cell<A>, values: BetterSet<A>): BetterSet<string>{
 
     const peers = set_map(values, (value: A) => {
         return _make_hypothetical(output, value)});
@@ -285,21 +285,21 @@ export function make_hypotheticals<A>(output: Cell, values: BetterSet<A>): Bette
     return peers;
 }
 
-function _make_hypothetical<A>(output: Cell, value: A): string {
+function _make_hypothetical<A>(output: Cell<A>, value: A): string {
     // ADD VALUE SUPPORT BY HYPOTHESIS TO CELL
     // IN SHORT EACH HYPOTHESIS BECOMES COMBINATION OF VALUES
     // TODO: extend to_string with generic
     // TODO: initialize cell with contradiction
     // @ts-ignore
-    const relation = new Relation("hypothetical:" + to_string(value), output);
+    const relation = new Primitive_Relation("hypothetical:" + to_string(value), output.getRelation());
     var peers: BetterSet<string> = make_better_set<string>([]);
     var id = uuidv4();
 
-    function get_relations(): Relation[]{
+    function get_relations(): Primitive_Relation[]{
         return [relation];
     }
 
-    function get_output(): Cell{
+    function get_output(): Cell<A>{
         return output;
     }
 
@@ -337,7 +337,8 @@ function _make_hypothetical<A>(output: Cell, value: A): string {
     register_hypothesis(id, self)
     register_premise(id, output);
     // console.log("add_cell_content",  support_by(value, id))
-    add_cell_content(output, support_by(value, id));
+    //@ts-ignore
+    add_cell_content<LayeredObject>(output, support_by(value, id));
 
     return id;       
 }

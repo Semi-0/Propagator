@@ -2,14 +2,29 @@ import { v4 as uuidv4 } from 'uuid';
 
 export type InterestedType = Relation;
 
-export class Relation{
+interface Relation{
+    add_child(child: InterestedType): void
+    get_id(): string
+    get_name(): string
+    set_name(name: string): void
+    get_children(): Relation[]
+    set_level(level: number): void
+    get_level(): number
+    dispose(): void
+}
+
+
+
+
+
+export class Primitive_Relation implements Relation {
     name: string;
     uuid: string;
     level: number = 0;
     parent: Relation | null;
     children: Relation[] = [];
 
-    constructor(name: string, parent: Relation |  null ){
+    constructor(name: string, parent: Relation | null, uuid: string | null = null){
         this.name = name;
         this.parent = parent;
 
@@ -17,15 +32,29 @@ export class Relation{
             this.level = 0;
         }
         else{
-            this.level = parent.level  + 1;
+            this.level = parent.get_level()  + 1;
         }
         
-        this.uuid = uuidv4(); 
+        if (uuid === null){
+            this.uuid = uuidv4(); 
+        }   
+        else{
+            // @ts-ignore
+            this.uuid = uuid
+        }
     }
 
     add_child(child: InterestedType){
         this.children.push(child);
         return this;
+    }
+
+    set_level(level: number): void {
+        this.level = level
+    }
+
+    get_level(): number{
+        return this.level
     }
 
     get_id(){
@@ -44,15 +73,15 @@ export class Relation{
         return this.children;
     }
 
-    clear_children(){
+    dispose(){
         this.children = [];
     }
 }
 
 export function is_relation(obj: any): obj is Relation{
-    return obj instanceof Relation;
+    return obj instanceof Primitive_Relation;
 }
 
-export function make_relation(name: string, parent: InterestedType){
-    return new Relation(name, parent);
+export function make_relation(name: string, parent: InterestedType, id: string | null = null){
+    return new Primitive_Relation(name, parent, id);
 }

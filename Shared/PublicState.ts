@@ -1,5 +1,5 @@
 
-import {  make_relation, type Relation } from '../DataTypes/Relation';
+import {  make_relation, type Primitive_Relation } from '../DataTypes/Relation';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 
 import { all_match, match_args } from 'generic-handler/Predicates';
@@ -13,7 +13,7 @@ import { generic_merge, set_merge } from '../Cell/Merge';
 
 
 //@ts-ignore
-var parent: StatefulReactor<Relation> = construct_stateful_reactor<Relation>(make_relation("root", null));
+var parent: StatefulReactor<Primitive_Relation> = construct_stateful_reactor<Primitive_Relation>(make_relation("root", null));
 // Todo: make this read only
 const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
 const all_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);

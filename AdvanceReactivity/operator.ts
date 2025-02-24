@@ -3,7 +3,7 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { no_compute } from "../Helper/noCompute";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
-import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp, annotate_now, stale } from "./traced_timestamp/tracedTimestampLayer";
+import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp, annotate_now_with_id, stale } from "./traced_timestamp/tracedTimestampLayer";
 
 import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, constant_cell, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
@@ -230,13 +230,13 @@ export const r_delay = (
 ) => {
     // Initialize "last" with annotated initial value if provided, or leave undefined.
     let last: LayeredObject | undefined =
-        initial !== undefined ? annotate_now(cell_id(output))(initial) : undefined;
+        initial !== undefined ? annotate_now_with_id(cell_id(output))(initial) : undefined;
 
     return construct_reactive_propagator((...args: LayeredObject[]) => {
         // Get the newest value from the input cell.
         const curr = get_base_value(args[args.length - 1]);
         // We annotate the current value with the output cell's id (for tracking/timestamp purposes).
-        const annotatedCurr = annotate_now(cell_id(output))(curr);
+        const annotatedCurr = annotate_now_with_id(cell_id(output))(curr);
 
         if (last === undefined) {
             // First update: save the value but do not emit it.
@@ -260,7 +260,7 @@ export const r_first = (output: Cell<any>, arg: Cell<any>) => {
             return args[0];
         }
         else{
-            return annotate_now(cell_id(output))(first_arg);
+            return annotate_now_with_id(cell_id(output))(first_arg);
         }
     }, "first")(arg, output);
 }

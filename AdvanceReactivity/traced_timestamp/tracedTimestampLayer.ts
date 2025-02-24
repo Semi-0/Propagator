@@ -211,10 +211,10 @@ import { deep_equal } from "../../Shared/PublicState";
 
     export const get_traced_timestamp_layer = layer_accessor(timestamp_layer);
 
-    export const annotate_now = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, Date.now());
+    export const annotate_now_with_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, Date.now());
 
-    export const annotate_smallest = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, -Infinity);
-    export const annotate_with_reference = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, get_new_relative_time());
+    export const annotate_smallest_time_with_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, -Infinity);
+    export const annotate_with_referenced_time_and_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, get_new_relative_time());
 
 
     define_generic_procedure_handler(to_string, match_args(has_timestamp_layer), (a: LayeredObject) => {

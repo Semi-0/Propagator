@@ -1,5 +1,5 @@
 import { add_cell_content, cell_id } from "@/cell/Cell";
-import { annotate_now, annotate_smallest } from "./traced_timestamp/tracedTimestampLayer";
+import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/tracedTimestampLayer";
 import { cell_strongest_value } from "@/cell/Cell";
 import type { Cell } from "@/cell/Cell";
 import { stale } from "./traced_timestamp/tracedTimestampLayer";
@@ -17,7 +17,7 @@ export function update<A>(a: Cell<A>, v: A){
         stale(update_store.get(cell_id(a)))
     }
 
-    const timestamp_now = annotate_now(cell_id(a))(v)
+    const timestamp_now = annotate_now_with_id(cell_id(a))(v)
     add_cell_content(a, timestamp_now as A);
     update_store.set(cell_id(a), timestamp_now)
 
@@ -29,6 +29,6 @@ export function initialize<A>(a: Cell<A>, v: A){
         stale(update_store.get(cell_id(a)))
     }
 
-    add_cell_content(a, annotate_smallest(cell_id(a))(v) as A)
+    add_cell_content(a, annotate_smallest_time_with_id(cell_id(a))(v) as A)
     update_store.set(cell_id(a), v)
 }

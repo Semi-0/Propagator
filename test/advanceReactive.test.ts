@@ -34,9 +34,10 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import {  annotate_now, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
+import {  annotate_now_with_id, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { construct_better_set, set_equal, set_for_each, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+
 import { generic_merge, set_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
@@ -163,8 +164,8 @@ describe("Advance Reactive Tests", () => {
 
 describe("timestamp value merge tests", () => {
   test("timestamp value merge should update according to its source id ", () => {
-    const v_a = annotate_now("1")(1)
-    const v_b = annotate_now("2")(2)
+    const v_a = annotate_now_with_id("1")(1)
+    const v_b = annotate_now_with_id("2")(2)
 
 
     const s_b_a = reactive_merge(v_a, v_b)

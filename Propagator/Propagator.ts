@@ -1,4 +1,4 @@
-import { Relation, make_relation } from "../DataTypes/Relation";
+import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
 import { type Cell, add_cell_content, cell_id, cell_name, cell_strongest } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent } from "../Shared/PublicState";
 
@@ -23,7 +23,7 @@ force_load_arithmatic();
 
 export interface Propagator {
   get_name: () => string;
-  getRelation: () => Relation;
+  getRelation: () => Primitive_Relation;
   getInputsID: () => string[];
   getOutputsID: () => string[];
   getActivator: () => Reactor<any>;
