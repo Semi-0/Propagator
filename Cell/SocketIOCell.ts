@@ -26,6 +26,12 @@ export async function socket_IO_client_cell(name: string, ip: string, port: numb
         hostname: ip,
         port: port,
         socket: {
+            open: (socket: Socket) => {
+                console.log("Socket opened");
+            },
+            close: (socket: Socket) => {
+                console.log("Socket closed");
+            },
             error: (socket: Socket, error: Error) => {
                 content.next(mark_error(the_contradiction, error))
             },
@@ -56,7 +62,7 @@ export async function socket_IO_client_cell(name: string, ip: string, port: numb
         getStrongest: () => strongest,
         getNeighbors: () => new Map(),
         addContent: (increment: any) => {
-            socket.write(JSON.stringify(increment))
+            socket.write(JSON.stringify(to_string(increment)))
         },
         force_update: () => {
             content.next(content.get_value())

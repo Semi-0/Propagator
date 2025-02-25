@@ -31,6 +31,7 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
 import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/Sugar";
+import { socket_IO_client_cell } from "./Cell/SocketIOCell";
 // TODO:
 //1.arrays
 //2.constraint programming with partial data still not work
@@ -45,10 +46,14 @@ const a = construct_cell("a");
 const b = construct_cell("b");
 const c = construct_cell("c");
 
-c_multiply(a, b, c)
+const c_r = await socket_IO_client_cell("c_r", "145.49.78.35", 9021)
+const c_r2 = await socket_IO_client_cell("c_r1", "145.49.78.35", 2043)
 
-tell(a, make_partial_data(5), "fst")
-tell(b, make_partial_data(3), "3st")
+c_multiply(a, b, c)
+c_multiply(c, b, c_r)
+c_multiply(c, a, c_r2)
+tell(a, 10, "fst")
+tell(b, 3, "3st")
 // tell(c, make_partial_data(5), "3st")
 
 
@@ -63,6 +68,12 @@ cell_strongest(b).subscribe((value: any) => {
 
 
 execute_all_tasks_sequential((e) => {})
+
+console.log(c.summarize())
+
+c_r.dispose()
+c_r2.dispose()
+
 
 // tell(c, make_partial_data(4), "fst")
 
