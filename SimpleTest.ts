@@ -31,7 +31,7 @@ set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 import { make_partial_data } from "./DataTypes/PartialData";
 import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/Sugar";
-import { socket_IO_client_cell } from "./Cell/SocketIOCell";
+import { socket_IO_client_cell } from "./Cell/RemoteCell/RemoteCell";
 // TODO:
 //1.arrays
 //2.constraint programming with partial data still not work

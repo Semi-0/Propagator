@@ -17,7 +17,7 @@ import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
 import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
-import { socket_IO_client_cell } from "@/cell/SocketIOCell";
+import { socket_IO_client_cell } from "@/cell/RemoteCell/RemoteCell";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
