@@ -82,7 +82,7 @@ export function cell_constructor<A>(
 
       pipe(
         content,
-        map((content: any) => testContent(content, strongest.get_value())),
+        map((content: any) => strongest_value(content)),
         filter((content: any) => !deep_equal(content, strongest.get_value())),
         subscribe((content: any) => {
           strongest.next(content)
