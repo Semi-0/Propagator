@@ -10,7 +10,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than, equal } from "../Cell/GenericArith";
-import { base_equal } from "../Shared/PublicState";
+import { base_equal } from "../Shared/base_equal";
 
 
 // Cons Cdr Pair 

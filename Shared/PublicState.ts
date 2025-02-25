@@ -258,24 +258,5 @@ define_generic_procedure_handler(deep_equal,
 )
 
 
-export const base_equal = construct_simple_generic_procedure("shallow_equal", 2,
-    (a: any, b: any) => {
-        return a === b;
-    }
-)
-
-
-define_generic_procedure_handler(base_equal,
-    match_args(is_layered_object, is_any),
-    (a: any, b: any) => {
-        return base_equal(get_base_value(a), b);
-    })
-
-define_generic_procedure_handler(base_equal,
-    all_match(is_layered_object),
-    (a: any, b: any) => {
-        return base_equal(get_base_value(a), get_base_value(b));
-    }
-)
 
 

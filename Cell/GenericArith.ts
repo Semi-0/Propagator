@@ -2,7 +2,7 @@
 // import { ValueSet } from "./ValueSet";
 // import { match_args } from "generic-handler/Predicates";
 import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide, less_than as _less_than } from "generic-handler/built_in_generics/generic_arithmetic";
-import { base_equal as _equal } from "../Shared/PublicState";
+import { base_equal as _equal } from "../Shared/base_equal";
 import { all_match, match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { get_base_value, is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
