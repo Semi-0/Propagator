@@ -15,7 +15,8 @@ import type { Propagator } from "../Propagator/Propagator";
 import { describe } from "../Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { mark_error } from "sando-layer/Specified/ErrorLayer"
-
+import SuperJSON from "superjson";
+import { is_layered_object } from "../Helper/Predicate";
 
 export async function socket_IO_client_cell(name: string, ip: string, port: number){
 
@@ -26,18 +27,18 @@ export async function socket_IO_client_cell(name: string, ip: string, port: numb
         hostname: ip,
         port: port,
         socket: {
-            open: (socket: Socket) => {
-                console.log("Socket opened");
-            },
-            close: (socket: Socket) => {
-                console.log("Socket closed");
-            },
+            // open: (socket: Socket) => {
+            //     console.log("Socket opened");
+            // },
+            // close: (socket: Socket) => {
+            //     console.log("Socket closed");
+            // },
             error: (socket: Socket, error: Error) => {
                 content.next(mark_error(the_contradiction, error))
             },
     
             data: (socket: Socket, data: any) => {
-                const decodedData = JSON.parse(data.toString());
+                const decodedData = SuperJSON.parse(data.toString());
                 const result = cell_merge(content.get_value(), decodedData);
                 content.next(result)
             }
@@ -62,7 +63,11 @@ export async function socket_IO_client_cell(name: string, ip: string, port: numb
         getStrongest: () => strongest,
         getNeighbors: () => new Map(),
         addContent: (increment: any) => {
-            socket.write(JSON.stringify(to_string(increment)))
+            if (is_layered_object(increment)){
+                socket.write(SuperJSON.stringify(to_string(increment)))
+            }else{
+                socket.write(SuperJSON.stringify(increment))
+            }
         },
         force_update: () => {
             content.next(content.get_value())

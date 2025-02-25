@@ -8,8 +8,9 @@ import { tell } from "../Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { update } from "../AdvanceReactivity/update";
 import { r_inspect_content, r_inspect_strongest } from "../AdvanceReactivity/operator";
-
+import SuperJSON from "superjson";
 describe("SocketIOCell Propagator Integration", () => {
+    /// FOR EFFECTIVE IO WE NEED TO FIGURE OUT A WAY TO JSONIFY THE DATA EFFECTIVELY
   let server: ReturnType<typeof Bun.listen>;
   let serverPort: number;
   let receivedData: any;
@@ -23,14 +24,14 @@ describe("SocketIOCell Propagator Integration", () => {
       socket: {
         data(socket, data) {
           // Parse incoming data
-          receivedData = JSON.parse(data.toString());
+          receivedData = SuperJSON.parse(data.toString());
           console.log("Server received:", to_string(receivedData));
           
           // Send response back with multiplication result
           if (receivedData && typeof receivedData.value === 'number') {
-            socket.write(JSON.stringify({ value: receivedData.value * 2 }));
+            socket.write(SuperJSON.stringify({ value: receivedData.value * 2 }));
           } else {
-            socket.write(JSON.stringify(receivedData));
+            socket.write(SuperJSON.stringify(receivedData));
           }
         },
         open(socket) {

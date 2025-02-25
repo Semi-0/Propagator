@@ -7,6 +7,7 @@ import { cell_strongest_base_value } from "@/cell/Cell";
 import { construct_cell, cell_strongest_value } from "@/cell/Cell";
 import { c_add } from "../Propagator/BuiltInProps";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
+import SuperJSON from "superjson";
 
 describe("SocketIOCell", () => {
   let server: ReturnType<typeof Bun.listen>;
@@ -21,12 +22,13 @@ describe("SocketIOCell", () => {
       port: serverPort,
       socket: {
         data(socket, data) {
-          // Parse incoming data
-          receivedData = JSON.parse(data.toString());
-          console.log("Server received:", receivedData);
+          // Parse incoming data and extract the actual object from SuperJSON format
+          const parsedData = SuperJSON.parse(data.toString());
+          receivedData = parsedData.json || parsedData; // Extract from SuperJSON format if present
+          console.log("Server received:", parsedData);
           
-          // Send response back
-          socket.write(JSON.stringify({ confirmation: true, newValue: 100 }));
+          // Send response back (also need to use SuperJSON format for consistency)
+          socket.write(SuperJSON.stringify({ confirmation: true, newValue: 100 }));
         },
         open(socket) {
           console.log("Client connected");
