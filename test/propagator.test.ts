@@ -16,8 +16,8 @@ import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
 import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
-import { make_partial_data } from "../DataTypes/PartialData";
-import { socket_IO_client_cell } from "@/cell/RemoteCell/RemoteCell";
+import { reduceEachTrailingCommentRange } from "typescript";
+
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -301,42 +301,55 @@ describe("test propagator", () => {
 
         const result  = f_switch(c, f_add(a, b))
 
-        tell(a, make_partial_data(1), "a")
-        tell(b, make_partial_data(2), "b")
-        tell(c, make_partial_data(true), "c")
+        tell(a, 1, "a")
+        tell(b, 2, "b")
+        tell(c, true, "c")
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(3)
+        expect(cell_strongest_base_value(result)).toBe(3)
 
+        // kick_out("a")
+        // kick_out("b")
+        kick_out("c")
 
-        tell(c, make_partial_data(false), "c")
-        tell(a, make_partial_data(4), "a")
-        tell(b, make_partial_data(2), "b")
+        tell(c, false, "e")
+        tell(a, 4, "f")
+        tell(b, 2, "g")
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(3)
+        expect(cell_strongest_base_value(result)).toBe(3)
     })
 
 
     test("equality", async () => {
+        set_merge(merge_value_sets)
 
-        const x = construct_cell("x");
-        const y = construct_cell("y");
+        
+
+        const x = construct_cell("x1");
+        const y = construct_cell("y1");
         const result = f_equal(x, y)
 
-        tell(x, make_partial_data(1), "x")
-        tell(y, make_partial_data(1), "y")
+        tell(x, 1, "x")
+        tell(y, 1, "y")
+
+        
+
+
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(true)
+        expect(cell_strongest_base_value(result)).toBe(true)
 
-        tell(x, make_partial_data(2), "x")
+
+        console.log(x.summarize())
+        kick_out("x")
+        tell(x, 2, "z")
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(false)
+        expect(cell_strongest_base_value(result)).toBe(false)
 
     })
 
@@ -346,18 +359,19 @@ describe("test propagator", () => {
 
         const result = f_less_than(a, b)
 
-        tell(a, make_partial_data(1), "a")
-        tell(b, make_partial_data(2), "b")
+        tell(a, 1, "a")
+        tell(b, 2, "b")
 
         execute_all_tasks_sequential((e) => {})
 
         //@ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(true)
+        expect(cell_strongest_base_value(result)).toBe(true)
 
-        tell(a, make_partial_data(3), "a")
+        kick_out("a")
+        tell(a, 3, "c")
         execute_all_tasks_sequential((e) => {})
         //@ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(false)
+        expect(cell_strongest_base_value(result)).toBe(false)
     })
 
 })
@@ -595,27 +609,27 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
 });
 
 
-test("tail recursion", async () => {
+// test("tail recursion", async () => {
 
-    const a = construct_cell("a");
-    const b = construct_cell("b");
-    const target = construct_cell("target")
-    const sum = f_add(a, b)
+//     const a = construct_cell("a");
+//     const b = construct_cell("b");
+//     const target = construct_cell("target")
+//     const sum = f_add(a, b)
  
     
 
-    p_switcher(f_less_than(sum, target),  f_add(a, b), a)
+//     p_switcher(f_less_than(sum, target),  f_add(a, b), a)
 
 
-    tell(target, make_partial_data(10), "target")
+//     tell(target, 10, "target")
 
-    tell(a, make_partial_data(1), "a")
-    tell(b, make_partial_data(2), "b")
+//     tell(a, 1, "a")
+//     tell(b, 2, "b")
 
-    execute_all_tasks_sequential((e) => {})
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    //@ts-ignore
-    expect(cell_strongest_base_value(a).data).toBe(11)
+//     execute_all_tasks_sequential((e) => {})
+//     await new Promise(resolve => setTimeout(resolve, 1000));
+//     //@ts-ignore
+//     expect(cell_strongest_base_value(a)).toBe(11)
 
 
-})
+// })

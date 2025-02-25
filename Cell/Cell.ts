@@ -114,6 +114,7 @@ export function cell_constructor<A>(
         getNeighbors: () => neighbors,
         addContent: (increment: CellValue<A>) => {
           const result = cell_merge(content.get_value(), increment);
+         
 
           content.next(result);
         },

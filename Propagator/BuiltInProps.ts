@@ -7,10 +7,10 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../Cell/GenericArith";
 import { the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
-import { base_equal } from "../Shared/PublicState";
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { less_than, equal } from "../Cell/GenericArith";
+import { base_equal } from "../Shared/PublicState";
 
 
 // Cons Cdr Pair 
@@ -28,7 +28,7 @@ export const p_switcher = primitive_propagator((condition: boolean, value: any) 
 }, "switcher")
 
 export const p_equal = primitive_propagator((x: any, y: any) => {
-    return base_equal(x, y)
+    return equal(x, y)
 }, "equal")
 
 export const p_not = primitive_propagator((input: any) => {

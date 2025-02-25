@@ -1,7 +1,8 @@
 // import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 // import { ValueSet } from "./ValueSet";
 // import { match_args } from "generic-handler/Predicates";
-import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide, less_than } from "generic-handler/built_in_generics/generic_arithmetic";
+import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide, less_than as _less_than } from "generic-handler/built_in_generics/generic_arithmetic";
+import { base_equal as _equal } from "../Shared/PublicState";
 import { all_match, match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { get_base_value, is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -38,6 +39,10 @@ define_nothing_arithmetic_handler(_multiply)
 
 define_nothing_arithmetic_handler(_divide)
 
+define_nothing_arithmetic_handler(_less_than)
+
+define_nothing_arithmetic_handler(_equal)
+
 define_generic_procedure_handler(_add,
     one_of_args_match(is_contradiction),
 
@@ -67,17 +72,31 @@ define_generic_procedure_handler(_divide,
     }
 )
 
+define_generic_procedure_handler(_less_than,
+    one_of_args_match(is_contradiction),
+        (a: any, b: any) => {
+            return the_contradiction
+    }
+) 
+
+define_generic_procedure_handler(_equal,
+    one_of_args_match(is_contradiction),
+        (a: any, b: any) => {
+            return the_contradiction
+    }
+)
+
+
 export function force_load_arithmatic(){
 }
 
 export const layered_add = make_layered_procedure("layered_add", 2, (x: any, y: any) =>{  return _add(x, y)})
 export const layered_subtract = make_layered_procedure("layered_subtract", 2, (x: any, y: any) => _subtract(x, y))
 export const layered_multiply = make_layered_procedure("layered_multiply", 2, (x: any, y: any) =>{ return _multiply(x, y)})
-
 export const layered_divide = make_layered_procedure("layered_divide", 2, (x: any, y: any) => _divide(x, y))
-
 export const layered_not = make_layered_procedure("layered_not", 1, (x: any) => !x)
-
+export const layered_less_than = make_layered_procedure("layered_less_than", 2, (x: any, y: any) => x < y)
+export const layered_equal = make_layered_procedure("layered_equal", 2, (x: any, y: any) => x === y)
 const _not = construct_simple_generic_procedure("not", 1, (x: any) => !x)
 
 define_generic_procedure_handler(_add,
@@ -116,12 +135,18 @@ define_generic_procedure_handler(_not,
     }
 )
 
-define_generic_procedure_handler(less_than,
+define_generic_procedure_handler(_less_than,
     all_match(is_layered_object),
     (a: any, b: any) => {
-        return less_than(get_base_value(a), get_base_value(b))
+        return layered_less_than(a, b)
     }
+)
 
+define_generic_procedure_handler(_equal,
+    all_match(is_layered_object),
+    (a: any, b: any) => {
+        return layered_equal(a, b)
+    }
 )
 
 export const add = _add
@@ -129,4 +154,6 @@ export const subtract = _subtract
 export const multiply = _multiply
 export const divide = _divide
 export const not = _not
+export const less_than = _less_than
+export const equal = _equal
 
