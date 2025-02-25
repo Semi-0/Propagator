@@ -18,6 +18,7 @@ import { get_new_reference_count, reference_store } from "../Helper/Helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_timestamp_value_set } from "./traced_timestamp/genericPatch";
 import { set_every, set_get_length, set_has } from "generic-handler/built_in_generics/generic_better_set";
+import { Socket } from "net";
 
  // perhaps a better design for this is convey it to generic propagator
  // ( so as generic operator )

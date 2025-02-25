@@ -15,14 +15,10 @@ import { scheduled_reactive_state } from "../Shared/Reactivity/Scheduler";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { tap } from "../Shared/Reactivity/Reactor";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_string } from "generic-handler/built_in_generics/generic_predicates";
-import { layered_deep_equal } from "sando-layer/Equality";
 import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
-import { NIL } from "uuid";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -55,15 +51,26 @@ export interface Cell<A> {
   getStrongest: () => StatefulReactor<CellValue<A>>;
   getNeighbors: () => Map<string, Propagator>;
   addContent: (increment: CellValue<A>) => void;
-  testContent: (content: CellValue<A>, strongest: CellValue<A>) => CellValue<A> | null;
-
-
   force_update: () => void;
   addNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
   observe_update: (observer: (cellValues: A) => void) => void;
   dispose: () => void;  // <-- new dispose method
 }
+
+function testContent(content: any, strongest: any): any | null {
+ 
+  const _strongest = strongest_value(content);
+
+  if (general_contradiction(_strongest)){
+    return _strongest;
+  }
+  else {
+    return _strongest
+  }
+}
+
+
 
 
 export function cell_constructor<A>(
@@ -95,17 +102,7 @@ export function cell_constructor<A>(
         }
       })
 
-      function testContent(content: any, strongest: any): any | null {
- 
-        const _strongest = strongest_value(content);
 
-        if (general_contradiction(_strongest)){
-          return _strongest;
-        }
-        else {
-          return _strongest
-        }
-      }
 
       const cell: Cell<A> = {
         getRelation: () => relation,
@@ -117,7 +114,6 @@ export function cell_constructor<A>(
 
           content.next(result);
         },
-        testContent,
         force_update: () => {
           content.next(content.get_value());
         },
@@ -154,6 +150,9 @@ export function construct_cell<A>(name: string): Cell<A> {
 export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
   return cell_constructor<A>(value, strongest_value, cell_merge)(name, id)
 }
+
+
+
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   typeof a === 'object' && a !== null &&
