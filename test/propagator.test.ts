@@ -17,6 +17,7 @@ import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
 import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
+import { socket_IO_client_cell } from "@/cell/RemoteCell/RemoteCell";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -600,8 +601,11 @@ test("tail recursion", async () => {
     const b = construct_cell("b");
     const target = construct_cell("target")
     const sum = f_add(a, b)
+ 
+    
 
     p_switcher(f_less_than(sum, target),  f_add(a, b), a)
+
 
     tell(target, make_partial_data(10), "target")
 
@@ -609,6 +613,7 @@ test("tail recursion", async () => {
     tell(b, make_partial_data(2), "b")
 
     execute_all_tasks_sequential((e) => {})
+    await new Promise(resolve => setTimeout(resolve, 1000));
     //@ts-ignore
     expect(cell_strongest_base_value(a).data).toBe(11)
 
