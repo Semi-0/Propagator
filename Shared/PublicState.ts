@@ -153,6 +153,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             all_amb_propagators.next([])
             clean_premises_store()
             clean_hypothetical_store()
+            clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
             break;
 
@@ -225,6 +226,8 @@ import { get_base_value, type Layer } from 'sando-layer/Basic/Layer';
 import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
 import { set_every, set_get_length, type BetterSet } from 'generic-handler/built_in_generics/generic_better_set';
 import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
+import { scheduler } from 'timers/promises';
+import { clear_all_tasks } from './Reactivity/Scheduler';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {

@@ -68,9 +68,7 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
         addNeighbor: (propagator: Propagator) => {
             neighbors.set(propagator.getRelation().get_id(), propagator);
         }, 
-        testContent: (content: any, strongest: any) => {
-            return content;
-        },
+ 
         summarize: () => {
             const name = relation.get_name();
             const strongestValue = strongest.get_value();

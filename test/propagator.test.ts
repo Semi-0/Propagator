@@ -1,6 +1,6 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
-import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell, handle_cell_contradiction, set_handle_contradiction } from "../Cell/Cell";
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switcher } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import {    is_contradiction } from "../Cell/CellValue";
@@ -14,14 +14,15 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
-import { p_amb } from "../Propagator/Search";
+import { configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "../Propagator/Search";
 import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
 import { make_partial_data } from "../DataTypes/PartialData";
-import { socket_IO_client_cell } from "@/cell/RemoteCell/RemoteCell";
+
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
     set_merge(merge_value_sets)
+    set_handle_contradiction(handle_cell_contradiction)
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
@@ -551,6 +552,12 @@ test('resolving contradiction with floating-point precision issues', async () =>
 
 test('AMB operator: example test from SimpleTest.ts', async () => {
  
+
+    configure_log_amb_choose(true)
+    configure_log_process_contradictions(true)
+    // configure_log_nogoods(true)
+    
+    
     const x = construct_cell("x");
     const y = construct_cell("y");
     const z = construct_cell("z");
