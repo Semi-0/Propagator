@@ -19,6 +19,8 @@ import { is_fresh } from "./Predicates";
 import { get_traced_timestamp_layer } from "./TracedTimestampLayer";
 import { patch_traced_timestamps, smallest_timestamped_value } from "./Annotater";
 import { same_freshness } from "./Fresher/Extensions";
+import { install_behavior_advice } from "../../Propagator/PropagatorBehavior";
+import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
@@ -130,3 +132,6 @@ export function trace_earliest_emerged_value(cell: Cell<any>){
         throw new Error("No cause found for contradiction")
     }
 }
+
+
+export const install_reactive_propagator_behavior = () => install_behavior_advice(reactive_propagator_behavior)
