@@ -17,8 +17,8 @@ function range(start: number, end: number): BetterSet<number>{
     return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i), to_string)
 }
 
-export async function tell(cell: Cell, information: any, ...premises: string[]) {
-    const constructor = (a: any) => a;
+export async function tell<A>(cell: Cell<A>, information: A, ...premises: string[]) {
+    const constructor = (a: A) => a;
 
     for_each(premises, (premise: string) => {
         register_premise(premise, constructor(information));
@@ -63,19 +63,19 @@ export function do_nothing(){
     return;
 }
 
-export function force_failure(cells: BetterSet<Cell>){
+export function force_failure(cells: BetterSet<Cell<any>>){
     
     // TODO: set union is not correct
     const nogoods = set_reduce(set_map(cells, (cell) => get_support_layer_value(cell_strongest_value(cell))), merge_set, construct_better_set([], to_string))
     process_contradictions(construct_better_set([nogoods], to_string), construct_cell("user_cell"))
 }
 
-export function all_results(cells: BetterSet<Cell>, value_receiver: (value: any) => void){
+export function all_results(cells: BetterSet<Cell<any>>, value_receiver: (value: any) => void){
     execute_all_tasks_sequential((e) => {
         console.log(e)
     })
 
-    const results = set_reduce(cells, (acc: BetterSet<any>, cell: Cell) => {
+    const results = set_reduce(cells, (acc: BetterSet<any>, cell: Cell<any>) => {
         return  set_add_item(acc, cell_strongest_base_value(cell))
     }, construct_better_set([], to_string))
 
@@ -95,19 +95,3 @@ export function enum_num_set(min: number, max: number){
     }, construct_better_set([], to_string))
 }
 
-export function observe_cell(print_to: (str: string) => void){
-    return (cell: Cell) => {
-        cell.observe_update((cellValues: any) => {
-            print_to("\n")
-            print_to(cell.summarize());
-        })
-    }
-}
-
-export function monitor_change(func: (msg: PublicStateMessage) => void, cell_func: (cell: Cell) => void){
-    observe_all_cells_update(func,  
-        (cell: Cell) => {
-            cell_func(cell)
-        }
-    )
-}

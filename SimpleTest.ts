@@ -1,6 +1,6 @@
 // import { isNumber } from "effect/Predicate";
 import { cell_content, cell_content_value, cell_strongest, cell_strongest_base_value, construct_cell, type Cell  } from "./Cell/Cell";
-import { force_load_arithmatic } from "./Cell/GenericArith";
+import { force_load_arithmatic } from "./AdvanceReactivity/Generics/GenericArith";
 import { c_add, c_multiply, c_subtract, p_add, p_divide, p_multiply, p_not, p_subtract, p_switcher } from "./Propagator/BuiltInProps";
 import { binary_amb, configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "./Propagator/Search";
 import { configure_trace_scheduler, configure_trace_scheduler_state_updates, execute_all_tasks_sequential, execute_all_tasks_simultaneous, steppable_run_task, summarize_scheduler_state } from "./Shared/Reactivity/Scheduler";
@@ -30,7 +30,7 @@ force_load_arithmatic();
 set_global_state(PublicStateCommand.SET_CELL_MERGE, merge_value_sets)
 
 
-import { f_add, f_equal, f_less_than, f_subtract, f_switch } from "./Propagator/Sugar";
+import { ce_add, ce_equal, ce_less_than, ce_subtract, ce_switch } from "./Propagator/Sugar";
 import { socket_IO_client_cell } from "./Cell/RemoteCell/SocketClientCell";
 // TODO:
 //1.arrays

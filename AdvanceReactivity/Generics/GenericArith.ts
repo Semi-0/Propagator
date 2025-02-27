@@ -2,9 +2,9 @@
 // import { ValueSet } from "./ValueSet";
 // import { match_args } from "generic-handler/Predicates";
 import { add as _add, subtract as _subtract, multiply as _multiply, divide as _divide, less_than as _less_than } from "generic-handler/built_in_generics/generic_arithmetic";
-import { base_equal as _equal } from "../Shared/base_equal";
+import { base_equal as _equal } from "../../Shared/base_equal";
 import { all_match, match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
-import { get_base_value, is_contradiction, is_nothing, the_contradiction, the_nothing } from "./CellValue";
+import { get_base_value, is_contradiction, is_nothing, the_contradiction, the_nothing } from "../../Cell/CellValue";
 import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_layered_object  as _is_layered_object} from "sando-layer/Basic/LayeredObject";
@@ -31,16 +31,10 @@ const define_nothing_arithmetic_handler = (op: any) => define_generic_procedure_
 
 
 define_nothing_arithmetic_handler(_add)
-
 define_nothing_arithmetic_handler(_subtract)
-
-
 define_nothing_arithmetic_handler(_multiply)
-
 define_nothing_arithmetic_handler(_divide)
-
 define_nothing_arithmetic_handler(_less_than)
-
 define_nothing_arithmetic_handler(_equal)
 
 define_generic_procedure_handler(_add,
@@ -85,7 +79,6 @@ define_generic_procedure_handler(_equal,
             return the_contradiction
     }
 )
-
 
 export function force_load_arithmatic(){
 }

@@ -47,9 +47,11 @@ async function socket_wrapper(ip: string, port: number): Promise<RemoteConnector
                 () => {}, 
                 // onSome
                 (socket: Socket) => {
-                    socket.end()
+                    socket.write = () => 0;
+                    socket.end();
                 }
             )(socket)
+            events.dispose();
         }
     }
 }

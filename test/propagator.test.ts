@@ -15,17 +15,16 @@ import { construct_better_set, set_get_length, to_array } from "generic-handler/
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
-import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
-import { reduceEachTrailingCommentRange } from "typescript";
-
+import { ce_add, ce_equal, ce_less_than, ce_switch } from "../Propagator/BuiltInProps";
+import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
+    return_default_behavior();
     set_merge(merge_value_sets)
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
-
 
         const x = construct_cell("x");
         const y = construct_cell("y");
@@ -51,7 +50,7 @@ describe("test propagator", () => {
         const x = construct_cell("x");
         const y = construct_cell("y");
         const product = construct_cell("product");
-        
+        // @ts-ignore
         c_multiply(x, y, product);
 
 
@@ -299,7 +298,7 @@ describe("test propagator", () => {
         const b = construct_cell("b");
         const c = construct_cell("c");
 
-        const result  = f_switch(c, f_add(a, b))
+        const result  = ce_switch(c, ce_add(a, b))
 
         tell(a, 1, "a")
         tell(b, 2, "b")
@@ -329,7 +328,7 @@ describe("test propagator", () => {
 
         const x = construct_cell("x1");
         const y = construct_cell("y1");
-        const result = f_equal(x, y)
+        const result = ce_equal(x, y)
 
         tell(x, 1, "x")
         tell(y, 1, "y")
@@ -357,7 +356,7 @@ describe("test propagator", () => {
         const a = construct_cell("a");
         const b = construct_cell("b");
 
-        const result = f_less_than(a, b)
+        const result = ce_less_than(a, b)
 
         tell(a, 1, "a")
         tell(b, 2, "b")

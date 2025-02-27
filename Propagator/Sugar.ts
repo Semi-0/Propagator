@@ -6,9 +6,9 @@ import { make_temp_cell } from "@/cell/Cell";
 
 
 
-// f means looks like a function
-function make_f_arithmetical(propagator_constructor: (...args: any[]) => Propagator){
-    return (...inputs: Cell[]) => {
+// ce shorts for cell 
+export function make_ce_arithmetical(propagator_constructor: (...args: any[]) => Propagator){
+    return (...inputs: Cell<any>[]) => {
         let result =  make_temp_cell()
      
         propagator_constructor(...[...inputs, result]);
@@ -17,18 +17,46 @@ function make_f_arithmetical(propagator_constructor: (...args: any[]) => Propaga
     }
 }
 
+export const ce_compose = (...operators: ((...cells: Cell<any>[]) => void)[]) => {
+    return (initial: Cell<any>) => {
+        let current = initial;
+        let result: Cell<any> = make_temp_cell();
 
+        operators.forEach((operator, index) => {
+            if (index === operators.length - 1) {
+                operator(...[current, result]);
+            } else {
+                const next = make_temp_cell();
+                operator(...[current, next]);
+                current = next;
+            }
+        });
 
-export const f_add = make_f_arithmetical(p_add);
+        return result;
+    }
+}
 
-export const f_subtract = make_f_arithmetical(p_subtract);
+export const ce_pipe = (arg_cell: Cell<any>, ...operators: ((...cells: Cell<any>[]) => void)[]) => {
+    return ce_compose(...operators)(arg_cell);
+}
 
-export const f_multiply = make_f_arithmetical(p_multiply);
+export const link = (A: Cell<any>, B: Cell<any>, ...operators: ((...cells: Cell<any>[]) => void)[]) => {
+    let current = A;
+    let middle = make_temp_cell();
+    let result = B;
 
-export const f_divide = make_f_arithmetical(p_divide);
+    operators.forEach((operator, index) => {
+        if (index === operators.length - 1) {
+            operator(...[current, result]);
+        } else {
+            operator(...[current, middle]);
+            current = middle;
+        }
+    });
+}
 
-export const f_equal = make_f_arithmetical(p_equal);
+export const bi_pipe = (A: Cell<any>, B: Cell<any>, AtoB: ((...cells: Cell<any>[]) => void)[], BtoA: ((...cells: Cell<any>[]) => void)[]) => {
+    link(A, B, ...AtoB);
+    link(B, A, ...BtoA);
+}
 
-export const f_switch = make_f_arithmetical(p_switcher);
-
-export const f_less_than = make_f_arithmetical(p_less_than);

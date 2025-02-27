@@ -1,5 +1,5 @@
 import { primitive_propagator, constraint_propagator, type Propagator, construct_propagator } from "./Propagator"; 
-import { multiply, divide } from "../Cell/GenericArith";
+import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
 import { type Cell, cell_name } from "../Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
 import { first, for_each, second } from "../Helper/Helper";
@@ -11,7 +11,7 @@ import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
 import { merge, tap, type Reactor } from "../Shared/Reactivity/Reactor";
 import { map } from "../Shared/Reactivity/Reactor";
-import { add, subtract} from "../Cell/GenericArith";
+import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 var log_amb_choose = false; 

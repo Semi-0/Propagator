@@ -2,8 +2,11 @@
 // the visualization would be very limited
 
 import { pipe } from "fp-ts/lib/function";
+import { keys } from "fp-ts/lib/ReadonlyRecord";
 import type { State } from "fp-ts/lib/State";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { guard, throw_type_mismatch } from "generic-handler/built_in_generics/other_generic_helper";
+import { register_predicate } from "generic-handler/Predicates";
 
 export type Reactor<T> =  ReadOnlyReactor<T>
 
@@ -23,6 +26,10 @@ export interface ReadOnlyReactor<T>{
     summarize: () => string;
     dispose: () => void;
 }
+
+export const is_reactor = register_predicate("is_reactor", (reactor: any): reactor is Reactor<any> => {
+    return "subscribe" in reactor && "unsubscribe" in reactor 
+})
 
 
 function connect(A: Reactor<any>, B: StandardReactor<any>){
@@ -79,6 +86,7 @@ function summarize<T>(name: string, observers: ((...args: T[]) => void)[]){
 
 // Store connections between reactors for proper cleanup
 // Map from downstream reactor to an array of {upstream, observer} objects
+// TODO: dispose all down stream reactors??
 const connectionMap = new WeakMap<ReadOnlyReactor<any>, Array<{upstream: ReadOnlyReactor<any>, observer: Function}>>();
 
 export function construct_prototype_reactor<T>(constructor: (
@@ -324,6 +332,8 @@ export function subscribe<T>(f: (v: T) => void): (reactor: Reactor<T>) => void{
 
 export function construct_simple_transformer<T>(f: (v: T, inner: StandardReactor<T>) => void): (reactor: Reactor<T>) => Reactor<T>  {
     return (reactor: Reactor<T>) => {
+        guard(is_reactor(reactor), throw_type_mismatch("construct_simple_transformer", "Reactor", typeof reactor))
+
         var inner = construct_reactor<T>()
 
         const observer = (value: T) => {

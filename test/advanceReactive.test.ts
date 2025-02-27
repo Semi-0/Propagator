@@ -1,31 +1,14 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
-import {
-  curried_generic_map,
-  r_subscribe,
-  r_filter,
-  r_reduce,
-  r_apply,
-  r_until,
-  r_or,
-  r_compose,
-  r_pipe,
-  r_first,
-  r_zip,
-  r_add,
-  r_subtract,
-  r_multiply,
-  r_divide,
-  r_inspect_strongest,
-  r_inspect_content,
-} from "../AdvanceReactivity/operator";
-import { update } from "../AdvanceReactivity/update";
+
+import { update } from "../AdvanceReactivity/interface";
 import {
   construct_cell,
   cell_strongest_value,
   cell_strongest_base_value,
   cell_content_value,
-  set_handle_contradiction
+  set_handle_contradiction,
+  cell_subscribe
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -34,17 +17,29 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import {  annotate_now_with_id, construct_traced_timestamp, has_timestamp_layer, stale, timestamp_set_merge, type traced_timestamp } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
-import { construct_better_set, set_equal, set_for_each, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer";
+import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
+import { construct_better_set, set_equal, set_for_each, set_get_length, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/GenericPatch";
 
 import { generic_merge, set_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
+import { install_behavior_advice } from "../Propagator/PropagatorBehavior";
+import { reactive_propagator_behavior } from "../AdvanceReactivity/traced_timestamp/ReactivePropagatorBehavior";
+import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
+import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
+import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
+import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
+import { c_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switcher, p_sync, p_zip } from "../Propagator/BuiltInProps";
+import { inspect_content, inspect_strongest } from "../Helper/Debug";
+import { link, ce_pipe } from "../Propagator/Sugar";
+import { bi_pipe } from "../Propagator/Sugar";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
 
+  install_behavior_advice(reactive_propagator_behavior)
   // set_merge(reactive_merge)
   set_merge(reactive_fresh_merge)
   // set_handle_contradiction(trace_earliest_emerged_value)
@@ -53,14 +48,7 @@ describe("Advance Reactive Tests", () => {
   // -------------------------
   // Basic helper - not using composition.
   // -------------------------
-  describe("Basic helper tests", () => {
-    test("curried_generic_map should map array correctly", () => {
-      const addOne = (x: number) => x + 1;
-      const mapAddOne = curried_generic_map(addOne);
-      const result = mapAddOne([1, 2, 3]);
-      expect(result).toEqual([2, 3, 4]);
-    });
-  });
+
 
 
    describe("timestamp set merge tests", () => {
@@ -181,7 +169,7 @@ describe("timestamp value merge tests", () => {
     const cell_a = construct_cell("a")
 
     update(cell_a, 1)
-    r_inspect_content(cell_a)
+  
     await new Promise((resolve) => setTimeout(resolve, 100))
 
     await execute_all_tasks_sequential((error: Error) => {});
@@ -217,21 +205,9 @@ describe("timestamp value merge tests", () => {
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(cell))).toBe(100);
     });
+  })
 
-    // Test subscribe helper
-    test("subscribe should trigger callback upon cell update", async () => {
-      const cell = construct_cell("subscribeTest");
-      let captured: number | null = null;
-      r_subscribe((val: number) => {
-        captured = val;
-      })(cell);
 
-      update(cell, 77);
-      await execute_all_tasks_sequential((error: Error) => {});
-      // @ts-ignore
-      expect(captured).toBe(77);
-    });
-  });
 
   // -------------------------
   // Check non-chainable operators that use multiple inputs.
@@ -239,10 +215,10 @@ describe("timestamp value merge tests", () => {
   describe("Non-chainable operators tests", () => {
     // Test until operator
     test("until operator should output 'then' cell's value when condition is true", async () => {
-      const condition = construct_cell("condition");
+      const condition: Cell<boolean> = construct_cell("condition");
       const thenCell = construct_cell("then");
       const output = construct_cell("output");
-      r_until(condition, thenCell, output);
+      p_switcher(condition, thenCell, output);
 
       update(condition, false);
       update(thenCell, "initial");
@@ -255,12 +231,26 @@ describe("timestamp value merge tests", () => {
       expect(get_base_value(cell_strongest_value(output))).toBe("updated");
     });
 
+    test("p_sync should update output when input changes", async () => {
+      const input = construct_cell("input");
+      const output = construct_cell("output");
+      p_sync(input, output);
+      
+      update(input, 1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(output))).toBe(1);
+
+      update(input, 2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(get_base_value(cell_strongest_value(output))).toBe(2);
+    })
+
     // Test or operator
     test("or operator should select the fresher cell value", async () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
       const output = construct_cell("output");
-      r_or(output, cellA, cellB);
+      c_or([cellA, cellB], output);
 
 
       // await new Promise((resolve) => setTimeout(resolve, 2));
@@ -296,7 +286,7 @@ describe("timestamp value merge tests", () => {
 
       const input = construct_cell("applyPipeTest");
       update(input, 5);
-      const output = r_pipe(input, r_apply((x: number) => {
+      const output = ce_pipe(input, p_map_a((x: number) => {
         console.log("applyPipeTest")
         console.log(to_string(x))
         return x + 10
@@ -304,7 +294,7 @@ describe("timestamp value merge tests", () => {
 
 
 
-      r_inspect_content(output)
+      inspect_content(output)
       await execute_all_tasks_sequential((error: Error) => {});
 
       expect(get_base_value(cell_strongest_value(output))).toBe(15);
@@ -313,10 +303,7 @@ describe("timestamp value merge tests", () => {
     // Test compose_r by chaining two apply_e operators.
     test("compose_r should chain multiple operators", async () => {
       const input = construct_cell("composeTest");
-      const composed = r_compose(
-        r_apply((x: number) => x * 2),
-        r_apply((x: number) => x + 1)
-      )(input);
+      const composed = ce_pipe(input, p_map_a((x: number) => x * 2), p_map_a((x: number) => x + 1));
 
       update(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -328,10 +315,10 @@ describe("timestamp value merge tests", () => {
     // Test pipe_r by chaining two operators.
     test("pipe_r should chain multiple operators", async () => {
       const input = construct_cell("pipeTest");
-      const piped = r_pipe(
+      const piped = ce_pipe(
         input,
-        r_apply((x: number) => x * 3),
-        r_apply((x: number) => x - 2)
+        p_map_a((x: number) => x * 3),
+        p_map_a((x: number) => x - 2)
       );
 
       update(input, 4);
@@ -344,7 +331,7 @@ describe("timestamp value merge tests", () => {
     // If the value does not pass the predicate, the output stays at the_nothing.
     test("pipe_r with filter_e should filter cell value", async () => {
       const input = construct_cell("filterTest");
-      const filtered = r_pipe(input, r_filter((x: number) => x > 10));
+      const filtered = ce_pipe(input, p_filter_a((x: number) => x > 10));
 
       update(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -358,7 +345,7 @@ describe("timestamp value merge tests", () => {
     // Test pipe_r with reduce_e, which accumulates updates over time.
     test("pipe_r with reduce_e should accumulate values", async () => {
       const input = construct_cell("reduceTest");
-      const reduced = r_pipe(input, r_reduce((acc: number, x: number) => acc + x, 0));
+      const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
 
       update(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -379,42 +366,10 @@ describe("timestamp value merge tests", () => {
       const fahrenheit = construct_cell("fahrenheit");
 
       // Create bi-directional conversion using compound_propagator
-      compound_propagator(
-        [celsius, fahrenheit],
-        [celsius, fahrenheit],
-        () => {
-          // Watch both cells
-          const c_to_f = r_pipe(
-            celsius,
-            r_filter(x => x !== the_nothing),
-            r_apply((c: number) => c * 9/5 + 32)
-          );
+      // @ts-ignore
+      com_celsius_to_fahrenheit(celsius, fahrenheit)
 
-          const f_to_c = r_pipe(
-            fahrenheit,
-            r_filter(x => x !== the_nothing),
-            r_apply((f: number) => (f - 32) * 5/9)
-          );
-
-          // Subscribe to update the other cell when one changes
-          r_subscribe((f: number) => {
-            if (get_base_value(cell_strongest_value(fahrenheit)) !== f) {
-              update(fahrenheit, f);
-            }
-          })(c_to_f);
-
-          r_subscribe((c: number) => {
-            if (get_base_value(cell_strongest_value(celsius)) !== c) {
-              update(celsius, c);
-            }
-          })(f_to_c);
-
-          // Return a combined reactor
-          return construct_reactor();
-        },
-        "temperature_converter"
-      );
-
+   
       // Test Celsius to Fahrenheit conversion
       update(celsius, 0);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -427,7 +382,7 @@ describe("timestamp value merge tests", () => {
       expect(get_base_value(cell_strongest_value(celsius))).toBe(100);
       expect(get_base_value(cell_strongest_value(fahrenheit))).toBe(212);
 
-      // Test another Celsius to Fahrenheit conversion
+      // // Test another Celsius to Fahrenheit conversion
       update(celsius, 25);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(celsius))).toBe(25);
@@ -440,64 +395,10 @@ describe("timestamp value merge tests", () => {
       const inches = construct_cell("inches");
 
       // Create bi-directional conversions between all three units
-      compound_propagator(
-        [meters, feet, inches],
-        [meters, feet, inches],
-        () => {
-          // Conversion factors
-          const m_to_ft = r_pipe(
-            meters,
-            r_filter(x => x !== the_nothing),
-            r_apply((m: number) => m * 3.28084)
-          );
+      // @ts-ignore
+      com_meters_feet_inches(meters, feet, inches)
+          // Bi-directional conversion between meters and feet
 
-          const ft_to_in = r_pipe(
-            feet,
-            r_filter(x => x !== the_nothing),
-            r_apply((ft: number) => ft * 12)
-          );
-
-          const in_to_ft = r_pipe(
-            inches,
-            r_filter(x => x !== the_nothing),
-            r_apply((inch: number) => inch / 12)
-          );
-
-          const ft_to_m = r_pipe(
-            feet,
-            r_filter(x => x !== the_nothing),
-            r_apply((ft: number) => ft / 3.28084)
-          );
-
-          // Set up subscriptions
-          r_subscribe((ft: number) => {
-            if (get_base_value(cell_strongest_value(feet)) !== ft) {
-              update(feet, ft);
-            }
-          })(m_to_ft);
-
-          r_subscribe((m: number) => {
-            if (get_base_value(cell_strongest_value(meters)) !== m) {
-              update(meters, m);
-            }
-          })(ft_to_m);
-
-          r_subscribe((inch: number) => {
-            if (get_base_value(cell_strongest_value(inches)) !== inch) {
-              update(inches, inch);
-            }
-          })(ft_to_in);
-
-          r_subscribe((ft: number) => {
-            if (get_base_value(cell_strongest_value(feet)) !== ft) {
-              update(feet, ft);
-            }
-          })(in_to_ft);
-
-          return construct_reactor();
-        },
-        "length_converter"
-      );
 
       // Test meters to feet to inches
       update(meters, 1);
@@ -517,10 +418,10 @@ describe("timestamp value merge tests", () => {
 })
 
 describe("Zip and First operator tests", () => {
-  test("r_first operator should return the first value and ignore subsequent updates", async () => {
+  test("p_index operator should return the first value and ignore subsequent updates", async () => {
     const cell = construct_cell("firstOpTest");
     const output = construct_cell("firstOpTestOutput");
-    const firstOutput = r_first(output, cell);
+    const firstOutput = p_index(1)(cell, output);
     
     // Set the initial value.
     update(cell, 100);
@@ -539,13 +440,15 @@ describe("Zip and First operator tests", () => {
     const cell2 = construct_cell("zipOpTest2");
     const output = construct_cell("zipOpTestOutput");
     const zip_func = construct_cell("zipOpTestFunc");
-    const zipped = r_zip(output, zip_func, cell1, cell2);
+    p_zip([cell1, cell2], zip_func, output);
 
     // First update: both cells are updated.
     update(zip_func, (a: string, b: string) => [a, b]);
     update(cell1, "x");
     update(cell2, "y");
     await execute_all_tasks_sequential((error: Error) => {});
+
+
     let result = get_base_value(cell_strongest_value(output));
     expect(result).toEqual(["x", "y"]);
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -561,6 +464,8 @@ describe("Zip and First operator tests", () => {
     update(cell2, "y2");
     await execute_all_tasks_sequential((error: Error) => {});
     const sameResult = get_base_value(cell_strongest_value(output));
+    const r = get_traced_timestamp_layer(cell_strongest_value(output))
+
     expect(sameResult).toEqual(["x2", "y2"]);
   });
 
@@ -570,11 +475,11 @@ describe("Zip and First operator tests", () => {
     const raw2 = construct_cell("zipTransformTest2") as Cell<number>;
     const zip_func = construct_cell("zipTransformTestFunc");
     // Create transformed cells using r_apply operator
-    const transformed1 = r_pipe(raw1, r_apply((x: number) => x * 2));
-    const transformed2 = r_pipe(raw2, r_apply((x: number) => x + 5));
+    const transformed1 = ce_pipe(raw1, p_map_a((x: number) => x * 2));
+    const transformed2 = ce_pipe(raw2, p_map_a((x: number) => x + 5));
 
     const zipOutput = construct_cell("zipTransformOutput");
-    r_zip(zipOutput, zip_func, transformed1, transformed2);
+    p_zip([transformed1, transformed2], zip_func, zipOutput);
     update(zip_func, (a: number, b: number) => [a, b]);
 
     update(raw1, 10);
@@ -593,7 +498,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell2 = construct_cell("rAddInput2");
     const output = construct_cell("rAddOutput");
     // Connect the add operator to the inputs and output.
-    r_add(output, cell1, cell2);
+    p_add(cell1, cell2, output);
 
     update(cell1, 10);
     update(cell2, 15);
@@ -605,7 +510,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell1 = construct_cell("rSubtractInput1");
     const cell2 = construct_cell("rSubtractInput2");
     const output = construct_cell("rSubtractOutput");
-    r_subtract(output, cell1, cell2);
+    p_subtract(cell1, cell2, output);
 
     update(cell1, 20);
     update(cell2, 5);
@@ -617,7 +522,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell1 = construct_cell("rMultiplyInput1");
     const cell2 = construct_cell("rMultiplyInput2");
     const output = construct_cell("rMultiplyOutput");
-    r_multiply(output, cell1, cell2);
+    p_multiply(cell1, cell2, output);
 
     update(cell1, 3);
     update(cell2, 7);
@@ -630,7 +535,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell2 = construct_cell("rMultiply3Input2");
     const cell3 = construct_cell("rMultiply3Input3");
     const output = construct_cell("rMultiply3Output");
-    r_multiply(output, cell1, cell2, cell3);
+    p_multiply(cell1, cell2, cell3, output);
 
     update(cell1, 2);
     update(cell2, 3);
@@ -643,7 +548,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell1 = construct_cell("rDivideInput1");
     const cell2 = construct_cell("rDivideInput2");
     const output = construct_cell("rDivideOutput");
-    r_divide(output, cell1, cell2);
+    p_divide(cell1, cell2, output);
 
     update(cell1, 100);
     update(cell2, 4);
@@ -656,7 +561,7 @@ describe("Arithmetic Operators Tests", () => {
     const cell2 = construct_cell("rDivideInputB");
     const cell3 = construct_cell("rDivideInputC");
     const output = construct_cell("rDivideOutputMultiple");
-    r_divide(output, cell1, cell2, cell3);
+    p_divide(cell1, cell2, cell3, output);
 
     update(cell1, 120);  // 120 / 2 = 60, then 60 / 3 = 20
     update(cell2, 2);

@@ -47,7 +47,7 @@ export const closed = "closed"
 export async function remote_cell(name: string, remote_server: RemoteConnector){
     const relation = make_relation(name, get_global_parent())
     const strongest = scheduled_reactive_state(the_nothing);
-    const content = scheduled_reactive_state(the_contradiction);
+    const content = scheduled_reactive_state(the_nothing);
     const neighbors: Map<string, Propagator> = new Map();
 
     await remote_server.connect()
@@ -57,7 +57,7 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
             // onLeft
             (error: Error) => {
                 if (error.message === closed){
-                    strongest.next(mark_error(the_contradiction, error))
+                    strongest.next("closed")
                 }else{
                     strongest.next(mark_error(the_contradiction, error))
                 }

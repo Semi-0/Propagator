@@ -1,31 +1,34 @@
-import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator } from "./Propagator"; 
-import { multiply, divide } from "../Cell/GenericArith";
-import { make_temp_cell, type Cell } from "../Cell/Cell";
-import { merge,  type Reactor } from "../Shared/Reactivity/Reactor";
-import { add, subtract} from "../Cell/GenericArith";
+import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator } from "./Propagator"; 
+import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content } from "../Cell/Cell";
+import { merge,  subscribe,  type Reactor, map, construct_reactor } from "../Shared/Reactivity/Reactor";
+import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-import { not } from "../Cell/GenericArith";
+import { not } from "../AdvanceReactivity/Generics/GenericArith";
 import { the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { less_than, equal } from "../Cell/GenericArith";
+import { less_than, equal } from "../AdvanceReactivity/Generics/GenericArith";
 import { base_equal } from "../Shared/base_equal";
+import { pipe } from "fp-ts/lib/function";
+import { no_compute } from "../Helper/noCompute";
+import { for_each } from "../Helper/Helper";
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { bi_pipe, link } from "./Sugar";
+import { make_ce_arithmetical } from "./Sugar";
 
 
-// Cons Cdr Pair 
-// Stategy instead of directly passing the value 
-// passing a pointer to the value ( with curried propagator or reactor)
-// so pair atom could be seperated from the value it point to
 
-export const p_switcher = primitive_propagator((condition: boolean, value: any) => {
+
+export const p_switcher = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
     if (base_equal(condition, true)){
         return value;
     }
     else{
         return the_nothing
     }
-}, "switcher")
+}, "switcher")(condition, value, output);
 
 export const p_equal = primitive_propagator((x: any, y: any) => {
     return equal(x, y)
@@ -69,21 +72,165 @@ export const p_divide = primitive_propagator((...inputs: any[]) => {
     return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
 }, "/"); 
 
-// function make_pair(fst: any, snd: any){
-//     return [fst, snd];
-// }
+export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
+    return input;
+})
 
-// export const p_pair = primitive_propagator((fst: any, snd: any) => {
-//     return [fst, snd];
-// }, "p:pair")
+export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
+    let acc = initial;
+    return function_to_primitive_propagator("reduce", (inputs: any) => {
+        acc = f(acc, inputs);
+        return acc;
+    })
+}
 
-// export function c_pair(fst: Cell, snd: Cell, visitor: propagator){
-//     return compound_propagator([fst, snd],  [pair], () => {
+export const p_filter_a = (f: (a: any) => boolean) => {
+    return function_to_primitive_propagator("filter", (inputs: any) => {
+        if (f(inputs)){
+            return inputs;
+        }
+        else{
+            return no_compute;
+        }
+    })
+}
+
+export const p_filter_b = function_to_primitive_propagator("filter", (input: any, predicate: (a: any) => boolean) => {
+    if (predicate(input)){
+        return input;
+    }
+    else{
+        return no_compute;
+    }
+})
+
+export const p_index = (index: number) => {
+    // index for time sequence
+    var acc_index = 0;
+
+    return function_to_primitive_propagator("index", (input: any) => {
+        acc_index++;
+        if (acc_index === index){
+            return input;
+        }
+        else{
+            return no_compute;
+        }
+    })
+}
+
+export const p_first = p_index(0);
+
+export const p_array_first = function_to_primitive_propagator("array_first", (input: any[]) => {
+    return input[0];
+})
+
+export const p_map_a = (f: (a: any) => any) => {
+    return function_to_primitive_propagator("map", (inputs: any) => {
+        return f(inputs);
+    })
+} 
+
+export const p_map_b = function_to_primitive_propagator("map", (input: any, f: (a: any) => any) => {
+    return f(input);
+}) 
+
+export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
+    const queues: any[][] = to_zip.map(() => []);
+    // last emitted zipped result; initially no_compute
+    let lastSent: any = no_compute;
+    // @ts-ignore
+    return function_to_primitive_propagator("zip", (f: (...a: any[]) => any, ...objects: any[]) => {
+        // Exclude the output cell from the inputs
         
-        
-//     }, "c:pair")
-// }
+      
+        // For each input, if currentValue is valid and it is new compared to the last queued value or the last emitted value,
+        // then push it into its respective queue
+        for (let i = 0; i < objects.length; i++) {
+            const curr = objects[i];
+            // If we haven't emitted any value yet, or the last emitted value for input i is different
+            if (lastSent === no_compute || (Array.isArray(lastSent) && lastSent[i] !== curr)) {
+                queues[i].push(curr);
+            }
+      
+        }
 
+        // If every input's queue has at least one element, consume one from each to produce a new zipped result
+        if (queues.every(queue => queue.length > 0)) {
+            const newZip = queues.map(queue => queue.shift());
+            lastSent = newZip;
+            return f(...newZip);
+        }
+        
+        // Otherwise, return the previously emitted zipped result (or no_compute if none)
+        return no_compute;
+    })(f, ...to_zip, output);
+}
+
+export const c_or = (inputs: Cell<any>[], output: Cell<any>) => {
+    return compound_propagator(inputs, [output], () => {
+        for_each(inputs, (i: Cell<any>) => {
+            return p_sync(i, output)
+        })
+    }, "or")
+}
+
+
+export const com_celsius_to_fahrenheit = (celsius: Cell<number>, fahrenheit: Cell<number>) => { 
+    return compound_propagator([celsius, fahrenheit], [celsius, fahrenheit], () => {
+        link(
+            celsius,
+            fahrenheit,
+            p_filter_a(x => x !== the_nothing),
+            p_map_a((c: number) => c * 9/5 + 32)
+        );
+
+        link(
+            fahrenheit,
+            celsius,
+            p_filter_a(x => x !== the_nothing),
+            p_map_a((f: number) => (f - 32) * 5/9)
+        );
+    }, "celsius_to_fahrenheit")
+}
+
+export const com_meters_feet_inches = (meters: Cell<number>, feet: Cell<number>, inches: Cell<number>) => {
+    return compound_propagator([meters, feet, inches], [meters, feet, inches], () => {
+        bi_pipe(
+            meters, 
+            feet,
+            // meters to feet
+            [
+              p_filter_a(x => x !== the_nothing),
+              p_map_a((m: number) => m * 3.28084)
+            ],
+            // feet to meters
+            [
+              p_filter_a(x => x !== the_nothing),
+              p_map_a((ft: number) => ft / 3.28084)
+            ]
+          );
+
+          // Bi-directional conversion between feet and inches
+          bi_pipe(
+            feet,
+            inches,
+            // feet to inches
+            [
+              p_filter_a(x => x !== the_nothing),
+              p_map_a((ft: number) => ft * 12)
+            ],
+            // inches to feet
+            [
+              p_filter_a(x => x !== the_nothing),
+              p_map_a((inch: number) => inch / 12)
+            ]
+          );
+        },
+        "length_converter"
+    )
+}
+            
 
 export function c_multiply(x: Cell<number>, y: Cell<number>, product: Cell<number>){
     // Some Weird bug if i try to figure out y through constraint it would always failed into infinite loop
@@ -91,41 +238,33 @@ export function c_multiply(x: Cell<number>, y: Cell<number>, product: Cell<numbe
     // if there is a moment when m and s1 has established but s2 not 
     // then it would cause infinite loop
     return constraint_propagator([x, y, product], () => {
-        const m = p_multiply(x, y, product).getActivator();
-        const s1 = p_divide(product, x, y).getActivator();
-        const s2 = p_divide(product, y, x).getActivator();
-
-        return merge(m, s1, s2) as Reactor<any>
+        const m = p_multiply(x, y, product);
+        const s1 = p_divide(product, x, y);
+        const s2 = p_divide(product, y, x);
     }, "c:*")
 }
 
 export function c_subtract(x: Cell<number>, y: Cell<number>, difference: Cell<number>){
     return constraint_propagator([x, y, difference], () => {
-        const m = p_subtract(x, y, difference).getActivator();
-        const s1 = p_divide(difference, x, y).getActivator();
-        const s2 = p_divide(difference, y, x).getActivator();
-
-        return merge(m, s1, s2) as Reactor<any>
+        const m = p_subtract(x, y, difference);
+        const s1 = p_divide(difference, x, y);
+        const s2 = p_divide(difference, y, x);
     }, "c:-")
 }
 
 export function c_divide(x: Cell<number>, y: Cell<number>, quotient: Cell<number>){
     return constraint_propagator([x, y, quotient], () => {
-        const m = p_divide(x, y, quotient).getActivator();
-        const s1 = p_divide(quotient, x, y).getActivator();
-        const s2 = p_divide(quotient, y, x).getActivator();
-
-        return merge(m, s1, s2) as Reactor<any>
+        const m = p_divide(x, y, quotient);
+        const s1 = p_divide(quotient, x, y);
+        const s2 = p_divide(quotient, y, x);
     }, "c:/")
 }   
 
 export function c_add(x: Cell<number>, y: Cell<number>, sum: Cell<number>){
     return constraint_propagator([x, y, sum], () => {
-        const m = p_add(x, y, sum).getActivator();
-        const s1 = p_subtract(sum, x, y).getActivator();
-        const s2 = p_subtract(sum, y, x).getActivator();
-
-        return merge(m, s1, s2) as Reactor<any>
+        const m = p_add(x, y, sum);
+        const s1 = p_subtract(sum, x, y);
+        const s2 = p_subtract(sum, y, x);
     }, "c:+")
 }
 
@@ -134,3 +273,16 @@ export function c_add(x: Cell<number>, y: Cell<number>, sum: Cell<number>){
 
 
 
+export const ce_add = make_ce_arithmetical(p_add);
+
+export const ce_subtract = make_ce_arithmetical(p_subtract);
+
+export const ce_multiply = make_ce_arithmetical(p_multiply);
+
+export const ce_divide = make_ce_arithmetical(p_divide);
+
+export const ce_equal = make_ce_arithmetical(p_equal);
+
+export const ce_switch = make_ce_arithmetical(p_switcher);
+
+export const ce_less_than = make_ce_arithmetical(p_less_than);

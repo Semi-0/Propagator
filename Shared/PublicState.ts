@@ -32,6 +32,8 @@ export enum PublicStateCommand{
     CLEAN_UP = "clean_up",
     FORCE_UPDATE_ALL = "force_update_all",
     SET_CELL_MERGE = "set_cell_merge",
+    SET_HANDLE_CONTRADICTION = "set_handle_contradiction",
+    INSTALL_BEHAVIOR_ADVICE = "install_behavior_advice",
     UPDATE_FAILED_COUNT = "update_failed_count"
 }
 
@@ -154,6 +156,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             clean_premises_store()
             clean_hypothetical_store()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
+            
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:
@@ -167,6 +170,14 @@ receiver.subscribe((msg: PublicStateMessage) => {
                     msg.summarize()
                 );
             }
+            break;
+
+        case PublicStateCommand.INSTALL_BEHAVIOR_ADVICE:
+            install_behavior_advice(msg.args[0]);
+            break;
+
+        case PublicStateCommand.SET_HANDLE_CONTRADICTION:
+            set_handle_contradiction(msg.args[0]);
             break;
     }
 })
@@ -225,6 +236,8 @@ import { get_base_value, type Layer } from 'sando-layer/Basic/Layer';
 import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
 import { set_every, set_get_length, type BetterSet } from 'generic-handler/built_in_generics/generic_better_set';
 import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
+import { install_behavior_advice, return_default_behavior } from '../Propagator/PropagatorBehavior';
+import { set_handle_contradiction } from '..';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
