@@ -3,12 +3,12 @@ import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test";
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
-import { is_contradiction } from "../Cell/CellValue";
+import { is_contradiction, the_nothing } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Reactivity/Scheduler";
 import { set_global_state } from "../Shared/PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
 import { PublicStateCommand } from "../Shared/PublicState";
-import { generic_merge, set_merge } from "@/cell/Merge";
+import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
@@ -296,6 +296,8 @@ describe("test propagator", () => {
 
     test("switch", async () => {
         set_merge(merge_value_sets)
+        set_trace_merge(true)
+
 // TODO: RECURSION
 
         const a = construct_cell("a");
@@ -312,16 +314,18 @@ describe("test propagator", () => {
         // @ts-ignore
         expect(cell_strongest_base_value(result)).toBe(3)
 
-        // kick_out("a")
-        // kick_out("b")
-        kick_out("c")
-
         tell(c, false, "e")
+        // kick_out("c")
+
         tell(a, 4, "f")
         tell(b, 2, "g")
+
+        kick_out("c")
         execute_all_tasks_sequential((e) => {})
+
         // @ts-ignore
-        expect(cell_strongest_base_value(result)).toBe(3)
+        expect(cell_strongest_base_value(result)).toBe(the_nothing)
+
     })
 
 

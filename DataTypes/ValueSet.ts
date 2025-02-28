@@ -169,7 +169,8 @@ define_generic_procedure_handler(is_unusable_value,
 define_generic_procedure_handler(strongest_value,
     match_args(is_value_set),
     (set: ValueSet<any>) => {
-        console.log("strongest_consequence", strongest_consequence(set))
+        // console.log("set", set)
+        // console.log("strongest_consequence", strongest_consequence(set))
         return strongest_consequence(set)}
 );
 

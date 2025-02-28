@@ -5,7 +5,7 @@ import { merge,  subscribe,  type Reactor, map, construct_reactor } from "../Sha
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
-import { the_nothing } from "@/cell/CellValue";
+import { is_nothing, the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -31,7 +31,10 @@ import { make_ce_arithmetical } from "./Sugar";
 // }, "switcher")(condition, value, output);
 
 export const p_switch = function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
-    if (base_equal(condition, true)){
+    if (is_nothing(condition)){
+        return no_compute;
+    }
+    else if (base_equal(condition, true)){
         return value;
     }
     else{
