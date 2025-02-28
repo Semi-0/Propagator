@@ -31,10 +31,11 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { c_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switcher, p_sync, p_zip } from "../Propagator/BuiltInProps";
+import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
+import { com_if } from "../Propagator/BuiltInProps";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -218,7 +219,7 @@ describe("timestamp value merge tests", () => {
       const condition: Cell<boolean> = construct_cell("condition");
       const thenCell = construct_cell("then");
       const output = construct_cell("output");
-      p_switcher(condition, thenCell, output);
+      p_switch(condition, thenCell, output);
 
       update(condition, false);
       update(thenCell, "initial");
@@ -250,7 +251,7 @@ describe("timestamp value merge tests", () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
       const output = construct_cell("output");
-      c_or([cellA, cellB], output);
+      comp_reactive_or([cellA, cellB], output);
 
 
       // await new Promise((resolve) => setTimeout(resolve, 2));
@@ -648,4 +649,83 @@ describe("Arithmetic Operators Tests", () => {
 
 //   });
 // });
+
+describe("Reactive Conditional (com_if) Tests", () => {
+  test("com_if should correctly route values based on the condition in reactive context", async () => {
+    // Initialize cells
+    const condition = construct_cell("reactiveCondition");
+    const thenValue = construct_cell("reactiveThen");
+    const otherwiseValue = construct_cell("reactiveElse");
+    const output = construct_cell("reactiveOutput");
+    
+    // Set up the if propagator
+    com_if(condition, thenValue, otherwiseValue, output);
+    
+    // Test when condition is true
+    update(condition, true);
+    update(thenValue, 42);
+    update(otherwiseValue, 24);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(get_base_value(cell_strongest_value(output))).toBe(42);
+    
+    // Test when condition changes to false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(get_base_value(cell_strongest_value(output))).toBe(24);
+    
+    // Test when 'then' value changes while condition is false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(thenValue, 100);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should still be the 'otherwise' value
+    expect(get_base_value(cell_strongest_value(output))).toBe(24);
+    
+    // Test when 'otherwise' value changes while condition is false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(otherwiseValue, 200);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should update to the new 'otherwise' value
+    expect(get_base_value(cell_strongest_value(output))).toBe(200);
+    
+    // Test switching back to true condition
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, true);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should now match the 'then' value
+    expect(get_base_value(cell_strongest_value(output))).toBe(100);
+    
+    // Test updating 'then' value while condition is true
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(thenValue, 150);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should update to the new 'then' value
+    expect(get_base_value(cell_strongest_value(output))).toBe(150);
+    
+    // Test rapid switching between conditions to verify timestamp behavior
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, true);
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(get_base_value(cell_strongest_value(output))).toBe(150);
+  });
+  
+ 
+});
 

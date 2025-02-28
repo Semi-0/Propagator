@@ -1,7 +1,7 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
-import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switcher } from "../Propagator/BuiltInProps";
+import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import { is_contradiction } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Reactivity/Scheduler";
@@ -17,11 +17,15 @@ import { randomUUID } from "crypto";
 import { p_amb } from "../Propagator/Search";
 import { ce_add, ce_equal, ce_less_than, ce_switch } from "../Propagator/BuiltInProps";
 import { return_default_behavior } from "../Propagator/PropagatorBehavior";
+import { com_if } from "../Propagator/BuiltInProps";
+import { inspect } from "util";
+import { inspect_content, inspect_strongest } from "../Helper/Debug";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
     return_default_behavior();
     set_merge(merge_value_sets)
+    
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
@@ -632,3 +636,62 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
 
 
 // })
+
+test('compound propagator com_if works correctly', async () => {
+    // Initialize cells
+    const condition = construct_cell("condition");
+    const thenValue = construct_cell("thenValue");
+    const otherwiseValue = construct_cell("otherwiseValue");
+    const output = construct_cell("output");
+    
+    // Set up the if propagator
+    // @ts-ignore
+    com_if(condition, thenValue, otherwiseValue, output);
+    
+    // Test when condition is true
+    tell(condition, true, "c_true");
+    tell(thenValue, 42, "then_val");
+    tell(otherwiseValue, 24, "else_val");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(cell_strongest_base_value(output)).toBe(42);
+    
+    // Test when condition changes to false
+    kick_out("c_true");
+    tell(condition, false, "c_false");
+
+    // inspect_strongest(output)
+    inspect_content(output)
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(cell_strongest_base_value(output)).toBe(24);
+    
+    // Test when 'then' value changes while condition is false
+    kick_out("then_val")
+    tell(thenValue, 100, "new_then");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should still be the 'otherwise' value
+    expect(cell_strongest_base_value(output)).toBe(24);
+    
+    // Test when 'otherwise' value changes while condition is false
+    kick_out("else_val")
+    tell(otherwiseValue, 200, "new_else");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should update to the new 'otherwise' value
+    expect(cell_strongest_base_value(output)).toBe(200);
+    
+    // Test switching back to true condition
+    kick_out("c_false");
+    tell(condition, true, "c_true_again");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should now match the 'then' value
+    expect(cell_strongest_base_value(output)).toBe(100);
+});

@@ -21,14 +21,24 @@ import { make_ce_arithmetical } from "./Sugar";
 
 
 
-export const p_switcher = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
+// export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
+//     if (base_equal(condition, true)){
+//         return value;
+//     }
+//     else{
+//         return no_compute
+//     }
+// }, "switcher")(condition, value, output);
+
+export const p_switch = function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
     if (base_equal(condition, true)){
         return value;
     }
     else{
-        return the_nothing
+        return no_compute
     }
-}, "switcher")(condition, value, output);
+})
+
 
 export const p_equal = primitive_propagator((x: any, y: any) => {
     return equal(x, y)
@@ -167,7 +177,24 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
     })(f, ...to_zip, output);
 }
 
-export const c_or = (inputs: Cell<any>[], output: Cell<any>) => {
+export const p_and = function_to_primitive_propagator("and", (...inputs: any[]) => {
+    for (let i = 0; i < inputs.length; i++){
+        if (inputs[i] === false){
+            return false;
+        }
+    }
+    return true;
+})
+
+export const p_or = function_to_primitive_propagator("or", (...inputs: any[]) => {
+    for (let i = 0; i < inputs.length; i++){
+        if (inputs[i] === true){
+            return true;
+        }
+    }
+    return false;
+})
+export const comp_reactive_or = (inputs: Cell<any>[], output: Cell<any>) => {
     return compound_propagator(inputs, [output], () => {
         for_each(inputs, (i: Cell<any>) => {
             return p_sync(i, output)
@@ -230,6 +257,13 @@ export const com_meters_feet_inches = (meters: Cell<number>, feet: Cell<number>,
         "length_converter"
     )
 }
+
+export function com_if(condition: Cell<boolean>, then: Cell<any>, otherwise: Cell<any>, output: Cell<any>){
+    return compound_propagator([condition, then, otherwise], [output], () => {
+       p_switch(condition, then, output);
+       p_switch(ce_not(condition), otherwise, output);
+    }, "if")
+}
             
 
 export function c_multiply(x: Cell<number>, y: Cell<number>, product: Cell<number>){
@@ -270,9 +304,6 @@ export function c_add(x: Cell<number>, y: Cell<number>, sum: Cell<number>){
 
 
 
-
-
-
 export const ce_add = make_ce_arithmetical(p_add);
 
 export const ce_subtract = make_ce_arithmetical(p_subtract);
@@ -283,6 +314,14 @@ export const ce_divide = make_ce_arithmetical(p_divide);
 
 export const ce_equal = make_ce_arithmetical(p_equal);
 
-export const ce_switch = make_ce_arithmetical(p_switcher);
+export const ce_switch = make_ce_arithmetical(p_switch);
 
 export const ce_less_than = make_ce_arithmetical(p_less_than);
+
+// @ts-ignore
+export const ce_not: (input: Cell<boolean>) => Cell<boolean> = make_ce_arithmetical(p_not);
+
+export const ce_and = make_ce_arithmetical(p_and);
+
+export const ce_or = make_ce_arithmetical(p_or);
+

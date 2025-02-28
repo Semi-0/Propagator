@@ -1,5 +1,5 @@
 import { construct_cell, type Cell } from "@/cell/Cell";
-import { p_add, p_divide, p_equal, p_less_than, p_multiply, p_subtract, p_switcher } from "./BuiltInProps";
+import { p_add, p_divide, p_equal, p_less_than, p_multiply, p_subtract, p_switch } from "./BuiltInProps";
 import type { Propagator } from "./Propagator";
 import { make_temp_cell } from "@/cell/Cell";
 
