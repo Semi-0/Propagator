@@ -7,16 +7,16 @@ import { configure_log_process_contradictions, find_premise_to_choose } from "..
 import { cell_strongest_base_value } from "../Cell/Cell";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import { observe_cell, tell } from "../Helper/UI";
+import { tell } from "../Helper/UI";
 import { set_merge } from "../Cell/Merge";
 import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { merge_value_sets, value_set_length } from "../DataTypes/ValueSet";
 import { subscribe } from "../Shared/Reactivity/Reactor";
 import { type PremiseMetaData } from "../DataTypes/Premises";
 import { mark_only_chosen_premise } from "../Propagator/Search";
+import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 
-
-let a: Cell, b: Cell, sum: Cell;
+let a: Cell<number>, b: Cell<number>, sum: Cell<number>;
 
 
 
@@ -26,6 +26,7 @@ describe("Premises and Hypotheticals", () => {
         set_handle_contradiction(handle_cell_contradiction)
         set_global_state(PublicStateCommand.CLEAN_UP);
         clear_all_tasks();
+        return_default_behavior();
         set_merge(merge_value_sets);
 
         // Set up cells

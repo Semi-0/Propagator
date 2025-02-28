@@ -1,23 +1,23 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_name, cell_strongest } from "../Cell/Cell";
-import { set_global_state, get_global_parent, parameterize_parent } from "../Shared/PublicState";
+import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
+import { set_global_state, get_global_parent} from "../Shared/PublicState";
 
-import { type Either, right, left } from "fp-ts/Either";
-import { force_load_arithmatic } from "../Cell/GenericArith";
+
+import { force_load_arithmatic } from "../AdvanceReactivity/Generics/GenericArith";
 import { PublicStateCommand } from "../Shared/PublicState";
-import { scheduled_reactor } from "../Shared/Reactivity/Scheduler";
-import { combine_latest, construct_reactor, filter, tap, type Reactor } from "../Shared/Reactivity/Reactor";
-import { pipe } from "fp-ts/function";
-import { map, subscribe } from "../Shared/Reactivity/Reactor";
-import type { StringLiteralType } from "typescript";
-import { register_predicate } from "generic-handler/Predicates";
-import { values } from "fp-ts/lib/Map";
-import { is_nothing } from "@/cell/CellValue";
-import { every } from "fp-ts/lib/Array";
-import { is_no_compute } from "../Helper/noCompute";
 
+import {combine_latest, type Reactor } from "../Shared/Reactivity/Reactor";
+
+import {  subscribe } from "../Shared/Reactivity/Reactor";
+
+import { register_predicate } from "generic-handler/Predicates";
+
+import { get_propagator_behavior } from "./PropagatorBehavior";
+import { pipe } from "fp-ts/lib/function";
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
+// TODO: memory leak?
 
 force_load_arithmatic();
 
@@ -26,7 +26,6 @@ export interface Propagator {
   getRelation: () => Primitive_Relation;
   getInputsID: () => string[];
   getOutputsID: () => string[];
-  getActivator: () => Reactor<any>;
   summarize: () => string;
 }
 
@@ -37,21 +36,20 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
 export function construct_propagator(name: string, 
                                  inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
-                                 activate: () => Reactor<any>): Propagator {
+                                 activate: () => void): Propagator {
   const relation = make_relation(name, get_global_parent()) 
 
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
 
-  const activator = activate();
+  activate();
 
   const propagator: Propagator = {
     get_name: () => name,
     getRelation: () => relation,
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
-    getActivator: () => activator,
     summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`
   };
   
@@ -70,37 +68,43 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 
             // this has different meaning than filtered out nothing from compound propagator
             return construct_propagator(name, inputs, [output], () => {
-                const activator = pipe(combine_latest(...inputs_reactors),
-                    map(values => {
-                        return f(...values);
-                    }),
-                    filter(values => !is_no_compute(values)))
+                const activator = get_propagator_behavior(combine_latest(...inputs_reactors), f)
 
                 subscribe((result: any) => {
                     add_cell_content(output, result);
                 })(activator)
 
-                return activator;
             })
         }
         else{
-           throw new Error("Primitive propagator must have at least two inputs");
+            throw new Error("Primitive propagator must have at least one input");
         }
     }
 }
 
+// just make_function layered procedure
+export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
+    // limitation: does not support rest or optional parameters
+    const rf = make_layered_procedure(name, f.length, f)
 
-export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => Reactor<any>, name: string): Propagator{
+    return primitive_propagator(rf, name)
+}
+
+
+
+export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator{
+
+    // TODO: handles parents relationship explicitly 
     const propagator = construct_propagator(name, inputs, outputs, () => {
-        return to_build();
+        to_build();
     });
     return propagator;
 }
 
 
-export function constraint_propagator(cells: Cell<any>[],  to_build: () => Reactor<any>, name: string): Propagator{
+export function constraint_propagator(cells: Cell<any>[],  to_build: () => void, name: string): Propagator{
     return construct_propagator(name, cells, cells, () => {
-        return to_build();
+        to_build();
     });
 }
 

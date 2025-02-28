@@ -13,9 +13,12 @@ import { describe } from "../../Helper/UI";
 import { mark_error } from "sando-layer/Specified/ErrorLayer"
 import SuperJSON from "superjson";
 
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import type { RemoteConnector } from "../../RemoteServer/RemoteConnector";
 import * as E from "fp-ts/lib/Either"
+import { match_args } from "generic-handler/Predicates";
+import { is_layered_object } from "../../Helper/Predicate";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 
@@ -24,10 +27,18 @@ export const parse_remote_data = construct_simple_generic_procedure("parse_socke
     return SuperJSON.parse(data.toString());
 })
 
+
+
 export const encode_remote_data = construct_simple_generic_procedure("encode_socket_data", 1, (data: any) => {
     return SuperJSON.stringify(data);
 })
 
+define_generic_procedure_handler(encode_remote_data, match_args(is_layered_object),
+    (data: any) => {
+       
+        return SuperJSON.stringify(data.describe_self());
+    }
+)
 
 export const closed = "closed"
 
@@ -36,7 +47,7 @@ export const closed = "closed"
 export async function remote_cell(name: string, remote_server: RemoteConnector){
     const relation = make_relation(name, get_global_parent())
     const strongest = scheduled_reactive_state(the_nothing);
-    const content = scheduled_reactive_state(the_contradiction);
+    const content = scheduled_reactive_state(the_nothing);
     const neighbors: Map<string, Propagator> = new Map();
 
     await remote_server.connect()
@@ -46,7 +57,7 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
             // onLeft
             (error: Error) => {
                 if (error.message === closed){
-                    strongest.next(mark_error(the_contradiction, error))
+                    strongest.next("closed")
                 }else{
                     strongest.next(mark_error(the_contradiction, error))
                 }
@@ -78,10 +89,10 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
             return `name: ${name}\nstrongest: ${describe(strongestValue)}\ncontent: ${describe(contentValue)}`;
         },
         addContent: (increment: any) => {
-            remote_server.send(increment)
+            remote_server.send(encode_remote_data(increment))
         },
         force_update: () => {
-            remote_server.send(strongest.get_value())
+            remote_server.send(encode_remote_data(strongest.get_value()))
         }, 
         observe_update: (observer: (cellValues: any) => void) => {
             strongest.subscribe(observer);

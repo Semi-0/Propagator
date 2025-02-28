@@ -24,6 +24,7 @@ describe("SocketIOCell", () => {
         data(socket, data) {
           // Parse incoming data and extract the actual object from SuperJSON format
           const parsedData = SuperJSON.parse(data.toString());
+          //@ts-ignore
           receivedData = parsedData.json || parsedData; // Extract from SuperJSON format if present
           console.log("Server received:", parsedData);
           

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "bun:test";
 import {  is_contradiction, is_nothing, the_contradiction, the_nothing } from "../Cell/CellValue";
-import { force_load_arithmatic } from "../Cell/GenericArith";
+import { force_load_arithmatic } from "../AdvanceReactivity/Generics/GenericArith";
 import { force_load_CellValue } from "../Cell/CellValue";
 import { add, divide, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic";
 

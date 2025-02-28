@@ -114,6 +114,7 @@ export function cell_constructor<A>(
         getNeighbors: () => neighbors,
         addContent: (increment: CellValue<A>) => {
           const result = cell_merge(content.get_value(), increment);
+         
 
           content.next(result);
         },
@@ -193,6 +194,11 @@ export function cell_id<A>(cell: Cell<A>){
   }
 
   return cell.getRelation().get_id();
+}
+
+
+export function cell_subscribe<A>(cell: Cell<A>, observer: (cellValues: A) => void){
+  cell.observe_update(observer);
 }
 
 export function cell_name<A>(cell: Cell<A>){
