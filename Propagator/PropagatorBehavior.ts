@@ -15,16 +15,17 @@ export function default_behavior(reactor: ReadOnlyReactor<any>, f: (...values: a
     )
 }
 
-var propagator_behavior = default_behavior;
+var primitive_propagator_behavior = default_behavior;
 
 export function return_default_behavior(){
-    propagator_behavior = default_behavior;
+    primitive_propagator_behavior = default_behavior;
 }
 
 export function install_behavior_advice(advice: any[]){
-    propagator_behavior = install_advice(advice, propagator_behavior);
+    primitive_propagator_behavior = install_advice(advice, primitive_propagator_behavior);
 }
 
-export function get_propagator_behavior(reactor: ReadOnlyReactor<any>, f: (...values: any[]) => any): Reactor<any>{
-    return propagator_behavior(reactor, f);
+export function get_primtive_propagator_behavior(): (reactor: ReadOnlyReactor<any>, f: (...values: any[]) => any) => Reactor<any>{
+    return (reactor: ReadOnlyReactor<any>, f: (...values: any[]) => any) =>
+         primitive_propagator_behavior(reactor, f);
 }

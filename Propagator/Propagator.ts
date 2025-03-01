@@ -12,7 +12,7 @@ import {  subscribe } from "../Shared/Reactivity/Reactor";
 
 import { register_predicate } from "generic-handler/Predicates";
 
-import { get_propagator_behavior } from "./PropagatorBehavior";
+import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
 import { pipe } from "fp-ts/lib/function";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 //TODO: a minimalistic revision which merge based info provided by data?
@@ -65,10 +65,13 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             const output = cells[last_index];
             const inputs = cells.slice(0, last_index);
             const inputs_reactors = inputs.map(cell => cell_strongest(cell));
+            // so every time propagator behavior would not change if outside state has changed
+            // this prevents changing behavior cause previous network generated unneeded behavior
+            const propagator_behavior = get_primtive_propagator_behavior()
 
             // this has different meaning than filtered out nothing from compound propagator
             return construct_propagator(name, inputs, [output], () => {
-                const activator = get_propagator_behavior(combine_latest(...inputs_reactors), f)
+                const activator = propagator_behavior(combine_latest(...inputs_reactors), f)
 
                 subscribe((result: any) => {
                     add_cell_content(output, result);

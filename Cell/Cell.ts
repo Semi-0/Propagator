@@ -79,6 +79,9 @@ export function cell_constructor<A>(
       const content: StatefulReactor<CellValue<A>> = scheduled_reactive_state(value);
       // @ts-ignore
       const strongest: StatefulReactor<CellValue<A>> = scheduled_reactive_state(value);
+      const handle_cell_contradiction = () => {
+        handle_contradiction(cell)
+      }
 
       pipe(
         content,
@@ -91,7 +94,7 @@ export function cell_constructor<A>(
 
       strongest.subscribe((v: any) => {
         if (general_contradiction(v)){
-          handle_contradiction(cell)
+          handle_cell_contradiction()
         }
       })
 
