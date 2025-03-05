@@ -64,11 +64,11 @@ define_generic_procedure_handler(fresher, match_args(is_timestamp_set, is_nothin
 });
 
 // 6. Compare layered objects by extracting their traced timestamp layers.
-define_generic_procedure_handler(fresher, all_match(has_timestamp_layer), (a: LayeredObject, b: LayeredObject) => {
+define_generic_procedure_handler(fresher, all_match(has_timestamp_layer), (a: LayeredObject<any>, b: LayeredObject<any>) => {
     return fresher(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b));
 });
 
-export const same_freshness = (a: LayeredObject, b: LayeredObject) => {
+export const same_freshness = (a: LayeredObject<any>, b: LayeredObject<any>) => {
     return !fresher(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b))
         && !fresher(get_traced_timestamp_layer(b), get_traced_timestamp_layer(a))
 }

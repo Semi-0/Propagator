@@ -11,7 +11,7 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 import type { traced_timestamp } from "./type";
 import { is_traced_timestamp } from "./Predicates";
-import { timestamp_layer } from "./TracedTimestampLayer"
+import { timestamp_layer } from "./tracedTimestampLayer"
 
 const get_new_relative_time = reference_store()
 

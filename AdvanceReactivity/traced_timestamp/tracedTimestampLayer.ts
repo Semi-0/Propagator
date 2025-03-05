@@ -7,12 +7,11 @@ import {  define_generic_procedure_handler } from "generic-handler/GenericProced
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import type { traced_timestamp } from "./type";
 import { deep_equal } from "../../Shared/PublicState";
-import { construct_traced_timestamp_set } from "./TracedTimeStampSet";
+import { construct_traced_timestamp_set, type TracedTimeStampSet } from "./TracedTimeStampSet";
 import { timestamp_equal } from "./TracedTimeStamp";
 import { generic_timestamp_set_merge } from "./TimeStampSetMerge";
 import { _is_fresh } from "./Predicates";
-
-export const timestamp_layer = make_annotation_layer("time_stamp", (get_name: () => string,
+export const timestamp_layer = make_annotation_layer<TracedTimeStampSet, any>("time_stamp", (get_name: () => string,
                                                                     has_value: (object: any) => boolean,
                                                                     get_value: (object: any) => any,
                                                                     is_equal: (a: any, b: any) => boolean) => {
@@ -56,21 +55,21 @@ export const get_traced_timestamp_layer = layer_accessor(timestamp_layer);
 
 define_generic_procedure_handler(deep_equal,
     all_match(has_timestamp_layer),
-    (a: LayeredObject, b: LayeredObject) => {
+    (a: LayeredObject<any>, b: LayeredObject<any>) => {
         const result = timestamp_equal(get_traced_timestamp_layer(a), get_traced_timestamp_layer(b))
             && deep_equal(get_base_value(a), get_base_value(b))
         return result
     }
 )    
 
-define_generic_procedure_handler(to_string, match_args(has_timestamp_layer), (a: LayeredObject) => {
+define_generic_procedure_handler(to_string, match_args(has_timestamp_layer), (a: LayeredObject<any>) => {
     return to_string(get_traced_timestamp_layer(a)) + " " 
     + "value: " + to_string(get_base_value(a)) + "\n"
 })
 
 
 define_generic_procedure_handler(_is_fresh, match_args(has_timestamp_layer),
-    (a: LayeredObject) => {
+    (a: LayeredObject<any>) => {
         return _is_fresh(get_traced_timestamp_layer(a));
     }
 )

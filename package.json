@@ -1,6 +1,6 @@
 {
   "name": "ppropogator",
-  "version": "0.3.19",
+  "version": "0.3.20",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
@@ -18,7 +18,7 @@
     "generic-handler": "0.3.13",
     "priority-queue": "^0.2.1",
     "rxjs": "^7.8.1",
-    "sando-layer": "0.1.6",
+    "sando-layer": "0.1.8",
     "superjson": "^2.2.2",
     "uuid": "^10.0.0"
   }

@@ -1,5 +1,5 @@
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import {  has_timestamp_layer } from "./TracedTimestampLayer";
+import {  has_timestamp_layer } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set, is_better_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -16,7 +16,7 @@ import { fresher } from "./Fresher/Fresher";
 import { same_source } from "./SameSource";
 import { timestamp_equal } from "./TracedTimeStamp";
 import { is_fresh } from "./Predicates";
-import { get_traced_timestamp_layer } from "./TracedTimestampLayer";
+import { get_traced_timestamp_layer } from "./tracedTimestampLayer";
 import { patch_traced_timestamps, smallest_timestamped_value } from "./Annotater";
 import { same_freshness } from "./Fresher/Extensions";
 import { install_behavior_advice } from "../../Propagator/PropagatorBehavior";
@@ -24,12 +24,12 @@ import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
-export function construct_timestamp_value_set(a: LayeredObject): BetterSet<LayeredObject> {
+export function construct_timestamp_value_set(a: LayeredObject<any>): BetterSet<LayeredObject<any>> {
     // this is an ideal value set which keeps all the value
-    return construct_better_set([a], (a: LayeredObject) => to_string(get_base_value(a)))
+    return construct_better_set([a], (a: LayeredObject<any>) => to_string(get_base_value(a)))
 }
 
-export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): BetterSet<LayeredObject> {
+export function to_timestamp_value_set(a: BetterSet<LayeredObject<any>> | LayeredObject<any>): BetterSet<LayeredObject<any>> {
     if (is_better_set(a)){
         // @ts-ignore
         return a;
@@ -40,17 +40,17 @@ export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObje
     }
 }
 
-function _is_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): boolean {
+function _is_timestamp_value_set(a: BetterSet<LayeredObject<any>> | LayeredObject<any>): boolean {
     // @ts-ignore
-    return is_better_set(a) && set_every(a, (a: LayeredObject) => has_timestamp_layer(a))
+    return is_better_set(a) && set_every(a, (a: LayeredObject<any>) => has_timestamp_layer(a))
 }
 
 export const is_timestamp_value_set = register_predicate("is_timestamp_value_set", _is_timestamp_value_set)
 
-export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
+export function freshest_value(a: BetterSet<LayeredObject<any>>): LayeredObject<any>{
    
     var freshest = smallest_timestamped_value
-    set_for_each((a: LayeredObject) => {
+    set_for_each((a: LayeredObject<any>) => {
      if (deep_equal(a, freshest)){
         return
        }
@@ -75,15 +75,15 @@ export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
     return freshest
 }
 
-export function _reactive_merge(content: LayeredObject, increment: LayeredObject): BetterSet<LayeredObject>{
+export function _reactive_merge(content: LayeredObject<any>, increment: LayeredObject<any>): BetterSet<LayeredObject<any>>{
     return set_add_item(to_timestamp_value_set(content), increment)
 }
 
 export const reactive_merge = construct_simple_generic_procedure("reactive_merge", 2, generic_merge) 
 
-define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject>) => {
+define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject<any>>) => {
 
-    return to_string(set_reduce(a, (a: string, b: LayeredObject) => {
+    return to_string(set_reduce(a, (a: string, b: LayeredObject<any>) => {
         return a + to_string(b)
     }, ""))
 })
@@ -92,7 +92,7 @@ define_handler(reactive_merge, match_args(is_timestamp_value_set, has_timestamp_
 
 define_handler(reactive_merge, match_args(has_timestamp_layer, has_timestamp_layer), _reactive_merge)
 
-export function _drop_staled_merge(content: LayeredObject, increment: LayeredObject){
+export function _drop_staled_merge(content: LayeredObject<any>, increment: LayeredObject<any>){
     const r = reactive_merge(content, increment)
     if (is_timestamp_value_set(r)){
         return set_filter(r, is_fresh)
@@ -119,7 +119,7 @@ export function trace_earliest_emerged_value(cell: Cell<any>){
     const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
     const contents = cell_content_value(cell)
 
-    const causes = set_filter(contents, (a: LayeredObject) => {
+    const causes = set_filter(contents, (a: LayeredObject<any>) => {
         return timestamp_equal(get_traced_timestamp_layer(a), contradiction_timestamp)
     })
 

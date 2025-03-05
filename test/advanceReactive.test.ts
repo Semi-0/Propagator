@@ -17,10 +17,10 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer";
+import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
 import { construct_better_set, set_equal, set_for_each, set_get_length, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/GenericPatch";
+import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 
 import { generic_merge, set_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -653,10 +653,10 @@ describe("Arithmetic Operators Tests", () => {
 describe("Reactive Conditional (com_if) Tests", () => {
   test("com_if should correctly route values based on the condition in reactive context", async () => {
     // Initialize cells
-    const condition = construct_cell("reactiveCondition");
-    const thenValue = construct_cell("reactiveThen");
-    const otherwiseValue = construct_cell("reactiveElse");
-    const output = construct_cell("reactiveOutput");
+    const condition = construct_cell("reactiveCondition") as Cell<boolean>;
+    const thenValue = construct_cell("reactiveThen") as Cell<number> ;
+    const otherwiseValue = construct_cell("reactiveElse") as Cell<number>;
+    const output = construct_cell("reactiveOutput") as Cell<number>;
     
     // Set up the if propagator
     com_if(condition, thenValue, otherwiseValue, output);
