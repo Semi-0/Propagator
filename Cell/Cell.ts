@@ -115,7 +115,6 @@ export function cell_constructor<A>(
         addContent: (increment: CellValue<A>) => {
           const result = cell_merge(content.get_value(), increment);
          
-
           content.next(result);
         },
         force_update: () => {
@@ -123,6 +122,7 @@ export function cell_constructor<A>(
         },
         addNeighbor: (propagator: Propagator) => {
           neighbors.set(propagator.getRelation().get_id(), propagator);
+          strongest.next(strongest.get_value());
         },
         summarize: () => {
           const name = relation.get_name();
