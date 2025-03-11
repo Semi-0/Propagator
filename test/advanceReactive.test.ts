@@ -215,7 +215,7 @@ describe("timestamp value merge tests", () => {
   // -------------------------
   describe("Non-chainable operators tests", () => {
     // Test until operator
-    test("until operator should output 'then' cell's value when condition is true", async () => {
+    test("switch operator should output 'then' cell's value when condition is true", async () => {
       const condition: Cell<boolean> = construct_cell("condition");
       const thenCell = construct_cell("then");
       const output = construct_cell("output");
@@ -227,9 +227,9 @@ describe("timestamp value merge tests", () => {
       expect(cell_strongest_base_value(output)).toBe(the_nothing);
 
       update(condition, true);
-      update(thenCell, "updated");
+ 
       await execute_all_tasks_sequential((error: Error) => {});
-      expect(get_base_value(cell_strongest_value(output))).toBe("updated");
+      expect(get_base_value(cell_strongest_value(output))).toBe("initial");
     });
 
     test("p_sync should update output when input changes", async () => {

@@ -42,7 +42,7 @@ export const ce_pipe = (arg_cell: Cell<any>, ...operators: ((...cells: Cell<any>
 
 export const link = (A: Cell<any>, B: Cell<any>, ...operators: ((...cells: Cell<any>[]) => void)[]) => {
     let current = A;
-    let middle = make_temp_cell();
+    var middle = make_temp_cell();
     let result = B;
 
     operators.forEach((operator, index) => {
@@ -51,6 +51,7 @@ export const link = (A: Cell<any>, B: Cell<any>, ...operators: ((...cells: Cell<
         } else {
             operator(...[current, middle]);
             current = middle;
+            middle = make_temp_cell();
         }
     });
 }
