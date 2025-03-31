@@ -1,7 +1,7 @@
 import { describe, it, expect } from "bun:test";
 import { ValueSet, construct_value_set, element_subsumes } from "../DataTypes/ValueSet";
 import { add } from "generic-handler/built_in_generics/generic_arithmetic";
-import { construct_better_set, set_get_length as get_length, merge_set, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, set_get_length as get_length, is_better_set, merge_set, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -83,8 +83,8 @@ describe("ValueSet", () => {
   it("element subsumes shoud when support is higher", () => {
     const element1 = support_by(1, "f");
     const element3 = support_by(element1, "g");
-
     const element2 = support_by(1, "g");
+
 
     expect(element_subsumes(element1, element3)).toBe(true);
     expect(element_subsumes(element2, element3)).toBe(true);

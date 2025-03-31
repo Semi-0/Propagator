@@ -188,26 +188,17 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
 }
 
 function save_nogood(nogood: BetterSet<string>){
-    console.log("nogoodadsa", nogood)
-    console.log(is_better_set(nogood))
+  
     // no good is the combination of premises that failed
     set_for_each((premise: string) => {        
-        console.log("premise", premise)
         const previous_nogoods = premises_nogoods(premise)
-        console.log("is_better_set", is_better_set(premise))
-        console.log("removed", set_remove_item(nogood, premise))
-        console.log("previous_nogoods", to_string(previous_nogoods))
-        console.log(is_better_set(previous_nogoods))
         const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
-        console.log("merged_nogoods", to_string(merged_nogoods))
         set_premises_nogoods(premise, merged_nogoods)
     }, nogood)
-    console.log("nogoooo")
+  
 }
 
 function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): any[] {
-    console.log("nogoodsaaa", to_string(nogoods))
-
     const count = (method: (elt: string) => boolean, set: BetterSet<string>)  => {
         return set_get_length(set_filter(set, method))
     }
