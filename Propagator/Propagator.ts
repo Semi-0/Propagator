@@ -33,10 +33,10 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
     return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator;
 })
 
-export function construct_propagator(name: string, 
-                                 inputs: Cell<any>[], 
+export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
-                                 activate: () => void): Propagator {
+                                 activate: () => void,
+                                 name: string): Propagator {
   const relation = make_relation(name, get_global_parent()) 
 
 
@@ -70,14 +70,13 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             const propagator_behavior = get_primtive_propagator_behavior()
 
             // this has different meaning than filtered out nothing from compound propagator
-            return construct_propagator(name, inputs, [output], () => {
+            return construct_propagator(inputs, [output], () => {
                 const activator = propagator_behavior(combine_latest(...inputs_reactors), f)
 
                 subscribe((result: any) => {
                     add_cell_content(output, result);
                 })(activator)
-
-            })
+            }, name)
         }
         else{
             throw new Error("Primitive propagator must have at least one input");
@@ -98,17 +97,17 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator{
 
     // TODO: handles parents relationship explicitly 
-    const propagator = construct_propagator(name, inputs, outputs, () => {
+    const propagator = construct_propagator(inputs, outputs, () => {
         to_build();
-    });
+    }, name);
     return propagator;
 }
 
 
 export function constraint_propagator(cells: Cell<any>[],  to_build: () => void, name: string): Propagator{
-    return construct_propagator(name, cells, cells, () => {
+    return construct_propagator(cells, cells, () => {
         to_build();
-    });
+    }, name);
 }
 
 

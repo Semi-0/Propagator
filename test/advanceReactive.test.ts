@@ -31,7 +31,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip } from "../Propagator/BuiltInProps";
+import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -1076,5 +1076,128 @@ describe("Complex Propagator Integration Tests", () => {
       console.log("Received new future value:", newFvValue);
       expect(typeof newFvValue).toBe('number');
     }
+  });
+});
+
+describe("Reactive c_if Conditional Tests", () => {
+  test("c_if_a should correctly route values based on a boolean condition", async () => {
+    // Initialize cells
+    const condition = construct_cell("c_ifCondition") as Cell<boolean>;
+    const thenValue = construct_cell("c_ifThen") as Cell<number>;
+    const otherwiseValue = construct_cell("c_ifElse") as Cell<number>;
+    const output = construct_cell("c_ifOutput") as Cell<number>;
+    
+    // Set up the c_if propagator
+    c_if_a(condition, thenValue, otherwiseValue, output);
+    
+    // Set initial values
+    update(thenValue, 100);
+    update(otherwiseValue, 200);
+    
+    // Test when condition is true
+    update(condition, true);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(100);
+    
+    // Test when condition changes to false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(200);
+    
+    // Test when 'then' value changes while condition is true
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, true);
+    await execute_all_tasks_sequential((error: Error) => {});
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(thenValue, 150);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(150);
+    
+    // Test when 'else' value changes while condition is false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    await execute_all_tasks_sequential((error: Error) => {});
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(otherwiseValue, 250);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(250);
+    
+    // Test that changing 'then' value doesn't affect output when condition is false
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(thenValue, 300);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(250);
+    
+    // Test that changing 'else' value doesn't affect output when condition is true
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, true);
+    await execute_all_tasks_sequential((error: Error) => {});
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(otherwiseValue, 350);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(300);
+    
+    // Test response to rapidly changing conditions
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(350);
+    
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, true);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(300);
+  });
+  
+  test("c_if_a should handle different data types and update reactively", async () => {
+    // Initialize cells with string values
+    const condition = construct_cell("c_ifStringCondition") as Cell<boolean>;
+    const thenValue = construct_cell("c_ifStringThen") as Cell<string>;
+    const otherwiseValue = construct_cell("c_ifStringElse") as Cell<string>;
+    const output = construct_cell("c_ifStringOutput") as Cell<string>;
+    
+    // Set up the c_if propagator
+    c_if_a(condition, thenValue, otherwiseValue, output);
+    
+    // Set initial values
+    update(thenValue, "Condition is true");
+    update(otherwiseValue, "Condition is false");
+    update(condition, true);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe("Condition is true");
+    
+    // Change condition and verify output updates
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    update(condition, false);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe("Condition is false");
+    
+    // Test with undefined condition (should be treated as false)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    // @ts-ignore - Intentionally testing with undefined
+    update(condition, undefined);
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe("Condition is false");
+    
+    // Test with complex objects
+    const objectCondition = construct_cell("c_ifObjectCondition") as Cell<boolean>;
+    const objectThen = construct_cell("c_ifObjectThen") as Cell<{id: number, name: string}>;
+    const objectElse = construct_cell("c_ifObjectElse") as Cell<{id: number, name: string}>;
+    const objectOutput = construct_cell("c_ifObjectOutput") as Cell<{id: number, name: string}>;
+    
+    c_if_a(objectCondition, objectThen, objectElse, objectOutput);
+    
+    const thenObject = {id: 1, name: "Then Object"};
+    const elseObject = {id: 2, name: "Else Object"};
+    
+    update(objectThen, thenObject);
+    update(objectElse, elseObject);
+    update(objectCondition, true);
+    
+    await execute_all_tasks_sequential((error: Error) => {});
+    const outputObject = get_base_value(cell_strongest_value(objectOutput));
+    expect(outputObject).toEqual(thenObject);
   });
 });

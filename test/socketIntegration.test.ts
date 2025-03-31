@@ -78,7 +78,7 @@ describe("SocketIOCell Propagator Integration", () => {
     const localCell = construct_cell("local-cell");
     const resultCell = construct_cell("result-cell");
 
-    const unwrap = (input: Cell<LayeredObject>, output: Cell<any>) =>  construct_propagator("unwrap_time", [input], [output], 
+    const unwrap = (input: Cell<LayeredObject>, output: Cell<any>) =>  construct_propagator( [input], [output], 
       () => {
         // @ts-ignore
         pipe(cell_strongest(input),
@@ -89,10 +89,10 @@ describe("SocketIOCell Propagator Integration", () => {
             output.addContent(a)
           })
         )
-      }
-    )
+      }, "unwrap_time")
+    
 
-    const wrap = (input: Cell<any>, output: Cell<LayeredObject>) => construct_propagator("wrap_time", [input], [output],
+    const wrap = (input: Cell<any>, output: Cell<LayeredObject>) => construct_propagator([input], [output],
       () => {
 
         pipe(cell_strongest(input),
@@ -106,9 +106,9 @@ describe("SocketIOCell Propagator Integration", () => {
           subscribe((a: LayeredObject) => {
             output.addContent(a)
           })
-      )
-      }
-    )
+        )
+      }, "wrap_time")
+    
 
     const timed = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [a, b], () => {
       link(a, b, unwrap, wrap)

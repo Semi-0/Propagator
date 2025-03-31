@@ -89,6 +89,8 @@ export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;
 })
 
+
+
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;
     return function_to_primitive_propagator("reduce", (inputs: any) => {
@@ -147,6 +149,21 @@ export const p_map_a = (f: (a: any) => any) => {
 export const p_map_b = function_to_primitive_propagator("map", (input: any, f: (a: any) => any) => {
     return f(input);
 }) 
+
+export const c_if_a = (condition: Cell<boolean>, then: Cell<any>, otherwise: Cell<any>, output: Cell<any>) => {
+    return compound_propagator([condition, then, otherwise], [output], () => {
+        p_switch(condition, then, output);
+        p_switch(ce_not(condition), otherwise, output);
+    }, "if")
+}
+
+
+export const c_if_b = (condition: Cell<boolean>, input: Cell<any>, then_out: Cell<any>, otherwise_out: Cell<any>) => {
+    return compound_propagator([condition, input, then_out, otherwise_out], [input], () => {
+        p_switch(condition, then_out, input);
+        p_switch(ce_not(condition), otherwise_out, input);
+    }, "if")
+}
 
 export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
     const queues: any[][] = to_zip.map(() => []);

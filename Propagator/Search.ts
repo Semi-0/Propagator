@@ -69,7 +69,7 @@ export function binary_amb(cell: Cell<boolean>): Propagator{
         }
     }
     // when amb propagato is activated?
-    const self = construct_propagator("binary_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "binary_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -133,7 +133,7 @@ export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
         }
 
 
-    const self = construct_propagator("p_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "p_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -162,8 +162,12 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    }
 
    set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
+   console.log("nogoodsa", to_string(nogoods))
+   console.log(is_better_set(nogoods))
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
+   console.log("nogoodsb", to_string(nogoods))
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
+ 
 
    if (log_process_contradictions){
         console.log("complaining cell", complaining_cell.summarize())
@@ -184,15 +188,25 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
 }
 
 function save_nogood(nogood: BetterSet<string>){
+    console.log("nogoodadsa", nogood)
+    console.log(is_better_set(nogood))
     // no good is the combination of premises that failed
-    set_for_each((premise: string) => {        const previous_nogoods = premises_nogoods(premise)
+    set_for_each((premise: string) => {        
+        console.log("premise", premise)
+        const previous_nogoods = premises_nogoods(premise)
+        console.log("is_better_set", is_better_set(premise))
+        console.log("removed", set_remove_item(nogood, premise))
+        console.log("previous_nogoods", to_string(previous_nogoods))
+        console.log(is_better_set(previous_nogoods))
         const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
-  
+        console.log("merged_nogoods", to_string(merged_nogoods))
         set_premises_nogoods(premise, merged_nogoods)
     }, nogood)
+    console.log("nogoooo")
 }
 
 function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): any[] {
+    console.log("nogoodsaaa", to_string(nogoods))
 
     const count = (method: (elt: string) => boolean, set: BetterSet<string>)  => {
         return set_get_length(set_filter(set, method))
@@ -204,7 +218,6 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
         return arr
     }
 
-    // console.log("nogoods", to_string(nogoods))
 
     return pipe(
         nogoods,

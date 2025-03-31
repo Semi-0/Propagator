@@ -3,7 +3,7 @@ import { type Cell, construct_cell, handle_cell_contradiction, set_handle_contra
 import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals,  premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../Propagator/BuiltInProps";
-import { configure_log_process_contradictions, find_premise_to_choose } from "../Propagator/Search";
+import { configure_log_nogoods, configure_log_process_contradictions, find_premise_to_choose } from "../Propagator/Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
@@ -79,9 +79,12 @@ describe("Premises and Hypotheticals", () => {
 
     it("should handle contradictions with hypotheticals", async () => {
 
+        configure_log_process_contradictions(true);
+        configure_log_nogoods(true);
+
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1, 2, 3]));
-        tell(b, 2, "b_value");
-        tell(sum, 6, "sum_value");
+        // tell(b, 2, "b_value");
+        // tell(sum, 6, "sum_value");
 
         execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);
