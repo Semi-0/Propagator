@@ -296,7 +296,7 @@ describe("test propagator", () => {
 
     test("switch", async () => {
         set_merge(merge_value_sets)
-        set_trace_merge(true)
+   
 
 // TODO: RECURSION
 

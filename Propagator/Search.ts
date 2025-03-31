@@ -162,10 +162,7 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    }
 
    set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
-   console.log("nogoodsa", to_string(nogoods))
-   console.log(is_better_set(nogoods))
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
-   console.log("nogoodsb", to_string(nogoods))
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
  
 

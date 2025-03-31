@@ -137,7 +137,7 @@ describe("miniReactor Combinators", () => {
             })
             // console.log(combinedValue);
             notify(combinedValue);
-        })(A, B);
+        }, [0, 0])(A, B);
 
         const observer = jest.fn();
         subscribe(observer)(combined);

@@ -79,8 +79,7 @@ describe("Premises and Hypotheticals", () => {
 
     it("should handle contradictions with hypotheticals", async () => {
 
-        configure_log_process_contradictions(true);
-        configure_log_nogoods(true);
+
 
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1, 2, 3]));
         // tell(b, 2, "b_value");

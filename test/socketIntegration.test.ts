@@ -44,6 +44,7 @@ describe("SocketIOCell Propagator Integration", () => {
           // Parse incoming data and extract the actual object from SuperJSON format
           try {
             const parsedData = SuperJSON.parse(data.toString());
+            //@ts-ignore
             receivedData = parsedData.json || parsedData;
             console.log("Server received:", parsedData);
             socket.write(SuperJSON.stringify(20));
@@ -78,11 +79,11 @@ describe("SocketIOCell Propagator Integration", () => {
     const localCell = construct_cell("local-cell");
     const resultCell = construct_cell("result-cell");
 
-    const unwrap = (input: Cell<LayeredObject>, output: Cell<any>) =>  construct_propagator( [input], [output], 
+    const unwrap = (input: Cell<LayeredObject<number>>, output: Cell<number>) =>  construct_propagator( [input], [output], 
       () => {
         // @ts-ignore
         pipe(cell_strongest(input),
-          map((a: LayeredObject) => {
+          map((a: LayeredObject<number>) => {
             return get_base_value(a)
           }),
           subscribe((a: number) => {
@@ -92,9 +93,9 @@ describe("SocketIOCell Propagator Integration", () => {
       }, "unwrap_time")
     
 
-    const wrap = (input: Cell<any>, output: Cell<LayeredObject>) => construct_propagator([input], [output],
+    const wrap = (input: Cell<number>, output: Cell<LayeredObject<number>>) => construct_propagator([input], [output],
       () => {
-
+        // @ts-ignore
         pipe(cell_strongest(input),
           // @ts-ignore
           map((a: number) => {
@@ -103,7 +104,7 @@ describe("SocketIOCell Propagator Integration", () => {
               (a: number) => annotate_identified_timestamp(cell_id(input))(a, Date.now())
             )
           }),
-          subscribe((a: LayeredObject) => {
+          subscribe((a: LayeredObject<number>) => {
             output.addContent(a)
           })
         )

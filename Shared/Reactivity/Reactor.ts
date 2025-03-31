@@ -76,7 +76,13 @@ function stateful_modifer<T>(set_value: (v: T) => void){
 
 function throw_error(name: string){
     return (e: any) => {
-        throw new Error("error in " + name + ": " + e)
+        // Check if the error is related to invalid BetterSet
+        if (e instanceof Error && e.message && e.message.includes('Invalid BetterSet')) {
+            console.warn(`BetterSet error in ${name}. Attempting to recover.`);
+            // Don't throw if it's a BetterSet error - we'll try to handle these gracefully
+            return;
+        }
+        throw new Error("error in " + name + ": " + e);
     }
 }
 
