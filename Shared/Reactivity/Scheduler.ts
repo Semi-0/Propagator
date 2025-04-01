@@ -30,6 +30,7 @@ var trace_scheduler = false;
 var trace_new_scheduled_task = false; 
 var trace_executed_task = false;  
 var trace_scheduler_state_updates = false; 
+var no_record_executed_tasks = false;
 
 export function configure_trace_scheduler(trace: boolean){
     trace_scheduler = trace;
@@ -105,7 +106,11 @@ export function simple_scheduler(): Scheduler {
                 }
 
                 task();
-                executed.set(taskId, task);
+
+                
+                if (!no_record_executed_tasks){
+                    executed.set(taskId, task);
+                }
             } catch (e) {
                 error_handler(e as Error);
             }
