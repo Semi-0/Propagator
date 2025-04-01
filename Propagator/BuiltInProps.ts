@@ -43,47 +43,19 @@ export const p_switch = function_to_primitive_propagator("switch", (condition: b
 })
 
 
-export const p_equal = primitive_propagator((x: any, y: any) => {
-    return equal(x, y)
-}, "equal")
+export const p_equal = primitive_propagator(equal, "equal")
 
-export const p_not = primitive_propagator((input: any) => {
-    return not(input);
-}, "not");
+export const p_not = primitive_propagator(not, "not");
 
-export const p_less_than = primitive_propagator((x: any, y: any) => {
-    return less_than(x, y);
-}, "less_than");
+export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator((...inputs: any[]) => {
-    // Check if there are inputs
-    if (inputs.length === 0) {
-        return 0; // Return 0 for empty input, or consider throwing an error
-    }
-    return inputs.reduce((acc, curr) => add(acc, curr));
-}, "+");
+export const p_add = primitive_propagator(add, "+");
 
-export const p_subtract = primitive_propagator((...inputs: any[]) => {
-    // Check if there are inputs
-    if (inputs.length === 0) {
-        return 0; // Return 0 for empty input, or consider throwing an error
-    }
-    if (inputs.length === 1) {
-        return inputs[0]; // Return the single input if only one is provided
-    }
-    // Subtract all subsequent inputs from the first input
-    return inputs.slice(1).reduce((acc, curr) => subtract(acc, curr), inputs[0]);
-}, "-");
+export const p_subtract = primitive_propagator(subtract, "-");
 
-export const p_multiply =  primitive_propagator((...inputs: any[]) => {
-    const result = inputs.slice(1).reduce((acc, curr) => multiply(acc, curr), inputs[0]);
-   
-    return result;
-}, "*");
+export const p_multiply =  primitive_propagator(multiply, "*");
 
-export const p_divide = primitive_propagator((...inputs: any[]) => {
-    return inputs.slice(1).reduce((acc, curr) => divide(acc, curr), inputs[0]);
-}, "/"); 
+export const p_divide = primitive_propagator(divide, "/"); 
 
 export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;

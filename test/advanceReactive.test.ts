@@ -8,14 +8,15 @@ import {
   cell_strongest_base_value,
   cell_content_value,
   set_handle_contradiction,
-  cell_subscribe
+  cell_subscribe,
+  cell_content
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
-import { compound_propagator } from "../Propagator/Propagator";
+import { compound_propagator, primitive_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
@@ -36,13 +37,15 @@ import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
 import { com_if } from "../Propagator/BuiltInProps";
+import { trace } from "console";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
 
   install_behavior_advice(reactive_propagator_behavior)
-  // set_merge(reactive_merge)
-  set_merge(reactive_fresh_merge)
+  set_handle_contradiction(trace_earliest_emerged_value)
+  set_merge(reactive_merge)
+  // set_merge(reactive_fresh_merge)
   // set_handle_contradiction(trace_earliest_emerged_value)
 });
 describe("Advance Reactive Tests", () => {
@@ -277,6 +280,36 @@ describe("timestamp value merge tests", () => {
       expect(get_base_value(cell_strongest_value(output))).toBe("third");
     });
   });
+
+// this is evil, we should not be able to do this
+  // describe("incrementation tests", () => {
+  //   test("incrementation should increment the value", async () => {
+
+  //     const original = construct_cell("original");
+  //     const pulse = construct_cell("pulse");
+  //     const synced = construct_cell("synced");
+
+  //     const increment = primitive_propagator((pulse: any, o: number) => o + 1, "increment");
+  //     update(original, 0);
+
+  //     p_sync(pulse, synced);
+
+  //     increment(pulse, synced, original);
+      
+  //     update(pulse, 1);
+  //     await execute_all_tasks_sequential((error: Error) => {console.log(error)});
+  //     console.log(cell_content_value(original))
+  //     expect(get_base_value(cell_strongest_value(original))).toBe(1);
+
+  //     update(pulse, 2);
+  //     await execute_all_tasks_sequential((error: Error) => {});
+  //     expect(get_base_value(cell_strongest_value(original))).toBe(2);
+
+  //     update(pulse, 3);
+  //     await execute_all_tasks_sequential((error: Error) => {});
+  //     expect(get_base_value(cell_strongest_value(original))).toBe(3);
+  //   });
+  // })
 
   // -------------------------
   // Composable, chainable operators using compose_r and pipe_r.
@@ -531,20 +564,6 @@ describe("Arithmetic Operators Tests", () => {
     expect(get_base_value(cell_strongest_value(output))).toBe(21);
   });
 
-  test("r_multiply should correctly multiply the values of three input cells", async () => {
-    const cell1 = construct_cell("rMultiply3Input1");
-    const cell2 = construct_cell("rMultiply3Input2");
-    const cell3 = construct_cell("rMultiply3Input3");
-    const output = construct_cell("rMultiply3Output");
-    p_multiply(cell1, cell2, cell3, output);
-
-    update(cell1, 2);
-    update(cell2, 3);
-    update(cell3, 4);
-    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
-    expect(get_base_value(cell_strongest_value(output))).toBe(24);
-  });
-
   test("r_divide should correctly divide the first cell by the second", async () => {
     const cell1 = construct_cell("rDivideInput1");
     const cell2 = construct_cell("rDivideInput2");
@@ -557,19 +576,6 @@ describe("Arithmetic Operators Tests", () => {
     expect(get_base_value(cell_strongest_value(output))).toBe(25);
   });
 
-  test("r_divide should correctly handle multiple divisions when more cells are supplied", async () => {
-    const cell1 = construct_cell("rDivideInputA");
-    const cell2 = construct_cell("rDivideInputB");
-    const cell3 = construct_cell("rDivideInputC");
-    const output = construct_cell("rDivideOutputMultiple");
-    p_divide(cell1, cell2, cell3, output);
-
-    update(cell1, 120);  // 120 / 2 = 60, then 60 / 3 = 20
-    update(cell2, 2);
-    update(cell3, 3);
-    await execute_all_tasks_sequential((error: Error) => { if (error) throw error; });
-    expect(get_base_value(cell_strongest_value(output))).toBe(20);
-  });
 });
 
 // describe("Proportional Sum Tests", () => {
@@ -1200,4 +1206,5 @@ describe("Reactive c_if Conditional Tests", () => {
     const outputObject = get_base_value(cell_strongest_value(objectOutput));
     expect(outputObject).toEqual(thenObject);
   });
+
 });

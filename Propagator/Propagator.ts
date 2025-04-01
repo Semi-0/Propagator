@@ -58,30 +58,34 @@ export function construct_propagator(inputs: Cell<any>[],
   return propagator;
 }
 
-export function primitive_propagator(f: (...inputs: any[]) => any, name: string){
+export function primitive_propagator(f: (...inputs: any[]) => any, name: string) {
     return (...cells: Cell<any>[]): Propagator => {
-        if (cells.length > 1){
-            const last_index = cells.length - 1;
-            const output = cells[last_index];
-            const inputs = cells.slice(0, last_index);
-            const inputs_reactors = inputs.map(cell => cell_strongest(cell));
-            // so every time propagator behavior would not change if outside state has changed
-            // this prevents changing behavior cause previous network generated unneeded behavior
-            const propagator_behavior = get_primtive_propagator_behavior()
-
-            // this has different meaning than filtered out nothing from compound propagator
-            return construct_propagator(inputs, [output], () => {
-                const activator = propagator_behavior(combine_latest(...inputs_reactors), f)
-
-                subscribe((result: any) => {
-                    add_cell_content(output, result);
-                })(activator)
-            }, name)
-        }
-        else{
+        if (cells.length === 0) {
             throw new Error("Primitive propagator must have at least one input");
         }
-    }
+
+        const propagator_behavior = get_primtive_propagator_behavior();
+        const [inputs, output] = cells.length > 1 
+            ? [cells.slice(0, -1), cells[cells.length - 1]]
+            : [cells, null];
+
+        const create_activator = () => {
+            const reactors = inputs.map(cell_strongest);
+            const activator = propagator_behavior(combine_latest(...reactors), f);
+            
+            if (output) {
+                subscribe((result: any) => add_cell_content(output, result))(activator);
+            }
+            return activator;
+        };
+
+        return construct_propagator(
+            inputs,
+            output ? [output] : [],
+            create_activator,
+            name
+        );
+    };
 }
 
 // just make_function layered procedure
