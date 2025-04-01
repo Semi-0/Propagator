@@ -1,6 +1,6 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
-import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell } from "../Cell/Cell";
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, constant_cell, construct_cell } from "../Cell/Cell";
 import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import { is_contradiction, the_nothing } from "../Cell/CellValue";
@@ -20,6 +20,7 @@ import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 import { com_if } from "../Propagator/BuiltInProps";
 import { inspect } from "util";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
+import { primitive_propagator } from "../Propagator/Propagator";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -199,6 +200,37 @@ describe("test propagator", () => {
 
         expect(cell_strongest_base_value(product)).toBe(6)
 
+    })
+
+
+    test('primitive propagator works fine with incrementation_set', async () => {
+        const obj = {
+            x: 0
+        }
+        const x = constant_cell(() => obj, "x")
+        const pulse = construct_cell("pulse");
+        const product = construct_cell("product");
+
+        const increment = (pulse: boolean) => {
+            obj.x = obj.x + 1
+        }
+        const increment_propagator = primitive_propagator(increment, "increment")
+
+        increment_propagator(pulse)
+
+        tell(pulse, true, "fst")
+        
+        execute_all_tasks_sequential((error: Error) => {
+        });
+
+        expect(obj.x).toBe(1)
+
+        tell(pulse, false, "snd") 
+
+        execute_all_tasks_sequential((error: Error) => {
+        });
+
+        expect(obj.x).toBe(2)
     })
 
 
