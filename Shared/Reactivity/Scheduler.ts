@@ -32,6 +32,10 @@ var trace_executed_task = false;
 var trace_scheduler_state_updates = false; 
 var no_record_executed_tasks = false;
 
+export function configure_scheduler_no_record(no_record: boolean){
+    no_record_executed_tasks = no_record;
+}
+
 export function configure_trace_scheduler(trace: boolean){
     trace_scheduler = trace;
     trace_new_scheduled_task = trace;
