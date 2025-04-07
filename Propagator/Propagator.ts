@@ -3,7 +3,6 @@ import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Ce
 import { set_global_state, get_global_parent} from "../Shared/PublicState";
 
 
-import { force_load_arithmatic } from "../AdvanceReactivity/Generics/GenericArith";
 import { PublicStateCommand } from "../Shared/PublicState";
 
 import {combine_latest, type Reactor } from "../Shared/Reactivity/Reactor";
@@ -19,7 +18,6 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
 
-force_load_arithmatic();
 
 export interface Propagator {
   get_name: () => string;
