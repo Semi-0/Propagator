@@ -32,28 +32,15 @@ export const define_contradiction_arithmetic_handler = (op: any) => define_gener
     }
 )
 
-
-export const define_layered_procedure_handler = (name: string, arity: number, op: any) => {
-    const layered_op = make_layered_procedure(name, arity, op)
-    define_generic_procedure_handler(op,
-        all_match(is_layered_object),
-        (a: any, b: any) => {
-            return layered_op(a, b)
-        }
-    )
-}
-
 export const extend_propagator_arithmetic_pack = (name: string, arity: number, op: (a: any, b: any) => any) => {
    define_nothing_arithmetic_handler(op)
    define_contradiction_arithmetic_handler(op)
-   define_layered_procedure_handler(name, arity, op)
-   return op
+   return make_layered_procedure(name, arity, op)
 }
 
 export const transform_to_legit_propagator_function = (name: string, arity: number, op: any) => {
     const generic_op = construct_simple_generic_procedure(name, arity, op)
-    extend_propagator_arithmetic_pack(name, arity, generic_op)
-    return generic_op
+    return extend_propagator_arithmetic_pack(name, arity, generic_op)
 }
 
 export const add = extend_propagator_arithmetic_pack("add", 2, _add)

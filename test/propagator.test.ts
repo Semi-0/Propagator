@@ -337,6 +337,11 @@ describe("test propagator", () => {
         const c = construct_cell("c");
 
         const result  = ce_switch(c, ce_add(a, b))
+        inspect_content(c)
+        inspect_strongest(c)
+
+        inspect_content(result)
+        inspect_strongest(result)
 
         tell(a, 1, "a")
         tell(b, 2, "b")
@@ -353,6 +358,8 @@ describe("test propagator", () => {
         tell(b, 2, "g")
 
         kick_out("c")
+        kick_out("b")
+        kick_out("a")
         execute_all_tasks_sequential((e) => {})
 
         // @ts-ignore
@@ -646,32 +653,6 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
     expect(y.summarize()).toBeDefined();
     expect(z.summarize()).toBeDefined();
 });
-
-
-// test("tail recursion", async () => {
-
-//     const a = construct_cell("a");
-//     const b = construct_cell("b");
-//     const target = construct_cell("target")
-//     const sum = f_add(a, b)
- 
-    
-
-//     p_switcher(f_less_than(sum, target),  f_add(a, b), a)
-
-
-//     tell(target, 10, "target")
-
-//     tell(a, 1, "a")
-//     tell(b, 2, "b")
-
-//     execute_all_tasks_sequential((e) => {})
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-//     //@ts-ignore
-//     expect(cell_strongest_base_value(a)).toBe(11)
-
-
-// })
 
 test('compound propagator com_if works correctly', async () => {
     // Initialize cells

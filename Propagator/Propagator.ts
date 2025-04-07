@@ -14,6 +14,7 @@ import { register_predicate } from "generic-handler/Predicates";
 import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
 import { pipe } from "fp-ts/lib/function";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { transform_to_legit_propagator_function } from "../AdvanceReactivity/Generics/GenericArith";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
@@ -89,7 +90,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
 // just make_function layered procedure
 export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
     // limitation: does not support rest or optional parameters
-    const rf = make_layered_procedure(name, f.length, f)
+    const rf = transform_to_legit_propagator_function(name, f.length, f)
 
     return primitive_propagator(rf, name)
 }
