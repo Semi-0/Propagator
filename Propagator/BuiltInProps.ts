@@ -156,11 +156,11 @@ export const p_between = (input: Cell<number>, min: Cell<number>, max: Cell<numb
 export const p_range = (input: Cell<number>, min: Cell<number>, max: Cell<number>, output: Cell<number>) => {
     return compound_propagator([input, min, max], [output], () => {
 
-        const less_than_or_equal: Cell<boolean> = ce_less_than(input, min)
-        const greater_than_or_equal: Cell<boolean> = ce_greater_than(input, max)
+        const less_than: Cell<boolean> = ce_less_than(input, min)
+        const greater_than: Cell<boolean> = ce_greater_than(input, max)
         const in_range: Cell<boolean> = ce_between(input, min, max)
-        p_switch(less_than_or_equal, min, output)
-        p_switch(greater_than_or_equal, max, output)
+        p_switch(less_than, min, output)
+        p_switch(greater_than, max, output)
         p_switch(in_range, input, output)
     }, "range")
 }
@@ -168,13 +168,13 @@ export const p_range = (input: Cell<number>, min: Cell<number>, max: Cell<number
 
 export const c_range = (input: Cell<number>, min: Cell<number>, max: Cell<number>) => {
     return compound_propagator([input, min, max], [input], () => {
-        const less_than_or_equal: Cell<boolean> = ce_less_than(input, min)
-        const greater_than_or_equal: Cell<boolean> = ce_greater_than(input, max)
+        const less_than: Cell<boolean> = ce_less_than(input, min)
+        const greater_than: Cell<boolean> = ce_greater_than(input, max)
         
         const temp: Cell<number> = construct_cell("temp")
         
-        p_switch(less_than_or_equal, min, temp)
-        p_switch(greater_than_or_equal, max, temp)
+        p_switch(less_than, min, temp)
+        p_switch(greater_than, max, temp)
 
         p_feedback(temp, input)
     }, "range")

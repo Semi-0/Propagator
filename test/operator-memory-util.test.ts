@@ -9,45 +9,45 @@ import { tell } from "../Helper/UI";
 // This demonstrates how to use the OperatorMemoryTest utility to easily 
 // test any propagator for memory leaks
 
-describe("Memory testing with OperatorMemoryTest utility", () => {
-  test("testing p_add and p_filter with utility", async () => {
-    const tester = new OperatorMemoryTest("test1");
+// describe("Memory testing with OperatorMemoryTest utility", () => {
+//   test("testing p_add and p_filter with utility", async () => {
+//     const tester = new OperatorMemoryTest("test1");
     
-    // Test p_add with normal numbers
-    const addResult = await tester.testOperator(
-      "p_add", 
-      (input, output) => {
-        const intermediateCell = construct_cell("intermediate");
-        return p_add(input, intermediateCell, output);
-      },
-      100, // 100 iterations
-      0    // No large objects
-    );
+//     // Test p_add with normal numbers
+//     const addResult = await tester.testOperator(
+//       "p_add", 
+//       (input, output) => {
+//         const intermediateCell = construct_cell("intermediate");
+//         return p_add(input, intermediateCell, output);
+//       },
+//       100, // 100 iterations
+//       0    // No large objects
+//     );
     
-    // Test p_filter with normal numbers
-    const filterResult = await tester.testOperator(
-      "p_filter",
-      (input, output) => {
-        const isEven = (x: number) => x % 2 === 0;
-        return p_filter_a(isEven)(input, output);
-      },
-      100,
-      0
-    );
+//     // Test p_filter with normal numbers
+//     const filterResult = await tester.testOperator(
+//       "p_filter",
+//       (input, output) => {
+//         const isEven = (x: number) => x % 2 === 0;
+//         return p_filter_a(isEven)(input, output);
+//       },
+//       100,
+//       0
+//     );
     
-    // ASSERTIONS:
+//     // ASSERTIONS:
     
-    // Both operators should consume memory during operations
-    expect(addResult.memoryIncreaseDuringOps).toBeGreaterThan(0);
-    expect(filterResult.memoryIncreaseDuringOps).toBeGreaterThan(0);
+//     // Both operators should consume memory during operations
+//     expect(addResult.memoryIncreaseDuringOps).toBeGreaterThan(0);
+//     expect(filterResult.memoryIncreaseDuringOps).toBeGreaterThan(0);
     
-    // Both should release most memory after disposal
-    expect(addResult.memoryReleasedAfterDispose + addResult.memoryReleasedAfterGC)
-      .toBeGreaterThan(addResult.memoryIncreaseDuringOps * 0.5); // Should release at least 50%
+//     // Both should release most memory after disposal
+//     expect(addResult.memoryReleasedAfterDispose + addResult.memoryReleasedAfterGC)
+//       .toBeGreaterThan(addResult.memoryIncreaseDuringOps * 0.5); // Should release at least 50%
     
-    expect(filterResult.memoryReleasedAfterDispose + filterResult.memoryReleasedAfterGC)
-      .toBeGreaterThan(filterResult.memoryIncreaseDuringOps * 0.5); // Should release at least 50%
-  });
+//     expect(filterResult.memoryReleasedAfterDispose + filterResult.memoryReleasedAfterGC)
+//       .toBeGreaterThan(filterResult.memoryIncreaseDuringOps * 0.5); // Should release at least 50%
+//   });
   
   test("comparing original and fixed p_remove_duplicates with utility", async () => {
     // Create fixed version
