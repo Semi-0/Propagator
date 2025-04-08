@@ -99,7 +99,7 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator{
 
-    // TODO: handles parents relationship explicitly 
+    // TODO: handles parents relationship explicitly for memory leak
     const propagator = construct_propagator(inputs, outputs, () => {
         to_build();
     }, name);

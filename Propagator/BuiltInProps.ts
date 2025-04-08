@@ -22,15 +22,6 @@ import { r_constant } from "../AdvanceReactivity/interface";
 
 
 
-// export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
-//     if (base_equal(condition, true)){
-//         return value;
-//     }
-//     else{
-//         return no_compute
-//     }
-// }, "switcher")(condition, value, output);
-
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
     if (is_nothing(condition)){
         return no_compute;
@@ -190,6 +181,7 @@ export const c_range = (input: Cell<number>, min: Cell<number>, max: Cell<number
 }
 
 export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
+    // TODO: Memory leak!!!!
     const queues: any[][] = to_zip.map(() => []);
     // last emitted zipped result; initially no_compute
     let lastSent: any = no_compute;
@@ -385,6 +377,7 @@ export const ce_zip_passthrough = (cells: Cell<any>[]) => {
 }
 
 export const p_remove_duplicates = (input: Cell<any>, output: Cell<any>) =>  {
+    // TODO: Memory leak!!!!
     var last_value: any = null
     return function_to_primitive_propagator("p_remove_duplicates",
         (x: any) => {
@@ -462,3 +455,13 @@ export const p_case = (predicate: (cell: Cell<string>) => Propagator, execute: (
     execute(result)
 }
 
+
+
+// export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
+//     if (base_equal(condition, true)){
+//         return value;
+//     }
+//     else{
+//         return no_compute
+//     }
+// }, "switcher")(condition, value, output);
