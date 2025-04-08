@@ -44,7 +44,7 @@ export function describe(v: any){
     if (is_layered_object(v)){
         return v.describe_self()
     }
-    return v
+    return to_string(v)
 }
 
 export function assert(premise: string){

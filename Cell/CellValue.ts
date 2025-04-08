@@ -52,6 +52,10 @@ export const is_layered_contradiction = register_predicate("is_layered_contradic
 })
 
 
+export const is_not_contradiction = (a: LayeredObject<any>) => {
+    return !is_contradiction(a)
+}
+
 export function force_load_CellValue(){
 //   console.log
 }

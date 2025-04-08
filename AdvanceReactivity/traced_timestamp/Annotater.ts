@@ -5,7 +5,7 @@ import { set_flat_map, set_for_each } from "generic-handler/built_in_generics/ge
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_layer_ui } from "sando-layer/Basic/LayeredObject";
+import { construct_layer_ui, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { reference_store } from "../../Helper/Helper";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
@@ -42,10 +42,10 @@ export function patch_traced_timestamp_set(base_value: any, ...traced_timestamps
         
         const timestamps = traced_timestamps as traced_timestamp[];
         const result = set_flat_map(construct_better_set(timestamps, (a: traced_timestamp) => a.id.toString()), 
-            (a: traced_timestamp) => {
+            (a: any) => {
                 return a;
             });  
-
+        // @ts-ignore
         return result;
     }
     else{

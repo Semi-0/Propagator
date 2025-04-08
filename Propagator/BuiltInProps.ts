@@ -1,6 +1,6 @@
-import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator } from "./Propagator"; 
-import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
-import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content } from "../Cell/Cell";
+import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator } from "./Propagator"; 
+import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell } from "../Cell/Cell";
 import { merge,  subscribe,  type Reactor, map, construct_reactor } from "../Shared/Reactivity/Reactor";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -15,8 +15,9 @@ import { pipe } from "fp-ts/lib/function";
 import { no_compute } from "../Helper/noCompute";
 import { for_each } from "../Helper/Helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { bi_pipe, link } from "./Sugar";
+import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
+import { r_constant } from "../AdvanceReactivity/interface";
 
 
 
@@ -30,7 +31,7 @@ import { make_ce_arithmetical } from "./Sugar";
 //     }
 // }, "switcher")(condition, value, output);
 
-export const p_switch = function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
+export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
     if (is_nothing(condition)){
         return no_compute;
     }
@@ -40,7 +41,7 @@ export const p_switch = function_to_primitive_propagator("switch", (condition: b
     else{
         return no_compute
     }
-})
+})(condition, value, output)
 
 
 export const p_equal = primitive_propagator(equal, "equal")
@@ -57,11 +58,17 @@ export const p_multiply =  primitive_propagator(multiply, "*");
 
 export const p_divide = primitive_propagator(divide, "/"); 
 
+export const p_greater_than = primitive_propagator(greater_than, ">");
+
+
+
 export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;
 })
 
 
+
+export const p_feedback = primitive_propagator(feedback, "feedback")
 
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;
@@ -137,6 +144,51 @@ export const c_if_b = (condition: Cell<boolean>, input: Cell<any>, then_out: Cel
     }, "if")
 }
 
+export const p_less_than_or_equal = (a: Cell<number>, b: Cell<number>, output: Cell<boolean>) => {
+    return compound_propagator([a, b], [output], () => {
+        p_or(ce_less_than(a, b), ce_equal(a, b), output)
+    }, "less_than_or_equal")
+}
+
+export const p_greater_than_or_equal = (a: Cell<number>, b: Cell<number>, output: Cell<boolean>) => {
+    return compound_propagator([a, b], [output], () => {
+        p_or(ce_greater_than(a, b), ce_equal(a, b), output)
+    }, "greater_than_or_equal")
+}
+
+export const p_between = (input: Cell<number>, min: Cell<number>, max: Cell<number>, output: Cell<number>) => {
+    return compound_propagator([input, min, max], [output], () => {
+        p_and(ce_less_than_or_equal(input, max), ce_greater_than_or_equal(input, min), output)
+    }, "between")
+}
+
+export const p_range = (input: Cell<number>, min: Cell<number>, max: Cell<number>, output: Cell<number>) => {
+    return compound_propagator([input, min, max], [output], () => {
+
+        const less_than_or_equal: Cell<boolean> = ce_less_than(input, min)
+        const greater_than_or_equal: Cell<boolean> = ce_greater_than(input, max)
+        const in_range: Cell<boolean> = ce_between(input, min, max)
+        p_switch(less_than_or_equal, min, output)
+        p_switch(greater_than_or_equal, max, output)
+        p_switch(in_range, input, output)
+    }, "range")
+}
+
+
+export const c_range = (input: Cell<number>, min: Cell<number>, max: Cell<number>) => {
+    return compound_propagator([input, min, max], [input], () => {
+        const less_than_or_equal: Cell<boolean> = ce_less_than(input, min)
+        const greater_than_or_equal: Cell<boolean> = ce_greater_than(input, max)
+        
+        const temp: Cell<number> = construct_cell("temp")
+        
+        p_switch(less_than_or_equal, min, temp)
+        p_switch(greater_than_or_equal, max, temp)
+
+        p_feedback(temp, input)
+    }, "range")
+}
+
 export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
     const queues: any[][] = to_zip.map(() => []);
     // last emitted zipped result; initially no_compute
@@ -169,23 +221,10 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
     })(f, ...to_zip, output);
 }
 
-export const p_and = function_to_primitive_propagator("and", (...inputs: any[]) => {
-    for (let i = 0; i < inputs.length; i++){
-        if (inputs[i] === false){
-            return false;
-        }
-    }
-    return true;
-})
+export const p_and = primitive_propagator(and, "and")
 
-export const p_or = function_to_primitive_propagator("or", (...inputs: any[]) => {
-    for (let i = 0; i < inputs.length; i++){
-        if (inputs[i] === true){
-            return true;
-        }
-    }
-    return false;
-})
+export const p_or = primitive_propagator(or, "or")
+
 export const comp_reactive_or = (inputs: Cell<any>[], output: Cell<any>) => {
     return compound_propagator(inputs, [output], () => {
         for_each(inputs, (i: Cell<any>) => {
@@ -295,25 +334,131 @@ export function c_add(x: Cell<number>, y: Cell<number>, sum: Cell<number>){
 }
 
 
-
-export const ce_add = make_ce_arithmetical(p_add);
-
-export const ce_subtract = make_ce_arithmetical(p_subtract);
-
-export const ce_multiply = make_ce_arithmetical(p_multiply);
-
-export const ce_divide = make_ce_arithmetical(p_divide);
-
-export const ce_equal = make_ce_arithmetical(p_equal);
-
-export const ce_switch = make_ce_arithmetical(p_switch);
-
-export const ce_less_than = make_ce_arithmetical(p_less_than);
+// @ts-ignore
+export const ce_add: (x: Cell<number>, y: Cell<number>) => Cell<number> = make_ce_arithmetical(p_add, "add");
 
 // @ts-ignore
-export const ce_not: (input: Cell<boolean>) => Cell<boolean> = make_ce_arithmetical(p_not);
+export const ce_subtract: (x: Cell<number>, y: Cell<number>) => Cell<number> = make_ce_arithmetical(p_subtract, "subtract");
 
-export const ce_and = make_ce_arithmetical(p_and);
+// @ts-ignore
+export const ce_multiply: (x: Cell<number>, y: Cell<number>) => Cell<number> = make_ce_arithmetical(p_multiply, "multiply");
 
-export const ce_or = make_ce_arithmetical(p_or);
+// @ts-ignore
+export const ce_divide: (x: Cell<number>, y: Cell<number>) => Cell<number> = make_ce_arithmetical(p_divide, "divide");
+
+// @ts-ignore
+export const ce_equal: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_equal, "equal");
+
+// @ts-ignore
+export const ce_switch: (condition: Cell<boolean>, value: Cell<any>) => Cell<any> = make_ce_arithmetical(p_switch, "switch");
+
+// @ts-ignore
+export const ce_less_than: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_less_than, "less_than");
+
+// @ts-ignore
+export const ce_greater_than: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_greater_than, "greater_than");
+
+// @ts-ignore
+export const ce_not: (input: Cell<boolean>) => Cell<boolean> = make_ce_arithmetical(p_not, "not");
+
+// @ts-ignore
+export const ce_and: (...inputs: Cell<boolean>[]) => Cell<boolean> = make_ce_arithmetical(p_and, "and");
+
+// @ts-ignore
+export const ce_or: (...inputs: Cell<boolean>[]) => Cell<boolean> = make_ce_arithmetical(p_or, "or");
+
+
+// @ts-ignore
+export const ce_less_than_or_equal: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_less_than_or_equal, "less_than_or_equal");
+
+// @ts-ignore
+export const ce_greater_than_or_equal: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_greater_than_or_equal, "greater_than_or_equal");
+
+// @ts-ignore
+export const ce_between: (input: Cell<number>, min: Cell<number>, max: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_between, "between");
+
+// @ts-ignore
+export const ce_zip = make_ce_arithmetical(p_zip, "zip");
+
+export const ce_zip_passthrough = (cells: Cell<any>[]) => {
+    return ce_zip(cells[0], r_constant(cells.slice(1), "pulse"))
+}
+
+export const p_remove_duplicates = (input: Cell<any>, output: Cell<any>) =>  {
+    var last_value: any = null
+    return function_to_primitive_propagator("p_remove_duplicates",
+        (x: any) => {
+            if (x === last_value) {
+                return no_compute
+            }
+            else {
+                last_value = x
+                return x
+            }
+    }
+    )(input, output)
+}
+
+export const p_tap = (prop: Cell<any>, f: (x: any) => void) => 
+    construct_propagator(
+        [prop],
+        [],
+        () => {
+            subscribe(f)(cell_strongest(prop))
+        },
+        "p_tap"
+)
+
+export const p_combine =  (...cells: Cell<any>[]) => function_to_primitive_propagator("p_combine",
+    (...args: any[]) => {
+        return args
+    }
+)(...cells)
+
+
+export const ce_combine = make_ce_arithmetical(p_combine, "combine")
+
+
+export const p_as_true = p_map_a((x: any) => true)
+
+export const p_as_false = p_map_a((x: any) => false)
+
+export const p_pulse = (pulse: Cell<any>, input: Cell<any>, output: Cell<any>) => {
+    return compound_propagator([pulse, input], [output], () => {
+        const switcher: Cell<boolean> = construct_cell("switcher")
+        p_as_true(pulse, switcher)
+        p_as_false(input, switcher)
+
+        p_switch(switcher, input, output)
+    }, "pulse")
+}
+
+
+
+
+export const p_increment = (pulse: Cell<any>, output: Cell<number>, increment: Cell<number> ) => {
+    return compound_propagator([pulse, output], [output], () => {
+
+        const temp = construct_cell("temp")
+
+        p_pulse(pulse, ce_add(output, increment), temp)
+        p_feedback(temp, output)
+    }, "increment")
+}
+
+
+
+
+
+export const p_dispatch = (i: Cell<string>, conds: ((input: Cell<string>) => void)[]) => {
+    for (const cond of conds) {
+      cond(i)
+    }
+}
+
+export const p_case = (predicate: (cell: Cell<string>) => Propagator, execute: (input: Cell<string>) => void) => 
+(keyboard_input: Cell<string>) => {
+    const result = ce_pipe(keyboard_input, predicate)
+    execute(result)
+}
 

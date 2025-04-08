@@ -11,7 +11,7 @@ import {
   cell_subscribe,
   cell_content
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
+import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Reactivity/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -21,9 +21,9 @@ import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
 import { construct_better_set, set_equal, set_for_each, set_get_length, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
-import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 
-import { generic_merge, set_merge } from "@/cell/Merge";
+import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
 import { install_behavior_advice } from "../Propagator/PropagatorBehavior";
@@ -32,7 +32,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b } from "../Propagator/BuiltInProps";
+import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -281,38 +281,7 @@ describe("timestamp value merge tests", () => {
     });
   });
 
-// this is evil, we should not be able to do this
-  // describe("incrementation tests", () => {
-  //   test("incrementation should increment the value", async () => {
 
-  //     const original = construct_cell("original");
-  //     const pulse = construct_cell("pulse");
-  //     const synced = construct_cell("synced");
-
-  //     const increment = primitive_propagator((pulse: any, o: number) => o + 1, "increment");
-  //     update(original, 0);
-
-  //     p_sync(pulse, synced);
-
-  //     increment(pulse, synced, original);
-      
-  //     update(pulse, 1);
-  //     await execute_all_tasks_sequential((error: Error) => {console.log(error)});
-  //     console.log(cell_content_value(original))
-  //     expect(get_base_value(cell_strongest_value(original))).toBe(1);
-
-  //     update(pulse, 2);
-  //     await execute_all_tasks_sequential((error: Error) => {});
-  //     expect(get_base_value(cell_strongest_value(original))).toBe(2);
-
-  //     update(pulse, 3);
-  //     await execute_all_tasks_sequential((error: Error) => {});
-  //     expect(get_base_value(cell_strongest_value(original))).toBe(3);
-  //   });
-  // })
-
-  // -------------------------
-  // Composable, chainable operators using compose_r and pipe_r.
   // -------------------------
   describe("Composable, chainable operators tests", () => {
     // Test pipe_r with a single operator (apply_e).
@@ -578,83 +547,6 @@ describe("Arithmetic Operators Tests", () => {
 
 });
 
-// describe("Proportional Sum Tests", () => {
-//   test("c_sum_propotional should correctly calculate the proportional sum of input cells", async () => {
-//     // Create input cells and output cell
-
-//     const input1 = construct_cell("propSum1") as Cell<number>;
-//     const input2 = construct_cell("propSum2") as Cell<number>;
-//     const output = construct_cell("propSumOutput") as Cell<number>;
-
-//     // Set up the proportional sum relationship
-//     c_sum_propotional(output, input1, input2);
-
-//     // Initial values establishing a 1:2 ratio
-//     update(input1, 10);
-//     update(input2, 20);
-//     await execute_all_tasks_sequential((error: Error) => {});
-
-//     // Verify initial sum and proportions
-//     expect(get_base_value(cell_strongest_value(output))).toBe(30);
-//     expect(get_base_value(cell_strongest_value(input1))).toBe(10);
-//     expect(get_base_value(cell_strongest_value(input2))).toBe(20);
-
-//     // Change the total sum - should maintain 1:2 ratio
-//     await new Promise((resolve) => setTimeout(resolve, 1000));
-//     update(output, 60);
-
-//     await execute_all_tasks_sequential((error: Error) => {});
-
-
-//     // Verify new values maintain the same proportion
-//     expect(get_base_value(cell_strongest_value(output))).toBe(60);
-//     expect(get_base_value(cell_strongest_value(input1))).toBe(20); // 1/3 of 60
-//     expect(get_base_value(cell_strongest_value(input2))).toBe(40); // 2/3 of 60
-
-
-
-//     // Test with three inputs
-//     const input3 = construct_cell("propSum3") as Cell<number>;
-//     const output2 = construct_cell("propSumOutput2") as Cell<number>;
-    
-//     // // Set up new relationship with three inputs
-    
-//     c_sum_propotional(output2, input1, input2, input3);
-    
-//     // Initial values establishing a 1:2:3 ratio
-//     update(input1, 10);
-//     update(input2, 20);
-//     update(input3, 30);
-//     await execute_all_tasks_sequential((error: Error) => {});
-
-//     // Verify initial sum and proportions
-//     expect(get_base_value(cell_strongest_value(output2))).toBe(60);
-//     expect(get_base_value(cell_strongest_value(input1))).toBe(10);
-//     expect(get_base_value(cell_strongest_value(input2))).toBe(20);
-//     expect(get_base_value(cell_strongest_value(input3))).toBe(30);
-
-//     // wait for 1 second
-//     await new Promise((resolve) => setTimeout(resolve, 1000));
-//     // Change the total sum - should maintain 1:2:3 ratio
-//     update(output2, 120);
-//     await execute_all_tasks_sequential((error: Error) => {});
- 
-
-//     // Verify new values maintain the same proportion
-//     expect(get_base_value(cell_strongest_value(output2))).toBe(120);
-//     expect(get_base_value(cell_strongest_value(input1))).toBe(20);  // 1/6 of 120
-//     expect(get_base_value(cell_strongest_value(input2))).toBe(40);  // 2/6 of 120
-//     expect(get_base_value(cell_strongest_value(input3))).toBe(60);  // 3/6 of 120
-
-
-//     update(input1, 40)
-//     r_inspect_strongest(output)
-
-//     await execute_all_tasks_sequential((error: Error) => {})
-
-
-//   });
-// });
 
 describe("Reactive Conditional (com_if) Tests", () => {
   test("com_if should correctly route values based on the condition in reactive context", async () => {
@@ -1208,3 +1100,125 @@ describe("Reactive c_if Conditional Tests", () => {
   });
 
 });
+
+describe("p_range test", () => {
+  test("p_range should correctly handle values within the range", async () => {
+    const input = construct_cell("input") as Cell<number>
+    const min = construct_cell("min") as Cell<number>
+    const max = construct_cell("max") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_range(input, min, max, output)
+
+    update(input, 10)
+    update(min, 5)
+    update(max, 15)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(10);
+  });
+
+  test("p_range should correctly handle values outside the range", async () => {
+    const input = construct_cell("input") as Cell<number>
+    const min = construct_cell("min") as Cell<number>
+    const max = construct_cell("max") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_range(input, min, max, output)
+
+    update(input, 20)
+    update(min, 5)
+    update(max, 15)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(15);
+  });
+
+  test("p_range should correctly handle values at the boundaries", async () => {
+    const input = construct_cell("input") as Cell<number>
+    const min = construct_cell("min") as Cell<number>
+    const max = construct_cell("max") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_range(input, min, max, output)
+
+    update(input, 5)
+    update(min, 5)
+    update(max, 15)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(5);
+  });
+
+  test("p_range should correctly handle values at the boundaries", async () => {
+    const input = construct_cell("input") as Cell<number>
+    const min = construct_cell("min") as Cell<number>
+    const max = construct_cell("max") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_range(input, min, max, output)
+
+    update(input, 15)
+    update(min, 5)
+    update(max, 15)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(output))).toBe(15);
+  });
+  
+});
+
+
+describe("handle cyclic dependencies", () => {
+  test("c_range", async () => {
+    
+    const input = construct_cell("input") as Cell<number>
+    const min = construct_cell("min") as Cell<number>
+    const max = construct_cell("max") as Cell<number>
+
+    c_range(input, min, max)
+
+    update(min, 10)
+    update(max, 20)
+
+    update(input, 30)
+
+ 
+
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(input))).toBe(20);
+
+    update(input, 15)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(input))).toBe(15);
+    
+  })
+})
+
+
+describe("handle contradiction", () => {
+  test("trace_earliest_emerged_value", async () => {
+    set_handle_contradiction(trace_earliest_emerged_value)
+    const a = construct_cell("a") as Cell<number>
+    const b = construct_cell("b") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_add(a, b, output)
+    p_subtract(a, b, output)
+
+    update(a, 10)
+    update(b, 20)
+    await execute_all_tasks_sequential((error: Error) => {});
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(get_base_value(cell_strongest_value(output))).toBe(30);
+    
+  })
+
+  test("trace_latest_emerged_value", async () => {
+    set_handle_contradiction(trace_latest_emerged_value)
+    const a = construct_cell("a") as Cell<number>
+    const b = construct_cell("b") as Cell<number>
+    const output = construct_cell("output") as Cell<number>
+    p_add(a, b, output)
+    p_subtract(a, b, output)
+
+    update(a, 10)
+    update(b, 20)
+    await execute_all_tasks_sequential((error: Error) => {console.log("error", error)});
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(get_base_value(cell_strongest_value(output))).toBe(-10);
+    
+  })
+})

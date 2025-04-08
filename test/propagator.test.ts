@@ -1,7 +1,7 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, constant_cell, construct_cell } from "../Cell/Cell";
-import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
+import { c_add, c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import { is_contradiction, the_nothing } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Reactivity/Scheduler";

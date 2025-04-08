@@ -10,8 +10,26 @@ export function construct_traced_timestamp(timestamp: number, id: string):  trac
     return {  timestamp, fresh: true, id: id }
 }
 
+export function refresh_timestamp(timestamp: traced_timestamp): traced_timestamp {
+    return construct_traced_timestamp(Date.now(), timestamp.id)
+}
+
+function format_timestamp(timestamp: number): string {
+    const date = new Date(timestamp);
+    const milliseconds = timestamp % 1000;
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }) + `.${milliseconds.toString().padStart(3, '0')}`;
+}
+
 define_generic_procedure_handler(to_string, match_args(is_traced_timestamp), (a: traced_timestamp) => {
-    return "traced_timestamp: " + a.id + " " + a.timestamp + " " + a.fresh
+    return `traced_timestamp: ${a.id} ${format_timestamp(a.timestamp)} ${a.fresh}`
 })
 
 export const _timestamp_layer_equal = construct_simple_generic_procedure("timestamp_equal", 2, (a: traced_timestamp, b: traced_timestamp) => {
