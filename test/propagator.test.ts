@@ -712,3 +712,42 @@ test('compound propagator com_if works correctly', async () => {
     // Output should now match the 'then' value
     expect(cell_strongest_base_value(output)).toBe(100);
 });
+
+// Add test for propagator disposal
+test("propagator disposal", async () => {
+    // Create cells with proper typing
+    // Note: There are type errors throughout the test file related to Cell typing
+    // This would require a more extensive refactoring of the entire test file
+    // @ts-ignore - Using any to match existing test patterns
+    const a: any = construct_cell("a");
+    // @ts-ignore - Using any to match existing test patterns
+    const b: any = construct_cell("b");
+    // @ts-ignore - Using any to match existing test patterns
+    const result: any = construct_cell("result");
+    
+    // Create a propagator
+    const prop = p_add(a, b, result);
+    
+    // Add values
+    tell(a, 2, "a");
+    tell(b, 3, "b");
+    
+    // Execute tasks
+    await execute_all_tasks_sequential((e) => {});
+    
+    // Verify propagation worked
+    expect(cell_strongest_base_value(result)).toBe(5);
+    
+    // Dispose the propagator
+    prop.dispose();
+    
+    // Update values
+    tell(a, 10, "a");
+    tell(b, 20, "b");
+    
+    // Execute tasks
+    await execute_all_tasks_sequential((e) => {});
+    
+    // Verify that propagation no longer happens
+    expect(cell_strongest_base_value(result)).toBe(5); // Still the old value
+});

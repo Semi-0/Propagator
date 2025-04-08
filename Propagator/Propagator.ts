@@ -26,10 +26,11 @@ export interface Propagator {
   getInputsID: () => string[];
   getOutputsID: () => string[];
   summarize: () => string;
+  dispose: () => void;
 }
 
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
-    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator;
+    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator && 'dispose' in propagator;
 })
 
 export function construct_propagator(inputs: Cell<any>[], 
@@ -38,6 +39,8 @@ export function construct_propagator(inputs: Cell<any>[],
                                  name: string): Propagator {
   const relation = make_relation(name, get_global_parent()) 
 
+  let activator: Reactor<any> | null = null;
+  const subscriptions: (() => void)[] = [];
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
@@ -49,7 +52,20 @@ export function construct_propagator(inputs: Cell<any>[],
     getRelation: () => relation,
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
-    summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`
+    summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`,
+    dispose: () => {
+      [...inputs, ...outputs].forEach(cell => {
+        const neighbors = cell.getNeighbors();
+        if (neighbors.has(relation.get_id())) {
+          neighbors.delete(relation.get_id());
+        }
+      });
+      
+      // Since there are no REMOVE commands, we'll rely on garbage collection
+      // to clean up the propagator once it's no longer referenced.
+      // A more comprehensive solution would require adding REMOVE_PROPAGATOR
+      // and REMOVE_CHILD commands to PublicStateCommand.
+    }
   };
   
   set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
@@ -68,22 +84,47 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             ? [cells.slice(0, -1), cells[cells.length - 1]]
             : [cells, null];
 
-        const create_activator = () => {
+        // Track subscriptions for cleanup
+        let activator: Reactor<any> | null = null;
+        let subscription: (() => void) | null = null;
+
+        const activate = () => {
             const reactors = inputs.map(cell_strongest);
-            const activator = propagator_behavior(combine_latest(...reactors), f);
+            activator = propagator_behavior(combine_latest(...reactors), f);
             
             if (output) {
-                subscribe((result: any) => add_cell_content(output, result))(activator);
+                // Store the subscription for later cleanup
+                const observer = (result: any) => add_cell_content(output, result);
+                activator.subscribe(observer);
+                subscription = () => activator?.unsubscribe(observer);
             }
-            return activator;
         };
 
-        return construct_propagator(
+        const prop = construct_propagator(
             inputs,
             output ? [output] : [],
-            create_activator,
+            activate,
             name
         );
+
+        // Enhance the dispose method to also clean up reactor subscriptions
+        const originalDispose = prop.dispose;
+        prop.dispose = () => {
+            // Call original dispose first
+            originalDispose();
+            
+            // Clean up subscriptions
+            if (subscription) {
+                subscription();
+            }
+            
+            // Clean up activator
+            if (activator && typeof activator.dispose === 'function') {
+                activator.dispose();
+            }
+        };
+
+        return prop;
     };
 }
 
@@ -97,22 +138,27 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 
 
 
-export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator{
-
-    // TODO: handles parents relationship explicitly for memory leak
-    const propagator = construct_propagator(inputs, outputs, () => {
-        to_build();
-    }, name);
-    return propagator;
+export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator {
+    // Create the propagator using the basic constructor
+    const prop = construct_propagator(inputs, outputs, to_build, name);
+    
+    // Enhance the dispose method to properly handle cleanup
+    const originalDispose = prop.dispose;
+    prop.dispose = () => {
+        // Call original dispose first
+        originalDispose();
+        
+        // Additional cleanup could be added here in the future
+        // For now we'll rely on the cell neighbor cleanup in the base implementation
+    };
+    
+    return prop;
 }
 
-
-export function constraint_propagator(cells: Cell<any>[],  to_build: () => void, name: string): Propagator{
-    return construct_propagator(cells, cells, () => {
-        to_build();
-    }, name);
+export function constraint_propagator(cells: Cell<any>[], to_build: () => void, name: string): Propagator {
+    // This is essentially a compound propagator with inputs and outputs being the same set of cells
+    return compound_propagator(cells, cells, to_build, name);
 }
-
 
 export function propagator_id(propagator: Propagator): string{
     return propagator.getRelation().get_id();
