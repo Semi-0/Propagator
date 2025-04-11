@@ -32,7 +32,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { comp_reactive_or, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -254,7 +254,7 @@ describe("timestamp value merge tests", () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
       const output = construct_cell("output");
-      comp_reactive_or([cellA, cellB], output);
+      p_composite([cellA, cellB], output);
 
 
       // await new Promise((resolve) => setTimeout(resolve, 2));

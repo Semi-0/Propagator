@@ -22,11 +22,8 @@ import { r_constant } from "../AdvanceReactivity/interface";
 
 
 
-export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => {
-    if (is_nothing(condition)){
-        return no_compute;
-    }
-    else if (base_equal(condition, true)){
+export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
+    if (base_equal(condition, true)){
         return value;
     }
     else{
@@ -51,13 +48,9 @@ export const p_divide = primitive_propagator(divide, "/");
 
 export const p_greater_than = primitive_propagator(greater_than, ">");
 
-
-
 export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;
 })
-
-
 
 export const p_feedback = primitive_propagator(feedback, "feedback")
 
@@ -172,6 +165,7 @@ export const c_range = (input: Cell<number>, min: Cell<number>, max: Cell<number
         const greater_than: Cell<boolean> = ce_greater_than(input, max)
         
         const temp: Cell<number> = construct_cell("temp")
+
         
         p_switch(less_than, min, temp)
         p_switch(greater_than, max, temp)
@@ -217,7 +211,7 @@ export const p_and = primitive_propagator(and, "and")
 
 export const p_or = primitive_propagator(or, "or")
 
-export const comp_reactive_or = (inputs: Cell<any>[], output: Cell<any>) => {
+export const p_composite = (inputs: Cell<any>[], output: Cell<any>) => {
     return compound_propagator(inputs, [output], () => {
         for_each(inputs, (i: Cell<any>) => {
             return p_sync(i, output)
@@ -431,7 +425,6 @@ export const p_pulse = (pulse: Cell<any>, input: Cell<any>, output: Cell<any>) =
 
 export const p_increment = (pulse: Cell<any>, output: Cell<number>, increment: Cell<number> ) => {
     return compound_propagator([pulse, output], [output], () => {
-
         const temp = construct_cell("temp")
 
         p_pulse(pulse, ce_add(output, increment), temp)

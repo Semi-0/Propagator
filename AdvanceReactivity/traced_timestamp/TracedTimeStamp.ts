@@ -10,8 +10,17 @@ export function construct_traced_timestamp(timestamp: number, id: string):  trac
     return {  timestamp, fresh: true, id: id }
 }
 
+let monotonic_counter = 0n;
+
+export function high_precision_timestamp(): number {
+    const now = Date.now();
+    const counter = monotonic_counter++;
+    
+    return now + (Number(counter % 1000n) / 1000);
+}
+
 export function refresh_timestamp(timestamp: traced_timestamp): traced_timestamp {
-    return construct_traced_timestamp(Date.now(), timestamp.id)
+    return construct_traced_timestamp(high_precision_timestamp(), timestamp.id)
 }
 
 function format_timestamp(timestamp: number): string {

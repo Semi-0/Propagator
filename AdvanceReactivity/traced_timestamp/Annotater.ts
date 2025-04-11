@@ -1,4 +1,4 @@
-import { construct_traced_timestamp } from "./TracedTimeStamp";
+import { construct_traced_timestamp, high_precision_timestamp } from "./TracedTimeStamp";
 import { construct_traced_timestamp_set } from "./TracedTimeStampSet";
 import { is_timestamp_set } from "./Predicates";
 import { set_flat_map, set_for_each } from "generic-handler/built_in_generics/generic_better_set";
@@ -71,7 +71,7 @@ export const annotate_identified_timestamp = (id: string) => construct_layer_ui(
     }
 );
 
-export const annotate_now_with_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, Date.now());
+export const annotate_now_with_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, high_precision_timestamp());
 
 export const annotate_smallest_time_with_id = (id: string) => (a: any) => annotate_identified_timestamp(id)(a, -Infinity);
 

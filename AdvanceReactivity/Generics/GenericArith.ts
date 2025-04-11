@@ -61,9 +61,7 @@ export const equal = extend_propagator_arithmetic_pack("equal", 2, _equal)
 export const and = extend_propagator_arithmetic_pack("and", 2, _and)
 export const or = extend_propagator_arithmetic_pack("or", 2, _or)
 export const greater_than = extend_propagator_arithmetic_pack("greater_than", 2, _greater_than)
-export const feedback = install_propagator_arith_pack("feedback", 1, (input: any) => {
-    return input;
-})
+export const feedback = install_propagator_arith_pack("feedback", 1, (input: any) => {return input;})
 
 
 export const force_load_arithmetic = () => {
