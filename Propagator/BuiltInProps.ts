@@ -1,4 +1,4 @@
-import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator } from "./Propagator"; 
+import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator, error_logged_primitive_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
 import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell } from "../Cell/Cell";
 import { merge,  subscribe,  type Reactor, map, construct_reactor } from "../Shared/Reactivity/Reactor";
@@ -32,27 +32,27 @@ export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cel
 })(condition, value, output)
 
 
-export const p_equal = primitive_propagator(equal, "equal")
+export const p_equal = error_logged_primitive_propagator(equal, "equal")
 
-export const p_not = primitive_propagator(not, "not");
+export const p_not = error_logged_primitive_propagator(not, "not");
 
-export const p_less_than = primitive_propagator(less_than, "less_than");
+export const p_less_than = error_logged_primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator(add, "+");
+export const p_add = error_logged_primitive_propagator(add, "+");
 
-export const p_subtract = primitive_propagator(subtract, "-");
+export const p_subtract = error_logged_primitive_propagator(subtract, "-");
 
-export const p_multiply =  primitive_propagator(multiply, "*");
+export const p_multiply =  error_logged_primitive_propagator(multiply, "*");
 
-export const p_divide = primitive_propagator(divide, "/"); 
+export const p_divide = error_logged_primitive_propagator(divide, "/"); 
 
-export const p_greater_than = primitive_propagator(greater_than, ">");
+export const p_greater_than = error_logged_primitive_propagator(greater_than, ">");
 
 export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;
 })
 
-export const p_feedback = primitive_propagator(feedback, "feedback")
+export const p_feedback = error_logged_primitive_propagator(feedback, "feedback")
 
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;

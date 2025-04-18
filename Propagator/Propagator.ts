@@ -15,6 +15,7 @@ import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
 import { pipe } from "fp-ts/lib/function";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
+import { error_handling_function } from "./ErrorHandling";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
@@ -128,12 +129,23 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
     };
 }
 
+
+
+export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
+    primitive_propagator(
+        error_handling_function(name, f),
+        name
+    )
+
+
+ 
+
 // just make_function layered procedure
 export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
     // limitation: does not support rest or optional parameters
     const rf = install_propagator_arith_pack(name, f.length, f)
 
-    return primitive_propagator(rf, name)
+    return error_logged_primitive_propagator(rf, name)
 }
 
 
