@@ -14,7 +14,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
-import { p_amb } from "../Propagator/Search";
+import { configure_log_amb_choose, configure_log_process_contradictions, p_amb } from "../Propagator/Search";
 import { ce_add, ce_equal, ce_less_than, ce_switch } from "../Propagator/BuiltInProps";
 import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 import { com_if } from "../Propagator/BuiltInProps";
@@ -612,8 +612,8 @@ test('resolving contradiction with floating-point precision issues', async () =>
 test('AMB operator: example test from SimpleTest.ts', async () => {
  
 
-    configure_log_amb_choose(true)
-    configure_log_process_contradictions(true)
+    // configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
     // configure_log_nogoods(true)
     
     

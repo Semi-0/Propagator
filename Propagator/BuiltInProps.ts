@@ -19,9 +19,6 @@ import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
 import { r_constant } from "../AdvanceReactivity/interface";
 
-
-
-
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
         return value;
@@ -53,6 +50,10 @@ export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
 })
 
 export const p_feedback = error_logged_primitive_propagator(feedback, "feedback")
+
+export const p_and = error_logged_primitive_propagator(and, "and")
+
+export const p_or = error_logged_primitive_propagator(or, "or")
 
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;
@@ -207,9 +208,7 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
     })(f, ...to_zip, output);
 }
 
-export const p_and = primitive_propagator(and, "and")
 
-export const p_or = primitive_propagator(or, "or")
 
 export const p_composite = (inputs: Cell<any>[], output: Cell<any>) => {
     return compound_propagator(inputs, [output], () => {

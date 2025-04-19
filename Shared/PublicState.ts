@@ -245,7 +245,7 @@ import { set_every, set_get_length, type BetterSet } from 'generic-handler/built
 import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
 import { install_behavior_advice, return_default_behavior } from '../Propagator/PropagatorBehavior';
 import { set_handle_contradiction } from '..';
-import { configure_scheduler_no_record } from './Reactivity/Scheduler';
+import { clear_all_tasks, configure_scheduler_no_record } from './Reactivity/Scheduler';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
