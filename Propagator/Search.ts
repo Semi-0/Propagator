@@ -1,5 +1,5 @@
 import { primitive_propagator, constraint_propagator, type Propagator, construct_propagator } from "./Propagator"; 
-import { multiply, divide } from "../Cell/GenericArith";
+import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
 import { type Cell, cell_name } from "../Cell/Cell";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
 import { first, for_each, second } from "../Helper/Helper";
@@ -11,7 +11,7 @@ import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
 import { merge, tap, type Reactor } from "../Shared/Reactivity/Reactor";
 import { map } from "../Shared/Reactivity/Reactor";
-import { add, subtract} from "../Cell/GenericArith";
+import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 var log_amb_choose = false; 
@@ -69,7 +69,7 @@ export function binary_amb(cell: Cell<boolean>): Propagator{
         }
     }
     // when amb propagato is activated?
-    const self = construct_propagator("binary_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "binary_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -133,7 +133,7 @@ export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
         }
 
 
-    const self = construct_propagator("p_amb", [cell], [cell], construct_amb_reactor(amb_choose))
+    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "p_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -164,6 +164,7 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    set_global_state(PublicStateCommand.UPDATE_FAILED_COUNT)
    set_for_each<BetterSet<string>>(save_nogood, nogoods)
    const [toDisbelieve, nogood] = choose_premise_to_disbelieve(nogoods) 
+ 
 
    if (log_process_contradictions){
         console.log("complaining cell", complaining_cell.summarize())
@@ -184,16 +185,17 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
 }
 
 function save_nogood(nogood: BetterSet<string>){
-    // no good is the combination of premises that failed
-    set_for_each((premise: string) => {        const previous_nogoods = premises_nogoods(premise)
-        const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
   
+    // no good is the combination of premises that failed
+    set_for_each((premise: string) => {        
+        const previous_nogoods = premises_nogoods(premise)
+        const merged_nogoods = set_add_item(previous_nogoods, set_remove_item(nogood, premise)) 
         set_premises_nogoods(premise, merged_nogoods)
     }, nogood)
+  
 }
 
 function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): any[] {
-
     const count = (method: (elt: string) => boolean, set: BetterSet<string>)  => {
         return set_get_length(set_filter(set, method))
     }
@@ -204,7 +206,6 @@ function choose_premise_to_disbelieve(nogoods: BetterSet<BetterSet<string>>): an
         return arr
     }
 
-    // console.log("nogoods", to_string(nogoods))
 
     return pipe(
         nogoods,

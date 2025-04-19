@@ -16,7 +16,7 @@ export const value_imples = construct_simple_generic_procedure("value_imples", 2
     }
 )
 
-export const get_base_value = construct_simple_generic_procedure("get_base_value", 1, (a: LayeredObject) => {
+export const get_base_value = construct_simple_generic_procedure("get_base_value", 1, (a: LayeredObject<any>) => {
     if (is_layered_object(a)){
         return get_base_value_layer(a)
     }
@@ -51,6 +51,10 @@ export const is_layered_contradiction = register_predicate("is_layered_contradic
     return is_contradiction(value)
 })
 
+
+export const is_not_contradiction = (a: LayeredObject<any>) => {
+    return !is_contradiction(a)
+}
 
 export function force_load_CellValue(){
 //   console.log

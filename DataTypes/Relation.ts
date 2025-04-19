@@ -83,5 +83,15 @@ export function is_relation(obj: any): obj is Relation{
 }
 
 export function make_relation(name: string, parent: InterestedType, id: string | null = null){
+    // TODO: Proper management of parential relationship for memory leak
+
+// export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
+//     if (base_equal(condition, true)){
+//         return value;
+//     }
+//     else{
+//         return no_compute
+//     }
+// }, "switcher")(condition, value, output);
     return new Primitive_Relation(name, parent, id);
 }

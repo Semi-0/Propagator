@@ -32,7 +32,10 @@ export enum PublicStateCommand{
     CLEAN_UP = "clean_up",
     FORCE_UPDATE_ALL = "force_update_all",
     SET_CELL_MERGE = "set_cell_merge",
-    UPDATE_FAILED_COUNT = "update_failed_count"
+    SET_HANDLE_CONTRADICTION = "set_handle_contradiction",
+    INSTALL_BEHAVIOR_ADVICE = "install_behavior_advice",
+    UPDATE_FAILED_COUNT = "update_failed_count",
+    SET_SCHEDULER_NO_RECORD = "set_scheduler_no_record"
 }
 
 export interface PublicStateMessage{
@@ -82,6 +85,11 @@ function is_propagator(o: any): boolean{
 
 receiver.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
+
+        case PublicStateCommand.SET_SCHEDULER_NO_RECORD:
+            configure_scheduler_no_record(msg.args[0]);
+            break;
+
         case PublicStateCommand.UPDATE_FAILED_COUNT:
           
             failed_count.next(failed_count.get_value() + 1)
@@ -155,6 +163,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
             clean_hypothetical_store()
             clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
+            
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:
@@ -168,6 +177,14 @@ receiver.subscribe((msg: PublicStateMessage) => {
                     msg.summarize()
                 );
             }
+            break;
+
+        case PublicStateCommand.INSTALL_BEHAVIOR_ADVICE:
+            install_behavior_advice(msg.args[0]);
+            break;
+
+        case PublicStateCommand.SET_HANDLE_CONTRADICTION:
+            set_handle_contradiction(msg.args[0]);
             break;
     }
 })
@@ -226,8 +243,9 @@ import { get_base_value, type Layer } from 'sando-layer/Basic/Layer';
 import { is_any } from 'generic-handler/built_in_generics/generic_predicates';
 import { set_every, set_get_length, type BetterSet } from 'generic-handler/built_in_generics/generic_better_set';
 import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
-import { scheduler } from 'timers/promises';
-import { clear_all_tasks } from './Reactivity/Scheduler';
+import { install_behavior_advice, return_default_behavior } from '../Propagator/PropagatorBehavior';
+import { set_handle_contradiction } from '..';
+import { configure_scheduler_no_record } from './Reactivity/Scheduler';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
@@ -235,7 +253,7 @@ export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     }
 )
 
-export function layers_equal(o1: LayeredObject, o2: LayeredObject){
+export function layers_equal(o1: LayeredObject<any>, o2: LayeredObject<any>){
     const layers1 = o1.annotation_layers();
     const layers2 = o2.annotation_layers();
 
@@ -244,9 +262,9 @@ export function layers_equal(o1: LayeredObject, o2: LayeredObject){
     }
 
     // Check if all layers are equal
-    return set_every(layers1, (layer: Layer) => {
+    return set_every(layers1, (layer: Layer<any>) => {
         return layer.is_equal(o1, o2)
-    }) && set_every(layers2, (layer: Layer) => {
+    }) && set_every(layers2, (layer: Layer<any>) => {
         return layer.is_equal(o1, o2)
     })
 }
@@ -261,24 +279,5 @@ define_generic_procedure_handler(deep_equal,
 )
 
 
-export const base_equal = construct_simple_generic_procedure("shallow_equal", 2,
-    (a: any, b: any) => {
-        return a === b;
-    }
-)
-
-
-define_generic_procedure_handler(base_equal,
-    match_args(is_layered_object, is_any),
-    (a: any, b: any) => {
-        return base_equal(get_base_value(a), b);
-    })
-
-define_generic_procedure_handler(base_equal,
-    all_match(is_layered_object),
-    (a: any, b: any) => {
-        return base_equal(get_base_value(a), get_base_value(b));
-    }
-)
 
 

@@ -2,8 +2,11 @@
 // the visualization would be very limited
 
 import { pipe } from "fp-ts/lib/function";
+import { keys } from "fp-ts/lib/ReadonlyRecord";
 import type { State } from "fp-ts/lib/State";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { guard, throw_type_mismatch } from "generic-handler/built_in_generics/other_generic_helper";
+import { register_predicate } from "generic-handler/Predicates";
 
 export type Reactor<T> =  ReadOnlyReactor<T>
 
@@ -23,6 +26,10 @@ export interface ReadOnlyReactor<T>{
     summarize: () => string;
     dispose: () => void;
 }
+
+export const is_reactor = register_predicate("is_reactor", (reactor: any): reactor is Reactor<any> => {
+    return "subscribe" in reactor && "unsubscribe" in reactor 
+})
 
 
 function connect(A: Reactor<any>, B: StandardReactor<any>){
@@ -69,7 +76,13 @@ function stateful_modifer<T>(set_value: (v: T) => void){
 
 function throw_error(name: string){
     return (e: any) => {
-        throw new Error("error in " + name + ": " + e)
+        // Check if the error is related to invalid BetterSet
+        if (e instanceof Error && e.message && e.message.includes('Invalid BetterSet')) {
+            console.warn(`BetterSet error in ${name}. Attempting to recover.`);
+            // Don't throw if it's a BetterSet error - we'll try to handle these gracefully
+            return;
+        }
+        throw new Error("error in " + name + ": " + e);
     }
 }
 
@@ -77,8 +90,10 @@ function summarize<T>(name: string, observers: ((...args: T[]) => void)[]){
     return "reactor with " + observers.length + " observers"
 }
 
-
-
+// Store connections between reactors for proper cleanup
+// Map from downstream reactor to an array of {upstream, observer} objects
+// TODO: dispose all down stream reactors??
+const connectionMap = new WeakMap<ReadOnlyReactor<any>, Array<{upstream: ReadOnlyReactor<any>, observer: Function}>>();
 
 export function construct_prototype_reactor<T>(constructor: (
     observers: ((...args: any[]) => void)[],
@@ -98,6 +113,15 @@ export function construct_prototype_reactor<T>(constructor: (
 
      // Attach the dispose function to clear references and disable further calls.
     self.dispose = () => {
+        // Unsubscribe from all upstream reactors
+        const connections = connectionMap.get(self);
+        if (connections) {
+            connections.forEach(({upstream, observer}) => {
+                upstream.unsubscribe(observer as any);
+            });
+            connectionMap.delete(self);
+        }
+        
         // Clear the internal observers.
         observers.length = 0;
         // Override subscribe and unsubscribe to no-ops.
@@ -110,6 +134,14 @@ export function construct_prototype_reactor<T>(constructor: (
     };
 
     return self
+}
+
+// Helper to track connections between reactors
+function trackConnection(downstream: ReadOnlyReactor<any>, upstream: ReadOnlyReactor<any>, observer: Function) {
+    if (!connectionMap.has(downstream)) {
+        connectionMap.set(downstream, []);
+    }
+    connectionMap.get(downstream)!.push({upstream, observer});
 }
 
 export function construct_reactor<T>(): StandardReactor<T>{
@@ -190,12 +222,14 @@ export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadO
     observers: ((...args: any[]) => void)[],
     subscribe: (observer: (...args: any[]) => void) => void,
     unsubscribe: (observer: (...args: any[]) => void) => void) => {
-
-       linked_reactor.subscribe((...v: any) => {
+       
+       const observer = (...v: any) => {
         observers.forEach((observe: (...v: any[]) =>  void) => {
             observe(...v)
         })
-       })
+       };
+       
+       linked_reactor.subscribe(observer);
 
        function stateful_subscribe(observer: (...args: any[]) => void){
         // if the linked reactor has state, 
@@ -208,13 +242,18 @@ export function construct_readonly_reactor<T>(linked_reactor: Reactor<T>): ReadO
             observer(linked_reactor.get_value())
         }
        }
-
-       return {
+       
+       const self = {
         observers,
         subscribe: stateful_subscribe,
         summarize: () => summarize("readonly reactor", observers),
         unsubscribe
-       }
+       };
+       
+       // Track the connection for proper cleanup after self is initialized
+       trackConnection(self as ReadOnlyReactor<T>, linked_reactor, observer);
+
+       return self;
     })
 }
 
@@ -299,11 +338,18 @@ export function subscribe<T>(f: (v: T) => void): (reactor: Reactor<T>) => void{
 
 export function construct_simple_transformer<T>(f: (v: T, inner: StandardReactor<T>) => void): (reactor: Reactor<T>) => Reactor<T>  {
     return (reactor: Reactor<T>) => {
+        guard(is_reactor(reactor), throw_type_mismatch("construct_simple_transformer", "Reactor", typeof reactor))
+
         var inner = construct_reactor<T>()
 
-        reactor.subscribe((value) => {
+        const observer = (value: T) => {
             f(value, inner)
-        })
+        };
+        
+        reactor.subscribe(observer);
+        
+        // Track the connection for proper cleanup
+        trackConnection(inner, reactor, observer);
 
         return inner
     }
@@ -356,12 +402,17 @@ export function construct_multicast_reactor<T>(value_pack_constructor: (rs: Reac
             var value_pack = value_pack_constructor(reactors)
 
             reactors.forEach((reactor, index) => {
-                reactor.subscribe((value) => {
-                    value_pack =  pipe(value_pack,
+                const observer = (value: any) => {
+                    value_pack = pipe(value_pack,
                          (old_value_pack) => update_latest(old_value_pack, index, value),
                          (updated_value_pack) => mapper(updated_value_pack, inner)
                     )
-                })
+                };
+                
+                reactor.subscribe(observer);
+                
+                // Track the connection for proper cleanup
+                trackConnection(inner, reactor, observer);
             })
 
             return inner

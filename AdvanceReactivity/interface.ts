@@ -1,12 +1,14 @@
-import { add_cell_content, cell_id } from "@/cell/Cell";
-import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/tracedTimestampLayer";
+import { add_cell_content, cell_id, constant_cell, construct_cell } from "@/cell/Cell";
+import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/Annotater";
 import { cell_strongest_value } from "@/cell/Cell";
 import type { Cell } from "@/cell/Cell";
-import { stale } from "./traced_timestamp/tracedTimestampLayer";
+import { stale } from "./traced_timestamp/Annotater";
 import { register_premise } from "../DataTypes/Premises";
 import { support_by } from "sando-layer/Specified/SupportLayer";
 import { pipe } from "fp-ts/lib/function";
-
+import { v4 as uuidv4 } from 'uuid';
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { get_new_reference_count } from "../Helper/Helper";
 
 export const update_store = new Map<string, any>();
 
@@ -31,4 +33,14 @@ export function initialize<A>(a: Cell<A>, v: A){
 
     add_cell_content(a, annotate_smallest_time_with_id(cell_id(a))(v) as A)
     update_store.set(cell_id(a), v)
+}
+
+
+export const r_constant = <T>(value: T, name: string | undefined = undefined) => {
+    if (name === undefined) {
+        name = "reactive_constant_cell#" + get_new_reference_count()
+    }
+    const cell = construct_cell<T>(name)
+    update(cell, value)
+    return cell
 }

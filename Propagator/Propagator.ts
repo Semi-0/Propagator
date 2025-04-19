@@ -1,58 +1,72 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_name, cell_strongest } from "../Cell/Cell";
-import { set_global_state, get_global_parent, parameterize_parent } from "../Shared/PublicState";
+import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
+import { set_global_state, get_global_parent} from "../Shared/PublicState";
 
-import { type Either, right, left } from "fp-ts/Either";
-import { force_load_arithmatic } from "../Cell/GenericArith";
+
 import { PublicStateCommand } from "../Shared/PublicState";
-import { scheduled_reactor } from "../Shared/Reactivity/Scheduler";
-import { combine_latest, construct_reactor, filter, tap, type Reactor } from "../Shared/Reactivity/Reactor";
-import { pipe } from "fp-ts/function";
-import { map, subscribe } from "../Shared/Reactivity/Reactor";
-import type { StringLiteralType } from "typescript";
-import { register_predicate } from "generic-handler/Predicates";
-import { values } from "fp-ts/lib/Map";
-import { is_nothing } from "@/cell/CellValue";
-import { every } from "fp-ts/lib/Array";
-import { is_no_compute } from "../Helper/noCompute";
 
+import {combine_latest, type Reactor } from "../Shared/Reactivity/Reactor";
+
+import {  subscribe } from "../Shared/Reactivity/Reactor";
+
+import { register_predicate } from "generic-handler/Predicates";
+
+import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
+import { pipe } from "fp-ts/lib/function";
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
+import { error_handling_function } from "./ErrorHandling";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
+// TODO: memory leak?
 
-force_load_arithmatic();
 
 export interface Propagator {
   get_name: () => string;
   getRelation: () => Primitive_Relation;
   getInputsID: () => string[];
   getOutputsID: () => string[];
-  getActivator: () => Reactor<any>;
   summarize: () => string;
+  dispose: () => void;
 }
 
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
-    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator;
+    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator && 'dispose' in propagator;
 })
 
-export function construct_propagator(name: string, 
-                                 inputs: Cell<any>[], 
+export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
-                                 activate: () => Reactor<any>): Propagator {
+                                 activate: () => void,
+                                 name: string): Propagator {
   const relation = make_relation(name, get_global_parent()) 
 
+  let activator: Reactor<any> | null = null;
+  const subscriptions: (() => void)[] = [];
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
 
-  const activator = activate();
+  activate();
 
   const propagator: Propagator = {
     get_name: () => name,
     getRelation: () => relation,
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
-    getActivator: () => activator,
-    summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`
+    summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`,
+    dispose: () => {
+      [...inputs, ...outputs].forEach(cell => {
+        const neighbors = cell.getNeighbors();
+        if (neighbors.has(relation.get_id())) {
+          neighbors.delete(relation.get_id());
+        }
+      });
+      
+      // Since there are no REMOVE commands, we'll rely on garbage collection
+      // to clean up the propagator once it's no longer referenced.
+      // A more comprehensive solution would require adding REMOVE_PROPAGATOR
+      // and REMOVE_CHILD commands to PublicStateCommand.
+    }
   };
   
   set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
@@ -60,50 +74,103 @@ export function construct_propagator(name: string,
   return propagator;
 }
 
-export function primitive_propagator(f: (...inputs: any[]) => any, name: string){
+export function primitive_propagator(f: (...inputs: any[]) => any, name: string) {
     return (...cells: Cell<any>[]): Propagator => {
-        if (cells.length > 1){
-            const last_index = cells.length - 1;
-            const output = cells[last_index];
-            const inputs = cells.slice(0, last_index);
-            const inputs_reactors = inputs.map(cell => cell_strongest(cell));
-
-            // this has different meaning than filtered out nothing from compound propagator
-            return construct_propagator(name, inputs, [output], () => {
-                const activator = pipe(combine_latest(...inputs_reactors),
-                    map(values => {
-                        return f(...values);
-                    }),
-                    filter(values => !is_no_compute(values)))
-
-                subscribe((result: any) => {
-                    add_cell_content(output, result);
-                })(activator)
-
-                return activator;
-            })
+        if (cells.length === 0) {
+            throw new Error("Primitive propagator must have at least one input");
         }
-        else{
-           throw new Error("Primitive propagator must have at least two inputs");
-        }
-    }
+
+        const propagator_behavior = get_primtive_propagator_behavior();
+        const [inputs, output] = cells.length > 1 
+            ? [cells.slice(0, -1), cells[cells.length - 1]]
+            : [cells, null];
+
+        // Track subscriptions for cleanup
+        let activator: Reactor<any> | null = null;
+        let subscription: (() => void) | null = null;
+
+        const activate = () => {
+            const reactors = inputs.map(cell_strongest);
+            activator = propagator_behavior(combine_latest(...reactors), f);
+            
+            if (output) {
+                // Store the subscription for later cleanup
+                const observer = (result: any) => add_cell_content(output, result);
+                activator.subscribe(observer);
+                subscription = () => activator?.unsubscribe(observer);
+            }
+        };
+
+        const prop = construct_propagator(
+            inputs,
+            output ? [output] : [],
+            activate,
+            name
+        );
+
+        // Enhance the dispose method to also clean up reactor subscriptions
+        const originalDispose = prop.dispose;
+        prop.dispose = () => {
+            // Call original dispose first
+            originalDispose();
+            
+            // Clean up subscriptions
+            if (subscription) {
+                subscription();
+            }
+            
+            // Clean up activator
+            if (activator && typeof activator.dispose === 'function') {
+                activator.dispose();
+            }
+        };
+
+        return prop;
+    };
 }
 
 
-export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => Reactor<any>, name: string): Propagator{
-    const propagator = construct_propagator(name, inputs, outputs, () => {
-        return to_build();
-    });
-    return propagator;
+
+export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
+    primitive_propagator(
+        error_handling_function(name, f),
+        name
+    )
+
+
+ 
+
+// just make_function layered procedure
+export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
+    // limitation: does not support rest or optional parameters
+    const rf = install_propagator_arith_pack(name, f.length, f)
+
+    return error_logged_primitive_propagator(rf, name)
 }
 
 
-export function constraint_propagator(cells: Cell<any>[],  to_build: () => Reactor<any>, name: string): Propagator{
-    return construct_propagator(name, cells, cells, () => {
-        return to_build();
-    });
+
+export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator {
+    // Create the propagator using the basic constructor
+    const prop = construct_propagator(inputs, outputs, to_build, name);
+    
+    // Enhance the dispose method to properly handle cleanup
+    const originalDispose = prop.dispose;
+    prop.dispose = () => {
+        // Call original dispose first
+        originalDispose();
+        
+        // Additional cleanup could be added here in the future
+        // For now we'll rely on the cell neighbor cleanup in the base implementation
+    };
+    
+    return prop;
 }
 
+export function constraint_propagator(cells: Cell<any>[], to_build: () => void, name: string): Propagator {
+    // This is essentially a compound propagator with inputs and outputs being the same set of cells
+    return compound_propagator(cells, cells, to_build, name);
+}
 
 export function propagator_id(propagator: Propagator): string{
     return propagator.getRelation().get_id();

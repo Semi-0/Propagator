@@ -37,7 +37,7 @@ export function construct_node<E>(): Node<E>{
     var children_edges = make_better_set<any>([])
     var parents_edges = make_better_set<any>([])
 
-    return {
+    const node = {
         id,
         receive(v: E) {
             set_for_each((e: any) => {
@@ -58,18 +58,21 @@ export function construct_node<E>(): Node<E>{
         remove_parent_edge: (edge: any) => {
             parents_edges = set_remove_item(parents_edges, edge)
         }
-    }
+    };
+
+    set_node(node);
+    return node;
 }
 
 export function get_children(n: any){
     return set_map(n.children_edges, (e: any) => {
-        return e.child
+        return get_node(e.child_id);
     })
 }
 
 export function get_parents(n: any){
     return set_map(n.parent_edges, (e: any) => {
-        return e.parent
+        return get_node(e.parent_id);
     })
 }
 

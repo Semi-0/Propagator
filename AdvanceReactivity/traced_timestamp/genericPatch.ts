@@ -1,33 +1,39 @@
-import { guard, throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { fresher, get_traced_timestamp_layer, has_timestamp_layer, is_fresh, patch_traced_timestamps, same_freshness, same_source, smallest_timestamped_value, stale, timestamp_equal, timestamp_set_merge, type traced_timestamp } from "./tracedTimestampLayer";
+import {  has_timestamp_layer, timestamp_layer } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { construct_better_set, is_better_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, is_better_set, merge_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_base_value } from "sando-layer/Basic/Layer";
-import { define_handler, generic_merge } from "@/cell/Merge";
-import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
+import { define_handler, generic_merge, set_merge } from "@/cell/Merge";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 import { strongest_value } from "@/cell/StrongestValue";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_contradiction, is_unusable_value, the_contradiction } from "@/cell/CellValue";
+import { is_contradiction, is_not_contradiction, the_contradiction } from "@/cell/CellValue";
 import { deep_equal } from "../../Shared/PublicState";
 import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell";
-import { update } from "../update";
-import { filter } from "fp-ts/lib/Filterable";
-
-
+import { update } from "../interface";
+import { fresher } from "./Fresher/Fresher";
+import { same_source } from "./SameSource";
+import { timestamp_equal } from "./TracedTimeStamp";
+import { is_fresh } from "./Predicates";
+import { get_traced_timestamp_layer } from "./tracedTimestampLayer";
+import { patch_traced_timestamps, smallest_timestamped_value } from "./Annotater";
+import { same_freshness } from "./Fresher/Extensions";
+import { install_behavior_advice } from "../../Propagator/PropagatorBehavior";
+import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
+import { execute_all_tasks_sequential } from "../../Shared/Reactivity/Scheduler";
+import { refresh_all_timestamps, timestamp_set_do_intersect, timestamp_set_intersect, type TracedTimeStampSet } from "./TracedTimeStampSet";
+import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
+import { feedback } from "../Generics/GenericArith";
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
-export function construct_timestamp_value_set(a: LayeredObject): BetterSet<LayeredObject> {
-
+export function construct_timestamp_value_set(a: LayeredObject<any>): BetterSet<LayeredObject<any>> {
     // this is an ideal value set which keeps all the value
-    return construct_better_set([a], (a: LayeredObject) => to_string(get_base_value(a)))
+    return construct_better_set([a], (a: LayeredObject<any>) => to_string(get_base_value(a)))
 }
 
-
-
-export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): BetterSet<LayeredObject> {
+export function to_timestamp_value_set(a: BetterSet<LayeredObject<any>> | LayeredObject<any>): BetterSet<LayeredObject<any>> {
     if (is_better_set(a)){
         // @ts-ignore
         return a;
@@ -38,20 +44,16 @@ export function to_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObje
     }
 }
 
-function _is_timestamp_value_set(a: BetterSet<LayeredObject> | LayeredObject): boolean {
+function _is_timestamp_value_set(a: BetterSet<LayeredObject<any>> | LayeredObject<any>): boolean {
     // @ts-ignore
-    return is_better_set(a) && set_every(a, (a: LayeredObject) => has_timestamp_layer(a))
+    return is_better_set(a) && set_every(a, (a: LayeredObject<any>) => has_timestamp_layer(a))
 }
-
 
 export const is_timestamp_value_set = register_predicate("is_timestamp_value_set", _is_timestamp_value_set)
 
-// TODO: handle contradiction
-
-export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
-   
+export function freshest_value(a: BetterSet<LayeredObject<any>>): LayeredObject<any>{
     var freshest = smallest_timestamped_value
-    set_for_each((a: LayeredObject) => {
+    set_for_each((a: LayeredObject<any>) => {
      if (deep_equal(a, freshest)){
         return
        }
@@ -73,20 +75,18 @@ export function freshest_value(a: BetterSet<LayeredObject>): LayeredObject{
        }
     }, a)
 
-
     return freshest
 }
 
-
-export function _reactive_merge(content: LayeredObject, increment: LayeredObject): BetterSet<LayeredObject>{
+export function _reactive_merge(content: LayeredObject<any>, increment: LayeredObject<any>): BetterSet<LayeredObject<any>>{
     return set_add_item(to_timestamp_value_set(content), increment)
 }
 
 export const reactive_merge = construct_simple_generic_procedure("reactive_merge", 2, generic_merge) 
 
-define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject>) => {
+define_generic_procedure_handler(to_string, match_args(is_timestamp_value_set), (a: BetterSet<LayeredObject<any>>) => {
 
-    return to_string(set_reduce(a, (a: string, b: LayeredObject) => {
+    return to_string(set_reduce(a, (a: string, b: LayeredObject<any>) => {
         return a + to_string(b)
     }, ""))
 })
@@ -95,7 +95,7 @@ define_handler(reactive_merge, match_args(is_timestamp_value_set, has_timestamp_
 
 define_handler(reactive_merge, match_args(has_timestamp_layer, has_timestamp_layer), _reactive_merge)
 
-export function _drop_staled_merge(content: LayeredObject, increment: LayeredObject){
+export function _drop_staled_merge(content: LayeredObject<any>, increment: LayeredObject<any>){
     const r = reactive_merge(content, increment)
     if (is_timestamp_value_set(r)){
         return set_filter(r, is_fresh)
@@ -110,32 +110,63 @@ export const reactive_fresh_merge = _drop_staled_merge
 
 define_handler(strongest_value, match_args(is_timestamp_value_set), freshest_value)
 
-
 define_handler(strongest_value, match_args(has_timestamp_layer), 
 (a: any) => {
+
     return a
+})
+
+export function trace_value(selector: (a: LayeredObject<any>[]) => LayeredObject<any>){
+    return (cell: Cell<any>) => {
+        const contradiction = cell_strongest_value(cell)
+        const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
+        const contents = cell_content_value(cell)
+        
+        const causes = set_filter(contents, (a: LayeredObject<any>) => {
+            return timestamp_set_do_intersect(get_traced_timestamp_layer(a), contradiction_timestamp)
+        })
+
+
+        const is_fresher_than_contradiction = (a: LayeredObject<any>) => {
+            return fresher(get_traced_timestamp_layer(a), contradiction_timestamp)
+        }
+
+        const options = merge_set(
+            set_filter(causes, is_not_contradiction), 
+            set_filter(contents, is_fresher_than_contradiction)
+        )
+
+        if (set_get_length(options) > 0){
+            const value = selector(to_array(options))
+            new Promise(resolve => setTimeout(resolve, 1)).then(() => {
+                update(cell, get_base_value(value))
+                execute_all_tasks_sequential((error: Error) => {console.log("error", error)})
+            })
+        }
+        else{
+            throw new Error("No cause found for contradiction")
+        }
+    }
+}
+
+export const trace_earliest_emerged_value = trace_value((a: LayeredObject<any>[]) => {
+    return a[0]
+})
+
+export const trace_latest_emerged_value = trace_value((a: LayeredObject<any>[]) => {
+    return a[a.length - 1]
 })
 
 
 
 
-export function trace_earliest_emerged_value(cell: Cell<any>){
+export const install_reactive_propagator_behavior = () => install_behavior_advice(reactive_propagator_behavior)
 
-    const contradiction = cell_strongest_value(cell)
-    const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
-    const contents = cell_content_value(cell)
 
-    const causes = set_filter(contents, (a: LayeredObject) => {
-        return timestamp_equal(get_traced_timestamp_layer(a), contradiction_timestamp)
-    })
-
-    // select the cause that was earliest emerged 
-    if (set_get_length(causes) > 0){
-        const earliest_emerged_value = to_array(causes)[0]
-        update(cell, get_base_value(earliest_emerged_value))
+define_layered_procedure_handler(feedback,
+    timestamp_layer,
+    (base: any, timestamp_value: TracedTimeStampSet) => {
+        
+        return refresh_all_timestamps(timestamp_value)
     }
-    else{
-        throw new Error("No cause found for contradiction")
-    }
-}
-
+)

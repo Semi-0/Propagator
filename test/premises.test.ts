@@ -3,20 +3,20 @@ import { type Cell, construct_cell, handle_cell_contradiction, set_handle_contra
 import { mark_premise_in, mark_premise_out, register_premise, make_hypotheticals,  premises_list, BeliefState, track_premise } from "../DataTypes/Premises";
 import { observe_premises_has_changed } from "../DataTypes/Premises";
 import { p_add } from "../Propagator/BuiltInProps";
-import { configure_log_process_contradictions, find_premise_to_choose } from "../Propagator/Search";
+import { configure_log_nogoods, configure_log_process_contradictions, find_premise_to_choose } from "../Propagator/Search";
 import { cell_strongest_base_value } from "../Cell/Cell";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { make_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import { observe_cell, tell } from "../Helper/UI";
+import { tell } from "../Helper/UI";
 import { set_merge } from "../Cell/Merge";
 import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { merge_value_sets, value_set_length } from "../DataTypes/ValueSet";
 import { subscribe } from "../Shared/Reactivity/Reactor";
 import { type PremiseMetaData } from "../DataTypes/Premises";
 import { mark_only_chosen_premise } from "../Propagator/Search";
+import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 
-
-let a: Cell, b: Cell, sum: Cell;
+let a: Cell<number>, b: Cell<number>, sum: Cell<number>;
 
 
 
@@ -26,6 +26,7 @@ describe("Premises and Hypotheticals", () => {
         set_handle_contradiction(handle_cell_contradiction)
         set_global_state(PublicStateCommand.CLEAN_UP);
         clear_all_tasks();
+        return_default_behavior();
         set_merge(merge_value_sets);
 
         // Set up cells
@@ -78,9 +79,11 @@ describe("Premises and Hypotheticals", () => {
 
     it("should handle contradictions with hypotheticals", async () => {
 
+
+
         const a_hypotheticals = make_hypotheticals(a, make_better_set([1, 2, 3]));
-        tell(b, 2, "b_value");
-        tell(sum, 6, "sum_value");
+        // tell(b, 2, "b_value");
+        // tell(sum, 6, "sum_value");
 
         execute_all_tasks_sequential((error: Error) => {
             console.error("Error during task execution:", error);

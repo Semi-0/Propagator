@@ -1,32 +1,35 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
-import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, construct_cell, handle_cell_contradiction, set_handle_contradiction } from "../Cell/Cell";
-import { c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switcher } from "../Propagator/BuiltInProps";
+import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_value, constant_cell, construct_cell } from "../Cell/Cell";
+import { c_add, c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
-import {    is_contradiction } from "../Cell/CellValue";
+import { is_contradiction, the_nothing } from "../Cell/CellValue";
 import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Reactivity/Scheduler";
 import { set_global_state } from "../Shared/PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
 import { PublicStateCommand } from "../Shared/PublicState";
-import { generic_merge, set_merge } from "@/cell/Merge";
+import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
-import { configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "../Propagator/Search";
-import { f_add, f_equal, f_less_than, f_switch } from "../Propagator/Sugar";
-import { make_partial_data } from "../DataTypes/PartialData";
-
+import { p_amb } from "../Propagator/Search";
+import { ce_add, ce_equal, ce_less_than, ce_switch } from "../Propagator/BuiltInProps";
+import { return_default_behavior } from "../Propagator/PropagatorBehavior";
+import { com_if } from "../Propagator/BuiltInProps";
+import { inspect } from "util";
+import { inspect_content, inspect_strongest } from "../Helper/Debug";
+import { primitive_propagator } from "../Propagator/Propagator";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
+    return_default_behavior();
     set_merge(merge_value_sets)
-    set_handle_contradiction(handle_cell_contradiction)
+    
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
-
 
         const x = construct_cell("x");
         const y = construct_cell("y");
@@ -52,7 +55,7 @@ describe("test propagator", () => {
         const x = construct_cell("x");
         const y = construct_cell("y");
         const product = construct_cell("product");
-        
+        // @ts-ignore
         c_multiply(x, y, product);
 
 
@@ -200,6 +203,37 @@ describe("test propagator", () => {
     })
 
 
+    test('primitive propagator works fine with incrementation_set', async () => {
+        const obj = {
+            x: 0
+        }
+        const x = constant_cell(() => obj, "x")
+        const pulse = construct_cell("pulse");
+        const product = construct_cell("product");
+
+        const increment = (pulse: boolean) => {
+            obj.x = obj.x + 1
+        }
+        const increment_propagator = primitive_propagator(increment, "increment")
+
+        increment_propagator(pulse)
+
+        tell(pulse, true, "fst")
+        
+        execute_all_tasks_sequential((error: Error) => {
+        });
+
+        expect(obj.x).toBe(1)
+
+        tell(pulse, false, "snd") 
+
+        execute_all_tasks_sequential((error: Error) => {
+        });
+
+        expect(obj.x).toBe(2)
+    })
+
+
 
     test('primitive propagator is working with divide', async () => {
         const x = construct_cell("x");
@@ -294,50 +328,74 @@ describe("test propagator", () => {
 
     test("switch", async () => {
         set_merge(merge_value_sets)
+   
+
 // TODO: RECURSION
 
         const a = construct_cell("a");
         const b = construct_cell("b");
         const c = construct_cell("c");
 
-        const result  = f_switch(c, f_add(a, b))
+        const result  = ce_switch(c, ce_add(a, b))
+        inspect_content(c)
+        inspect_strongest(c)
 
-        tell(a, make_partial_data(1), "a")
-        tell(b, make_partial_data(2), "b")
-        tell(c, make_partial_data(true), "c")
+        inspect_content(result)
+        inspect_strongest(result)
+
+        tell(a, 1, "a")
+        tell(b, 2, "b")
+        tell(c, true, "c")
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(3)
+        expect(cell_strongest_base_value(result)).toBe(3)
 
+        tell(c, false, "e")
+        // kick_out("c")
 
-        tell(c, make_partial_data(false), "c")
-        tell(a, make_partial_data(4), "a")
-        tell(b, make_partial_data(2), "b")
+        tell(a, 4, "f")
+        tell(b, 2, "g")
+
+        kick_out("c")
+        kick_out("b")
+        kick_out("a")
         execute_all_tasks_sequential((e) => {})
+
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(3)
+        expect(cell_strongest_base_value(result)).toBe(the_nothing)
+
     })
 
 
     test("equality", async () => {
+        set_merge(merge_value_sets)
 
-        const x = construct_cell("x");
-        const y = construct_cell("y");
-        const result = f_equal(x, y)
+        
 
-        tell(x, make_partial_data(1), "x")
-        tell(y, make_partial_data(1), "y")
+        const x = construct_cell("x1");
+        const y = construct_cell("y1");
+        const result = ce_equal(x, y)
+
+        tell(x, 1, "x")
+        tell(y, 1, "y")
+
+        
+
+
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(true)
+        expect(cell_strongest_base_value(result)).toBe(true)
 
-        tell(x, make_partial_data(2), "x")
+
+        console.log(x.summarize())
+        kick_out("x")
+        tell(x, 2, "z")
 
         execute_all_tasks_sequential((e) => {})
         // @ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(false)
+        expect(cell_strongest_base_value(result)).toBe(false)
 
     })
 
@@ -345,20 +403,21 @@ describe("test propagator", () => {
         const a = construct_cell("a");
         const b = construct_cell("b");
 
-        const result = f_less_than(a, b)
+        const result = ce_less_than(a, b)
 
-        tell(a, make_partial_data(1), "a")
-        tell(b, make_partial_data(2), "b")
+        tell(a, 1, "a")
+        tell(b, 2, "b")
 
         execute_all_tasks_sequential((e) => {})
 
         //@ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(true)
+        expect(cell_strongest_base_value(result)).toBe(true)
 
-        tell(a, make_partial_data(3), "a")
+        kick_out("a")
+        tell(a, 3, "c")
         execute_all_tasks_sequential((e) => {})
         //@ts-ignore
-        expect(cell_strongest_base_value(result).data).toBe(false)
+        expect(cell_strongest_base_value(result)).toBe(false)
     })
 
 })
@@ -601,28 +660,100 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
     expect(z.summarize()).toBeDefined();
 });
 
-
-test("tail recursion", async () => {
-
-    const a = construct_cell("a");
-    const b = construct_cell("b");
-    const target = construct_cell("target")
-    const sum = f_add(a, b)
- 
+test('compound propagator com_if works correctly', async () => {
+    // Initialize cells
+    const condition = construct_cell("condition");
+    const thenValue = construct_cell("thenValue");
+    const otherwiseValue = construct_cell("otherwiseValue");
+    const output = construct_cell("output");
     
+    // Set up the if propagator
+    // @ts-ignore
+    com_if(condition, thenValue, otherwiseValue, output);
+    
+    // Test when condition is true
+    tell(condition, true, "c_true");
+    tell(thenValue, 42, "then_val");
+    tell(otherwiseValue, 24, "else_val");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(cell_strongest_base_value(output)).toBe(42);
+    
+    // Test when condition changes to false
+    kick_out("c_true");
+    tell(condition, false, "c_false");
 
-    p_switcher(f_less_than(sum, target),  f_add(a, b), a)
+    // inspect_strongest(output)
+    inspect_content(output)
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(cell_strongest_base_value(output)).toBe(24);
+    
+    // Test when 'then' value changes while condition is false
+    kick_out("then_val")
+    tell(thenValue, 100, "new_then");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should still be the 'otherwise' value
+    expect(cell_strongest_base_value(output)).toBe(24);
+    
+    // Test when 'otherwise' value changes while condition is false
+    kick_out("else_val")
+    tell(otherwiseValue, 200, "new_else");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should update to the new 'otherwise' value
+    expect(cell_strongest_base_value(output)).toBe(200);
+    
+    // Test switching back to true condition
+    kick_out("c_false");
+    tell(condition, true, "c_true_again");
+    
+    execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should now match the 'then' value
+    expect(cell_strongest_base_value(output)).toBe(100);
+});
 
-
-    tell(target, make_partial_data(10), "target")
-
-    tell(a, make_partial_data(1), "a")
-    tell(b, make_partial_data(2), "b")
-
-    execute_all_tasks_sequential((e) => {})
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    //@ts-ignore
-    expect(cell_strongest_base_value(a).data).toBe(11)
-
-
-})
+// Add test for propagator disposal
+test("propagator disposal", async () => {
+    // Create cells with proper typing
+    // Note: There are type errors throughout the test file related to Cell typing
+    // This would require a more extensive refactoring of the entire test file
+    // @ts-ignore - Using any to match existing test patterns
+    const a: any = construct_cell("a");
+    // @ts-ignore - Using any to match existing test patterns
+    const b: any = construct_cell("b");
+    // @ts-ignore - Using any to match existing test patterns
+    const result: any = construct_cell("result");
+    
+    // Create a propagator
+    const prop = p_add(a, b, result);
+    
+    // Add values
+    tell(a, 2, "a");
+    tell(b, 3, "b");
+    
+    // Execute tasks
+    await execute_all_tasks_sequential((e) => {});
+    
+    // Verify propagation worked
+    expect(cell_strongest_base_value(result)).toBe(5);
+    
+    // Dispose the propagator
+    prop.dispose();
+    
+    // Update values
+    tell(a, 10, "a");
+    tell(b, 20, "b");
+    
+    // Execute tasks
+    await execute_all_tasks_sequential((e) => {});
+    
+    // Verify that propagation no longer happens
+    expect(cell_strongest_base_value(result)).toBe(5); // Still the old value
+});

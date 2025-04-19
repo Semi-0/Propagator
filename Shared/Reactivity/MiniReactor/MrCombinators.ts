@@ -73,13 +73,13 @@ export function remove_source(node: Node<any>){
 
 export function combine_latest(...parents: any[]){
     return combine((notify, update, sources) => {
-        notify(sources.map((source) => source.value));
-    })(...parents);
+        notify(sources.map((source) => source.get_value()));
+    }, parents.map(() => undefined))(...parents);
 }
 
 export function merge(...parents: any[]){
     return combine((notify, update, sources) => {
         notify(update);
-    })(...parents);
+    }, parents.map(() => undefined))(...parents);
 }
 
