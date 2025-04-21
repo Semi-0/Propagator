@@ -20,7 +20,7 @@ import { return_default_behavior } from "../Propagator/PropagatorBehavior";
 import { com_if } from "../Propagator/BuiltInProps";
 import { inspect } from "util";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
-import { primitive_propagator } from "../Propagator/Propagator";
+import { function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
@@ -214,7 +214,7 @@ describe("test propagator", () => {
         const increment = (pulse: boolean) => {
             obj.x = obj.x + 1
         }
-        const increment_propagator = primitive_propagator(increment, "increment")
+        const increment_propagator = function_to_primitive_propagator("increment", increment)
 
         increment_propagator(pulse)
 
@@ -224,6 +224,8 @@ describe("test propagator", () => {
         });
 
         expect(obj.x).toBe(1)
+
+        kick_out("fst")
 
         tell(pulse, false, "snd") 
 
