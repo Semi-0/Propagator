@@ -68,6 +68,10 @@ export function construct_propagator(inputs: Cell<any>[],
       // and REMOVE_CHILD commands to PublicStateCommand.
     }
   };
+
+  inputs.forEach(cell => {
+    cell.addNeighbor(propagator);
+  })
   
   set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);

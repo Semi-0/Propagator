@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
 
-import { update } from "../AdvanceReactivity/interface";
+import { r_constant, update } from "../AdvanceReactivity/interface";
 import {
   construct_cell,
   cell_strongest_value,
@@ -32,7 +32,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -437,6 +437,25 @@ describe("Zip and First operator tests", () => {
     // Expect the first propagator to continue returning the initial value.
     expect(get_base_value(cell_strongest_value(output))).toBe(100);
   });
+
+
+  test("r_constant should always broadcast new values", async () => {
+    const result = ce_add(r_constant(1), r_constant(2))
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(result))).toBe(3)
+    
+
+    const r_1 = r_constant(1)
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    const r_2 = r_constant(2)
+    await execute_all_tasks_sequential((error: Error) => {});
+
+    const r_3 = ce_add(r_1, r_2)
+    await execute_all_tasks_sequential((error: Error) => {});
+    expect(get_base_value(cell_strongest_value(r_3))).toBe(3)
+    
+  })
 
   test("r_zip operator should output an array of values when cell values change", async () => {
     const cell1 = construct_cell("zipOpTest1");
