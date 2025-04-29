@@ -28,10 +28,3 @@ export function observe_cell(print_to: (str: string) => void){
     }
 }
 
-export function monitor_change(func: (msg: PublicStateMessage) => void, cell_func: (cell: Cell<any>) => void){
-    observe_all_cells_update(func,  
-        (cell: Cell<any>) => {
-            cell_func(cell)
-        }
-    )
-}

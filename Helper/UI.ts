@@ -2,7 +2,7 @@ import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest_
 import { for_each } from "./Helper";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "../DataTypes/Premises";
-import { failed_count, observe_all_cells_update, PublicStateCommand } from "../Shared/PublicState";
+import { failed_count } from "../Shared/PublicState";
 import {  type PublicStateMessage } from "../Shared/PublicState";
 import { is_layered_object } from "./Predicate";
 import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Reactivity/Scheduler";

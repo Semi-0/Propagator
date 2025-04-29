@@ -210,15 +210,10 @@ export function get_global_parent(){
     return parent.get_value();
 }
 
-export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessage) => void, 
-                                  observeCell: (cell: any) => void) => {
+export const observe_all_cells_update = (observeCell: (cell: any) => void) => {
     pipe(receiver,
         filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
-        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_cell(msg.args[0])),
-        tap((msg: PublicStateMessage) => {
-            observeCommand(msg);
-            return msg
-        }))
+        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_cell(msg.args[0])))
     .subscribe((msg: PublicStateMessage) => {
         const cell = msg.args[0]; 
         guard((is_cell(cell)), throw_error(
@@ -227,14 +222,26 @@ export const observe_all_cells_update = (observeCommand: (msg: PublicStateMessag
             msg.summarize()
         ));
         observeCell(cell);
-    })
-                
+    })               
 }
 
-export const observe_cell_array = construct_readonly_reactor(all_cells)
-export const observe_propagator_array = construct_readonly_reactor(all_propagators)
-export const observe_amb_propagator_array = construct_readonly_reactor(all_amb_propagators)
-export const observe_failed_count = construct_readonly_reactor(failed_count)
+export const observe_all_propagators_update = (observePropagator: (propagator: any) => void) => {
+    pipe(receiver,
+        filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_PROPAGATOR),
+        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_propagator(msg.args[0])))
+    .subscribe((msg: PublicStateMessage) => {
+        const propagator = msg.args[0];
+        guard((is_propagator(propagator)), throw_error(
+            "observe_all_propagators", 
+            "observe_all_propagators expects a propagator, got " + propagator, 
+            msg.summarize()
+        ));
+        observePropagator(propagator);
+    })
+}
+
+export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => all_amb_propagators.subscribe(f)
+export const observe_failed_count = (f: (failed_count: number) => void) => failed_count.subscribe(f)
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
