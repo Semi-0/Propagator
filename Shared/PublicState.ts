@@ -240,6 +240,11 @@ export const observe_all_propagators_update = (observePropagator: (propagator: a
     })
 }
 
+export const observe_cell_array = (f: (cells: any[]) => void) => all_cells.subscribe(f)
+export const observe_propagator_array = (f: (propagators: any[]) => void) => all_propagators.subscribe(f)
+export const cell_snapshot = all_cells.get_value()
+export const propagator_snapshot = all_propagators.get_value()
+export const amb_propagator_snapshot = all_amb_propagators.get_value()
 export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => all_amb_propagators.subscribe(f)
 export const observe_failed_count = (f: (failed_count: number) => void) => failed_count.subscribe(f)
 
