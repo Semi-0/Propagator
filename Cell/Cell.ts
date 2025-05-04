@@ -18,6 +18,7 @@ import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { disposeSubtree } from "../Shared/GraphTraversal";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -125,10 +126,13 @@ export function cell_constructor<A>(
         Reactive.subscribe(observer)(strongest.node);
       },
       dispose: () => {
+        // first dispose entire downstream subgraph
+        disposeSubtree(cell);
         disposed = true;
         content.dispose();
         strongest.dispose();
         neighbors.clear();
+        set_global_state(PublicStateCommand.REMOVE_CELL, cell);
       }
     };
 

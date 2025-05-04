@@ -64,11 +64,8 @@ export function construct_propagator(inputs: Cell<any>[],
           neighbors.delete(relation.get_id());
         }
       });
-      
-      // Since there are no REMOVE commands, we'll rely on garbage collection
-      // to clean up the propagator once it's no longer referenced.
-      // A more comprehensive solution would require adding REMOVE_PROPAGATOR
-      // and REMOVE_CHILD commands to PublicStateCommand.
+      // Unregister this propagator from global state
+      set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator);
     }
   };
 

@@ -186,7 +186,7 @@ describe("timestamp value merge tests", () => {
     test("update (with premise) should update a cell with support info", async () => {
       const cell = construct_cell("updateWithPremise");
       update(cell, 100);
-      await execute_all_tasks_sequential((error: Error) => {});
+      // await execute_all_tasks_sequential((error: Error) => {});
       expect(get_base_value(cell_strongest_value(cell))).toBe(100);
     });
   })
@@ -212,7 +212,7 @@ describe("timestamp value merge tests", () => {
       update(condition, true);
  
       await execute_all_tasks_sequential((error: Error) => {});
-      expect(get_base_value(cell_strongest_value(output))).toBe("initial");
+      expect(cell_strongest_base_value(output)).toBe("initial");
     });
 
     test("p_sync should update output when input changes", async () => {

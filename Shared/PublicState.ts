@@ -33,7 +33,10 @@ export enum PublicStateCommand{
     SET_HANDLE_CONTRADICTION = "set_handle_contradiction",
     INSTALL_BEHAVIOR_ADVICE = "install_behavior_advice",
     UPDATE_FAILED_COUNT = "update_failed_count",
-    SET_SCHEDULER_NO_RECORD = "set_scheduler_no_record"
+    SET_SCHEDULER_NO_RECORD = "set_scheduler_no_record",
+    REMOVE_CELL = "remove_cell",
+    REMOVE_PROPAGATOR = "remove_propagator",
+    REMOVE_AMB_PROPAGATOR = "remove_amb_propagator",
 }
 
 export interface PublicStateMessage{
@@ -175,6 +178,29 @@ Reactive.subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.SET_HANDLE_CONTRADICTION:
             set_handle_contradiction(msg.args[0]);
+            break;
+
+        case PublicStateCommand.REMOVE_CELL:
+            if (msg.args.every(o => is_cell(o))) {
+                all_cells.next(all_cells.get_value().filter(c => c !== msg.args[0]));
+            } else {
+                console.warn('REMOVE_CELL with invalid args', msg.args);
+            }
+            break;
+        case PublicStateCommand.REMOVE_PROPAGATOR:
+            if (msg.args.every(o => is_propagator(o))) {
+                all_propagators.next(all_propagators.get_value().filter(p => p !== msg.args[0]));
+                all_amb_propagators.next(all_amb_propagators.get_value().filter(p => p !== msg.args[0]));
+            } else {
+                console.warn('REMOVE_PROPAGATOR with invalid args', msg.args);
+            }
+            break;
+        case PublicStateCommand.REMOVE_AMB_PROPAGATOR:
+            if (msg.args.every(o => is_propagator(o))) {
+                all_amb_propagators.next(all_amb_propagators.get_value().filter(p => p !== msg.args[0]));
+            } else {
+                console.warn('REMOVE_AMB_PROPAGATOR with invalid args', msg.args);
+            }
             break;
     }
 })(receiver.node);
