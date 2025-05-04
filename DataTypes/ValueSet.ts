@@ -203,7 +203,7 @@ function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: Laye
 
 }
 
-export function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): boolean {
+export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<A>): boolean {
     return (
         value_imples(get_base_value(elt1), get_base_value(elt2)) &&
         (set_smaller_than(get_support_layer_value(elt1), get_support_layer_value(elt2)) || 
@@ -214,12 +214,12 @@ export function element_subsumes(elt1: LayeredObject, elt2: LayeredObject): bool
 function strongest_consequence<A>(set: ValueSet<A>): A {
     return pipe(
         set.elements,
-        (elements) => filter(elements, (elt: LayeredObject) => {
+        (elements) => filter(elements, (elt: LayeredObject<A>) => {
             return is_premises_in(get_support_layer_value(elt))
         }),
         (filtered) => reduce(
             filtered,
-            (acc: LayeredObject, item: LayeredObject) => {
+            (acc: LayeredObject<A>, item: LayeredObject<A>) => {
 
                 return merge_layered(acc, item)},
             the_nothing,

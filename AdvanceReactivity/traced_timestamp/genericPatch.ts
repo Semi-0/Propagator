@@ -1,5 +1,5 @@
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import {  has_timestamp_layer, timestamp_layer } from "./tracedTimestampLayer";
+import {  has_timestamp_layer, traced_timestamp_layer } from "./tracedTimestampLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set, is_better_set, merge_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -14,10 +14,9 @@ import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell
 import { update } from "../interface";
 import { fresher } from "./Fresher/Fresher";
 import { same_source } from "./SameSource";
-import { timestamp_equal } from "./TracedTimeStamp";
 import { is_fresh } from "./Predicates";
 import { get_traced_timestamp_layer } from "./tracedTimestampLayer";
-import { patch_traced_timestamps, smallest_timestamped_value } from "./Annotater";
+import { smallest_timestamped_value, traced_timestamped } from "./Annotater";
 import { same_freshness } from "./Fresher/Extensions";
 import { install_behavior_advice } from "../../Propagator/PropagatorBehavior";
 import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
@@ -25,6 +24,10 @@ import { execute_all_tasks_sequential } from "../../Shared/Reactivity/Scheduler"
 import { refresh_all_timestamps, timestamp_set_do_intersect, timestamp_set_intersect, type TracedTimeStampSet } from "./TracedTimeStampSet";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 import { feedback } from "../Generics/GenericArith";
+import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
+import { time_stamp_set_merge } from "./TimeStampSetMerge";
+import { construct_error_value, error_layer } from "sando-layer/Specified/ErrorLayer";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 // TODO: now is not realistic because cell would keep all the data
 // perhaps we need some strategy to clean up the data
 
@@ -52,27 +55,39 @@ function _is_timestamp_value_set(a: BetterSet<LayeredObject<any>> | LayeredObjec
 export const is_timestamp_value_set = register_predicate("is_timestamp_value_set", _is_timestamp_value_set)
 
 export function freshest_value(a: BetterSet<LayeredObject<any>>): LayeredObject<any>{
-    var freshest = smallest_timestamped_value
+    var freshest = smallest_timestamped_value()
     set_for_each((a: LayeredObject<any>) => {
-     if (deep_equal(a, freshest)){
-        return
-       }
-       else if (same_freshness(a, freshest) ){
-        // @ts-ignore
-        // if has two value has the same freshness then cause a contradiction
-        const timestamp_set_a = get_traced_timestamp_layer(a)
-        const timestamp_set_freshest = get_traced_timestamp_layer(freshest)
+        if (is_equal(a, freshest)){
+            return
+        }
+        else if (same_freshness(a, freshest) ){
+            // @ts-ignore
+            // if has two value has the same freshness then cause a contradiction
+            const timestamp_set_a = get_traced_timestamp_layer(a)
+            const timestamp_set_freshest = get_traced_timestamp_layer(freshest)
 
-        if(same_source(timestamp_set_a, timestamp_set_freshest)){
-            freshest = patch_traced_timestamps(the_contradiction, timestamp_set_a)
+            if(same_source(timestamp_set_a, timestamp_set_freshest)){
+                freshest = construct_layered_datum(
+                    the_contradiction, 
+                traced_timestamp_layer, 
+                time_stamp_set_merge(timestamp_set_a, timestamp_set_freshest),
+                error_layer,
+                    construct_error_value(get_base_value(a), "same freshness error")
+                )
+            }
+            else{
+                freshest = a
+            }
+        }
+        else if (fresher(a, freshest)){
+            freshest = a
+        
         }
         else{
-            freshest = a
+            // stay the same
         }
-       }
-       else if (fresher(a, freshest)){
-        freshest = a
-       }
+
+      
     }, a)
 
     return freshest
@@ -164,7 +179,7 @@ export const install_reactive_propagator_behavior = () => install_behavior_advic
 
 
 define_layered_procedure_handler(feedback,
-    timestamp_layer,
+    traced_timestamp_layer,
     (base: any, timestamp_value: TracedTimeStampSet) => {
         
         return refresh_all_timestamps(timestamp_value)

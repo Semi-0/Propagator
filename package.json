@@ -18,7 +18,7 @@
     "generic-handler": "0.3.17",
     "priority-queue": "^0.2.1",
     "rxjs": "^7.8.1",
-    "sando-layer": "0.1.9",
+    "sando-layer": "0.1.11",
     "superjson": "^2.2.2",
     "uuid": "^10.0.0"
   }

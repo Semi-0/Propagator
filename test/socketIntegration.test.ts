@@ -18,7 +18,7 @@ import { pipe } from "fp-ts/lib/function";
 import { map, subscribe } from "../Shared/Reactivity/Reactor" 
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { get_base_value } from "sando-layer/Basic/Layer";
-import { annotate_identified_timestamp } from "../AdvanceReactivity/traced_timestamp/Annotater";
+import { traced_timestamped } from "../AdvanceReactivity/traced_timestamp/Annotater";
 import { link, make_ce_arithmetical } from "../Propagator/Sugar";
 import { to_number } from "generic-handler/built_in_generics/generic_conversation";
 import { inspect_content } from "../Helper/Debug";
@@ -101,7 +101,7 @@ describe("SocketIOCell Propagator Integration", () => {
           map((a: number) => {
             return pipe(a,
               // @ts-ignore
-              (a: number) => annotate_identified_timestamp(cell_id(input))(a, Date.now())
+              (a: number) => traced_timestamped(a, construct_traced_timestamp(Date.now(), cell_id(input)))
             )
           }),
           subscribe((a: LayeredObject<number>) => {

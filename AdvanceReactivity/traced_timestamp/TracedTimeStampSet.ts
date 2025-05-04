@@ -6,13 +6,27 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { same_source } from "./SameSource";
 
 import { is_timestamp_set } from "./Predicates";
-import { _timestamp_layer_equal, refresh_timestamp, timestamp_equal } from "./TracedTimeStamp";
+import { get_id, get_timestamp, refresh_timestamp } from "./TracedTimeStamp";
 import { set_copy } from "../../Helper/BetterSet";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+import { is_array } from "generic-handler/built_in_generics/generic_predicates";
+import type { traced } from "fp-ts";
 
 export type TracedTimeStampSet = BetterSet<traced_timestamp>
 
-export function construct_traced_timestamp_set(timestamps: traced_timestamp[]): TracedTimeStampSet {
-    return construct_better_set(timestamps, (a: traced_timestamp) => a.id.toString())
+
+export function construct_traced_timestamp_set(timestamps: traced_timestamp[] | traced_timestamp): TracedTimeStampSet {
+    if (is_array(timestamps)){
+        return construct_better_set(timestamps as traced_timestamp[],  compose(get_id, to_string))
+    }
+    else{
+        return construct_better_set([timestamps as traced_timestamp],  compose(get_id, to_string))
+    }
+}
+
+export function empty_traced_timestamp_set(): TracedTimeStampSet {
+    return construct_traced_timestamp_set([])
 }
 
 export function to_traced_timestamp_set(timestamp: traced_timestamp): TracedTimeStampSet {
@@ -29,44 +43,24 @@ define_generic_procedure_handler(to_string, match_args(is_timestamp_set), (a: Tr
     }, ""))
 })
 
+export const has_same_source_timestamp = set_has
+
 define_generic_procedure_handler(same_source, all_match(is_timestamp_set), 
 (a: TracedTimeStampSet, b: TracedTimeStampSet) => {
-    return set_every(a, (at: traced_timestamp) => set_has(b, at)) && 
-           set_every(b, (bt: traced_timestamp) => set_has(a, bt))
+    return set_every(a, (at: traced_timestamp) => has_same_source_timestamp(b, at)) && 
+           set_every(b, (bt: traced_timestamp) => has_same_source_timestamp(a, bt))
 })
 
 
-define_generic_procedure_handler(_timestamp_layer_equal, all_match(is_timestamp_set), (a: TracedTimeStampSet, b: TracedTimeStampSet) => {
-    var eq = true 
- 
-    for (const [key, value] of a.meta_data.entries()){ 
 
-        // get would automatically convert the value to id
-        const bt = get(b, value)
-        if (bt === undefined){
-            return false
-        }
-        if (!timestamp_equal(value, bt)){
-            return false
-        }
-    }
-
-    for (const [key, value] of b.meta_data.entries()){ 
-        const at = get(a, value)
-        if (at === undefined){
-            return false
-        }
-        if (!timestamp_equal(at, value)){
-            return false
-        }
-    }
-
-    return eq
+define_generic_procedure_handler(is_equal, all_match(is_timestamp_set), (a: TracedTimeStampSet, b: TracedTimeStampSet) => {
+    return set_every(a, (at: traced_timestamp) => set_some(b, (bt: traced_timestamp) => is_equal(at, bt))) && 
+           set_every(b, (bt: traced_timestamp) => set_some(a, (at: traced_timestamp) => is_equal(at, bt)))
 })
 
 
 export function timestamp_set_intersect(a: TracedTimeStampSet, b: TracedTimeStampSet): TracedTimeStampSet {
-    return set_filter(a, (at: traced_timestamp) => set_some(b, (bt: traced_timestamp) => timestamp_equal(at, bt)))
+    return set_filter(a, (at: traced_timestamp) => set_some(b, (bt: traced_timestamp) => is_equal(at, bt)))
 }
 
 export function timestamp_set_do_intersect(a: TracedTimeStampSet, b: TracedTimeStampSet): boolean {

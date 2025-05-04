@@ -19,6 +19,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -93,7 +94,7 @@ export function cell_constructor<A>(
       pipe(
         content,
         map((content: any) => strongest_value(content)),
-        filter((content: any) => !deep_equal(content, strongest.get_value())),
+        filter((content: any) => !is_equal(content, strongest.get_value())),
         subscribe((content: any) => {
           strongest.next(content)
         })

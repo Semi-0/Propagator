@@ -18,10 +18,10 @@ export function update<A>(a: Cell<A>, v: A){
     if (update_store.has(cell_id(a))){
         stale(update_store.get(cell_id(a)))
     }
-
-    const timestamp_now = annotate_now_with_id(cell_id(a))(v)
-    add_cell_content(a, timestamp_now as A);
-    update_store.set(cell_id(a), timestamp_now)
+    const with_traced_timestamp = annotate_now_with_id(cell_id(a))
+    const annotated = with_traced_timestamp(v)
+    add_cell_content(a, annotated as A);
+    update_store.set(cell_id(a), annotated)
 
 }
 

@@ -30,7 +30,7 @@ import { install_behavior_advice } from "../Propagator/PropagatorBehavior";
 import { reactive_propagator_behavior } from "../AdvanceReactivity/traced_timestamp/ReactivePropagatorBehavior";
 import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
-import { timestamp_set_merge } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
+import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
 import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
@@ -38,6 +38,7 @@ import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
 import { com_if } from "../Propagator/BuiltInProps";
 import { trace } from "console";
+import { construct_traced_timestamp_set, empty_traced_timestamp_set } from "../AdvanceReactivity/traced_timestamp/TracedTimeStampSet";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -60,18 +61,12 @@ describe("Advance Reactive Tests", () => {
 
       const timestampA = construct_traced_timestamp(1, "1")
       const timestampB = construct_traced_timestamp(2, "1")
-      const setA = construct_better_set(
-        [timestampA], 
-        (a: traced_timestamp) => a.id.toString()
-      )
+      const setA = construct_traced_timestamp_set(timestampA)
       stale(timestampA)
 
-      const setB = construct_better_set(
-        [timestampB], 
-        (a: traced_timestamp) => a.id.toString()
-      )
+      const setB = construct_traced_timestamp_set(timestampB)
 
-      const result = timestamp_set_merge(setA, setB)
+      const result = timestamp_set_union(setA, setB)
       expect(set_equal(result, setB)).toEqual(true)
       
    })
@@ -80,15 +75,9 @@ describe("Advance Reactive Tests", () => {
     test("timestamp should propagate timestamp from multiple sources - A", () => {
       const timestampA = construct_traced_timestamp(1, "1")
       const timestampB = construct_traced_timestamp(2, "2")
-      const setA = construct_better_set(
-        [timestampA], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const setB = construct_better_set(
-        [timestampB], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const result = timestamp_set_merge(setA, setB)
+      const setA = construct_traced_timestamp_set(timestampA)
+      const setB = construct_traced_timestamp_set(timestampB)
+      const result = timestamp_set_union(setA, setB)
       expect(to_array(result)).toEqual([timestampA, timestampB])
     })
 
@@ -97,58 +86,49 @@ describe("Advance Reactive Tests", () => {
       const timestampA = construct_traced_timestamp(1, "1")
       const timestampB = construct_traced_timestamp(2, "2")
       const timestampC = construct_traced_timestamp(3, "3")
-      const setA = construct_better_set(
-        [timestampA], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const setB = construct_better_set(
-        [timestampB], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const setC = construct_better_set(
-        [timestampC], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const result = timestamp_set_merge(setA, setB)
+      const setA = construct_traced_timestamp_set(timestampA)
+      const setB = construct_traced_timestamp_set(timestampB)
+      const setC = construct_traced_timestamp_set(timestampC)
+      const result = time_stamp_set_merge(setA, setB)
       expect(to_array(result)).toEqual([timestampA, timestampB])
 
-      const result2 = timestamp_set_merge(result, setC)
+      const result2 = time_stamp_set_merge(result, setC)
       expect(to_array(result2)).toEqual([timestampA, timestampB, timestampC])
+    })
+
+    test("timestamp set merge should be able to merge element into empty set", () => {
+      const timestampA = construct_traced_timestamp(1, "1")
+      const setA = construct_traced_timestamp_set(timestampA)
+      const setB = empty_traced_timestamp_set()
+      const result = time_stamp_set_merge(setA, setB)
+      expect(to_array(result)).toEqual([timestampA])
+
+      const setC = empty_traced_timestamp_set()
+      const result2 = time_stamp_set_merge(result, setC)
+      expect(to_array(result2)).toEqual([timestampA])
     })
 
     test("multiple timestamp merged with new fresher timestamp should update according to its source id ", () => {
       const timestampA = construct_traced_timestamp(1, "1")
       const timestampB = construct_traced_timestamp(2, "2")
       const timestampC = construct_traced_timestamp(3, "3")
-      const setA = construct_better_set(
-        [timestampA], 
-        (a: traced_timestamp) => a.id.toString()
-      )
+      const setA = construct_traced_timestamp_set(timestampA)
 
       
-      const setB = construct_better_set(
-        [timestampB], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const setC = construct_better_set(
-        [timestampC], 
-        (a: traced_timestamp) => a.id.toString()
-      )
-      const result = timestamp_set_merge(setA, setB)
+      const setB = construct_traced_timestamp_set(timestampB)
+      const setC = construct_traced_timestamp_set(timestampC)
+      const result = time_stamp_set_merge(setA, setB)
       expect(to_array(result)).toEqual([timestampA, timestampB]) 
 
-      const result3 = timestamp_set_merge(result, setC)
+      const result3 = time_stamp_set_merge(result, setC)
       expect(to_array(result3)).toEqual([timestampA, timestampB, timestampC]) 
 
       const timestampD = construct_traced_timestamp(4, "1")
-      const setD = construct_better_set(
-        [timestampD], 
-        (a: traced_timestamp) => a.id.toString()
-      )
+      const setD = construct_traced_timestamp_set(timestampD)
 
       stale(timestampA)
-      const result4 = timestamp_set_merge(result3, setD)
-      expect(to_array(result4)).toEqual([timestampD, timestampB, timestampC])   
+      const result4 = time_stamp_set_merge(result3, setD)
+      expect(to_array(result4)).toEqual([timestampB, timestampC, timestampD])   
   })
 
 })
@@ -241,11 +221,17 @@ describe("timestamp value merge tests", () => {
       p_sync(input, output);
       
       update(input, 1);
-      await execute_all_tasks_sequential((error: Error) => {});
+      await execute_all_tasks_sequential((error: Error) => {console.log(error)});
       expect(get_base_value(cell_strongest_value(output))).toBe(1);
+      console.log(to_string(cell_content_value(input)))
+      console.log(to_string(cell_content_value(output)))
+      await new Promise((resolve) => setTimeout(resolve, 1));
 
       update(input, 2);
-      await execute_all_tasks_sequential((error: Error) => {});
+
+      await execute_all_tasks_sequential((error: Error) => {console.log(error)});
+      console.log(to_string(cell_content_value(input)))
+      console.log(to_string(cell_content_value(output)))
       expect(get_base_value(cell_strongest_value(output))).toBe(2);
     })
 
@@ -262,21 +248,21 @@ describe("timestamp value merge tests", () => {
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1));
       expect(get_base_value(cell_strongest_value(output))).toBe("first");
 
       update(cellB, "second");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1));
       expect(get_base_value(cell_strongest_value(output))).toBe("second");
 
       update(cellA, "third");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
       });
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1));
       expect(get_base_value(cell_strongest_value(output))).toBe("third");
     });
   });

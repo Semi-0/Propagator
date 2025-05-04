@@ -19,7 +19,6 @@ import { is_layered_object  as _is_layered_object} from "sando-layer/Basic/Layer
 import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 
 
-const is_layered_object = register_predicate("is_layered_object", _is_layered_object)
 
 const _and = construct_simple_generic_procedure("and", 2, (a: any, b: any) => a && b)
 const _or = construct_simple_generic_procedure("or", 2, (a: any, b: any) => a || b)
