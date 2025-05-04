@@ -2,7 +2,7 @@ import { socket_IO_client_cell } from "../Cell/RemoteCell/SocketClientCell";
 import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 import { describe, it, expect, beforeEach, afterEach, test } from "bun:test";
 import { cell_id, cell_strongest, cell_strongest_base_value, construct_cell, type Cell } from "@/cell/Cell";
-
+import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import { c_multiply } from "../Propagator/BuiltInProps";
 import { tell } from "../Helper/UI";
 import { update } from "../AdvanceReactivity/interface";
