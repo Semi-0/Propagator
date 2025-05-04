@@ -1,7 +1,7 @@
 import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator, error_logged_primitive_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
 import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell } from "../Cell/Cell";
-import { merge,  subscribe,  type Reactor, map, construct_reactor } from "../Shared/Reactivity/Reactor";
+import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
@@ -11,7 +11,6 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than, equal } from "../AdvanceReactivity/Generics/GenericArith";
 import { base_equal } from "../Shared/base_equal";
-import { pipe } from "fp-ts/lib/function";
 import { no_compute } from "../Helper/noCompute";
 import { for_each } from "../Helper/Helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -390,10 +389,11 @@ export const p_tap = (prop: Cell<any>, f: (x: any) => void) =>
         [prop],
         [],
         () => {
-            subscribe(f)(cell_strongest(prop))
+            const state = cell_strongest(prop);
+            Reactive.subscribe(f)(state.node);
         },
         "p_tap"
-)
+    );
 
 export const p_combine =  (...cells: Cell<any>[]) => function_to_primitive_propagator("p_combine",
     (...args: any[]) => {

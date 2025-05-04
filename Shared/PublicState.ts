@@ -1,24 +1,22 @@
-
 import {  make_relation, type Primitive_Relation } from '../DataTypes/Relation';
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
 
 import { all_match, match_args } from 'generic-handler/Predicates';
 import {  guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { is_layered_object } from '../Helper/Predicate';
-import { construct_readonly_reactor, construct_stateful_reactor, type StatefulReactor } from './Reactivity/Reactor';
-import { pipe } from 'fp-ts/function';
-import { filter, tap, map } from './Reactivity/Reactor';
+import { Reactive } from './Reactivity/ReactiveEngine';
+import type { ReadOnly, ReactiveState } from './Reactivity/ReactiveEngine';
 import { generic_merge, set_merge } from '../Cell/Merge';
 
 
 
 //@ts-ignore
-var parent: StatefulReactor<Primitive_Relation> = construct_stateful_reactor<Primitive_Relation>(make_relation("root", null));
+var parent: ReactiveState<Primitive_Relation> = Reactive.constructStateful(make_relation("root", null));
 // Todo: make this read only
-const all_cells: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-const all_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-const all_amb_propagators: StatefulReactor<any[]> = construct_stateful_reactor<any[]>([]);
-export const failed_count : StatefulReactor<number> = construct_stateful_reactor<number>(1);
+const all_cells: ReactiveState<any[]> = Reactive.constructStateful<any[]>([]);
+const all_propagators: ReactiveState<any[]> = Reactive.constructStateful<any[]>([]);
+const all_amb_propagators: ReactiveState<any[]> = Reactive.constructStateful<any[]>([]);
+export const failed_count : ReactiveState<number> = Reactive.constructStateful(1);
 
 
 
@@ -45,31 +43,23 @@ export interface PublicStateMessage{
 }
 
 export function public_state_message(command: PublicStateCommand, ...args: any[]): PublicStateMessage{
-    function get_command(){
-        return command;
-    }
-
-    function get_args(){
-        return args;
-    } 
-
-    function summarize(){
-        const args_summarize = ( is_cell(args[0]) ) || (is_propagator(args[0])) ? args[0].summarize() : "unknown args";
-
-        return  "command: " + get_command() + " args: " + args_summarize;
-    }
-
     return {
-        command: get_command(),
-        args: get_args(),
-        summarize: summarize
-    }
+        command,
+        args,
+        summarize() {
+            const [first] = args;
+            const argDescr = is_cell(first) || is_propagator(first)
+                ? first.summarize()
+                : 'unknown args';
+            return `command: ${command} args: ${argDescr}`;
+        }
+    };
 }
 
 
 
 
-const receiver : StatefulReactor<PublicStateMessage> = construct_stateful_reactor<PublicStateMessage>(public_state_message(PublicStateCommand.ADD_CELL, []));
+const receiver : ReactiveState<PublicStateMessage> = Reactive.constructStateful(public_state_message(PublicStateCommand.ADD_CELL, []));
 
 
 
@@ -83,7 +73,7 @@ function is_propagator(o: any): boolean{
 }
 
 
-receiver.subscribe((msg: PublicStateMessage) => {
+Reactive.subscribe((msg: PublicStateMessage) => {
     switch(msg.command){
 
         case PublicStateCommand.SET_SCHEDULER_NO_RECORD:
@@ -105,7 +95,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
                 all_cells.next([...all_cells.get_value(), ...msg.args]);
             }
             else{
-                console.log("captured attempt for insert weird thing inside cells:" + msg.args)
+                console.warn('ADD_CELL with invalid args', msg.args)
             }
             break;
 
@@ -114,7 +104,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
                 all_propagators.next([...all_propagators.get_value(), ...msg.args]);
             }
             else{
-                console.log("captured attempt for insert weird thing inside propagators")
+                console.warn('ADD_PROPAGATOR with invalid args')
             }
             
             break;
@@ -131,16 +121,16 @@ receiver.subscribe((msg: PublicStateMessage) => {
             }
             else{
                 throw_error(
-                    "add_error:",
-                    "add_child expects 1 or 2 arguments, got " + msg.args.length,
+                    'add_error:',
+                    `add_child expects 1 or 2 args, got ${msg.args.length}`,
                     msg.summarize()
                 );
             }
             break;
         case PublicStateCommand.SET_PARENT:
             guard(msg.args.length == 1, throw_error(
-                "add_error:",
-                "set_parent expects 1 argument, got " + msg.args.length,
+                'add_error:',
+                `set_parent expects 1 arg, got ${msg.args.length}`,
                 msg.summarize()
             ));
             parent = msg.args[0];
@@ -151,7 +141,7 @@ receiver.subscribe((msg: PublicStateMessage) => {
                 all_amb_propagators.next([...all_amb_propagators.get_value(), ...msg.args]);
             }
             else{
-                console.log("captured attempt for insert weird thing inside propagators")
+                console.warn('ADD_AMB_PROPAGATOR with invalid args')
             }
             break;
 
@@ -172,8 +162,8 @@ receiver.subscribe((msg: PublicStateMessage) => {
             }
             else{
                 throw_error(
-                    "add_error:",
-                    "set_cell_merge expects 1 argument, got " + msg.args.length,
+                    'add_error:',
+                    `set_cell_merge expects 1 arg, got ${msg.args.length}`,
                     msg.summarize()
                 );
             }
@@ -187,22 +177,20 @@ receiver.subscribe((msg: PublicStateMessage) => {
             set_handle_contradiction(msg.args[0]);
             break;
     }
-})
+})(receiver.node);
 
 export function set_global_state(type: PublicStateCommand, ...args: any[]){
-    // altering global state should be very careful, so i intentionally make the operation observable
-    const msg = public_state_message(type, ...args);
-    receiver.next(msg);
+    receiver.next(public_state_message(type, ...args));
 } 
 
 export function parameterize_parent(a: any){
-    return (do_something: () => any) => {
-        const old_parent = parent.get_value();
+    return (fn: () => any) => {
+        const old = parent.get_value();
         
         parent.next(a); 
-        const temp = do_something();
-        parent.next(old_parent);
-        return temp
+        const result = fn();
+        parent.next(old);
+        return result
     }
 }
 
@@ -211,42 +199,36 @@ export function get_global_parent(){
 }
 
 export const observe_all_cells_update = (observeCell: (cell: any) => void) => {
-    pipe(receiver,
-        filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_CELL), 
-        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_cell(msg.args[0])))
-    .subscribe((msg: PublicStateMessage) => {
-        const cell = msg.args[0]; 
-        guard((is_cell(cell)), throw_error(
-            "observe_all_cells", 
-            "observe_all_cells expects a cell, got " + cell, 
-            msg.summarize()
-        ));
-        observeCell(cell);
-    })               
+    Reactive.subscribe((msg: PublicStateMessage) => {
+        if (
+            msg.command === PublicStateCommand.ADD_CELL &&
+            msg.args.length === 1 &&
+            is_cell(msg.args[0])
+        ) {
+            observeCell(msg.args[0]);
+        }
+    })(receiver.node);
 }
 
 export const observe_all_propagators_update = (observePropagator: (propagator: any) => void) => {
-    pipe(receiver,
-        filter((msg: PublicStateMessage) => msg.command === PublicStateCommand.ADD_PROPAGATOR),
-        filter((msg: PublicStateMessage) => msg.args.length == 1 && is_propagator(msg.args[0])))
-    .subscribe((msg: PublicStateMessage) => {
-        const propagator = msg.args[0];
-        guard((is_propagator(propagator)), throw_error(
-            "observe_all_propagators", 
-            "observe_all_propagators expects a propagator, got " + propagator, 
-            msg.summarize()
-        ));
-        observePropagator(propagator);
-    })
+    Reactive.subscribe((msg: PublicStateMessage) => {
+        if (
+            msg.command === PublicStateCommand.ADD_PROPAGATOR &&
+            msg.args.length === 1 &&
+            is_propagator(msg.args[0])
+        ) {
+            observePropagator(msg.args[0]);
+        }
+    })(receiver.node);
 }
 
-export const observe_cell_array = (f: (cells: any[]) => void) => all_cells.subscribe(f)
-export const observe_propagator_array = (f: (propagators: any[]) => void) => all_propagators.subscribe(f)
+export const observe_cell_array = (f: (cells: any[]) => void) => Reactive.subscribe(f)(all_cells.node)
+export const observe_propagator_array = (f: (propagators: any[]) => void) => Reactive.subscribe(f)(all_propagators.node)
 export const cell_snapshot = () => all_cells.get_value()
 export const propagator_snapshot = () => all_propagators.get_value()
 export const amb_propagator_snapshot = () => all_amb_propagators.get_value()
-export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => all_amb_propagators.subscribe(f)
-export const observe_failed_count = (f: (failed_count: number) => void) => failed_count.subscribe(f)
+export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => Reactive.subscribe(f)(all_amb_propagators.node)
+export const observe_failed_count = (f: (failed_count: number) => void) => Reactive.subscribe(f)(failed_count.node)
 
 
 import { layered_deep_equal } from 'sando-layer/Equality';
@@ -258,6 +240,7 @@ import type { LayeredObject } from 'sando-layer/Basic/LayeredObject';
 import { install_behavior_advice, return_default_behavior } from '../Propagator/PropagatorBehavior';
 import { set_handle_contradiction } from '..';
 import { clear_all_tasks, configure_scheduler_no_record } from './Reactivity/Scheduler';
+import { is_equal } from 'generic-handler/built_in_generics/generic_arithmetic';
 
 export const deep_equal = construct_simple_generic_procedure("is_equal", 2,
     (a: any, b: any) => {
@@ -275,9 +258,9 @@ export function layers_equal(o1: LayeredObject<any>, o2: LayeredObject<any>){
 
     // Check if all layers are equal
     return set_every(layers1, (layer: Layer<any>) => {
-        return layer.is_equal(o1, o2)
+        return is_equal(o1, o2)
     }) && set_every(layers2, (layer: Layer<any>) => {
-        return layer.is_equal(o1, o2)
+        return is_equal(o1, o2)
     })
 }
 

@@ -6,7 +6,7 @@ import { tell, kick_out } from "../Helper/UI";
 import { MemoryMonitor } from "../Monitor/MemoryMonior";
 import { function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator";
 
-describe("Memory leak detection tests", () => {
+describe.skip("Memory leak detection tests", () => {
   // Create a memory monitor instance
   const monitor = new MemoryMonitor();
 

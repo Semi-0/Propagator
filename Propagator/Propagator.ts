@@ -5,14 +5,11 @@ import { set_global_state, get_global_parent} from "../Shared/PublicState";
 
 import { PublicStateCommand } from "../Shared/PublicState";
 
-import {combine_latest, type Reactor } from "../Shared/Reactivity/Reactor";
-
-import {  subscribe } from "../Shared/Reactivity/Reactor";
+import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 
 import { register_predicate } from "generic-handler/Predicates";
 
 import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
-import { pipe } from "fp-ts/lib/function";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
@@ -31,17 +28,23 @@ export interface Propagator {
 }
 
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
-    return propagator && typeof propagator === 'object' && 'get_name' in propagator && 'getRelation' in propagator && 'getInputsID' in propagator && 'getOutputsID' in propagator && 'getActivator' in propagator && 'summarize' in propagator && 'dispose' in propagator;
-})
+    return (
+        propagator &&
+        typeof propagator === 'object' &&
+        'get_name' in propagator &&
+        'getRelation' in propagator &&
+        'getInputsID' in propagator &&
+        'getOutputsID' in propagator &&
+        'summarize' in propagator &&
+        'dispose' in propagator
+    );
+});
 
 export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
                                  activate: () => void,
                                  name: string): Propagator {
-  const relation = make_relation(name, get_global_parent()) 
-
-  let activator: Reactor<any> | null = null;
-  const subscriptions: (() => void)[] = [];
+  const relation = make_relation(name, get_global_parent());
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
@@ -85,23 +88,28 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
         }
 
         const propagator_behavior = get_primtive_propagator_behavior();
-        const [inputs, output] = cells.length > 1 
+        const [inputs, output] = cells.length > 1
             ? [cells.slice(0, -1), cells[cells.length - 1]]
             : [cells, null];
 
-        // Track subscriptions for cleanup
-        let activator: Reactor<any> | null = null;
-        let subscription: (() => void) | null = null;
+        // Track subscription removal for cleanup
+        let unsubscribeFunc: (() => void) | null = null;
 
         const activate = () => {
-            const reactors = inputs.map(cell_strongest);
-            activator = propagator_behavior(combine_latest(...reactors), f);
+            // Build reactive pipeline using ReactiveEngine
+            // Get last-value streams for inputs
+            const inputStates = inputs.map(cell_strongest);
+            const inputNodes = inputStates.map(state => state.node);
+            // Combine latest values
+            const combined = Reactive.combineLatest(...inputNodes);
+            // Apply behavior (map and filter)
+            const behaviorNode = propagator_behavior(combined, f);
             
             if (output) {
-                // Store the subscription for later cleanup
-                const observer = (result: any) => add_cell_content(output, result);
-                activator.subscribe(observer);
-                subscription = () => activator?.unsubscribe(observer);
+                // Subscribe to behavior output to add content to output cell
+                const subscriptionNode = Reactive.subscribe((result: any) => add_cell_content(output, result))(behaviorNode as any);
+                // Track removal: disconnect subscriptionNode from behaviorNode
+                unsubscribeFunc = () => Reactive.disconnect(behaviorNode as any, subscriptionNode as any);
             }
         };
 
@@ -117,15 +125,9 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
         prop.dispose = () => {
             // Call original dispose first
             originalDispose();
-            
-            // Clean up subscriptions
-            if (subscription) {
-                subscription();
-            }
-            
-            // Clean up activator
-            if (activator && typeof activator.dispose === 'function') {
-                activator.dispose();
+            // Clean up subscription in reactive graph
+            if (unsubscribeFunc) {
+                unsubscribeFunc();
             }
         };
 

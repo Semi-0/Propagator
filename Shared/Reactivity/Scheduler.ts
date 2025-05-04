@@ -1,5 +1,6 @@
-import { construct_reactor, construct_scheduled_reactor, construct_scheduled_stateful_reactor, type StandardReactor } from "./Reactor";
 import { v4 as uuidv4 } from 'uuid';
+import { Reactive } from "./ReactiveEngine";
+import type { ReactiveState } from "./ReactiveEngine";
 
 // MAIN PROBLEM LIES IN EXECUTION ORDER
 export interface Scheduler{
@@ -215,7 +216,31 @@ export function steppable_run_task(error_handler: (e: Error) => void) {
       SimpleScheduler.steppable_run(error_handler)
 }
 
-export const scheduled_reactor = construct_scheduled_reactor<any>(SimpleScheduler.schedule)
+/** Create a reactor (without initial emission) whose next() calls are scheduled */
+export function scheduled_reactor<T>(): { subscribe: (f: (v: T) => void) => void; next: (v: T) => void; dispose: () => void } {
+    // Underlying stateful stream holds scheduled emissions
+    const state = Reactive.constructStateful<T>(undefined as any);
+    const originalNext = state.next.bind(state);
+    // Override next to schedule execution
+    state.next = (v: T) => {
+        SimpleScheduler.schedule(() => originalNext(v));
+    };
+    // Override subscribe to avoid initial emission: subscribe to node
+    const subscribeFn = (f: (v: T) => void) => {
+        Reactive.subscribe(f)(state.node);
+    };
+    return { subscribe: subscribeFn, next: state.next.bind(state), dispose: state.dispose.bind(state) };
+}
 
-export const scheduled_reactive_state = construct_scheduled_stateful_reactor(SimpleScheduler.schedule)
+/** Create a stateful stream whose emissions are scheduled through the scheduler */
+export function scheduled_reactive_state<T>(initial: T): ReactiveState<T> {
+    const state = Reactive.constructStateful<T>(initial);
+    const originalNext = state.next.bind(state);
+    // Override next to schedule execution
+    state.next = (v: T) => {
+        SimpleScheduler.schedule(() => originalNext(v));
+    };
+    // Keep subscribe from Reactive.constructStateful (emits initial + subsequent updates)
+    return state;
+}
 

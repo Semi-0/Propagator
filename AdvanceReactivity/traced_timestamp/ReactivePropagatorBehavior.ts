@@ -1,15 +1,12 @@
 import { construct_advice } from "generic-handler/built_in_generics/generic_advice";
-import type { ReadOnlyReactor } from "../../Shared/Reactivity/Reactor";
-import { filter } from "../../Shared/Reactivity/Reactor";
+import { Reactive } from "../../Shared/Reactivity/ReactiveEngine";
+import type { ReadOnly } from "../../Shared/Reactivity/ReactiveEngine";
 import { is_fresh } from "./Predicates";
 
 export const reactive_propagator_behavior = construct_advice(
     [
-        (reactor: ReadOnlyReactor<any>) => {
- 
-            return filter(is_fresh)(reactor)
-        },
-        (a: any) => a
+        (node: ReadOnly<any>) => Reactive.filter(is_fresh)(node),
+        (node: ReadOnly<any>) => node
     ],
-    (r: ReadOnlyReactor<any>) => r
+    (node: ReadOnly<any>) => node
 )

@@ -192,4 +192,23 @@ describe("miniReactor Combinators", () => {
         A.receive(2);
         expect(observer).toHaveBeenCalledTimes(0); // C should not receive updates after B is disposed
     });
+
+    test("dispose on source node should remove all child edges", () => {
+        const A = construct_node<number>();
+        const B = construct_node<number>();
+        const C = construct_node<number>();
+        connect(A, B, (notify, update) => { notify(update); });
+        connect(B, C, (notify, update) => { notify(update); });
+        const observer = jest.fn();
+        subscribe(observer)(C);
+        A.receive(1);
+        expect(observer).toHaveBeenCalledTimes(1);
+        expect(observer).toHaveBeenCalledWith(1);
+
+        observer.mockClear();
+        // Dispose the source A: should remove all downstream connections
+        dispose(A);
+        A.receive(2);
+        expect(observer).not.toHaveBeenCalled();
+    });
 });
