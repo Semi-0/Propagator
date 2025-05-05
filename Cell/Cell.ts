@@ -19,6 +19,7 @@ import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { disposeSubtree } from "../Shared/GraphTraversal";
+import { scheduled_reactive_state } from "../Shared/Reactivity/Scheduler";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -79,8 +80,8 @@ export function cell_constructor<A>(
     const relation = make_relation(name, get_global_parent(), id);
     const neighbors: Map<string, Propagator> = new Map();
     // build two stateful streams for content and strongest
-    const content: ReactiveState<CellValue<A>> = Reactive.constructStateful(initial);
-    const strongest: ReactiveState<CellValue<A>> = Reactive.constructStateful(initial);
+    const content: ReactiveState<CellValue<A>> = scheduled_reactive_state(initial);
+    const strongest: ReactiveState<CellValue<A>> = scheduled_reactive_state(initial);
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
     // whenever content changes, compute strongest_value and push if changed
