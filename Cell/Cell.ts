@@ -128,7 +128,6 @@ export function cell_constructor<A>(
       },
       dispose: () => {
         // first dispose entire downstream subgraph
-        disposeSubtree(cell);
         disposed = true;
         content.dispose();
         strongest.dispose();
@@ -208,6 +207,10 @@ export function cell_strongest_value<A>(cell: Cell<A>){
 
 export function cell_content_value<A>(cell: Cell<A>){
   return cell.getContent().get_value();
+}
+
+export function cell_dispose(cell: Cell<any>){
+  cell.dispose();
 }
 
 export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)

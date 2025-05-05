@@ -13,6 +13,7 @@ import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
+import { find_cell_by_id } from "../Shared/GraphTraversal";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
@@ -181,4 +182,16 @@ export function propagator_id(propagator: Propagator): string{
 
 export function propagator_name(propagator: Propagator): string{
     return propagator.get_name();
+}
+
+export function propagator_dispose(propagator: Propagator){
+    propagator.dispose();
+}
+
+export function propagator_inputs(propagator: Propagator): Cell<any>[] {
+    return propagator.getInputsID().map(id => find_cell_by_id(id) as Cell<any>).filter(cell => cell !== undefined);
+}
+
+export function propagator_outputs(propagator: Propagator): Cell<any>[] {
+    return propagator.getOutputsID().map(id => find_cell_by_id(id) as Cell<any>).filter(cell => cell !== undefined);
 }
