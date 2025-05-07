@@ -14,22 +14,24 @@ import {
   combine_latest as mrCombineLatest
 } from "./MiniReactor/MrCombinators";
 
+// THIS CLASS NEEDS SERIOUS REFACTORING
+// THIS IS SO STUPIDLY WRONG!!!!
+
+
 /** A read-only reactive stream of T */
-export type ReadOnly<T> = Node<T>;
+export type ReadOnly<T> = {
+  next: (v: T) => void;
+  dispose: () => void;
+  subscribe: (f: (v: T) => void) => void;
+}
+// this had some serious issues if we use readOnly as a output type
 
 /** A stateful reactive stream we can push to, peek, and dispose */
-export interface ReactiveState<T> {
+export interface ReactiveState<T> extends ReadOnly<T>{
   /** the underlying node to drive or subscribe to */
-  node: ReadOnly<T>;
-  /** push a new value */
-  next(v: T): void;
-  /** read the last pushed value */
   get_value(): T;
-  /** remove the node and its descendants */
-  dispose(): void;
-  /** subscribe to value updates */
-  subscribe(f: (v: T) => void): ReadOnly<T>;
 }
+
 
 /** The reactive engine interface */
 export interface IReactive {
@@ -53,13 +55,21 @@ export interface IReactive {
   dispose<T>(state: ReactiveState<T>): void;
 }
 
+
+const MiniReactorToReadOnly = (node: Node<any>): ReadOnly<any> => {
+  return {
+    next: node.receive,
+    dispose: () => mrDispose(node),
+    subscribe: (f: (v: any) => void) => mrCombinatorSubscribe(f)(node)
+  }
+}
+
 /** Adapter implementation over MiniReactor */
 export class MiniReactorAdapter implements IReactive {
   constructStateful<T>(initial: T): ReactiveState<T> {
     const root = construct_node<T>();
     const step = mrStepper(initial)(root);
     return {
-      node: step.node,
       next: root.receive,
       get_value: () => step.get_value(),
       dispose: () => mrDispose(root),
@@ -67,19 +77,23 @@ export class MiniReactorAdapter implements IReactive {
         // Send initial value
         f(step.get_value());
         // Subscribe to subsequent updates
-        return mrCombinatorSubscribe(f)(step.node);
+        mrCombinatorSubscribe(f)(step.node as Node<T>);
       },
     };
   }
 
   constructReadOnly<T>(linked: ReactiveState<T>): ReadOnly<T> {
-    return linked.node;
+    return {
+      next: linked.next,
+      dispose: linked.dispose,
+      subscribe: linked.subscribe
+    }
   }
 
-  map = <A, B>(f: (a: A) => B) => mrMap(f);
-  filter = <A>(f: (a: A) => boolean) => mrFilter(f);
-  tap = <A>(f: (a: A) => void) => mrTap(f);
-  combineLatest = <A>(...src: ReadOnly<A>[]) => mrCombineLatest(...src);
+  map = <A, B>(f: (a: A) => B) => (src: ReadOnly<A>) => MiniReactorToReadOnly(mrMap(f)(src as any));
+  filter = <A>(f: (a: A) => boolean) => (src: ReadOnly<A>) => MiniReactorToReadOnly(mrFilter(f)(src as any));
+  tap = <A>(f: (a: A) => void) => (src: ReadOnly<A>) => MiniReactorToReadOnly(mrTap(f)(src as any));
+  combineLatest = <A>(...src: ReadOnly<A>[]) => MiniReactorToReadOnly(mrCombineLatest(...src));
   pipe = <A>(
     src: ReadOnly<A>,
     ...ops: ((node: ReadOnly<A>) => ReadOnly<A>)[]
@@ -94,8 +108,10 @@ export class MiniReactorAdapter implements IReactive {
   disconnect = <A, B>(parent: ReadOnly<A>, child: ReadOnly<B>) => {
     mrDisconnect(parent as any, child as any);
   };
-  subscribe = <A>(f: (v: A) => void) => (src: ReadOnly<A>) =>
-    mrCombinatorSubscribe(f)(src);
+  subscribe = <A>(f: (v: A) => void) => (src: ReadOnly<A>) => {
+    mrCombinatorSubscribe(f)(src as any);
+    return src;
+  }
   dispose = <T>(state: ReactiveState<T>) => state.dispose();
 }
 

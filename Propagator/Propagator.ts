@@ -25,6 +25,7 @@ export interface Propagator {
   getInputsID: () => string[];
   getOutputsID: () => string[];
   summarize: () => string;
+  activate: () => void;
   dispose: () => void;
 }
 
@@ -58,6 +59,7 @@ export function construct_propagator(inputs: Cell<any>[],
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
     summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`,
+    activate: activate,
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
         const neighbors = cell.getNeighbors();
@@ -93,47 +95,18 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
         // Track subscription removal for cleanup
         let unsubscribeFunc: (() => void) | null = null;
 
-        const activate = () => {
-            // Build reactive pipeline using ReactiveEngine
-            // Get last-value streams for inputs
-            const inputStates = inputs.map(cell_strongest);
-            const inputNodes = inputStates.map(state => state.node);
-            // Combine latest values
-            const combined = Reactive.combineLatest(...inputNodes);
-            // Apply behavior (map and filter)
-            const behaviorNode = propagator_behavior(combined, f);
-            
-            if (output) {
-                // Subscribe to behavior output to add content to output cell
-                const subscriptionNode = Reactive.subscribe((result: any) => add_cell_content(output, result))(behaviorNode as any);
-                // Track removal: disconnect subscriptionNode from behaviorNode
-                unsubscribeFunc = () => Reactive.disconnect(behaviorNode as any, subscriptionNode as any);
-            }
-        };
+
 
         const prop = construct_propagator(
             inputs,
             output ? [output] : [],
-            activate,
+            f,
             name
         );
-
-        // Enhance the dispose method to also clean up reactor subscriptions
-        const originalDispose = prop.dispose;
-        prop.dispose = () => {
-            // Call original dispose first
-            originalDispose();
-            // Clean up subscription in reactive graph
-            if (unsubscribeFunc) {
-                unsubscribeFunc();
-            }
-        };
 
         return prop;
     };
 }
-
-
 
 export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
     primitive_propagator(
@@ -141,10 +114,6 @@ export const error_logged_primitive_propagator = (f: (...args: any[]) => any, na
         name
     )
 
-
- 
-
-// just make_function layered procedure
 export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
     // limitation: does not support rest or optional parameters
     const rf = install_propagator_arith_pack(name, f.length, f)
@@ -156,17 +125,13 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator {
     // Create the propagator using the basic constructor
-    const prop = construct_propagator(inputs, outputs, to_build, name);
-    
-    // Enhance the dispose method to properly handle cleanup
-    const originalDispose = prop.dispose;
-    prop.dispose = () => {
-        // Call original dispose first
-        originalDispose();
-        
-        // Additional cleanup could be added here in the future
-        // For now we'll rely on the cell neighbor cleanup in the base implementation
-    };
+    var built = false
+    const prop = construct_propagator(inputs, outputs, () => {
+        if (!built){
+            to_build()
+            built = true
+        }
+    }, name);
     
     return prop;
 }

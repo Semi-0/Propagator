@@ -20,6 +20,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { disposeSubtree } from "../Shared/GraphTraversal";
 import { scheduled_reactive_state } from "../Shared/Reactivity/Scheduler";
+import { schedule } from "../Shared/StandardScheduler";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -30,7 +31,7 @@ export const general_contradiction =  construct_simple_generic_procedure("genera
 
 export function handle_cell_contradiction<A>(cell: Cell<A>) {
   // get the support layer of the cell's strongest value, cast to any for type compatibility
-  const support = get_support_layer_value(cell.getStrongest().get_value() as any);
+  const support = get_support_layer_value(cell.getStrongest() as any);
   process_contradictions(make_better_set([support]), cell);
 }
 
@@ -44,14 +45,13 @@ export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
 
 export interface Cell<A> {
   getRelation: () => Primitive_Relation;
-  getContent: () => ReactiveState<CellValue<A>>;
-  getStrongest: () => ReactiveState<CellValue<A>>;
+  getContent: () => CellValue<A>[] 
+  getStrongest: () => CellValue<A>
   getNeighbors: () => Map<string, Propagator>;
   addContent: (increment: CellValue<A>) => void;
-  force_update: () => void;
+  testContent: () => void;
   addNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
-  observe_update: (observer: (cellValues: A) => void) => void;
   dispose: () => void;  // <-- new dispose method
 }
 
@@ -73,64 +73,60 @@ function testContent(content: any, strongest: any): any | null {
 export function cell_constructor<A>(
       initial: any,
       strongest_value_fn: (x: any) => any,
-      cell_merge: (content: any, increment: any) => any
+      cell_merge: (content: CellValue<A>[], increment: CellValue<A>) => CellValue<A>[]
   ) {
   return (name: string, id: string | null = null) => {
     let disposed = false;
     const relation = make_relation(name, get_global_parent(), id);
     const neighbors: Map<string, Propagator> = new Map();
     // build two stateful streams for content and strongest
-    const content: ReactiveState<CellValue<A>> = scheduled_reactive_state(initial);
-    const strongest: ReactiveState<CellValue<A>> = scheduled_reactive_state(initial);
+    var content: CellValue<A>[] = []
+    var strongest: CellValue<A> = initial;
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
-    // whenever content changes, compute strongest_value and push if changed
-    Reactive.pipe(
-      content.node,
-      Reactive.map((c: CellValue<A>) => strongest_value_fn(c)),
-      Reactive.filter((c: any) => !is_equal(c, strongest.get_value())),
-      Reactive.tap((c: any) => strongest.next(c))
-    );
 
-    // subscribe to strongest stream for contradictions
-    Reactive.subscribe((v: any) => {
-      if (general_contradiction(v)) {
-        handle_cell_contradiction();
+
+    function test_content(){
+      const new_strongest = strongest_value_fn(content)
+      if (is_equal(new_strongest, strongest)){
+        strongest = new_strongest
       }
-    })(strongest.node);
+      else if (is_contradiction(new_strongest)){
+        handle_cell_contradiction()
+      }
+      else{
+        strongest = new_strongest
+        schedule.alert_propagators(Array.from(neighbors.values()))
+      }
+    }
 
     const cell: Cell<A> = {
       getRelation: () => relation,
       getContent: () => content,
       getStrongest: () => strongest,
       getNeighbors: () => neighbors,
+      testContent: () => test_content(),
       addContent: (increment: CellValue<A>) => {
-        if (disposed) {
-          return;
-        }
-        const result = cell_merge(content.get_value(), increment);
-        content.next(result);
+        content = cell_merge(content, increment)
+        test_content()
       },
-      force_update: () => content.next(content.get_value()),
+
       addNeighbor: (propagator: Propagator) => {
         neighbors.set(propagator.getRelation().get_id(), propagator);
-        strongest.next(strongest.get_value());
+        schedule.alert_propagator(propagator)
       },
       summarize: () => {
         const name = relation.get_name();
-        const strongVal = strongest.get_value();
-        const contVal = content.get_value();
+        const strongVal = strongest
+        const contVal = content
         return `name: ${name}\nstrongest: ${describe(strongVal)}\ncontent: ${describe(contVal)}`;
       },
-      observe_update: (observer: (cellValues: any) => void) => {
-        // side-effect subscription
-        Reactive.subscribe(observer)(strongest.node);
-      },
+
       dispose: () => {
         // first dispose entire downstream subgraph
         disposed = true;
-        content.dispose();
-        strongest.dispose();
+        content = []
+        strongest = initial
         neighbors.clear();
         set_global_state(PublicStateCommand.REMOVE_CELL, cell);
       }
@@ -192,25 +188,12 @@ export function cell_id<A>(cell: Cell<A>){
   return cell.getRelation().get_id();
 }
 
-
-export function cell_subscribe<A>(cell: Cell<A>, observer: (cellValues: A) => void){
-  cell.observe_update(observer);
-}
-
 export function cell_name<A>(cell: Cell<A>){
   return cell.getRelation().get_name()
-}
-
-export function cell_strongest_value<A>(cell: Cell<A>){
-  return cell.getStrongest().get_value();
-}
-
-export function cell_content_value<A>(cell: Cell<A>){
-  return cell.getContent().get_value();
 }
 
 export function cell_dispose(cell: Cell<any>){
   cell.dispose();
 }
 
-export const cell_strongest_base_value = compose(cell_strongest_value, get_base_value)
+export const cell_strongest_base_value = compose(cell_strongest, get_base_value)

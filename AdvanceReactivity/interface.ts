@@ -1,6 +1,5 @@
 import { add_cell_content, cell_id, constant_cell, construct_cell } from "@/cell/Cell";
 import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/Annotater";
-import { cell_strongest_value } from "@/cell/Cell";
 import type { Cell } from "@/cell/Cell";
 import { stale } from "./traced_timestamp/Annotater";
 import { register_premise } from "../DataTypes/Premises";

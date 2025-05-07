@@ -1,4 +1,23 @@
-GABAGE COLLECTION
-1. UPSTREAM CELLS PROPAGATORS REACTORS
-2. REMOVE CELL AND PROPAGATORS FROM GLOBAL STATE
-3. CHILDRREN PROPAGATORS FROM COMPOUND PROPAGATORS
+1. Scheduler: Push–Pull Based (Necessity: High, Urgency: High)
+• The original thesis design was push–pull, and changing it to pull‐only was a mistake. This affects correctness and performance.
+2. Timestamp Uniqueness (Necessity: High, Urgency: Medium)
+• Ideally, timestamps should be unique per input so that the extra “id” property isn’t needed. 
+This simplifies the model and reduces potential bugs. (Necessity: High, Urgency: Medium)
+3. Generic Procedure for Informativeness (Necessity: Medium, Urgency: Medium)
+• Fixed reactor in amb operator and global state (Necessity: Medium, Urgency: Medium) 
+• A generic procedure to calculate informativeness (e.g., every propagator that had a cell change since last time gets a value of 1) would help the scheduler prioritize better.
+4. fixed parent child relationship in cell and propagator, add dimension tracking for relationship (Necessity: Medium, Urgency: Mediun)
+4. Contextual Awareness in Scheduler (Necessity: Medium, Urgency: Low)
+• The scheduler should be aware of the dimension of the propagator (e.g., propagators inside a subnet of cells should be prioritized). This is important for performance but not immediately critical.
+5. Timestamp Sorting for Circles (Necessity: Medium, Urgency: Low)
+• When a cell receives two values with the same timestamp, it should automatically sort based on the timing it received the value. This would allow circles and eliminate the need for a feedback propagator.
+6. Scheduler Propagator (Necessity: Low, Urgency: Low)
+• Investigating whether a scheduler propagator is possible is an interesting idea but not urgent.
+7. Generic Properties for State (Necessity: Low, Urgency: Low)
+• Using generic properties for state (like in public state or scheduler) could be observed, but it’s not immediately necessary.
+8. Cell Remembering Input Neighbors (Necessity: Low, Urgency: Low)
+• Having cells remember input neighbors for easier upstream change tracking is a nice-to-have but not urgent.
+9. Disposing Propagators and Cells (Necessity: Low, Urgency: Low)
+• Disposing propagators and cells without necessarily disposing all upstreams is a minor optimization.
+10. Separating Neighbor/Inputs/Outputs into an Independent Graph (Necessity: Low, Urgency: Low)
+

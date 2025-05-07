@@ -10,7 +10,7 @@ import { strongest_value } from "@/cell/StrongestValue";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_contradiction, is_not_contradiction, the_contradiction } from "@/cell/CellValue";
 import { deep_equal } from "../../Shared/PublicState";
-import { cell_content_value, cell_strongest_value, type Cell } from "@/cell/Cell";
+import {  cell_content, type Cell } from "@/cell/Cell";
 import { update } from "../interface";
 import { fresher } from "./Fresher/Fresher";
 import { same_source } from "./SameSource";
@@ -133,9 +133,9 @@ define_handler(strongest_value, match_args(has_timestamp_layer),
 
 export function trace_value(selector: (a: LayeredObject<any>[]) => LayeredObject<any>){
     return (cell: Cell<any>) => {
-        const contradiction = cell_strongest_value(cell)
+        const contradiction = strongest_value(cell)
         const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
-        const contents = cell_content_value(cell)
+        const contents = cell_content(cell)
         
         const causes = set_filter(contents, (a: LayeredObject<any>) => {
             return timestamp_set_do_intersect(get_traced_timestamp_layer(a), contradiction_timestamp)
