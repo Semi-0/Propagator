@@ -1,8 +1,8 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
-import { deep_equal } from "../Shared/PublicState";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import type { Applicability } from "generic-handler/Applicatability";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 
 var trace_merge = false; 
 
@@ -27,7 +27,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
         else if (is_contradiction(increment)) {
             return increment
         }
-        else if (deep_equal(content, increment)) {
+        else if (is_equal(content, increment)) {
             return content
         }
         else {

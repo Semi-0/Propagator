@@ -1,7 +1,7 @@
 import { primitive_propagator, constraint_propagator, type Propagator, construct_propagator } from "./Propagator"; 
 import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
 import { type Cell, cell_name } from "../Cell/Cell";
-import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, observe_premises_has_changed, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
+import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
 import { first, for_each, second } from "../Helper/Helper";
 import { set_add_item, construct_better_set,  set_for_each, set_merge, set_remove, map_to_new_set , set_filter, set_get_length, to_array, set_find,  set_remove_item, set_larger_than, set_some, map_to_same_set, make_better_set, set_map, set_flat_map, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";
 import { set_reduce_right } from "generic-handler/built_in_generics/generic_better_set";
@@ -37,11 +37,6 @@ export function configure_debug_search(debug: boolean){
     configure_log_nogoods(debug);
 }
 
-
-function construct_amb_reactor(f: () => void): () => Reactor<boolean>{
-  return () =>  tap<boolean>(f)(observe_premises_has_changed() as Reactor<boolean>)
-}
-
 // TODO: this need be able to work only if the support set can be propagated first!!!
 export function binary_amb(cell: Cell<boolean>): Propagator{
     // 
@@ -69,7 +64,7 @@ export function binary_amb(cell: Cell<boolean>): Propagator{
         }
     }
     // when amb propagato is activated?
-    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "binary_amb")
+    const self = construct_propagator([cell], [cell], amb_choose, "binary_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -104,6 +99,7 @@ export function mark_all_premises_out(premises: BetterSet<string>){
 export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
     const premises: BetterSet<string> = make_hypotheticals<any>(cell, values)
         function amb_choose(){
+            console.log("amb_choose")
             // if all the premises is believed, it represent a contradiction
             const premise_to_choose = find_premise_to_choose(premises)
 
@@ -133,7 +129,7 @@ export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
         }
 
 
-    const self = construct_propagator([cell], [cell], construct_amb_reactor(amb_choose), "p_amb")
+    const self = construct_propagator([cell], [cell], amb_choose, "p_amb")
     set_global_state(PublicStateCommand.ADD_AMB_PROPAGATOR, self)
     return self
 }
@@ -154,7 +150,7 @@ function cross_product_union(nogoodss: BetterSet<BetterSet<BetterSet<string>>>):
 
 export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, complaining_cell: Cell<any>){
     // MARK FAILED PREMISE COMBINATION WITH EACH FAILED PREMISE
- //TODO: update-failure-count
+    //TODO: update-failure-count
 
 
    if(log_nogoods){
@@ -176,12 +172,6 @@ export function process_contradictions(nogoods: BetterSet<BetterSet<string>>, co
    if (toDisbelieve !== undefined){
        maybe_kick_out([toDisbelieve], nogood, complaining_cell)
    }
-//    else{
-//         throw Error("contradiction is unsolvable, no hypo premises is find, nogoods: " + 
-//                     to_string(nogoods) +
-//                     " cell_name: " + cell_name(complaining_cell))
-//    }
-
    
 }
 

@@ -1,4 +1,4 @@
-import { set_global_state, get_global_parent, deep_equal } from "../Shared/PublicState";
+import { set_global_state, get_global_parent } from "../Shared/PublicState";
 import { type Propagator } from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
@@ -17,10 +17,10 @@ import { match_args, register_predicate } from "generic-handler/Predicates";
 import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { disposeSubtree } from "../Shared/GraphTraversal";
-import { scheduled_reactive_state } from "../Shared/Reactivity/Scheduler";
-import { schedule } from "../Shared/StandardScheduler";
+import { Current_Scheduler } from "../Shared/Scheduler/Scheduler";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -67,9 +67,6 @@ function testContent(content: any, strongest: any): any | null {
   }
 }
 
-
-
-
 export function cell_constructor<A>(
       initial: any,
       strongest_value_fn: (x: any) => any,
@@ -89,14 +86,15 @@ export function cell_constructor<A>(
     function test_content(){
       const new_strongest = strongest_value_fn(content)
       if (is_equal(new_strongest, strongest)){
-        strongest = new_strongest
+    
       }
       else if (is_contradiction(new_strongest)){
+        strongest = new_strongest
         handle_cell_contradiction()
       }
       else{
         strongest = new_strongest
-        schedule.alert_propagators(Array.from(neighbors.values()))
+        Current_Scheduler.alert_propagators(Array.from(neighbors.values()))
       }
     }
 
@@ -113,7 +111,7 @@ export function cell_constructor<A>(
 
       addNeighbor: (propagator: Propagator) => {
         neighbors.set(propagator.getRelation().get_id(), propagator);
-        schedule.alert_propagator(propagator)
+        Current_Scheduler.alert_propagator(propagator)
       },
       summarize: () => {
         const name = relation.get_name();
@@ -151,11 +149,16 @@ export function constant_cell<A>(value: A, name: string, id: string | null = nul
 
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
-  typeof a === 'object' && a !== null &&
-  'getRelation' in a && 'getContent' in a && 'getStrongest' in a &&
-  'getNeighbors' in a && 'addContent' in a && 'testContent' in a &&
-  'force_update' in a && 'addNeighbor' in a && 'summarize' in a &&
-  'observe_update' in a && 'dispose' in a
+  typeof  a !== null && a !== undefined 
+          && a.getRelation !== undefined 
+          && a.getContent !== undefined 
+          && a.getStrongest !== undefined 
+          && a.getNeighbors !== undefined 
+          && a.addContent !== undefined 
+          && a.testContent !== undefined 
+          && a.addNeighbor !== undefined 
+          && a.summarize !== undefined 
+          && a.dispose !== undefined
 );
 
     
@@ -172,11 +175,12 @@ export function add_cell_content<A>(cell: Cell<A>, content: A){
   cell.addContent(content);
 }
 
-export function cell_strongest<A>(cell: Cell<A>){
+export function cell_strongest<A>(cell: Cell<A>): CellValue<A>{
   return cell.getStrongest();
-}
+} 
 
-export function cell_content<A>(cell: Cell<A>){
+
+export function cell_content<A>(cell: Cell<A>): any{
   return cell.getContent();
 }
 
@@ -197,3 +201,7 @@ export function cell_dispose(cell: Cell<any>){
 }
 
 export const cell_strongest_base_value = compose(cell_strongest, get_base_value)
+
+define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {
+  return cell.summarize()
+})

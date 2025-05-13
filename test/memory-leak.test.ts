@@ -1,7 +1,7 @@
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test";
 import { construct_cell, cell_strongest_base_value } from "../Cell/Cell";
 import { p_add, p_zip, p_remove_duplicates } from "../Propagator/BuiltInProps";
-import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
+import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { tell, kick_out } from "../Helper/UI";
 import { MemoryMonitor } from "../Monitor/MemoryMonior";
 import { function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator";

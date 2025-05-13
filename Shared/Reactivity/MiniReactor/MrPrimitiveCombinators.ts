@@ -1,6 +1,6 @@
 import { type Node, type EdgeCallback, type Edge } from './MrType';
 import { construct_edge, construct_node, fetch_edge, get_children, get_parents, have_only_one_parent_of, remove_edge, remove_node, get_node } from './MrPrimitive';
-import {  make_better_set, set_for_each, set_map } from 'generic-handler/built_in_generics/generic_better_set';
+import {  construct_better_set, make_better_set, set_for_each, set_map } from 'generic-handler/built_in_generics/generic_better_set';
 import { set_add_item } from 'generic-handler/built_in_generics/generic_better_set';
 import { guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 export function connect<A, B>(parent: Node<A>, child: Node<B>, f: EdgeCallback<A, B>){
@@ -31,6 +31,7 @@ export function apply<A, B>(f: EdgeCallback<A, B>){
 export interface Stepper<A>{
     get_value: () => A,
     node: Node<A>
+    receive: (update: A) => void
 }
 
 export function stepper<A>(initial: A): (node: Node<A>) => Stepper<A>{
@@ -43,7 +44,8 @@ export function stepper<A>(initial: A): (node: Node<A>) => Stepper<A>{
         
         return {
             get_value: () => value,
-            node: stepperNode
+            node: stepperNode,
+            receive: node.receive
         };
     }
 }
@@ -72,7 +74,7 @@ export function dispose(node: Node<any>) {
     if (!node) return;
 
     // Create a set to track nodes that need to be disposed
-    let nodes_to_dispose = make_better_set<Node<any>>([]);
+    let nodes_to_dispose = construct_better_set<Node<any>>([], (e: any) => e.id);
     
     // Collect all nodes that should be disposed
     const collect_nodes_to_dispose = (parent: Node<any>) => {

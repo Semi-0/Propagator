@@ -9,7 +9,6 @@ import { match_args, register_predicate } from "generic-handler/Predicates";
 import { strongest_value } from "@/cell/StrongestValue";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_contradiction, is_not_contradiction, the_contradiction } from "@/cell/CellValue";
-import { deep_equal } from "../../Shared/PublicState";
 import {  cell_content, type Cell } from "@/cell/Cell";
 import { update } from "../interface";
 import { fresher } from "./Fresher/Fresher";
@@ -18,9 +17,8 @@ import { is_fresh } from "./Predicates";
 import { get_traced_timestamp_layer } from "./tracedTimestampLayer";
 import { smallest_timestamped_value, traced_timestamped } from "./Annotater";
 import { same_freshness } from "./Fresher/Extensions";
-import { install_behavior_advice } from "../../Propagator/PropagatorBehavior";
+
 import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
-import { execute_all_tasks_sequential } from "../../Shared/Reactivity/Scheduler";
 import { refresh_all_timestamps, timestamp_set_do_intersect, timestamp_set_intersect, type TracedTimeStampSet } from "./TracedTimeStampSet";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 import { feedback } from "../Generics/GenericArith";
@@ -135,7 +133,8 @@ export function trace_value(selector: (a: LayeredObject<any>[]) => LayeredObject
     return (cell: Cell<any>) => {
         const contradiction = strongest_value(cell)
         const contradiction_timestamp = get_traced_timestamp_layer(contradiction) 
-        const contents = cell_content(cell)
+        // @ts-ignore
+        const contents = cell_content(cell) as BetterSet<LayeredObject<any>>
         
         const causes = set_filter(contents, (a: LayeredObject<any>) => {
             return timestamp_set_do_intersect(get_traced_timestamp_layer(a), contradiction_timestamp)
@@ -155,7 +154,7 @@ export function trace_value(selector: (a: LayeredObject<any>[]) => LayeredObject
             const value = selector(to_array(options))
             new Promise(resolve => setTimeout(resolve, 1)).then(() => {
                 update(cell, get_base_value(value))
-                execute_all_tasks_sequential((error: Error) => {console.log("error", error)})
+                
             })
         }
         else{
@@ -175,7 +174,6 @@ export const trace_latest_emerged_value = trace_value((a: LayeredObject<any>[]) 
 
 
 
-export const install_reactive_propagator_behavior = () => install_behavior_advice(reactive_propagator_behavior)
 
 
 define_layered_procedure_handler(feedback,

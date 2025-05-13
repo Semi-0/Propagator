@@ -5,13 +5,14 @@ import { mark_premise_in, mark_premise_out, register_premise } from "../DataType
 import { failed_count } from "../Shared/PublicState";
 import {  type PublicStateMessage } from "../Shared/PublicState";
 import { is_layered_object } from "./Predicate";
-import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Reactivity/Scheduler";
+import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Scheduler/Scheduler";
 import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
 import { pipe } from "fp-ts/lib/function";
 import { construct_better_set, map_to_new_set, merge_set, set_add_item, set_map, set_reduce, set_some, set_union, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { process_contradictions } from "../Propagator/Search";
 import { is_contradiction, is_nothing } from "../Cell/CellValue";
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 
 function range(start: number, end: number): BetterSet<number>{
     return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i), to_string)
@@ -66,7 +67,7 @@ export function do_nothing(){
 export function force_failure(cells: BetterSet<Cell<any>>){
     
     // TODO: set union is not correct
-    const nogoods = set_reduce(set_map(cells, (cell) => get_support_layer_value(cell_strongest(cell))), merge_set, construct_better_set([], to_string))
+    const nogoods = set_reduce(set_map(cells, (cell) => get_support_layer_value(cell_strongest(cell) as LayeredObject<any>)), merge_set, construct_better_set([], to_string))
     process_contradictions(construct_better_set([nogoods], to_string), construct_cell("user_cell"))
 }
 

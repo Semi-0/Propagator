@@ -1,6 +1,6 @@
 import type { Node, Edge, EdgeCallback } from './MrType';
 import { reference_store } from '../../../Helper/Helper';
-import { make_better_set, set_add_item,  set_every,  set_for_each,  set_get_length,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
+import { construct_better_set, make_better_set, set_add_item,  set_every,  set_for_each,  set_get_length,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
 
@@ -31,11 +31,12 @@ export function get_node(id: number): Node<any>{
     }
 }
 
+
 export function construct_node<E>(): Node<E>{
     const id: number = get_reference();
 
-    var children_edges = make_better_set<any>([])
-    var parents_edges = make_better_set<any>([])
+    var children_edges = construct_better_set<any>([], (e: any) => e.child_id)
+    var parents_edges = construct_better_set<any>([], (e: any) => e.parent_id)
 
     const node = {
         id,

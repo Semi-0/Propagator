@@ -14,6 +14,9 @@ export const _is_no_compute = register_predicate("_is_no_compute", (a: any) => a
 
 export const is_no_compute = construct_simple_generic_procedure("is_no_compute", 1, (a: any) => false);
 
-define_generic_procedure_handler(is_no_compute, match_args(is_layered_object), (a: LayeredObject) => is_no_compute(get_base_value(a)));
+define_generic_procedure_handler(is_no_compute, match_args(is_layered_object), (a: LayeredObject<any>) => is_no_compute(get_base_value(a)));
 
 define_generic_procedure_handler(is_no_compute, match_args(_is_no_compute), (a: NoCompute) => true);
+
+
+export const is_not_no_compute = (a: any) => !is_no_compute(a);

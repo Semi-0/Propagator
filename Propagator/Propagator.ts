@@ -5,15 +5,17 @@ import { set_global_state, get_global_parent} from "../Shared/PublicState";
 
 import { PublicStateCommand } from "../Shared/PublicState";
 
-import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 
-import { register_predicate } from "generic-handler/Predicates";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 
-import { get_primtive_propagator_behavior } from "./PropagatorBehavior";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
 import { find_cell_by_id } from "../Shared/GraphTraversal";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+import { is_not_no_compute, no_compute } from "../Helper/noCompute";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
@@ -42,6 +44,11 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
     );
 });
 
+
+export function summarize_cells(cells: Cell<any>[]): string{
+    return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
+}
+
 export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
                                  activate: () => void,
@@ -58,7 +65,7 @@ export function construct_propagator(inputs: Cell<any>[],
     getRelation: () => relation,
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
-    summarize: () => `propagator: ${name} inputs: ${inputs_ids} outputs: ${outputs_ids}`,
+    summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
     activate: activate,
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
@@ -87,20 +94,23 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             throw new Error("Primitive propagator must have at least one input");
         }
 
-        const propagator_behavior = get_primtive_propagator_behavior();
+
         const [inputs, output] = cells.length > 1
             ? [cells.slice(0, -1), cells[cells.length - 1]]
             : [cells, null];
-
-        // Track subscription removal for cleanup
-        let unsubscribeFunc: (() => void) | null = null;
-
 
 
         const prop = construct_propagator(
             inputs,
             output ? [output] : [],
-            f,
+            () => {
+                const inputs_values = inputs.map(cell => cell_strongest(cell));
+                const output_value = f(...inputs_values);
+
+                if ((output) && (is_not_no_compute(output_value))){
+                    add_cell_content(output as Cell<any>, output_value);
+                }
+           }, 
             name
         );
 
@@ -121,7 +131,7 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
     return error_logged_primitive_propagator(rf, name)
 }
 
-
+// compound propagator might need virtualized inner cells
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator {
     // Create the propagator using the basic constructor
@@ -160,3 +170,11 @@ export function propagator_inputs(propagator: Propagator): Cell<any>[] {
 export function propagator_outputs(propagator: Propagator): Cell<any>[] {
     return propagator.getOutputsID().map(id => find_cell_by_id(id) as Cell<any>).filter(cell => cell !== undefined);
 }
+
+export function propagator_activate(propagator: Propagator){
+    propagator.activate()
+}
+
+define_generic_procedure_handler(to_string, match_args(is_propagator), (propagator: Propagator) => {
+    return propagator.summarize()
+})
