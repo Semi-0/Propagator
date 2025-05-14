@@ -1,12 +1,16 @@
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
+import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { match_args, register_predicate } from "generic-handler/Predicates"
-import { is_layered_object  as is_layered_object_predicate } from "sando-layer/Basic/LayeredObject"
+import { is_layered_object  as is_layered_object_predicate, type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { layered_deep_equal } from "sando-layer/Equality"
+
+
 
 const is_layered_object = register_predicate("is_layered_object", is_layered_object_predicate)
 define_generic_procedure_handler(is_equal, match_args(is_layered_object), layered_deep_equal)
 
+define_generic_procedure_handler(to_string, match_args(is_layered_object), (value: LayeredObject<any>) => value.describe_self())
 
 export interface SimpleSet<T> {
     add: (item: T) => void
@@ -21,10 +25,12 @@ export const make_easy_set = <T>(identifier: (item: T) => string): SimpleSet<T> 
     const items: T[] = [] 
     const added_ids = new Set<string>()
 
+
+
     return {
         add: (item: T) => {
             if (!added_ids.has(identifier(item))) {
-                items.push(item)
+                items.unshift(item)
                 added_ids.add(identifier(item))
             }
         },

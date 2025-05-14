@@ -592,6 +592,7 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
     all_results(construct_better_set([x, y, z], to_string), (value: any) => {
         console.log("all results", to_string(value));
         results.push(to_string(value));
+        console.log(summarize_scheduler_state())
     });
 
     execute_all_tasks_sequential((error: Error) => {
@@ -599,6 +600,8 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
             console.error(error);
         }
     });
+
+    console.log(summarize_scheduler_state())
 
     // Add assertions for expected results
     expect(results).toContain("[4, 3, 5]");

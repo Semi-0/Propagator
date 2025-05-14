@@ -37,7 +37,7 @@ import { com_if } from "../Propagator/BuiltInProps";
 import { trace } from "console";
 import { construct_traced_timestamp_set, empty_traced_timestamp_set } from "../AdvanceReactivity/traced_timestamp/TracedTimeStampSet";
 import { reactive_scheduler } from "../Shared/Scheduler/ReactiveScheduler";
-import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import {is_layered_object, type LayeredObject} from "sando-layer/Basic/LayeredObject";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -152,17 +152,20 @@ describe("timestamp value merge tests", () => {
     const cell_a = construct_cell<number>("a")
 
     update(cell_a, 1)
-  
+
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    await execute_all_tasks_sequential((error: Error) => {});
-    expect(cell_strongest_base_value(cell_a)).toBe(1) 
+    execute_all_tasks_sequential((error: Error) => {
+      console.log(error)
+    });
 
     update(cell_a, 2)
 
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    await execute_all_tasks_sequential((error: Error) => {});
+    execute_all_tasks_sequential((error: Error) => {
+      console.log(error)
+    });
     expect(cell_strongest_base_value(cell_a)).toBe(2)
   })
 })

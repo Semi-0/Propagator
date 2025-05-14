@@ -24,7 +24,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 
 
 
-
+//TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
@@ -84,7 +84,7 @@ export const simple_scheduler = (): Scheduler => {
             record_alerted_propagator = value
         },
         summarize: () => {
-            return `Immediate execute: ${immediate_execute}`
+            return propagators_to_alert.get_items().map(p => p.summarize()).join("\n")
         },
         clear_all_tasks: () => {
             propagators_to_alert.clear()

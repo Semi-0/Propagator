@@ -63,8 +63,8 @@ export function value_set_substitute<A>(set: ValueSet<A>, old_elt: A, new_elt: A
 const is_value_set = register_predicate("is_value_set", (value: any) => value instanceof ValueSet);
 
 define_generic_procedure_handler(to_string,
-    match_args(is_layered_object),
-    (value: LayeredObject) => value.describe_self()
+    match_args(is_value_set),
+    (set: ValueSet<any>) => set.toString()
 );
 
 define_generic_procedure_handler(to_string,
@@ -81,10 +81,7 @@ define_generic_procedure_handler(to_string,
 
 
 
-define_generic_procedure_handler(to_string,
-    match_args(is_value_set),
-    (set: ValueSet<any>) => set.toString()
-);
+
 
 // ValueSet operations
 define_generic_procedure_handler(map,
@@ -179,6 +176,7 @@ define_generic_procedure_handler(strongest_value,
 // define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 
 export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>, increment: LayeredObject): ValueSet<LayeredObject> {
+   
     return is_nothing(increment) ? to_value_set(content) : value_set_adjoin(to_value_set(content), increment);
 }
 

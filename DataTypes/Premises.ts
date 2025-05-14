@@ -18,6 +18,8 @@ import { construct_better_set } from "generic-handler/built_in_generics/generic_
 import { PremiseMetaData } from "./PremiseMetaData";
 import { construct_state } from "../Shared/Reactivity/MiniReactor/MrState";
 import type { Stepper } from "../Shared/Reactivity/MiniReactor/MrPrimitiveCombinators";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { match_args } from "generic-handler/Predicates";
 
 
 
@@ -38,9 +40,7 @@ export function summarize_premises_list(): string {
     return summaries.join("\n");
 }
 
-function wake_up_roots(){
-    set_global_state(PublicStateCommand.ALERT_ALL_AMBS)
-}
+
 
 export function clean_premises_store(){
     set_premises_list( (m) => {return new Map()})
@@ -87,6 +87,7 @@ export function is_premises(name: string): boolean{
     return has_name(name); 
 }
 
+
 export function _premises_metadata(name: string): PremiseMetaData{
     const premise = get_metadata(name);
     if(premise){
@@ -129,7 +130,7 @@ export function mark_premise_out(name: string){
 } 
 
 export function premises_nogoods(name: string): BetterSet<any>{
-
+    // console.log("premises_nogoods", name, _premises_metadata(name).get_no_goods())
     return _premises_metadata(name).get_no_goods();
 } 
 

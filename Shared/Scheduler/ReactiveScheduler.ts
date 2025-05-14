@@ -25,6 +25,7 @@ import type { SimpleSet } from "../../helper";
 import { make_easy_set } from "../../helper";
 import type { Scheduler } from "./SchedulerType";
 import { PropagatorError } from "../../Error/PropagatorError";
+import {to_string} from "generic-handler/built_in_generics/generic_conversation";
 
 
 export const reactive_scheduler = (): Scheduler => {
@@ -43,7 +44,7 @@ export const reactive_scheduler = (): Scheduler => {
             propagators_to_alert.remove(propagator)
         }
         catch(e: any){
-            error_handler(new PropagatorError("Error executing propagator", propagator, e))
+            error_handler(new PropagatorError("Error executing propagator", to_string(propagator), e))
         }
     }
     
@@ -62,7 +63,11 @@ export const reactive_scheduler = (): Scheduler => {
         const cell_values =  propagator.getInputsID()
                                  .map(compose(find_cell_by_id, cell_strongest)) 
 
-        const all_fresh = reduce(cell_values, true, (acc: boolean, v: LayeredObject<any>) => acc && is_fresh(v))
+        const all_fresh = reduce(
+            cell_values,
+            (acc: boolean, v: LayeredObject<any>) => acc && is_fresh(v),
+            true
+        )
         if (all_fresh){
             propagators_to_alert.add(propagator)
         }

@@ -77,7 +77,7 @@ export function cell_constructor<A>(
     const relation = make_relation(name, get_global_parent(), id);
     const neighbors: Map<string, Propagator> = new Map();
     // build two stateful streams for content and strongest
-    var content: CellValue<A>[] = []
+    var content: CellValue<A>[] = initial;
     var strongest: CellValue<A> = initial;
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
