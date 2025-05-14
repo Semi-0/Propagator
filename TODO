@@ -1,4 +1,4 @@
-1. Scheduler: Push–Pull Based (Necessity: High, Urgency: High)
+1. Scheduler: Push–Pull Based (Necessity: High, Urgency: High) Done
 • The original thesis design was push–pull, and changing it to pull‐only was a mistake. This affects correctness and performance.
 2. Timestamp Uniqueness (Necessity: High, Urgency: Medium)
 • Ideally, timestamps should be unique per input so that the extra “id” property isn’t needed. 
