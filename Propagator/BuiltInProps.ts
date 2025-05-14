@@ -388,10 +388,7 @@ export const p_tap = (prop: Cell<any>, f: (x: any) => void) =>
     construct_propagator(
         [prop],
         [],
-        () => {
-            const state = cell_strongest(prop);
-            Reactive.subscribe(f)(state.node);
-        },
+        () => f(cell_strongest(prop)),
         "p_tap"
     );
 

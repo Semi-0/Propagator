@@ -2,11 +2,27 @@
 // Disable TypeScript checking for this test file
 import { expect, test, jest, beforeEach, afterEach, describe } from "bun:test"; 
 
-import { add_cell_content, type Cell,  cell_strongest,  cell_strongest_base_value, constant_cell, construct_cell } from "../Cell/Cell";
-import { c_add, c_multiply, p_add, p_divide, p_multiply, p_subtract, p_switch } from "../Propagator/BuiltInProps";
+import {
+    add_cell_content,
+    type Cell,
+    cell_content,
+    cell_strongest,
+    cell_strongest_base_value,
+    constant_cell,
+    construct_cell
+} from "../Cell/Cell";
+import {c_add, c_multiply, p_add, p_divide, p_multiply, p_or, p_subtract, p_switch} from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import { is_contradiction, the_nothing } from "../Cell/CellValue";
-import { execute_all_tasks_sequential, summarize_scheduler_state, simple_scheduler, set_immediate_execute, execute_all_tasks_simultaneous } from "../Shared/Scheduler/Scheduler";
+import {
+    execute_all_tasks_sequential,
+    summarize_scheduler_state,
+    set_immediate_execute,
+    execute_all_tasks_simultaneous,
+    set_scheduler
+} from "../Shared/Scheduler/Scheduler";
+
+import { simple_scheduler} from "../Shared/Scheduler/SimpleScheduler.ts";
 import { set_global_state } from "../Shared/PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
 import { PublicStateCommand } from "../Shared/PublicState";
@@ -16,17 +32,24 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { construct_better_set, set_get_length, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { value_set_length } from "../DataTypes/ValueSet";
 import { randomUUID } from "crypto";
-import { configure_log_amb_choose, configure_log_nogoods, configure_log_process_contradictions, p_amb } from "../Propagator/Search";
+import {
+    binary_amb,
+    configure_log_amb_choose,
+    configure_log_nogoods,
+    configure_log_process_contradictions,
+    p_amb, p_amb_a
+} from "../Propagator/Search";
 import { ce_add, ce_equal, ce_less_than, ce_switch } from "../Propagator/BuiltInProps";
 import { com_if } from "../Propagator/BuiltInProps";
 import { inspect } from "util";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator";
+import {is_equal} from "generic-handler/built_in_generics/generic_arithmetic";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
     set_merge(merge_value_sets)
-    
+    set_scheduler(simple_scheduler())
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
@@ -559,20 +582,242 @@ test('resolving contradiction with floating-point precision issues', async () =>
 });
 
 
+test('pAMB simple binary', async () => {
+    const xA = construct_cell("xA");
+    const xB = construct_cell("xB");
+    const xC = construct_cell("xC");
 
-test('AMB operator: example test from SimpleTest.ts', async () => {
- 
+    const result = []
 
-    configure_log_amb_choose(true)
-    configure_log_process_contradictions(true)
-    configure_log_nogoods(true)
-    
-    
+    const possibilities = construct_better_set([true, false], to_string)
+
+    p_or(xA, xB, xC);
+    p_amb_a(xA, possibilities)
+    p_amb_a(xB, possibilities)
+
+    tell(xC, true, "xc_false")
+
+
+    all_results(construct_better_set([xA, xB, xC], to_string), (value: any) => {
+        const vA = cell_strongest_base_value(xA);
+        const vB = cell_strongest_base_value(xB);
+        const vC = cell_strongest_base_value(xC);
+
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+            result.push([vA, vB, vC])
+        }
+    })
+
+    expect(result.some((v) => v == [true, true, true]));
+    expect(result.some((v) => v == [true, false, true]));
+    expect(result.some((v) => v == [false, true, true]));
+})
+
+
+test('Binary AMB operator', async () => {
+    const xA = construct_cell("xA");
+    const xB = construct_cell("xB");
+    const xC = construct_cell("xC");
+
+    const result = []
+
+
+
+    p_or(xA, xB, xC);
+    binary_amb(xA)
+    binary_amb(xB)
+
+    tell(xC, true, "xc_false")
+
+
+    all_results(construct_better_set([xA, xB, xC], to_string), (value: any) => {
+        const vA = cell_strongest_base_value(xA);
+        const vB = cell_strongest_base_value(xB);
+        const vC = cell_strongest_base_value(xC);
+
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+            result.push([vA, vB, vC])
+        }
+    })
+
+    expect(result.some((v) => v == [true, true, true]));
+    expect(result.some((v) => v == [true, false, true]));
+    expect(result.some((v) => v == [false, true, true]));
+})
+
+
+test('AMB_A operator: simple adder', async () => {
+
+
+    // configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
+    // configure_log_nogoods(true)
+    //
+
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
+
+    const possibilities = enum_num_set(1, 3);
+
+    p_amb_a(x, possibilities);
+    p_amb_a(y, possibilities);
+    p_amb_a(z, possibilities);
+
+    p_add(x, y, z);
+
+    const results: any[] = [];
+    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+        const vA = cell_strongest_base_value(x);
+        const vB = cell_strongest_base_value(y);
+        const vC = cell_strongest_base_value(z);
+
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+            results.push([vA, vB, vC])
+            console.log(vA, vB, vC)
+        }
+    });
+
+
+    console.log(results)
+
+    console.log(summarize_scheduler_state())
+
+    // Add assertions for expected results
+    expect(is_equal(results,
+        [[ 1, 3, 4 ], [ 1, 1, 2 ],
+        [ 3, 1, 4 ], [ 2, 1, 3 ],
+            [ 2, 3, 5 ], [ 1, 2, 3],
+            [ 3, 2, 5 ], [ 2, 2, 4 ]])).toBe(true)
+
+    expect(x.summarize()).toBeDefined();
+    expect(y.summarize()).toBeDefined();
+    expect(z.summarize()).toBeDefined();
+});
+
+
+test('AMB_A operator: simple multiply', async () => {
+
+
+    // configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
+    // configure_log_nogoods(true)
+    //
+
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
+
+    const possibilities = enum_num_set(1, 3);
+
+    p_amb_a(x, possibilities);
+    p_amb_a(y, possibilities);
+    p_amb_a(z, possibilities);
+
+    const z2 = construct_cell("z2");
+    p_add(z, z, z2)
+
+    p_multiply(x, y, z2);
+
+    const results: any[] = [];
+    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+        const vA = cell_strongest_base_value(x);
+        const vB = cell_strongest_base_value(y);
+        const vC = cell_strongest_base_value(z);
+        const vz2 = cell_strongest_base_value(z2);
+
+        console.log(vA, vB, vC, vz2)
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+
+            results.push([vA, vB, vC])
+            console.log(vA, vB, vC)
+        }
+    });
+
+
+    console.log(results)
+
+    console.log(summarize_scheduler_state())
+
+    // Add assertions for expected results
+
+});
+
+
+test('AMB_A operator: triangle', async () => {
+
+
+    // configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
+    // configure_log_nogoods(true)
+    //
+
     const x = construct_cell("x");
     const y = construct_cell("y");
     const z = construct_cell("z");
 
     const possibilities = enum_num_set(1, 10);
+
+    p_amb_a(z, possibilities);
+    p_amb_a(x, possibilities);
+    p_amb_a(y, possibilities);
+
+    const x2 = construct_cell("x2");
+    const y2 = construct_cell("y2");
+    const z2 = construct_cell("z2");
+
+    p_multiply(x, x, x2);
+    p_multiply(y, y, y2);
+    p_multiply(z, z, z2);
+
+    p_add(x2, y2, z2);
+
+    // const results: any[] = [];
+    // all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+    //     const vA = cell_strongest_base_value(x);
+    //     const vB = cell_strongest_base_value(y);
+    //     const vC = cell_strongest_base_value(z);
+    //
+    //     console.log(vA, vB, vC)
+    //     if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+    //         results.push([vA, vB, vC])
+    //
+    //     }
+    // });
+    execute_all_tasks_sequential((e) => {})
+    console.log(x.summarize())
+    console.log(y.summarize())
+    console.log(z.summarize())
+
+    console.log(results)
+
+    console.log(summarize_scheduler_state())
+
+    // Add assertions for expected results
+    expect(results).toContain("[4, 3, 5]");
+    expect(results).toContain("[3, 4, 5]");
+    expect(results).toContain("[8, 6, 10]");
+    expect(results).toContain("[6, 8, 10]");
+
+    expect(x.summarize()).toBeDefined();
+    expect(y.summarize()).toBeDefined();
+    expect(z.summarize()).toBeDefined();
+});
+
+
+test('AMB operator: example test from SimpleTest.ts', async () => {
+ 
+
+    // configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
+    // configure_log_nogoods(true)
+    //
+    
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
+
+    const possibilities = enum_num_set(1, 5);
 
     p_amb(x, possibilities);
     p_amb(y, possibilities);
@@ -590,16 +835,18 @@ test('AMB operator: example test from SimpleTest.ts', async () => {
 
     const results: any[] = [];
     all_results(construct_better_set([x, y, z], to_string), (value: any) => {
-        console.log("all results", to_string(value));
-        results.push(to_string(value));
-        console.log(summarize_scheduler_state())
-    });
+        const vA = cell_strongest_base_value(x);
+        const vB = cell_strongest_base_value(x);
+        const vC = cell_strongest_base_value(x);
 
-    execute_all_tasks_sequential((error: Error) => {
-        if (error) {
-            console.error(error);
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+            results.push([vA, vB, vC])
+
         }
     });
+
+
+     console.log(results)
 
     console.log(summarize_scheduler_state())
 

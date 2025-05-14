@@ -6,7 +6,7 @@ import type { traced_timestamp } from "../type";
 import { fresher } from "./Fresher";
 import { all_match, match_args } from "generic-handler/Predicates";
 import { is_nothing } from "@/cell/CellValue";
-import { has_timestamp_layer, get_traced_timestamp_layer } from "../TracedTimestampLayer";
+import { has_timestamp_layer, get_traced_timestamp_layer } from "../TracedTimestampLayer.ts";
 import { get_max_timestamp } from "./Fresher";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 

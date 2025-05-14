@@ -8,7 +8,18 @@ import { is_layered_object } from "./Predicate";
 import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Scheduler/Scheduler";
 import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
 import { pipe } from "fp-ts/lib/function";
-import { construct_better_set, map_to_new_set, merge_set, set_add_item, set_map, set_reduce, set_some, set_union, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+import {
+    construct_better_set,
+    map_to_new_set,
+    merge_set,
+    set_add_item,
+    set_map,
+    set_reduce,
+    set_some,
+    set_union,
+    type BetterSet,
+    set_every
+} from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { process_contradictions } from "../Propagator/Search";
 import { is_contradiction, is_nothing } from "../Cell/CellValue";
@@ -80,7 +91,7 @@ export function all_results(cells: BetterSet<Cell<any>>, value_receiver: (value:
         return  set_add_item(acc, cell_strongest_base_value(cell))
     }, construct_better_set([], to_string))
 
-   if (set_some(results, (value) => is_contradiction(value) || is_nothing(value))){
+   if (set_some(results, (value) => is_contradiction(value)) || set_every(results, (value) => is_nothing(value))){
         value_receiver("done:" + failed_count.get_value())
    }
    else{

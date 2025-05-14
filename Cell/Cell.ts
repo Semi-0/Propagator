@@ -1,5 +1,5 @@
 import { set_global_state, get_global_parent } from "../Shared/PublicState";
-import { type Propagator } from "../Propagator/Propagator";
+import {type Propagator, propagator_dispose} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
@@ -122,6 +122,7 @@ export function cell_constructor<A>(
 
       dispose: () => {
         // first dispose entire downstream subgraph
+        // neighbors.forEach(propagator => propagator_dispose)
         disposed = true;
         content = []
         strongest = initial

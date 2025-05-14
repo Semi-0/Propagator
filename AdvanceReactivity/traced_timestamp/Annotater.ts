@@ -1,4 +1,4 @@
-import { construct_traced_timestamp, high_precision_timestamp } from "./TracedTimeStamp";
+import {construct_traced_timestamp, high_precision_timestamp, monotonic_timestamp} from "./TracedTimeStamp";
 import { construct_traced_timestamp_set } from "./TracedTimeStampSet";
 import { is_timestamp_set } from "./Predicates";
 import { set_flat_map, set_for_each } from "generic-handler/built_in_generics/generic_better_set";
@@ -11,7 +11,7 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 import type { traced_timestamp } from "./type";
 import { is_traced_timestamp } from "./Predicates";
-import { traced_timestamp_layer } from "./tracedTimestampLayer"
+import { traced_timestamp_layer } from "./TracedTimestampLayer.ts"
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 
@@ -27,7 +27,7 @@ export const traced_timestamped = (
 ): LayeredObject<any> => construct_layered_datum(v, traced_timestamp_layer, stamps);
 
 export const annotate_now_with_id = (id: string) => (a: any) => 
-    traced_timestamped(a, tt_set_annotated(high_precision_timestamp(), id));
+    traced_timestamped(a, tt_set_annotated(monotonic_timestamp(), id));
 
 export const annotate_smallest_time_with_id = (id: string) => (a: any) => 
     traced_timestamped(a, tt_set_annotated(-Infinity, id));

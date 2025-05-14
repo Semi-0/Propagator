@@ -1,5 +1,5 @@
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import {  has_timestamp_layer, traced_timestamp_layer } from "./tracedTimestampLayer";
+import {  has_timestamp_layer, traced_timestamp_layer } from "./TracedTimestampLayer.ts";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set, is_better_set, merge_set, set_add_item, set_every, set_filter, set_for_each, set_get_length, set_reduce, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -14,11 +14,10 @@ import { update } from "../interface";
 import { fresher } from "./Fresher/Fresher";
 import { same_source } from "./SameSource";
 import { is_fresh } from "./Predicates";
-import { get_traced_timestamp_layer } from "./tracedTimestampLayer";
+import { get_traced_timestamp_layer } from "./TracedTimestampLayer.ts";
 import { smallest_timestamped_value, traced_timestamped } from "./Annotater";
 import { same_freshness } from "./Fresher/Extensions";
 
-import { reactive_propagator_behavior } from "./ReactivePropagatorBehavior";
 import { refresh_all_timestamps, timestamp_set_do_intersect, timestamp_set_intersect, type TracedTimeStampSet } from "./TracedTimeStampSet";
 import { define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
 import { feedback } from "../Generics/GenericArith";

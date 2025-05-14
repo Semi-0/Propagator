@@ -62,7 +62,7 @@ export function get_metadata(name: string): PremiseMetaData{
         return metadata;
     }
     else{
-        throw new Error(name + " is not a premise");
+        throw new Error(to_string(name) + " is not a premise");
     }
 }
 
@@ -109,9 +109,7 @@ export function is_premise_out(name: string): boolean{
 }
 
 export function is_premises_in(names: BetterSet<string>): boolean{
-    return set_every(names, (name: string) => {
-        return is_premise_in(name)
-    });
+    return set_every(names, is_premise_in);
 } 
 
 export function is_premises_out(names: BetterSet<string>): boolean{

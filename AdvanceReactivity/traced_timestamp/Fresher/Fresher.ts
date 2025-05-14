@@ -6,7 +6,7 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { traced_timestamp } from "../type";
 
 
-export const fresher = construct_simple_generic_procedure("fresher", 2, (a: LayeredObject, b: LayeredObject) => {
+export const fresher = construct_simple_generic_procedure("fresher", 2, (a: LayeredObject<any>, b: LayeredObject<any>) => {
     throw new Error("Fresher is not defined for traced timestamp: " + to_string(a) + " and " + to_string(b));
 })
 

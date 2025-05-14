@@ -17,6 +17,7 @@ import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
 import { generic_merge, merge_layered } from "../Cell/Merge";
 import { guard } from "generic-handler/built_in_generics/other_generic_helper";
+import {trace_func} from "../helper.ts";
 // ValueSet class definition
 export class ValueSet<A> {
     elements: BetterSet<A>;
@@ -35,6 +36,10 @@ export class ValueSet<A> {
 
     toString(): string {
         return `ValueSet: ${to_string(this.elements)})`;
+    }
+
+    forEach(procedure: (elt: A) => void): void {
+        set_for_each(procedure, this.elements);
     }
 }
 
@@ -165,11 +170,7 @@ define_generic_procedure_handler(is_unusable_value,
 
 define_generic_procedure_handler(strongest_value,
     match_args(is_value_set),
-    (set: ValueSet<any>) => {
-        // console.log("set", set)
-        // console.log("strongest_consequence", strongest_consequence(set))
-        return strongest_consequence(set)}
-);
+    strongest_consequence)
 
 // ValueSet operations
 

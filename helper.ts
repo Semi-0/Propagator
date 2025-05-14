@@ -21,6 +21,17 @@ export interface SimpleSet<T> {
     has: (item: T) => boolean
 }
 
+export const trace_func = (name: string, f: (...args: any[]) => any) => (...args: any[]) => {
+    console.log("***trace start *** ")
+    console.log("fn: " + name + " \n")
+    console.log("args: " + args.map(to_string).join(", \n") + "\n")
+    const result = f(...args)
+    console.log("result: \n " + to_string(result))
+    console.log("***trace end *** ")
+    return result
+}
+
+
 export const make_easy_set = <T>(identifier: (item: T) => string): SimpleSet<T> => {
     const items: T[] = [] 
     const added_ids = new Set<string>()
@@ -32,6 +43,10 @@ export const make_easy_set = <T>(identifier: (item: T) => string): SimpleSet<T> 
             if (!added_ids.has(identifier(item))) {
                 items.unshift(item)
                 added_ids.add(identifier(item))
+            }
+            else{
+                items.splice(items.indexOf(item), 1)
+                items.unshift(item)
             }
         },
         remove: (item: T) => {

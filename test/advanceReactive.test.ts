@@ -16,7 +16,7 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
 import { compound_propagator, primitive_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/tracedTimestampLayer";
+import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer.ts";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
 import { construct_better_set, set_equal, set_for_each, set_get_length, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
 import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
@@ -24,7 +24,6 @@ import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, r
 import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
-import { reactive_propagator_behavior } from "../AdvanceReactivity/traced_timestamp/ReactivePropagatorBehavior";
 import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";

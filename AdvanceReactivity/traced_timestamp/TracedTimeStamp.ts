@@ -23,17 +23,22 @@ export function get_fresh(timestamp: traced_timestamp): boolean {
     return timestamp.fresh
 }
 
-let monotonic_counter = 0n;
+let monotonic_counter: number = 0;
+
+export function monotonic_timestamp(): number {
+    monotonic_counter = monotonic_counter + 1;
+    return Number(monotonic_counter);
+}
 
 export function high_precision_timestamp(): number {
     const now = Date.now();
     const counter = monotonic_counter++;
     
-    return now + (Number(counter % 1000n) / 1000);
+    return now + (Number(counter % 1000) / 1000);
 }
 
 export function refresh_timestamp(timestamp: traced_timestamp): traced_timestamp {
-    return construct_traced_timestamp(high_precision_timestamp(), timestamp.id)
+    return construct_traced_timestamp(monotonic_timestamp(), timestamp.id)
 }
 
 function format_timestamp(timestamp: number): string {
