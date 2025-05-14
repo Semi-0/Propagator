@@ -708,25 +708,22 @@ test('AMB_A operator: simple multiply', async () => {
     const y = construct_cell("y");
     const z = construct_cell("z");
 
-    const possibilities = enum_num_set(1, 3);
+    const possibilities = enum_num_set(1, 4);
 
+    // tell(z, 10, "z_val");
     p_amb_a(x, possibilities);
     p_amb_a(y, possibilities);
     p_amb_a(z, possibilities);
-
-    const z2 = construct_cell("z2");
-    p_add(z, z, z2)
-
-    p_multiply(x, y, z2);
+    p_multiply(x, y, z);
 
     const results: any[] = [];
     all_results(construct_better_set([x, y, z], to_string), (value: any) => {
         const vA = cell_strongest_base_value(x);
         const vB = cell_strongest_base_value(y);
         const vC = cell_strongest_base_value(z);
-        const vz2 = cell_strongest_base_value(z2);
 
-        console.log(vA, vB, vC, vz2)
+
+        console.log(vA, vB, vC)
         if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
 
             results.push([vA, vB, vC])
