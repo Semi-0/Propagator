@@ -164,7 +164,6 @@ export function p_amb_a(cell: Cell<any>, values: BetterSet<any>): Propagator{
 export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
     const premises: BetterSet<string> = make_hypotheticals<any>(cell, values)
         function amb_choose(){
-            console.log("amb_choose")
             // if all the premises is believed, it represent a contradiction
             const premise_to_choose = find_premise_to_choose(premises)
 
@@ -252,7 +251,7 @@ function save_nogood(nogood: BetterSet<string>){
             set_premises_nogoods(premise, merged_nogoods)
         }
         else {
-            console.log("not a string" + to_string(premise))
+            throw new Error("not a string" + to_string(premise))
         }
 
     }, nogood)

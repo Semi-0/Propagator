@@ -123,8 +123,8 @@ export const c_if_a = (condition: Cell<boolean>, then: Cell<any>, otherwise: Cel
 
 export const c_if_b = (condition: Cell<boolean>, input: Cell<any>, then_out: Cell<any>, otherwise_out: Cell<any>) => {
     return compound_propagator([condition, input, then_out, otherwise_out], [input], () => {
-        p_switch(condition, then_out, input);
-        p_switch(ce_not(condition), otherwise_out, input);
+        p_switch(condition, input, then_out);
+        p_switch(ce_not(condition), input, otherwise_out);
     }, "if")
 }
 
