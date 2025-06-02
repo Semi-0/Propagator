@@ -128,6 +128,15 @@ export const c_if_b = (condition: Cell<boolean>, input: Cell<any>, then_out: Cel
     }, "if")
 }
 
+
+export const c_if_c = (condition: Cell<boolean>, then_in: Cell<any>,  then_out: Cell<any>, otherwise_in: Cell<any>, otherwise_out: Cell<any>) => {
+    return compound_propagator([condition, then_in, otherwise_in], [then_out, otherwise_out], () => {
+        p_switch(condition, then_in, then_out);
+        p_switch(ce_not(condition), otherwise_in, otherwise_out);
+    }, "if")
+}
+
+
 export const p_less_than_or_equal = (a: Cell<number>, b: Cell<number>, output: Cell<boolean>) => {
     return compound_propagator([a, b], [output], () => {
         p_or(ce_less_than(a, b), ce_equal(a, b), output)

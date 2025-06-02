@@ -131,7 +131,7 @@ export function p_one_of_the_cells(inputs: Cell<any>[], output: Cell<any>){
                 const p: Cell<boolean> = make_temp_cell() as Cell<boolean>
                 c_if_a(p, inputs[0], inputs[1], output)
                 binary_amb(p)
-                console.log('built')
+                
             }
             else if (inputs.length > 2){
                 const link = make_temp_cell() as Cell<boolean>

@@ -769,18 +769,18 @@ test('AMB_A operator: triangle', async () => {
 
     p_add(x2, y2, z2);
 
-    // const results: any[] = [];
-    // all_results(construct_better_set([x, y, z], to_string), (value: any) => {
-    //     const vA = cell_strongest_base_value(x);
-    //     const vB = cell_strongest_base_value(y);
-    //     const vC = cell_strongest_base_value(z);
-    //
-    //     console.log(vA, vB, vC)
-    //     if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
-    //         results.push([vA, vB, vC])
-    //
-    //     }
-    // });
+    const results: any[] = [];
+    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+        const vA = cell_strongest_base_value(x);
+        const vB = cell_strongest_base_value(y);
+        const vC = cell_strongest_base_value(z);
+    
+        console.log(vA, vB, vC)
+        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+            results.push([vA, vB, vC])
+    
+        }
+    });
     execute_all_tasks_sequential((e) => {})
     console.log(x.summarize())
     console.log(y.summarize())
