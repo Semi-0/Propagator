@@ -1,8 +1,12 @@
-import type { Node, Edge, EdgeCallback } from './MrType';
-import { reference_store } from '../../../Helper/Helper';
-import { construct_better_set, make_better_set, set_add_item,  set_every,  set_for_each,  set_get_length,  set_map, set_remove_item } from 'generic-handler/built_in_generics/generic_better_set';
+import { type Node, type Edge, type EdgeCallback, is_node } from './MrType';
+import {  reference_store } from '../../../Helper/Helper';
+import { construct_better_set, identify_by  } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
+import { add_item, remove_item, for_each } from 'generic-handler/built_in_generics/generic_collection';
+import { map, length, every } from 'generic-handler/built_in_generics/generic_collection';
+import { define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
+import { match_args } from 'generic-handler/Predicates';
 
 export const get_reference = reference_store();
 
@@ -35,29 +39,29 @@ export function get_node(id: number): Node<any>{
 export function construct_node<E>(): Node<E>{
     const id: number = get_reference();
 
-    var children_edges = construct_better_set<any>([], (e: any) => e.child_id)
-    var parents_edges = construct_better_set<any>([], (e: any) => e.parent_id)
+    var children_edges = construct_better_set<any>([])
+    var parents_edges = construct_better_set<any>([])
 
     const node = {
         id,
         receive(v: E) {
-            set_for_each((e: any) => {
+            for_each(children_edges, (e: any) => {
                 e.activate(v)
-            }, children_edges)
+            })
         },
         get children_edges() {return children_edges},
         get parent_edges() {return parents_edges},
         add_child_edge: (edge: any) => {
-            children_edges = set_add_item(children_edges, edge)
+            children_edges = add_item(children_edges, edge)
         },
         remove_child_edge: (edge: any) => {
-            children_edges = set_remove_item(children_edges, edge)
+            children_edges = remove_item(children_edges, edge)
         },
         add_parent_edge: (edge: any) => {
-            parents_edges = set_add_item(parents_edges, edge)
+            parents_edges = add_item(parents_edges, edge)
         },
         remove_parent_edge: (edge: any) => {
-            parents_edges = set_remove_item(parents_edges, edge)
+            parents_edges = remove_item(parents_edges, edge)
         }
     };
 
@@ -65,22 +69,26 @@ export function construct_node<E>(): Node<E>{
     return node;
 }
 
+define_generic_procedure_handler(identify_by, match_args(is_node), (node: Node<any>) => {
+    return node.id;
+})
+
 export function get_children(n: any){
-    return set_map(n.children_edges, (e: any) => {
+    return map(n.children_edges, (e: any) => {
         return get_node(e.child_id);
     })
 }
 
 export function get_parents(n: any){
-    return set_map(n.parent_edges, (e: any) => {
+    return map(n.parent_edges, (e: any) => {
         return get_node(e.parent_id);
     })
 }
 
 export function have_only_one_parent_of(child: Node<any>, parent: Node<any>){
     const parents = get_parents(child)
-    return set_get_length(parents) === 1 && 
-           set_every(parents, (p: any) => p.id === parent.id)
+    return length(parents) === 1 && 
+           every(parents, (p: any) => p.id === parent.id)
 }
 
 var edge_store = new Map<string, Edge<any, any>>();
@@ -127,7 +135,8 @@ export function construct_edge<A, B>(source: Node<A>, target: Node<B>, f: EdgeCa
     const edge = {
         parent_id: source.id,
         child_id: target.id,
-        activate
+        activate,
+        id: get_reference()
     }    
 
     source.add_child_edge(edge)

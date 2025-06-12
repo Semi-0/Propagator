@@ -18,7 +18,7 @@ import { compound_propagator, primitive_propagator } from "../Propagator/Propaga
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer.ts";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { construct_better_set, set_equal, set_for_each, set_get_length, set_map, to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 
 import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
@@ -37,6 +37,8 @@ import { trace } from "console";
 import { construct_traced_timestamp_set, empty_traced_timestamp_set } from "../AdvanceReactivity/traced_timestamp/TracedTimeStampSet";
 import { reactive_scheduler } from "../Shared/Scheduler/ReactiveScheduler";
 import {is_layered_object, type LayeredObject} from "sando-layer/Basic/LayeredObject";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.ts";
+import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -65,7 +67,7 @@ describe("Advance Reactive Tests", () => {
       const setB = construct_traced_timestamp_set(timestampB)
 
       const result = timestamp_set_union(setA, setB)
-      expect(set_equal(result, setB)).toEqual(true)
+      expect(is_equal(result, setB)).toEqual(true)
       
    })
 
@@ -874,111 +876,6 @@ describe("Complex Propagator Integration Tests", () => {
     }
   });
 
-  // test("Simple financial calculator with bi-directional propagation", async () => {
-  //   // Create cells for financial values
-  //   const principal = construct_cell("principal") as Cell<number>;
-  //   const interestRate = construct_cell("interestRate") as Cell<number>; // as decimal, e.g., 0.05 for 5%
-  //   const years = construct_cell("years") as Cell<number>;
-  //   const futureValue = construct_cell("futureValue") as Cell<number>;
-    
-  //   // Set up bi-directional constraints between principal and future value
-  //   compound_propagator([principal, interestRate, years, futureValue], [principal, futureValue], () => {
-  //     // Calculate future value from principal (P to FV)
-  //     const calculateFV = ce_pipe(
-  //       principal,
-  //       p_map_a((p: number) => {
-  //         const rate = get_base_value(cell_strongest_value(interestRate));
-  //         const term = get_base_value(cell_strongest_value(years));
-  //         if (typeof rate === 'number' && typeof term === 'number') {
-  //           return p * Math.pow(1 + rate, term);
-  //         }
-  //         return p;
-  //       })
-  //     );
-      
-  //     // Calculate principal from future value (FV to P)
-  //     const calculateP = ce_pipe(
-  //       futureValue,
-  //       p_map_a((fv: number) => {
-  //         const rate = get_base_value(cell_strongest_value(interestRate));
-  //         const term = get_base_value(cell_strongest_value(years));
-  //         if (typeof rate === 'number' && typeof term === 'number' && rate !== 0) {
-  //           return fv / Math.pow(1 + rate, term);
-  //         }
-  //         return fv;
-  //       })
-  //     );
-      
-  //     // Connect the propagators
-  //     p_sync(calculateFV, futureValue);
-  //     p_sync(calculateP, principal);
-  //   }, "investment_calculator");
-    
-  //   // Initialize with a starting investment
-  //   update(principal, 1000);
-  //   update(interestRate, 0.05);
-  //   update(years, 10);
-  //   await execute_all_tasks_sequential((error: Error) => {});
-  //   await new Promise((resolve) => setTimeout(resolve, 100));
-    
-  //   // Verify future value calculation
-  //   const fvValue = get_base_value(cell_strongest_value(futureValue));
-    
-  //   if (typeof fvValue === 'number') {
-  //     // $1000 at 5% for 10 years = $1,628.89
-  //     expect(fvValue).toBeCloseTo(1628.89, 1);
-  //   } else {
-  //     console.log("Received future value:", fvValue);
-  //     expect(typeof fvValue).toBe('number');
-  //   }
-    
-  //   // Now update from the other direction
-  //   update(futureValue, 2000);
-  //   await execute_all_tasks_sequential((error: Error) => {});
-  //   await new Promise((resolve) => setTimeout(resolve, 100));
-    
-  //   // Verify principal calculation
-  //   const pValue = get_base_value(cell_strongest_value(principal));
-    
-  //   if (typeof pValue === 'number') {
-  //     // Working backwards from $2000 at 5% for 10 years ≈ $1,227.83
-  //     expect(pValue).toBeCloseTo(1227.83, 1);
-  //   } else {
-  //     console.log("Received principal value:", pValue);
-  //     expect(typeof pValue).toBe('number');
-  //   }
-    
-  //   // Change the time horizon and verify updates
-  //   update(years, 20);
-  //   await execute_all_tasks_sequential((error: Error) => {});
-  //   await new Promise((resolve) => setTimeout(resolve, 100));
-    
-  //   // Get updated future value - it should recalculate based on the new years value
-  //   const newFvValue = get_base_value(cell_strongest_value(futureValue));
-    
-  //   if (typeof newFvValue === 'number') {
-  //     // The value stays at 2000 because we explicitly set it, rather than being recalculated
-  //     expect(newFvValue).toBeCloseTo(2000, 1);
-      
-  //     // Let's test the system by setting a new principal value to see if future value updates
-  //     update(principal, 2000);
-  //     await execute_all_tasks_sequential((error: Error) => {});
-  //     await new Promise((resolve) => setTimeout(resolve, 100));
-      
-  //     // Now the future value should update
-  //     const finalFvValue = get_base_value(cell_strongest_value(futureValue));
-  //     if (typeof finalFvValue === 'number') {
-  //       // $2000 at 5% for 20 years ≈ $5,306.60
-  //       expect(finalFvValue).toBeCloseTo(5306.60, 1);
-  //     } else {
-  //       console.log("Received final future value:", finalFvValue);
-  //       expect(typeof finalFvValue).toBe('number');
-  //     }
-  //   } else {
-  //     console.log("Received new future value:", newFvValue);
-  //     expect(typeof newFvValue).toBe('number');
-  //   }
-  // });
 });
 
 

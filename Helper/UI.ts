@@ -1,32 +1,25 @@
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest, construct_cell } from "../Cell/Cell"; 
-import { for_each } from "./Helper";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "../DataTypes/Premises";
 import { failed_count } from "../Shared/PublicState";
 import {  type PublicStateMessage } from "../Shared/PublicState";
 import { is_layered_object } from "./Predicate";
 import { execute_all_tasks_sequential, steppable_run_task } from "../Shared/Scheduler/Scheduler";
-import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
+import { reduce, map, filter, add_item, some, every, for_each } from "generic-handler/built_in_generics/generic_collection";
 import { pipe } from "fp-ts/lib/function";
 import {
     construct_better_set,
-    map_to_new_set,
-    merge_set,
-    set_add_item,
-    set_map,
-    set_reduce,
-    set_some,
-    set_union,
+    set_merge,
     type BetterSet,
-    set_every
 } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { process_contradictions } from "../Propagator/Search";
 import { is_contradiction, is_nothing } from "../Cell/CellValue";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
 
 function range(start: number, end: number): BetterSet<number>{
-    return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i), to_string)
+    return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i))
 }
 
 export async function tell<A>(cell: Cell<A>, information: A, ...premises: string[]) {
@@ -76,10 +69,9 @@ export function do_nothing(){
 }
 
 export function force_failure(cells: BetterSet<Cell<any>>){
-    
     // TODO: set union is not correct
-    const nogoods = set_reduce(set_map(cells, (cell) => get_support_layer_value(cell_strongest(cell) as LayeredObject<any>)), merge_set, construct_better_set([], to_string))
-    process_contradictions(construct_better_set([nogoods], to_string), construct_cell("user_cell"))
+    const nogoods = reduce(map(cells, compose(cell_strongest, get_support_layer_value)), set_merge, construct_better_set([]))
+    process_contradictions(construct_better_set([nogoods]), construct_cell("user_cell"))
 }
 
 export function all_results(cells: BetterSet<Cell<any>>, value_receiver: (value: any) => void){
@@ -87,11 +79,11 @@ export function all_results(cells: BetterSet<Cell<any>>, value_receiver: (value:
         console.log(e)
     })
 
-    const results = set_reduce(cells, (acc: BetterSet<any>, cell: Cell<any>) => {
-        return  set_add_item(acc, cell_strongest_base_value(cell))
-    }, construct_better_set([], to_string))
+    const results = reduce(cells, (acc: BetterSet<any>, cell: Cell<any>) => {
+        return  add_item(acc, cell_strongest_base_value(cell))
+    }, construct_better_set([]))
 
-   if (set_some(results, (value) => is_contradiction(value)) || set_every(results, (value) => is_nothing(value))){
+   if (some(results, is_contradiction) || every(results, is_nothing)){
         value_receiver("done:" + failed_count.get_value())
    }
    else{
@@ -102,8 +94,6 @@ export function all_results(cells: BetterSet<Cell<any>>, value_receiver: (value:
 }
 
 export function enum_num_set(min: number, max: number){
-    return set_reduce(range(min, max), (acc: BetterSet<number>, value: number) => {
-        return set_add_item(acc, value)
-    }, construct_better_set([], to_string))
+    return reduce(range(min, max), add_item, construct_better_set([]))
 }
 

@@ -1,6 +1,6 @@
 import { type Cell, construct_cell } from "../Cell/Cell";
 import { type Propagator } from "../Propagator/Propagator";
-import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
+import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { tell } from "../Helper/UI";
 import { MemoryMonitor } from "./MemoryMonior";
 

@@ -9,7 +9,8 @@ import { PublicStateCommand } from "../Shared/PublicState";
 import { describe } from "../Helper/UI";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../Propagator/Search";
-import { construct_better_set, make_better_set, map_to_new_set, set_get_length, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, identify_by, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { length } from "generic-handler/built_in_generics/generic_collection"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
@@ -32,7 +33,7 @@ export const general_contradiction =  construct_simple_generic_procedure("genera
 export function handle_cell_contradiction<A>(cell: Cell<A>) {
   // get the support layer of the cell's strongest value, cast to any for type compatibility
   const support = get_support_layer_value(cell.getStrongest() as any);
-  process_contradictions(make_better_set([support]), cell);
+  process_contradictions(construct_better_set([support]), cell);
 }
 
 export var handle_contradiction = handle_cell_contradiction;
@@ -206,3 +207,5 @@ export const cell_strongest_base_value = compose(cell_strongest, get_base_value)
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {
   return cell.summarize()
 })
+
+define_generic_procedure_handler(identify_by, match_args(is_cell), cell_id)

@@ -16,6 +16,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
@@ -178,3 +179,5 @@ export function propagator_activate(propagator: Propagator){
 define_generic_procedure_handler(to_string, match_args(is_propagator), (propagator: Propagator) => {
     return propagator.summarize()
 })
+
+define_generic_procedure_handler(identify_by, match_args(is_propagator), propagator_id)

@@ -2,7 +2,7 @@ import type { BetterSet } from "generic-handler/built_in_generics/generic_better
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { set_add_item } from "generic-handler/built_in_generics/generic_better_set";
+import { add_item } from "generic-handler/built_in_generics/generic_collection";
 
 
 var track_premises_changed: boolean = false;
@@ -15,8 +15,8 @@ export enum BeliefState {
 export class PremiseMetaData {
     name : string;
     belief_state: BeliefState = BeliefState.Believed; 
-    no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([], to_string);
-    roots: BetterSet<any> = construct_better_set<any>([], (item) => item);
+    no_goods: BetterSet<BetterSet<string>> = construct_better_set<BetterSet<string>>([]);
+    roots: BetterSet<any> = construct_better_set<any>([]);
 
     constructor(name: string){
         this.name = name;
@@ -70,7 +70,7 @@ export class PremiseMetaData {
     }
 
     add_root(root: any){
-        this.roots = set_add_item(this.roots, root);
+        this.roots = add_item(this.roots, root);
     } 
 
     get_no_goods(): BetterSet<BetterSet<string>>{

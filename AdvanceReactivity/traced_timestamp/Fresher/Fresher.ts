@@ -1,4 +1,4 @@
-import { to_array } from "generic-handler/built_in_generics/generic_better_set";
+import { length, reduce, to_array } from "generic-handler/built_in_generics/generic_collection";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
@@ -14,10 +14,8 @@ export const fresher = construct_simple_generic_procedure("fresher", 2, (a: Laye
 // Helper function to reduce a BetterSet of traced_timestamps to its freshest timestamp.
 // Assumes that fresher(ts1, ts2) returns true when ts1 is fresher than ts2.
 export function get_max_timestamp(set: BetterSet<traced_timestamp>): traced_timestamp | null {
-
-    const arr = to_array(set);
-    if (arr.length === 0) return null;
-    return arr.reduce((max, ts) => {
+    if (length(set) === 0) return null;
+    return reduce(set, (max: traced_timestamp | null, ts: traced_timestamp) => {
         // If there is no max so far, or ts is fresher than the current max, then use ts.
         if (max === null || fresher(ts, max)) {
             return ts;

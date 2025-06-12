@@ -1,7 +1,6 @@
 import {construct_traced_timestamp, high_precision_timestamp, monotonic_timestamp} from "./TracedTimeStamp";
 import { construct_traced_timestamp_set } from "./TracedTimeStampSet";
 import { is_timestamp_set } from "./Predicates";
-import { set_flat_map, set_for_each } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
@@ -14,6 +13,8 @@ import { is_traced_timestamp } from "./Predicates";
 import { traced_timestamp_layer } from "./TracedTimestampLayer.ts"
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { flat_map, map, for_each } from "generic-handler/built_in_generics/generic_collection.ts";
+
 
 const get_new_relative_time = reference_store()
 
@@ -48,8 +49,8 @@ export const stale = make_layered_procedure("stale", 1, _stale)
 
 define_layered_procedure_handler(stale, traced_timestamp_layer, 
     (base: any, timestamp: BetterSet<traced_timestamp>) => {
-        return set_for_each((a: traced_timestamp) => {
+        return for_each(timestamp, (a: traced_timestamp) => {
             a.fresh = false;
-        }, timestamp);
+        });
     }
 )

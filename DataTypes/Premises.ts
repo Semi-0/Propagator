@@ -4,13 +4,11 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
 import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { make_better_set, set_add_item, set_equal, set_map } from "generic-handler/built_in_generics/generic_better_set";
-import { set_every, set_for_each as for_each } from "generic-handler/built_in_generics/generic_better_set";
+import {  for_each, map, reduce, filter, every, some, has } from "generic-handler/built_in_generics/generic_collection";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { Primitive_Relation } from "./Relation";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { v4 as uuidv4 } from 'uuid';
-import { map } from "generic-handler/built_in_generics/generic_array_operation"
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set"
 
 
@@ -109,7 +107,7 @@ export function is_premise_out(name: string): boolean{
 }
 
 export function is_premises_in(names: BetterSet<string>): boolean{
-    return set_every(names, is_premise_in);
+    return every(names, is_premise_in);
 } 
 
 export function is_premises_out(names: BetterSet<string>): boolean{
@@ -174,15 +172,15 @@ export function _hypothesis_metadata(id: string): Hypothesis<any> | undefined {
 
 export function make_hypotheticals<A>(output: Cell<A>, values: BetterSet<A>): BetterSet<string>{
 
-    const peers = set_map(values, (value: A) => {
+    const peers = map(values, (value: A) => {
         return _make_hypothetical(output, value)});
 
-    for_each( (peer: string) => {
+    for_each(peers, (peer: string) => {
         const peer_metadata = _hypothesis_metadata(peer);
         if(peer_metadata){
             _hypothesis_metadata(peer)?.set_peers(peers);
         }
-    }, peers);
+    });
     return peers;
 }
 
@@ -193,7 +191,7 @@ function _make_hypothetical<A>(output: Cell<A>, value: A): string {
     // TODO: initialize cell with contradiction
     // @ts-ignore
     const relation = new Primitive_Relation("hypothetical:" + to_string(value), output.getRelation());
-    var peers: BetterSet<string> = make_better_set<string>([]);
+    var peers: BetterSet<string> = construct_better_set([]);
     var id = uuidv4();
 
     function get_relations(): Primitive_Relation[]{

@@ -11,7 +11,7 @@ import { construct_traced_timestamp_set, empty_traced_timestamp_set, type Traced
 import { _is_fresh } from "./Predicates";
 import { time_stamp_set_merge } from "./TimeStampSetMerge";
 import { smallest_timestamped_value } from "./Annotater";
-import { reduce } from "generic-handler/built_in_generics/generic_array_operation"
+import { reduce } from "generic-handler/built_in_generics/generic_collection";
 
 
 

@@ -1,4 +1,4 @@
-import { get, set_add_item, set_reduce, set_remove_item, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+import { type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { same_source } from "./SameSource";
 import { fresher } from "./Fresher/Fresher";
 import type { traced_timestamp } from "./type";
@@ -8,19 +8,23 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { construct_empty_generic_procedure } from "../../Helper/Helper";
 import { all_match, match_args } from "generic-handler/Predicates";
+import { add_item, find, reduce, remove_item } from "generic-handler/built_in_generics/generic_collection";
+import { has } from "generic-handler/built_in_generics/generic_collection";
+
 
 export function timestamp_set_union(setA: BetterSet<traced_timestamp>, setB: BetterSet<traced_timestamp>): BetterSet<traced_timestamp> {
-    return set_reduce(setB, timestamp_set_adjoin, setA)
+    return reduce(setB, timestamp_set_adjoin, setA)
 }
 
 export function timestamp_set_adjoin(set: BetterSet<traced_timestamp>, timestamp: traced_timestamp): BetterSet<traced_timestamp> {
-    if (has_same_source_timestamp(set, timestamp)){
-        const item_in_set = get(set, timestamp);
 
-        return set_add_item<traced_timestamp>(set_remove_item(set, item_in_set), merge_same_source_timestamp(item_in_set, timestamp));
+    const has_same_source_timestamp = has(set, timestamp)
+    if (has_same_source_timestamp){
+        const  same_source_timestamp = find(set, (a: traced_timestamp) => a.id === timestamp.id)
+        return add_item(remove_item(set, same_source_timestamp), merge_same_source_timestamp(same_source_timestamp, timestamp));
     }
     else{
-        return set_add_item(set, timestamp);
+        return add_item(set, timestamp);
     }
 }
 

@@ -7,12 +7,11 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
 import { is_nothing, the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
-
+import { for_each } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than, equal } from "../AdvanceReactivity/Generics/GenericArith";
 import { base_equal } from "../Shared/base_equal";
 import { no_compute } from "../Helper/noCompute";
-import { for_each } from "../Helper/Helper";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
@@ -436,10 +435,6 @@ export const p_increment = (pulse: Cell<any>, output: Cell<number>, increment: C
         p_feedback(temp, output)
     }, "increment")
 }
-
-
-
-
 
 export const p_dispatch = (i: Cell<string>, conds: ((input: Cell<string>) => void)[]) => {
     for (const cond of conds) {

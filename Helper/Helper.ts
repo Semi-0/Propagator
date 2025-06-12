@@ -1,8 +1,8 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler, error_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { is_array, is_function, is_number } from "generic-handler/built_in_generics/generic_predicates"
 import { guard, throw_error, throw_type_mismatch } from "generic-handler/built_in_generics/other_generic_helper"
-import { first as _first } from "generic-handler/built_in_generics/generic_array_operation"
-import { is_better_set, set_find, set_for_each, set_get_length, to_array, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { first as _first, find, length, to_array} from "generic-handler/built_in_generics/generic_collection"
+import { is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 
@@ -22,26 +22,12 @@ export function reference_store(){
 
 export let get_new_reference_count = reference_store()
 
-export const for_each = construct_simple_generic_procedure("for_each", 2,
-    (array: any[], procedure: (a: any) => any) => {
-        guard(is_array(array), throw_type_mismatch("for_each", "array", typeof array))
-        for (const element of array) {
-            procedure(element)
-        }
-    }
-)
-
 
 
 // // better way is to use layered equal
 // export function layered_is_true(value: any): boolean {
 //     return (is_layered_object(value) && get_base_value(value) === true) || value === true
 // }
-
-export function set_any(predicate: (a: any) => boolean, set: BetterSet<any>): any{
-    return set_find(predicate, set)
-}
-
 export function construct_empty_generic_procedure(name: string, arity: number){
     return construct_simple_generic_procedure(name, arity, (...args: any[]) => {
         throw_error(name, "no handler found for this procedure", to_string(args))
@@ -49,31 +35,19 @@ export function construct_empty_generic_procedure(name: string, arity: number){
 }
 
 
-
-define_generic_procedure_handler(for_each,
-match_args(is_better_set, is_function),
-(set: BetterSet<any>, procedure: (a: any) => any) => {
-    set_for_each(procedure, set)
-})
-
-export const first = _first
-
 export const second = construct_simple_generic_procedure("second", 1, (array: any[]) => {
-    guard(array.length > 2, throw_error("second", "array length mismatch, expect 2", typeof array))
+    guard(array.length > 1, throw_error("second", "array length mismatch, expect 2", typeof array))
     return array[1]
-})
+}) 
 
 
-
-define_generic_procedure_handler(first, match_args(is_better_set), (set: BetterSet<any>) => {
-    guard(set_get_length(set) > 0, throw_error("first", "set is empty", typeof set))
-    return to_array(set)[0]
-})
-
-define_generic_procedure_handler(second, match_args(is_better_set), (set: BetterSet<any>) => {
-    guard(set_get_length(set) > 1, throw_error("second", "set length mismatch, expect 2", typeof set))
-    return to_array(set)[1]
-})
+define_generic_procedure_handler(second,
+    match_args(is_better_set),
+    (set: BetterSet<any>) => {
+        guard(length(set) > 1, throw_error("second", "set length mismatch, expect 2", typeof set))
+        return second(to_array(set))
+    }
+)
 
 
 // // check if the object has circular dependency 

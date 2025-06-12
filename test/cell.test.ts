@@ -2,6 +2,7 @@ import { test, expect } from "bun:test";
 import { construct_cell, cell_strongest_base_value } from "../Cell/Cell";
 import { tell } from "../Helper/UI";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
+import { dispose } from "../Shared/Reactivity/Dispose";
 
 // Test that disposing a cell stops further updates
 test("cell disposal should stop updates", async () => {
@@ -13,7 +14,7 @@ test("cell disposal should stop updates", async () => {
     expect(cell_strongest_base_value(cell)).toBe(1);
 
     // Dispose the cell
-    cell.dispose();
+    dispose(cell);
 
     // Further update should be ignored
     tell(cell, 2, "p2");

@@ -5,7 +5,7 @@ import { trace_cell } from "../GraphTraversal";
 import type { Propagator } from "../../Propagator/Propagator";
 import { is_propagator, propagator_dispose, propagator_inputs } from "../../Propagator/Propagator";
 import { find_cell_by_id } from "../GraphTraversal";
-import { for_each } from "../../Helper/Helper";
+import { for_each } from "generic-handler/built_in_generics/generic_collection";
 
 const dispose = construct_simple_generic_procedure("dispose", 1, (x: any) => {
     return x.dispose();
@@ -13,8 +13,8 @@ const dispose = construct_simple_generic_procedure("dispose", 1, (x: any) => {
 
 define_generic_procedure_handler(dispose, match_args(is_cell), (cell: Cell<any>) => {
    const tree = trace_cell(cell);
-   for_each(tree.propagators.values(), propagator_dispose);
-   for_each(tree.cells.values(), cell_dispose);
+   tree.propagators.values().forEach(propagator_dispose);
+   tree.cells.values().forEach(cell_dispose);
 });
 
 define_generic_procedure_handler(dispose, match_args(is_propagator), (propagator: Propagator) => {

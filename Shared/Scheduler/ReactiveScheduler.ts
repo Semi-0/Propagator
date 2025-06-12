@@ -8,7 +8,8 @@
 // and it should also considered cycles
 // if the propagators is already in the queue, then it should move to the end
 
-import { construct_better_set, set_add_item, set_remove_item, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+import { construct_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
+import { add_item, remove_item } from "generic-handler/built_in_generics/generic_collection";
 import { propagator_id as _propagator_id, propagator_activate, propagator_id, type Propagator } from "../../Propagator/Propagator";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -19,7 +20,7 @@ import { cell_id, cell_strongest, cell_strongest_base_value } from "@/cell/Cell"
 import { type Cell } from "@/cell/Cell";
 import { find_cell_by_id } from "../GraphTraversal";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-import { reduce } from "generic-handler/built_in_generics/generic_array_operation";
+import { reduce } from "generic-handler/built_in_generics/generic_collection";
 import { is_fresh } from "../../AdvanceReactivity/traced_timestamp/Predicates";
 import type { SimpleSet } from "../../helper";
 import { make_easy_set } from "../../helper";
