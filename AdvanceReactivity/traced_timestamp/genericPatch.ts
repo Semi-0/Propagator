@@ -169,11 +169,11 @@ export function trace_value(selector: (a: LayeredObject<any>[]) => LayeredObject
 }
 
 export const trace_earliest_emerged_value = trace_value((a: LayeredObject<any>[]) => {
-    return a[0]
+    return a[a.length - 1]
 })
 
 export const trace_latest_emerged_value = trace_value((a: LayeredObject<any>[]) => {
-    return a[a.length - 1]
+    return a[0]
 })
 
 
