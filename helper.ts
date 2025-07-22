@@ -1,11 +1,20 @@
+import { match } from "fp-ts/lib/EitherT"
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
+import { is_function, is_object } from "generic-handler/built_in_generics/generic_predicates"
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { match_args, register_predicate } from "generic-handler/Predicates"
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { layered_deep_equal } from "sando-layer/Equality"
 
 
+// define_generic_procedure_handler(to_string, match_args(is_object), (value: object) => {
+//     return "{" + Object.entries(value).map(([key, value]) => key + ": " + to_string(value)).join(", ") + "}"
+// })
+
+define_generic_procedure_handler(to_string, match_args(is_function), (value: Function) => {
+    return value.toString()
+})
 
 define_generic_procedure_handler(is_equal, match_args(is_layered_object), layered_deep_equal)
 

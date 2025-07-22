@@ -72,6 +72,8 @@ describe("test propagator", () => {
 
 
     test("causing contradiction", async () => {
+
+        // set_trace_merge(true)
         const x = construct_cell("x");
         const y = construct_cell("y");
         const product = construct_cell("product");
@@ -86,7 +88,7 @@ describe("test propagator", () => {
         tell(product, 40, "snd");
 
 
-        execute_all_tasks_sequential((error: Error) => {
+        await execute_all_tasks_sequential((error: Error) => {
         });
         
     
@@ -95,8 +97,10 @@ describe("test propagator", () => {
 
         tell(product, 5, "red");
 
-        execute_all_tasks_sequential((error: Error) => {
+        await execute_all_tasks_sequential((error: Error) => {
         });
+
+        console.log(product.summarize())
 
         expect(is_contradiction(cell_strongest_base_value(product))).toBe(true)
     }) 
