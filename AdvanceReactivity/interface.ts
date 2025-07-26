@@ -8,6 +8,7 @@ import { pipe } from "fp-ts/lib/function";
 import { v4 as uuidv4 } from 'uuid';
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { get_new_reference_count } from "../Helper/Helper";
+import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 
 export const update_store = new Map<string, any>();
 
@@ -19,8 +20,13 @@ export function update<A>(a: Cell<A>, v: A){
     }
     const with_traced_timestamp = annotate_now_with_id(cell_id(a))
     const annotated = with_traced_timestamp(v)
+
     add_cell_content(a, annotated as A);
     update_store.set(cell_id(a), annotated)
+
+    execute_all_tasks_sequential((e) => {
+        throw e
+    })
 
 }
 
