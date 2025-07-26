@@ -72,7 +72,14 @@ export const reactive_scheduler = (): Scheduler => {
         if (all_fresh){
             propagators_to_alert.add(propagator)
         }
-}
+
+        if (immediate_execute){
+            execute_propagator(propagator, (e) => {
+                throw e
+            })
+        }
+    }
+
 
     const run_scheduler = (error_handler: (e: Error) => void) => {
         while (propagators_to_alert.get_items().length) {
