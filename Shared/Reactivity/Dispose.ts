@@ -12,6 +12,9 @@ const dispose = construct_simple_generic_procedure("dispose", 1, (x: any) => {
 });
 
 define_generic_procedure_handler(dispose, match_args(is_cell), (cell: Cell<any>) => {
+   // Dispose the cell itself first
+   cell_dispose(cell);
+   // Then dispose the entire subtree
    const tree = trace_cell(cell);
    tree.propagators.values().forEach(propagator_dispose);
    tree.cells.values().forEach(cell_dispose);
@@ -23,8 +26,6 @@ define_generic_procedure_handler(dispose, match_args(is_propagator), (propagator
     dispose(any_input_cell);
    }
 });
-
-
 
 export { dispose };
 

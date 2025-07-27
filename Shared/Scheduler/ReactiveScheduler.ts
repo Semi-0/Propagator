@@ -18,7 +18,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { match_args } from "generic-handler/Predicates";
 import { cell_id, cell_strongest, cell_strongest_base_value } from "@/cell/Cell";
 import { type Cell } from "@/cell/Cell";
-import { find_cell_by_id } from "../GraphTraversal";
+import { find_cell_by_id, find_propagator_by_id } from "../GraphTraversal";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { reduce } from "generic-handler/built_in_generics/generic_collection";
 import { is_fresh } from "../../AdvanceReactivity/traced_timestamp/Predicates";
@@ -27,13 +27,14 @@ import { make_easy_set } from "../../helper";
 import type { Scheduler } from "./SchedulerType";
 import { PropagatorError } from "../../Error/PropagatorError";
 import {to_string} from "generic-handler/built_in_generics/generic_conversation";
-
+import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 
 export const reactive_scheduler = (): Scheduler => {
 
     var record_alerted_propagator = false
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
     const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
+    const disposalQueue: Set<string> = new Set() // Track IDs of items to be disposed
     var immediate_execute = false
 
     const execute_propagator = (propagator: Propagator, error_handler: (e: Error) => void) => {
@@ -53,6 +54,30 @@ export const reactive_scheduler = (): Scheduler => {
         immediate_execute = value
     }
 
+    const markForDisposal = (id: string) => {
+        disposalQueue.add(id)
+    }
+
+    const cleanupDisposedItems = () => {
+        disposalQueue.forEach(id => {
+            // Try to find and dispose cell
+            const cell = find_cell_by_id(id)
+            if (cell) {
+                set_global_state(PublicStateCommand.REMOVE_CELL, cell)
+            }
+            
+            // Try to find and dispose propagator
+            const propagator = find_propagator_by_id(id)
+            if (propagator) {
+                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
+            }
+        })
+        disposalQueue.clear()
+    }
+
+    const getDisposalQueueSize = () => {
+        return disposalQueue.size
+    }
 
     const alert_propagators = (propagators: Propagator[]) => {
         for (const propagator of propagators){
@@ -80,7 +105,6 @@ export const reactive_scheduler = (): Scheduler => {
         }
     }
 
-
     const run_scheduler = (error_handler: (e: Error) => void) => {
         while (propagators_to_alert.get_items().length) {
             const next = propagators_to_alert.get_items()[0] as Propagator
@@ -107,7 +131,10 @@ export const reactive_scheduler = (): Scheduler => {
         },
         clear_all_tasks: () => {
             propagators_to_alert.clear()
-        }
+        },
+        markForDisposal,
+        cleanupDisposedItems,
+        getDisposalQueueSize
     }
 }
 

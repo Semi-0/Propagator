@@ -3,7 +3,7 @@ import {type Propagator, propagator_dispose} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
+import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction, the_disposed, is_disposed } from "./CellValue";
 import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../Shared/PublicState";
 import { describe } from "../Helper/UI";
@@ -20,15 +20,13 @@ import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { disposeSubtree } from "../Shared/GraphTraversal";
-import { Current_Scheduler } from "../Shared/Scheduler/Scheduler";
+import { Current_Scheduler, markForDisposal } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
     return is_contradiction(value) || is_layered_contradiction(value)
   })
-
-
 
 export function handle_cell_contradiction<A>(cell: Cell<A>) {
   // get the support layer of the cell's strongest value, cast to any for type compatibility
@@ -42,7 +40,6 @@ export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
   // @ts-ignore
   handle_contradiction = func;
 }
-
 
 export interface Cell<A> {
   getRelation: () => Primitive_Relation;
@@ -82,8 +79,6 @@ export function cell_constructor<A>(
     var strongest: CellValue<A> = initial;
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
-
-
     function test_content(){
       const new_strongest = strongest_value_fn(content)
       if (is_equal(new_strongest, strongest)){
@@ -92,6 +87,15 @@ export function cell_constructor<A>(
       else if (is_contradiction(new_strongest)){
         strongest = new_strongest
         handle_cell_contradiction()
+      }
+      else if (is_disposed(new_strongest)){
+        strongest = new_strongest
+        // Mark cell for disposal
+        markForDisposal(cell_id(cell))
+        // Propagate disposal to connected cells
+        neighbors.forEach(propagator => {
+          propagator.activate()
+        })
       }
       else{
         strongest = new_strongest
@@ -106,6 +110,10 @@ export function cell_constructor<A>(
       getNeighbors: () => neighbors,
       testContent: () => test_content(),
       addContent: (increment: CellValue<A>) => {
+        // If cell is disposed, ignore new content
+        if (is_disposed(strongest)) {
+          return;
+        }
         content = cell_merge(content, increment)
         test_content()
       },
@@ -122,13 +130,16 @@ export function cell_constructor<A>(
       },
 
       dispose: () => {
-        // first dispose entire downstream subgraph
-        // neighbors.forEach(propagator => propagator_dispose)
         disposed = true;
-        content = []
-        strongest = initial
-        neighbors.clear();
-        set_global_state(PublicStateCommand.REMOVE_CELL, cell);
+        // Set the cell to disposed value
+        content = [the_disposed]
+        strongest = the_disposed
+        // Mark for cleanup
+        markForDisposal(cell_id(cell))
+        // Trigger propagation to connected cells
+        neighbors.forEach(propagator => {
+          propagator.activate()
+        })
       }
     };
 
@@ -138,7 +149,6 @@ export function cell_constructor<A>(
   };
 }
 
-
 export function construct_cell<A>(name: string): Cell<A> {
   return cell_constructor<A>(the_nothing, strongest_value, cell_merge)(name)
 }
@@ -146,9 +156,6 @@ export function construct_cell<A>(name: string): Cell<A> {
 export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
   return cell_constructor<A>(value, strongest_value, cell_merge)(name, id)
 }
-
-
-
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   typeof  a !== null && a !== undefined 
@@ -162,7 +169,6 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> =>
           && a.summarize !== undefined 
           && a.dispose !== undefined
 );
-
     
 export function make_temp_cell(){
     let name = "#temp_cell_" + get_new_reference_count();
@@ -180,7 +186,6 @@ export function add_cell_content<A>(cell: Cell<A>, content: A){
 export function cell_strongest<A>(cell: Cell<A>): CellValue<A>{
   return cell.getStrongest();
 } 
-
 
 export function cell_content<A>(cell: Cell<A>): any{
   return cell.getContent();

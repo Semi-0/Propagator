@@ -1,13 +1,8 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
 import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
 import { set_global_state, get_global_parent} from "../Shared/PublicState";
-
-
 import { PublicStateCommand } from "../Shared/PublicState";
-
-
 import { match_args, register_predicate } from "generic-handler/Predicates";
-
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
@@ -17,10 +12,12 @@ import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
+import { the_disposed, is_disposed } from "../Cell/CellValue";
+import { markForDisposal } from "../Shared/Scheduler/Scheduler";
+
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
 // TODO: memory leak?
-
 
 export interface Propagator {
   get_name: () => string;
@@ -45,7 +42,6 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
     );
 });
 
-
 export function summarize_cells(cells: Cell<any>[]): string{
     return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
 }
@@ -67,7 +63,26 @@ export function construct_propagator(inputs: Cell<any>[],
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
     summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
-    activate: activate,
+    activate: () => {
+      // Check if any inputs are disposed
+      const hasDisposedInput = inputs.some(cell => is_disposed(cell_strongest(cell)));
+      const hasDisposedOutput = outputs.some(cell => is_disposed(cell_strongest(cell)));
+      
+      if (hasDisposedInput || hasDisposedOutput) {
+        // Mark propagator for disposal
+        markForDisposal(propagator_id(propagator));
+        // Propagate disposal to outputs
+        outputs.forEach(cell => {
+          if (!is_disposed(cell_strongest(cell))) {
+            cell.addContent(the_disposed);
+          }
+        });
+        return;
+      }
+      
+      // Normal activation
+      activate();
+    },
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
         const neighbors = cell.getNeighbors();
@@ -75,8 +90,8 @@ export function construct_propagator(inputs: Cell<any>[],
           neighbors.delete(relation.get_id());
         }
       });
-      // Unregister this propagator from global state
-      set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator);
+      // Mark for cleanup
+      markForDisposal(propagator_id(propagator));
     }
   };
 
@@ -95,11 +110,9 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             throw new Error("Primitive propagator must have at least one input");
         }
 
-
         const [inputs, output] = cells.length > 1
             ? [cells.slice(0, -1), cells[cells.length - 1]]
             : [cells, null];
-
 
         const prop = construct_propagator(
             inputs,

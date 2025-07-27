@@ -1,5 +1,5 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import {  is_nothing, is_contradiction, the_contradiction } from "./CellValue";
+import {  is_nothing, is_contradiction, the_contradiction, is_disposed, the_disposed } from "./CellValue";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import type { Applicability } from "generic-handler/Applicatability";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
@@ -15,7 +15,10 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
         if (trace_merge) {
             console.log("merging", content, increment)
         }
-        if (is_nothing(content)) {
+        if (is_disposed(content) || is_disposed(increment)) {
+            return the_disposed
+        }
+        else if (is_nothing(content)) {
             return increment
         }
         else if (is_nothing(increment)) {

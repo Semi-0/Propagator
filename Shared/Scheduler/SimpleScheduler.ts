@@ -20,16 +20,15 @@ import { propagator_activate } from "../../Propagator/Propagator";
 import type { SimpleSet } from "../../helper";
 import { make_easy_set } from "../../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-
-
-
-
+import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
+import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
     const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
+    const disposalQueue: Set<string> = new Set() // Track IDs of items to be disposed
     var immediate_execute = false
     var record_alerted_propagator = false
 
@@ -63,6 +62,31 @@ export const simple_scheduler = (): Scheduler => {
         }
     }
 
+    const markForDisposal = (id: string) => {
+        disposalQueue.add(id)
+    }
+
+    const cleanupDisposedItems = () => {
+        disposalQueue.forEach(id => {
+            // Try to find and dispose cell
+            const cell = find_cell_by_id(id)
+            if (cell) {
+                set_global_state(PublicStateCommand.REMOVE_CELL, cell)
+            }
+            
+            // Try to find and dispose propagator
+            const propagator = find_propagator_by_id(id)
+            if (propagator) {
+                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
+            }
+        })
+        disposalQueue.clear()
+    }
+
+    const getDisposalQueueSize = () => {
+        return disposalQueue.size
+    }
+
     const run_scheduler = (error_handler: (e: Error) => void) => {
         while (propagators_to_alert.get_items().length) {
             const next = propagators_to_alert.get_items()[0] as Propagator
@@ -89,6 +113,9 @@ export const simple_scheduler = (): Scheduler => {
         },
         clear_all_tasks: () => {
             propagators_to_alert.clear()
-        }
+        },
+        markForDisposal,
+        cleanupDisposedItems,
+        getDisposalQueueSize
     }
 }
