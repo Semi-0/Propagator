@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "bun:test";
 import { construct_cell, cell_strongest, cell_content, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
-import { p_add, p_multiply, p_subtract, p_divide } from "../Propagator/BuiltInProps";
+import { p_add, p_multiply, p_subtract, p_divide, c_add, c_multiply } from "../Propagator/BuiltInProps";
 import { clear_all_tasks, execute_all_tasks_sequential, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { the_disposed, is_disposed, the_nothing, the_contradiction, is_contradiction, is_nothing } from "../Cell/CellValue";
@@ -1449,21 +1449,12 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators when cells are disposed", async () => {
-            const a = construct_cell("constraint_dispose_a");
-            const b = construct_cell("constraint_dispose_b");
-            const c = construct_cell("constraint_dispose_c");
+            const a = construct_cell("constraint_dispose_a") as Cell<number>;
+            const b = construct_cell("constraint_dispose_b") as Cell<number>;
+            const c = construct_cell("constraint_dispose_c") as Cell<number>;
             
-            const constraint = constraint_propagator([a, b, c], () => {
-                const valA = cell_strongest_base_value(a) as number;
-                const valB = cell_strongest_base_value(b) as number;
-                const valC = cell_strongest_base_value(c) as number;
-                
-                if (!is_disposed(valA) && !is_disposed(valB) && !is_disposed(valC)) {
-                    if (!is_nothing(valA) && !is_nothing(valB) && is_nothing(valC)) {
-                        c.addContent(valA + valB);
-                    }
-                }
-            }, "dispose_constraint");
+            // Use built-in constraint propagator from BuiltInProps.ts
+            const constraint = c_add(a, b, c);
             
             const constraintId = propagator_id(constraint);
             const aId = cell_id(a);
@@ -1490,7 +1481,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After disposal, the cell should be removed and constraint should propagate disposal
             expect(find_cell_by_id(aId)).toBeUndefined();
-            expect(find_cell_by_id(bId)).toBeDefined(); // Should remain
+            expect(find_cell_by_id(bId)).toBeUndefined(); // Should also be removed due to constraint dependency
             expect(find_cell_by_id(cId)).toBeUndefined(); // Should be removed due to disposal propagation
             expect(find_propagator_by_id(constraintId)).toBeUndefined(); // Should be removed
             expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
@@ -1563,21 +1554,12 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with generic dispose function", async () => {
-            const a = construct_cell("generic_constraint_a");
-            const b = construct_cell("generic_constraint_b");
-            const c = construct_cell("generic_constraint_c");
+            const a = construct_cell("generic_constraint_a") as Cell<number>;
+            const b = construct_cell("generic_constraint_b") as Cell<number>;
+            const c = construct_cell("generic_constraint_c") as Cell<number>;
             
-            const constraint = constraint_propagator([a, b, c], () => {
-                const valA = cell_strongest_base_value(a) as number;
-                const valB = cell_strongest_base_value(b) as number;
-                const valC = cell_strongest_base_value(c) as number;
-                
-                if (!is_disposed(valA) && !is_disposed(valB) && !is_disposed(valC)) {
-                    if (!is_nothing(valA) && !is_nothing(valB) && is_nothing(valC)) {
-                        c.addContent(valA * valB);
-                    }
-                }
-            }, "generic_constraint");
+            // Use built-in constraint propagator from BuiltInProps.ts
+            const constraint = c_multiply(a, b, c);
             
             const constraintId = propagator_id(constraint);
             const aId = cell_id(a);
@@ -1604,10 +1586,10 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, constraint should be removed from global state
             expect(find_propagator_by_id(constraintId)).toBeUndefined();
-            // Cells should remain since they weren't disposed
-            expect(find_cell_by_id(aId)).toBeDefined();
-            expect(find_cell_by_id(bId)).toBeDefined();
-            expect(find_cell_by_id(cId)).toBeDefined();
+            // Cells should also be removed since constraint propagators dispose their cells
+            expect(find_cell_by_id(aId)).toBeUndefined();
+            expect(find_cell_by_id(bId)).toBeUndefined();
+            expect(find_cell_by_id(cId)).toBeUndefined();
             expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
         });
     });

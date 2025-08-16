@@ -49,8 +49,9 @@ export function summarize_cells(cells: Cell<any>[]): string{
 export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
                                  activate: () => void,
-                                 name: string): Propagator {
-  const relation = make_relation(name, get_global_parent());
+                                 name: string,
+                                 id: string | null = null): Propagator {
+  const relation = make_relation(name, get_global_parent(), id);
 
   const inputs_ids = inputs.map(cell => cell_id(cell));
   const outputs_ids = outputs.map(cell => cell_id(cell));
@@ -147,7 +148,7 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 
 // compound propagator might need virtualized inner cells
 
-export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string): Propagator {
+export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string, id: string | null = null): Propagator {
     // Create the propagator using the basic constructor
     var built = false
     const prop = construct_propagator(inputs, outputs, () => {
@@ -155,7 +156,7 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
             to_build()
             built = true
         }
-    }, name);
+    }, name, id);
     
     return prop;
 }
