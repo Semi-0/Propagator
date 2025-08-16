@@ -16,6 +16,7 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
 import { r_constant } from "../AdvanceReactivity/interface";
+import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
@@ -405,6 +406,38 @@ export const p_combine =  (...cells: Cell<any>[]) => function_to_primitive_propa
         return args
     }
 )(...cells)
+
+export const p_array_index =  function_to_primitive_propagator("array_index", (input: any[], index: number) => {
+    // TODO: MEMORY LEAK
+    if (is_array(input) && index < input.length){
+        return input[index]
+    }
+    else{
+        return no_compute
+    }
+})
+
+export const p_array_do = (index: Cell<number>, input: Cell<any>, do_something: (...cells: Cell<any>[]) => void, output: Cell<any>) => {
+    return compound_propagator([index, input], [output], () => {
+        const selected = make_temp_cell()
+        p_array_index(index, input, selected)
+        do_something(selected, output)
+    }, "array_do")
+}
+
+
+export const p_spread = (input: Cell<any>, outputs: Cell<any>[]) => {
+    // fix this cannot handles dynamic updates 
+
+    return compound_propagator([input], outputs, () => {
+        p_tap(input, (collection: any[]) => {
+            if (is_array(collection)){
+
+            }
+
+        })
+    }, "spread")
+}
 
 
 export const ce_combine = make_ce_arithmetical(p_combine, "combine")
