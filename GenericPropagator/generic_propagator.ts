@@ -210,7 +210,8 @@ export const match_cells_prototype = (...args: Cell<boolean>[]) => {
                 mc(index + 1, next_result)
             }
         }
-        mc(0, make_temp_cell())
+        const TRUE = constant_cell(true, "TRUE")
+        mc(0, TRUE)
     },
         "match_cells"
     )     

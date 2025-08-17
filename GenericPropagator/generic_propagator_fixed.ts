@@ -1,6 +1,6 @@
 import { compound_propagator, function_to_primitive_propagator, is_propagator, propagator_id, type Propagator } from "../Propagator/Propagator";
-import { constant_cell, construct_cell, make_temp_cell, type Cell } from "../Cell/Cell";
-import { ce_equal, ce_subtract, ce_switch, p_and, p_switch, p_sync, p_or } from "../Propagator/BuiltInProps";
+import { constant_cell, construct_cell, make_temp_cell, type Cell, cell_strongest_base_value } from "../Cell/Cell";
+import { ce_equal, ce_subtract, ce_switch, p_and, p_switch, p_sync, p_or, p_composite, p_combine } from "../Propagator/BuiltInProps";
 import { reduce } from "fp-ts/lib/Foldable";
 import { last } from "fp-ts/lib/Array";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
@@ -8,6 +8,178 @@ import { v4 as uuidv4 } from 'uuid';
 import { make_ce_arithmetical } from "../Propagator/Sugar";
 import { is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { no_compute } from "../Helper/noCompute";
+import { update } from "../AdvanceReactivity/interface";
+import { the_nothing } from "../Cell/CellValue";
+
+// ============================================================================
+// SELECTION STRATEGIES
+// ============================================================================
+
+export type SelectionStrategy = 
+  | "simultaneous"    // Execute all matching handlers and pack results
+  | "most_specific"   // Execute the most specific (most predicates) handler
+  | "most_recent"     // Execute the most recently added handler
+
+// ============================================================================
+// SIMULTANEOUS PROPAGATOR
+// ============================================================================
+
+
+
+
+export const p_simultaneous = (inputs: Cell<any>[], output: Cell<any>) => {
+  return compound_propagator(
+    inputs,
+    [output],
+    () => {
+      // For now, let's use a simpler approach that works reliably
+      // We'll use p_composite for the OR behavior and then transform the result
+      const temp_output = make_temp_cell();
+      p_composite(inputs, temp_output);
+      
+      // Create a transformer that converts single values to arrays
+      const array_transformer = function_to_primitive_propagator(
+        "array_transformer",
+        (value: any) => {
+          if (value !== the_nothing && value !== undefined) {
+            return [value];
+          }
+          return the_nothing;
+        }
+      );
+      
+      array_transformer(temp_output, output);
+    },
+    "simultaneous"
+  );
+};
+
+// Enhanced p_composite that can take a custom composition callback
+export const p_composite_with_callback = (inputs: Cell<any>[], output: Cell<any>, callback?: (...values: any[]) => any) => {
+  return compound_propagator(
+    inputs,
+    [output],
+    () => {
+      if (callback) {
+        // Use custom callback for composition
+        const custom_combiner = function_to_primitive_propagator(
+          "custom_combiner",
+          callback
+        );
+        custom_combiner(...inputs, output);
+      } else {
+        // Default behavior: return array of all non-nothing values
+        const array_combiner = function_to_primitive_propagator(
+          "array_combiner",
+          (...values: any[]) => {
+            const valid_values = values.filter(v => v !== the_nothing && v !== undefined);
+            if (valid_values.length > 0) {
+              return valid_values;
+            }
+            return the_nothing;
+          }
+        );
+        array_combiner(...inputs, output);
+      }
+    },
+    "composite_with_callback"
+  );
+};
+
+// ============================================================================
+// OBJECT PROPAGATOR SYSTEM
+// ============================================================================
+
+export type ObjectPropagator<T> = (cmd: any, out: Cell<any>) => Propagator;
+
+export const create_object_propagator = <T>(
+  name: string,
+  initial_value: T,
+  handler: (state: T, cmd: any) => { new_state: T, result: any }
+): ObjectPropagator<T> => {
+
+    let current_state = initial_value;
+    
+    return (cmd: any, out: Cell<any>) => {
+      return compound_propagator(
+        [cmd],
+        [out],
+        () => {
+          const state_handler = function_to_primitive_propagator(
+            `${name}_handler`,
+            (command: any) => {
+              const { new_state, result } = handler(current_state, command);
+              current_state = new_state;
+              return result;
+            }
+          );
+          state_handler(cmd, out);
+        },
+        name
+      );
+    };
+  };
+
+// ============================================================================
+// DISPATCH STORE OBJECT PROPAGATOR
+// ============================================================================
+
+export interface HandlerEntry {
+  critic: (...args: Cell<any>[]) => Cell<boolean>;
+  handler: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator;
+}
+
+export interface DispatchStore {
+  handlers: HandlerEntry[];
+  selection_strategy: SelectionStrategy;
+}
+
+export const create_dispatch_store_propagator = (): ObjectPropagator<DispatchStore> => {
+  return create_object_propagator<DispatchStore>(
+    "dispatch_store",   
+    { handlers: [], selection_strategy: "most_recent" },
+    (state: DispatchStore, cmd: any) => {
+      switch (cmd.type) {
+        case "add_handler":
+          const new_handler: HandlerEntry = {
+            critic: cmd.critic,
+            handler: cmd.handler,
+          };
+          return {
+            new_state: {
+              ...state,
+              handlers: [...state.handlers, new_handler]
+            },
+            result: new_handler
+          };
+          
+        case "set_selection_strategy":
+          return {
+            new_state: {
+              ...state,
+              selection_strategy: cmd.strategy
+            },
+            result: cmd.strategy
+          };
+          
+        case "get_selection_strategy":
+          return {
+            new_state: state,
+            result: state.selection_strategy
+          };
+          
+          
+          
+        default:
+          return { new_state: state, result: null };
+      }
+    }
+  );
+};
+
+// ============================================================================
+// EXISTING CODE (keeping for backward compatibility)
+// ============================================================================
 
 interface GenericPropagatorMetadata {
     dispatchers: Cell<any>[],
@@ -24,17 +196,22 @@ type Ce_Propagator = (...args: Cell<any>[]) => Cell<any>
 // ============================================================================
 
 export const generic_propagator_prototype = (name: string, dispatchers: Cell<any>[], dispatched_results: Cell<any>[]) => {
+    const id = uuidv4()
     const interface_propagator = (inputs: Cell<any>[], outputs: Cell<any>[]) => compound_propagator(
         [...inputs],
         [...outputs],
         () => {
-            const id = uuidv4()
+          
 
             inputs.forEach((input, index) => {
                 p_sync(input, dispatchers[index])
             })
             outputs.forEach((output, index) => {
                 p_sync(dispatched_results[index], output)
+            })
+            metadata_store.set(id, {
+                dispatchers: dispatchers,
+                dispatched_results: dispatched_results,
             })
         },
         name
@@ -80,13 +257,12 @@ export const define_generic_propagator_handler = (propagator_or_interface: Propa
 // FIXED MATCH CELLS IMPLEMENTATION
 // ============================================================================
 
-export const match_cells_prototype = (...args: Cell<boolean>[]) => {
-    if (args.length === 0) {
+export const match_cells_prototype = (...predicates: ((arg: Cell<any>) => Cell<boolean>)[]) => {
+    if (predicates.length === 0) {
         throw new Error("At least one predicate is required")
     }
 
-    const output = args[args.length - 1] as Cell<boolean>
-    const predicates = args.slice(0, -1) as Cell<boolean>[]
+    const output = make_temp_cell() as Cell<boolean>
 
     return (...inputs: Cell<any>[]) => {
         const propagator = compound_propagator(
@@ -99,18 +275,19 @@ export const match_cells_prototype = (...args: Cell<boolean>[]) => {
 
                 // FIXED: Properly implement the matching logic
                 if (predicates.length === 1) {
+                   
                     // Single predicate case
-                    p_sync(predicates[0], output)
+                    p_sync(predicates[0](inputs[0]), output)
                 } else if (predicates.length === 2) {
                     // Two predicates case
-                    p_and(predicates[0], predicates[1], output)
+                    p_and(predicates[0](inputs[0]), predicates[1](inputs[1]), output)
                 } else {
                     // Multiple predicates case - chain them together
-                    let current_result = predicates[0]
+                    let current_result = predicates[0](inputs[0])
                     
                     for (let i = 1; i < predicates.length; i++) {
                         const next_result = make_temp_cell() as Cell<boolean>
-                        p_and(current_result, predicates[i], next_result)
+                        p_and(current_result, predicates[i](inputs[i]), next_result)
                         current_result = next_result
                     }
                     
@@ -119,39 +296,16 @@ export const match_cells_prototype = (...args: Cell<boolean>[]) => {
             },
             "match_cells"
         )     
-        return propagator
+        return output
     }
 }
 
-export const match_cells = (...args: Cell<boolean>[]) => {
-    if (args.length === 0) {
+export const match_cells = (...predicates: ((arg: Cell<any>) => Cell<boolean>)[]) => {
+    if (predicates.length === 0) {
         throw new Error("At least one predicate is required")
     }
     
-    const output = make_temp_cell() as Cell<boolean>
-    
-    // For match_cells, we don't need inputs since we're just combining predicates
-    // Create a simple compound propagator that combines all predicates
-    if (args.length === 1) {
-        // Single predicate case
-        p_sync(args[0], output)
-    } else if (args.length === 2) {
-        // Two predicates case
-        p_and(args[0], args[1], output)
-    } else {
-        // Multiple predicates case - chain them together
-        let current_result = args[0]
-        
-        for (let i = 1; i < args.length; i++) {
-            const next_result = make_temp_cell() as Cell<boolean>
-            p_and(current_result, args[i], next_result)
-            current_result = next_result
-        }
-        
-        p_sync(current_result, output)
-    }
-    
-    return output
+    return match_cells_prototype(...predicates)
 }
 
 // ============================================================================

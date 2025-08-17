@@ -1,6 +1,6 @@
 import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator, error_logged_primitive_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
-import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell } from "../Cell/Cell";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value } from "../Cell/Cell";
 import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -16,6 +16,8 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
 import { r_constant } from "../AdvanceReactivity/interface";
+import { reduce } from "fp-ts/Array";
+import { pipe } from "fp-ts/lib/function";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
@@ -102,8 +104,8 @@ export const p_array_first = function_to_primitive_propagator("array_first", (in
     return input[0];
 })
 
-export const p_map_a = (f: (a: any) => any) => {
-    return function_to_primitive_propagator("map", (inputs: any) => {
+export const p_map_a = (f: (...a: any[]) => any) => {
+    return function_to_primitive_propagator("map", (...inputs: any[]) => {
         return f(inputs);
     })
 } 
@@ -339,7 +341,7 @@ export const ce_multiply: (x: Cell<number>, y: Cell<number>) => Cell<number> = m
 export const ce_divide: (x: Cell<number>, y: Cell<number>) => Cell<number> = make_ce_arithmetical(p_divide, "divide");
 
 // @ts-ignore
-export const ce_equal: (x: Cell<number>, y: Cell<number>) => Cell<boolean> = make_ce_arithmetical(p_equal, "equal");
+export const ce_equal: (x: Cell<any>, y: Cell<any>) => Cell<boolean> = make_ce_arithmetical(p_equal, "equal");
 
 // @ts-ignore
 export const ce_switch: (condition: Cell<boolean>, value: Cell<any>) => Cell<any> = make_ce_arithmetical(p_switch, "switch");
@@ -448,7 +450,7 @@ export const p_case = (predicate: (cell: Cell<string>) => Propagator, execute: (
     execute(result)
 }
 
-
+export const ce_map = (f: (...a: any[]) => any) => make_ce_arithmetical(p_map_a(f), "map")
 
 // export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
 //     if (base_equal(condition, true)){
@@ -458,3 +460,103 @@ export const p_case = (predicate: (cell: Cell<string>) => Propagator, execute: (
 //         return no_compute
 //     }
 // }, "switcher")(condition, value, output);
+
+export const p_pull = (pull_from: Cell<any>, pulse: Cell<any>, output: Cell<any>) => {
+    return p_map_a((x: any) => {
+        const value = cell_strongest_base_value(pull_from)
+        if (value === the_nothing){
+            return no_compute
+        }
+        else{
+            return value
+        }
+    })(pulse, output)
+}
+
+
+export const p_drop = (until: number) => {
+    var acc_index = 0;
+
+    return function_to_primitive_propagator("drop", (input: any) => {
+ 
+        if (acc_index >= until){
+            return input;
+        }
+
+        else{
+            acc_index++;
+            return no_compute;
+        }
+    })
+}
+
+export const p_take = (until: number) => {
+    var acc_index = 0;
+    return function_to_primitive_propagator("take", (input: any) => {
+        if (acc_index < until){
+            acc_index++;
+            return input;
+        }   
+        else{
+            return no_compute;
+        }
+    })
+}
+
+export const ce_index = (index: number) => make_ce_arithmetical(p_index(index))
+
+export const ce_first = make_ce_arithmetical(p_take(1), "first")
+
+
+
+
+
+export const ce_pull = (pull_from: Cell<any>, pulse: Cell<any>) => make_ce_arithmetical(p_pull)(pull_from, pulse)
+
+export const p_drop_first = p_drop(1)
+
+export const ce_drop_first = make_ce_arithmetical(p_drop_first)
+
+export const p_as_array = (inputs: Cell<any>[], output: Cell<any[]>) => function_to_primitive_propagator(
+    "p_as_array",
+    (...inputs: any[]) => {
+        return inputs
+    }
+)(...inputs, output)
+
+
+export const c_merge_queue = (until: number) => (a: Cell<any>, b: Cell<any>, out: Cell<any>) =>  compound_propagator([a, b], [out], () => {
+    const input = construct_cell("input")
+    p_sync(a, input)
+    p_sync(b, input)
+    p_take(until)(input, out)
+    p_drop(until)(input, out)
+}, "merge_queue")
+
+export const c_fold = (f: (i: any, a: any) => any) => (input: Cell<any>, acc_cell: Cell<any>) => {
+    return compound_propagator([input, acc_cell], [acc_cell], () => {
+        const pulled = ce_pull(acc_cell, input) 
+        const internal = function_to_primitive_propagator("fold", f) 
+        internal(input, pulled, acc_cell)
+       
+    }, "fold")
+}
+
+export const c_fold_pack = (f: (acc: any, input: any) => any) => (input: Cell<any[]>, acc_cell: Cell<any>) => {
+    return compound_propagator([input, acc_cell], [acc_cell], () => {
+        const pulled = ce_pull(acc_cell, input) 
+        const internal = function_to_primitive_propagator("fold_pack", (input: any[], acc: any) => {
+            return reduce(acc, f)(input)
+        }) 
+        internal(input, pulled, acc_cell)
+    }, "fold_pack")
+}
+
+export const c_reduce = (f: (i: any, a: any) => any) => (input: Cell<any>, acc_getter: Cell<any>, acc_setter:  Cell<any>) => {
+    return compound_propagator([input, acc_getter], [acc_setter], () => {
+        const pulled = ce_pull(acc_getter, input) 
+        const internal = function_to_primitive_propagator("reduce", f) 
+   
+        internal(input, pulled, acc_setter)
+    }, "reduce")
+}
