@@ -6,128 +6,33 @@ import { last } from "fp-ts/lib/Array";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import { v4 as uuidv4 } from 'uuid';
 import { make_ce_arithmetical } from "../Propagator/Sugar";
-import { is_string } from "generic-handler/built_in_generics/generic_predicates";
+import { is_boolean, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
+import { inspect_strongest } from "../Helper/Debug";
+import { r_constant } from "../AdvanceReactivity/interface";
 
 interface GenericPropagatorMetadata {
     dispatchers: Cell<any>[],
     dispatched_results: Cell<any>[],
+    handlers?: Array<{
+        critics: (...args: Cell<any>[]) => Cell<boolean>,
+        handler_network: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator,
+        succeeded: Cell<any>[],
+        propagator: Propagator
+    }>
 }
 
 const metadata_store = new Map<string, GenericPropagatorMetadata>()
-const interface_store = new Map<(...args: any) => Propagator, GenericPropagatorMetadata>()
 
 type Ce_Propagator = (...args: Cell<any>[]) => Cell<any>
 // helper function 
 
-
-// // TODO: GENERIC LOOP
-// export const loop_propagator = (source: Cell<any>, ce_conditon: Ce_Propagator, ce_body: Ce_Propagator, output: Cell<any>) => {
-
-//     return compound_propagator(
-//         [source],
-//         [output],
-//         () => {
-//             const v_source = make_temp_cell()
-//             const done = ce_conditon(v_source)
-//             exp_if({
-//                 condition: done, 
-//                 then: exp_write(v_source, output),
-//                 else: exp_feed(ce_body(v_source), v_source)
-//             })
-//         },
-//         "loop_propagator"
-//     )
-// }
-
-// export const p_make_array = function_to_primitive_propagator("make_array", (...args: any[]) => {
-//     return args
-// })
-
-// export const combine_cells = (...args: Cell<any>[]) => {
-
-//     if (args.length === 0) {
-//         throw new Error("At least one cell is required")
-//     }
-
-//     const inputs = args.slice(0, -1)
-//     const output = args[args.length - 1]
-
-//     return compound_propagator(
-//         [...inputs],
-//         [output],
-//         () => {
-//            p_make_array(...[...inputs, output])
-//         },
-//         "combine_cells"
-//     )
-// }
-
-// // to solve array for each, we need a generic loop propagator
-
-
-// export const c_array_for_each = (array: Cell<any>, exp_body: (item: Cell<any>, index: Cell<number>) => void) => {
-//     return compound_propagator(
-//         [array],
-//         [],
-//         () => {
-//             const current_index = make_temp_cell() as Cell<number>
-//             const current_item = ce_array_index(array, current_index)
-
-//             exp_loop(
-//                 {
-//                     condition: ce_equal(current_index, ce_sub_one(ce_array_length(array))),
-//                     next: ce_increment(current_index),
-//                     body: exp_body(current_item, current_index)
-//                 }
-//             )
-
-
-//         },
-//         "c_array_for_each"
-//     )
-// }
-
-// export const spread_cells = (...args: Cell<any>[]) => {
-//     if (args.length === 0) {
-//         throw new Error("At least one cell is required")
-//     }
-
-//     const spread_from = args[0]
-//     const spread_to = args.slice(1, -1)
-
-//     return compound_propagator(
-//         [spread_from],
-//         [...spread_to],
-//         () => {
-//             c_array_for_each(spread_from, (item: Cell<any>, index: number) => {
-//                 p_sync(item, spread_to[index])
-//             })
-//         },
-//         "spread_cells"
-//     )
-// }
-
-// export const p_object = (inital_setter...) => {
-//     ...
-//     return (cmd, out) => {
-//         dispatch(cmd, out)
-//     }
-// }
-
-
-export const generic_propagator_prototype = (name: string, dispatchers: Cell<any>[], dispatched_results: Cell<any>[]) => {
-    // supposely the return propagator would have two condition
-    // 1. as template (...args: Cell<any>[]) => Propagator
-    // 2. as builted propagator (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator
-
-
-
-    const interface_propagator = (inputs: Cell<any>[], outputs: Cell<any>[]) => compound_propagator(
+// Helper function to create the interface propagator
+export const create_interface_propagator = (name: string, id: string, dispatchers: Cell<any>[], dispatched_results: Cell<any>[]) => {
+    return (inputs: Cell<any>[], outputs: Cell<any>[]) => compound_propagator(
         [...inputs],
         [...outputs],
         () => {
-            const id = uuidv4()
-
+          
 
             inputs.forEach((inputs, index) => {
                 p_sync(inputs, dispatchers[index])
@@ -136,13 +41,40 @@ export const generic_propagator_prototype = (name: string, dispatchers: Cell<any
                 p_sync(dispatched_results[index], output)
             })
         },
-        name
+        name,
+        id
     )
+}
 
-    interface_store.set(interface_propagator, {
+// Helper function to store metadata for interface propagator
+export const store_interface_metadata = (id: string,  dispatchers: Cell<any>[], dispatched_results: Cell<any>[]): void => {
+    metadata_store.set(id, {
         dispatchers: dispatchers,
         dispatched_results: dispatched_results,
     })
+}
+
+
+
+// Helper function to validate dispatchers and results
+export const validate_dispatchers_and_results = (dispatchers: Cell<any>[], dispatched_results: Cell<any>[]): void => {
+    if (!Array.isArray(dispatchers)) {
+        throw new Error("Dispatchers must be an array")
+    }
+    if (!Array.isArray(dispatched_results)) {
+        throw new Error("Dispatched results must be an array")
+    }
+    if (dispatchers.length !== dispatched_results.length) {
+        throw new Error("Dispatchers and dispatched results must have the same length")
+    }
+}
+
+export const generic_propagator_prototype = ( id: string, name: string, dispatchers: Cell<any>[], dispatched_results: Cell<any>[]) => {
+    // Create the interface propagator
+    const interface_propagator = create_interface_propagator(name, id, dispatchers, dispatched_results)
+    
+    // Store metadata
+    store_interface_metadata(id, dispatchers, dispatched_results)
 
     return interface_propagator
 }
@@ -150,94 +82,192 @@ export const generic_propagator_prototype = (name: string, dispatchers: Cell<any
 
 // what if handler is bisync?
 
+// for most of the primitive propagator and compound propagator we will define it this way 
+export const define_generic_propagator_handler = (propagator: Propagator , critics: (...args: Cell<any>[]) => Cell<boolean>, propagator_constructor: (...args: Cell<any>[]) => Propagator) => {
+   return define_generic_propagator_handler_network(propagator, critics, propagator_to_handler_network(propagator_constructor))
+}
 
-export const define_generic_propagator_handler = (propagator_or_interface: Propagator | ((...args: any) => Propagator), critics: (...args: Cell<any>[]) => Cell<boolean>, handler_network: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator) => {
-    
-    let metadata: GenericPropagatorMetadata | undefined
-    if (typeof propagator_or_interface === "function") {
-        const interface_propagator = propagator_or_interface
-        metadata = interface_store.get(interface_propagator)
-
-    }
-    else if (is_propagator(propagator_or_interface)) {
+// Helper function to get metadata from propagator or interface
+export const get_propagator_metadata = (propagator: Propagator): GenericPropagatorMetadata => {
+    if (is_propagator(propagator)) {
         // if its propagator then it is not identity one
-        metadata = metadata_store.get(propagator_id(propagator_or_interface))
+        const metadata = metadata_store.get(propagator_id(propagator))
+        if (!metadata) {
+            throw new Error("Propagator metadata not found in store")
+        }
+        return metadata
     }
     else {
         throw new Error("Invalid propagator or interface")
     }
+}
 
-   
-    const is_matched = critics(...metadata!.dispatchers)
-    const succeeded = metadata!.dispatchers.map((dispatcher) => {
+// Helper function to evaluate critics and create succeeded cells
+export const create_succeeded_cells = (dispatchers: Cell<any>[], critics: (...args: Cell<any>[]) => Cell<boolean>): Cell<any>[] => {
+    const is_matched = critics(...dispatchers)
+    return dispatchers.map((dispatcher) => {
         const succeeded_cell = make_temp_cell()
         p_switch(is_matched, dispatcher, succeeded_cell)
         return succeeded_cell
     })
-
-    handler_network(succeeded, metadata!.dispatched_results)
 }
 
-export const match_cells_prototype = (...args: Cell<boolean>[]) => {
+// Helper function to validate critics function
+export const validate_critics = (critics: (...args: Cell<any>[]) => Cell<boolean>): void => {
+    if (typeof critics !== "function") {
+        throw new Error("Critics must be a function")
+    }
+}
 
-    if (args.length === 0) {
+// Helper function to validate handler network
+export const validate_handler_network = (handler_network: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator): void => {
+    if (typeof handler_network !== "function") {
+        throw new Error("Handler network must be a function")
+    }
+}
+
+// for precise handler which takes in multiple inputs and outputs
+export const define_generic_propagator_handler_network = (propagator: Propagator , critics: (...args: Cell<any>[]) => Cell<boolean>, handler_network: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator) => {
+    
+    // Validate inputs
+    validate_critics(critics)
+    validate_handler_network(handler_network)
+    
+    // Get metadata
+    const metadata = get_propagator_metadata(propagator)
+    
+    // Create succeeded cells
+    const succeeded = create_succeeded_cells(metadata.dispatchers, critics)
+
+    // Execute handler network and store the result
+    const handler_propagator = handler_network(succeeded, metadata.dispatched_results)
+    
+    // Store the handler connection in metadata
+    if (!metadata.handlers) {
+        metadata.handlers = []
+    }
+    metadata.handlers.push({
+        critics,
+        handler_network,
+        succeeded,
+        propagator: handler_propagator
+    })
+    
+    return handler_propagator
+}
+
+export const propagator_to_handler_network = (propagator_constructor: (...args: Cell<any>[]) => Propagator) => {
+    return (inputs: Cell<any>[], outputs: Cell<any>[]) => {
+ 
+        return propagator_constructor(...[...inputs, ...outputs])
+    }
+}
+
+// Helper function to validate predicates array
+export const validate_predicates = (predicates: ((arg: Cell<any>) => Cell<boolean>)[]): void => {
+    if (predicates.length === 0) {
         throw new Error("At least one predicate is required")
     }
+    if (!predicates.every(pred => typeof pred === "function")) {
+        throw new Error("All predicates must be functions")
+    }
+}
 
-   const output = args[args.length - 1] as Cell<boolean>
-   const predicates = args.slice(0, -1) as Cell<boolean>[]
+// Helper function to validate inputs match predicates length
+export const validate_inputs_match_predicates = (predicates: ((arg: Cell<any>) => Cell<boolean>)[], inputs: Cell<any>[]): void => {
+    if (predicates.length !== inputs.length) {
+        throw new Error(`Predicates and inputs must have the same length, predicates: ${predicates.length}, inputs: ${inputs.length}`)
+    }
+}
 
-   return (...inputs: Cell<any>[]) => {
+// Helper function to check if index is the last one
+export const is_last_index = (index: number, inputs_length: number): boolean => {
+    return index === inputs_length - 1
+}
 
-    const propagator = compound_propagator(
+// Helper function for recursive predicate matching
+export const match_predicates_recursive = (
+    predicates: ((arg: Cell<any>) => Cell<boolean>)[],
+    inputs: Cell<any>[],
+    output: Cell<boolean>,
+    index: number,
+    last_result: Cell<any>
+): void => {
+    const current_predicate = predicates[index]
+    const current_input = inputs[index]
+    
+    if (is_last_index(index, inputs.length)) {
+        p_and(last_result, current_predicate(current_input), output as Cell<any>)
+    } else {
+        const next_result = make_temp_cell()
+        p_and(last_result, current_predicate(current_input), next_result)
+        match_predicates_recursive(predicates, inputs, output, index + 1, next_result)
+    }
+}
+
+// Helper function to create match cells propagator
+export const create_match_cells_propagator = (
+    predicates: ((arg: Cell<any>) => Cell<boolean>)[],
+    inputs: Cell<any>[],
+    output: Cell<boolean>
+): Propagator => {
+    return compound_propagator(
         [...inputs],
         [output],
         () => {
-         if (predicates.length !== inputs.length) {
-            throw new Error("Predicates and inputs must have the same length")
-        }
-
-        const is_last_index = (index: number) => index === inputs.length - 1
-
-        const mc = (index: number, last_result: Cell<any>) => {
-            const current_predicate = predicates[index]
-            if (is_last_index(index)) {
-                p_and(last_result, current_predicate, output as Cell<any>)
-            }
-            else {
-                const next_result = make_temp_cell()
-                p_and(last_result, current_predicate, next_result)
-                mc(index + 1, next_result)
-            }
-        }
-        const TRUE = constant_cell(true, "TRUE")
-        mc(0, TRUE)
-    },
+            validate_inputs_match_predicates(predicates, inputs)
+            
+            const TRUE = r_constant(true, "TRUE")
+            match_predicates_recursive(predicates, inputs, output, 0, TRUE)
+        },
         "match_cells"
-    )     
-    return propagator
-   }
+    )
 }
 
-export const match_cells = (...args: Cell<boolean>[]) => {
+export const match_cells = (...args: ((arg: Cell<any>) => Cell<boolean>)[]) => {
+    // Validate predicates
+    validate_predicates(args)
+    
+    const predicates = args as ((arg: Cell<any>) => Cell<boolean>)[]
     const output = make_temp_cell() as Cell<boolean>
-    match_cells_prototype(...args, output)
-    return output
+
+    return (...inputs: Cell<any>[]) => {
+        const propagator = create_match_cells_propagator(predicates, inputs, output)
+        return output
+    }
 }
+
+
+// -- GENERIC PREDICTATE -- 
+
+
+
+export const p_is_number = function_to_primitive_propagator("is_number", is_number)
+export const ce_is_number = (cell: Cell<any>) => make_ce_arithmetical(p_is_number)(cell)  as Cell<boolean>
+
+export const p_is_boolean = function_to_primitive_propagator("is_boolean", is_boolean)
+export const ce_is_boolean = (cell: Cell<any>) => make_ce_arithmetical(p_is_boolean)(cell)  as Cell<boolean>
 
 export const p_is_string = function_to_primitive_propagator("is_string", is_string)
 
-export const ce_is_string = make_ce_arithmetical(p_is_string) 
+export const ce_is_string = (cell: Cell<any>) => make_ce_arithmetical(p_is_string)(cell)  as Cell<boolean>
 
-
-export const construct_simple_generic_propagator = (name: string, inputs_arity: number, outputs_arity: number, default_handler: (inputs: Cell<any>[], outputs: Cell<any>[]) => Propagator) => {
+export const construct_simple_generic_propagator_network = (name: string, inputs_arity: number, outputs_arity: number) => {
     const inputs = Array.from({length: inputs_arity}, () => make_temp_cell())
     const outputs = Array.from({length: outputs_arity}, () => make_temp_cell())
 
-    const constructor = generic_propagator_prototype(name, inputs, outputs)
+    const constructor = generic_propagator_prototype(uuidv4(), name,  inputs, outputs)
     // i think maybe we still need a dispatch store for multiple result
-    default_handler(inputs, outputs)
+ 
 
     return constructor
 
+}
+
+export const construct_simple_generic_propagator = (name: string, inputs_arity: number, outputs_arity: number) => {
+   return (...args: any[]) => {
+        const inputs = args.slice(0, inputs_arity)
+        const outputs = args.slice(inputs_arity, inputs_arity + outputs_arity)
+        return construct_simple_generic_propagator_network(name, inputs_arity, outputs_arity)(inputs, outputs)
+}
 }

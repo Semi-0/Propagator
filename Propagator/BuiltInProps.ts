@@ -507,7 +507,9 @@ export const ce_index = (index: number) => make_ce_arithmetical(p_index(index))
 
 export const ce_first = make_ce_arithmetical(p_take(1), "first")
 
-
+export const p_concat = function_to_primitive_propagator("concat", (...inputs: any[]) => {
+    return inputs.join("")
+})
 
 
 

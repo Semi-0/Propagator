@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from "bun:test";
 import {  is_contradiction, is_nothing, the_contradiction, the_nothing } from "../Cell/CellValue";
 import { force_load_CellValue } from "../Cell/CellValue";
 import { add, divide, multiply, subtract } from "../AdvanceReactivity/Generics/GenericArith";
+import { is_no_compute } from "../Helper/noCompute";
 
 beforeAll(() => {
     force_load_CellValue()
@@ -25,12 +26,12 @@ describe("The Contradiction", () => {
 
 
 describe("the_nothing with arithmetic", () => {
-    it("any arithmetic with the_nothing should return the_nothing", () => {
+    it("any arithmetic with the_nothing should return no_compute", () => {
         const value = the_nothing;
-        expect(is_nothing(add(value, "1"))).toBe(true);
-        expect(is_nothing(multiply(value, "1"))).toBe(true); 
-        expect(is_nothing(divide(value, "1"))).toBe(true);
-        expect(is_nothing(subtract(value, "1"))).toBe(true);
+        expect(is_no_compute(add(value, "1"))).toBe(true);
+        expect(is_no_compute(multiply(value, "1"))).toBe(true); 
+        expect(is_no_compute(divide(value, "1"))).toBe(true);
+        expect(is_no_compute(subtract(value, "1"))).toBe(true);
     });
 });
 

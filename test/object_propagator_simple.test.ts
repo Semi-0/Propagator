@@ -157,4 +157,3 @@ describe("construct_simple_object_propagator - Simple Tests", () => {
     expect(cell_strongest_base_value(state)).toBe(0);
   });
 });
-});

@@ -17,6 +17,7 @@ import {  make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_layered_object  as _is_layered_object} from "sando-layer/Basic/LayeredObject";
 import { is_any } from "generic-handler/built_in_generics/generic_predicates";
+import { no_compute } from "../../Helper/noCompute";
 
 
 
@@ -27,7 +28,7 @@ const _not = construct_simple_generic_procedure("not", 1, (x: any) => !x)
 export const extend_nothing_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
     one_of_args_match(is_nothing), 
     (a: any, b: any) => {
-            return the_nothing
+            return no_compute 
     })
 
 
