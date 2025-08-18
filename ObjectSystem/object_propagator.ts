@@ -6,10 +6,8 @@ import { c_fold, c_fold_pack, c_reduce, ce_equal, ce_map, ce_pull, p_map_a, p_re
 import { p_feedback } from "../Propagator/BuiltInProps";
 import { p_sync } from "../Propagator/BuiltInProps";
 import { r_constant, the_nothing } from "..";
-import { construct_simple_generic_propagator } from "../GenericPropagator/generic_propagator";
 import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure";
 import { make_ce_arithmetical } from "../Propagator/Sugar";
-import type { state } from "fp-ts";
 
 type msg = {
     op: "get" | "set" | "call" | "custom"
@@ -19,48 +17,7 @@ type msg = {
 
 
 
-export const create_object_reducer = <T, R = any>(
-  name: string,
-  step: (s: T, cmd: any) => { state: T; result?: R },
-  state: Cell<T>
-) => (
-  cmd: Cell<any>,
-  result?: Cell<R>
-): Propagator => {
-    // maybe it should take a step propagator instead of a step function
-  // Step function as a cell effectful computation
-  const ce_step = make_ce_arithmetical(
-    function_to_primitive_propagator(`${name}:step`, step)
-  );
-
-  // Extractors for state and result
-  const get_result = ce_map(
-    (s: { state: T; result?: R }) => s.result ?? the_nothing
-  ) as (s: Cell<{ state: T; result?: R }>) => Cell<R>;
-
-  const get_state = ce_map(
-    (s: { state: T; result?: R }) => s.state
-  ) as (s: Cell<{ state: T; result?: R }>) => Cell<T>;
-
-  // Compose the compound propagator
-  return compound_propagator(
-    [state, cmd],
-    result ? [state, result] : [state],
-    () => {
-      // Apply the step and feedback the new state
-      const stepped = ce_step(state, cmd) as Cell<{ state: T; result?: R }>;
-      p_feedback(get_state(stepped), state);
-
-      // Optionally sync the result
-      if (result) {
-        p_sync(get_result(stepped), result);
-      }
-    },
-    name
-  );
-};
-
-export const create_object_reducer_b = <T, R = any>(
+export const construct_simple_object_propagator = <T, R = any>(
     name: string,
     step: (s: Cell<T>, cmd: Cell<any>) => Cell<{ state: T; result?: R }>,
     state: Cell<T>
@@ -86,8 +43,11 @@ export const create_object_reducer_b = <T, R = any>(
       result ? [state, result] : [state],
       () => {
         // Apply the step and feedback the new state
-        const stepped = step(state, cmd) as Cell<{ state: T; result?: R }>;
-        p_feedback(get_state(stepped), state);
+
+        const state_value = ce_pull(state, cmd) as Cell<T>
+        const stepped = step(state_value, cmd) as Cell<{ state: T; result?: R }>;
+        const new_state = get_state(stepped)
+        p_sync(new_state, state)
   
         // Optionally sync the result
         if (result) {
@@ -97,6 +57,14 @@ export const create_object_reducer_b = <T, R = any>(
       name
     );
   };
+
+export const make_simple_object_propagator = (name: string, step: (state:any , cmd: any) => any, state: any) => {
+    return construct_simple_object_propagator(
+      name, 
+      ce_map(step) as (state: Cell<any>, cmd: Cell<any>) => Cell<{ state: any; result?: any; }>, 
+      r_constant(state)
+    )
+}
 
 
 export const getter = (key: string, p_getter: (cell: Cell<any>) => Cell<any>) => construct_simple_generic_procedure(

@@ -106,7 +106,7 @@ export const p_array_first = function_to_primitive_propagator("array_first", (in
 
 export const p_map_a = (f: (...a: any[]) => any) => {
     return function_to_primitive_propagator("map", (...inputs: any[]) => {
-        return f(inputs);
+        return f(...inputs);
     })
 } 
 
