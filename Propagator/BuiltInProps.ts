@@ -18,6 +18,7 @@ import { make_ce_arithmetical } from "./Sugar";
 import { r_constant } from "../AdvanceReactivity/interface";
 import { reduce } from "fp-ts/Array";
 import { pipe } from "fp-ts/lib/function";
+import { Subject, throttleTime, distinctUntilChanged, distinct } from "rxjs";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){

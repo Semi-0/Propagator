@@ -55,6 +55,7 @@ export const make_easy_set = <T>(identifier: (item: T) => string): SimpleSet<T> 
             else{
                 items.splice(items.indexOf(item), 1)
                 items.unshift(item)
+                added_ids.add(identifier(item))
             }
         },
         remove: (item: T) => {
