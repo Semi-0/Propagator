@@ -344,6 +344,10 @@ describe("timestamp value merge tests", () => {
       update(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(reduced)).toBe(8);
+
+      update(input, 10);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(reduced)).toBe(18);
     });
   });
 

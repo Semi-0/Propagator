@@ -1,0 +1,4 @@
+task,runner,total_events,joins_with_change,join_redundancy_ratio,avg_causal_slice_length,legibility_score
+micro_diamond,contextual,12,3,0.250,4.00,60.00
+micro_diamond,hybrid,12,3,0.250,4.00,60.00
+micro_diamond,yampa,12,3,0.250,4.00,60.00

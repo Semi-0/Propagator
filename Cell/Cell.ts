@@ -158,16 +158,16 @@ export function constant_cell<A>(value: A, name: string, id: string | null = nul
 }
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
-  typeof  a !== null && a !== undefined 
-          && a.getRelation !== undefined 
-          && a.getContent !== undefined 
-          && a.getStrongest !== undefined 
-          && a.getNeighbors !== undefined 
-          && a.addContent !== undefined 
-          && a.testContent !== undefined 
-          && a.addNeighbor !== undefined 
-          && a.summarize !== undefined 
-          && a.dispose !== undefined
+  a !== null && a !== undefined 
+  && a.getRelation !== undefined 
+  && a.getContent !== undefined 
+  && a.getStrongest !== undefined 
+  && a.getNeighbors !== undefined 
+  && a.addContent !== undefined 
+  && a.testContent !== undefined 
+  && a.addNeighbor !== undefined 
+  && a.summarize !== undefined 
+  && a.dispose !== undefined
 );
     
 export function make_temp_cell(){

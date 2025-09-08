@@ -18,7 +18,7 @@ export interface Node<E>{
 }
 
 export const is_node = register_predicate("is_node", (a: any) => {
-    return a !== undefined && 
+    return a !== null && a !== undefined && 
     a.id !== undefined && 
     a.children_edges !== undefined &&
     a.parent_edges !== undefined;
@@ -34,7 +34,7 @@ export interface Edge<A, B>{
 }
 
 export const is_edge = register_predicate("is_edge", (a: any) => {
-    return a !== undefined &&  a.parent_id !== undefined && a.child_id !== undefined && a.activate !== undefined && a.id !== undefined;
+    return a !== null && a !== undefined &&  a.parent_id !== undefined && a.child_id !== undefined && a.activate !== undefined && a.id !== undefined;
 
 })
 

@@ -3,11 +3,9 @@ import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Ce
 import { set_global_state, get_global_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
 import { find_cell_by_id } from "../Shared/GraphTraversal";
-import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
