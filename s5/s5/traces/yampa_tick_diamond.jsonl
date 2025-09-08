@@ -1,0 +1,12 @@
+{"t":1,"kind":"BEGIN_EPISODE","seed":0}
+{"t":2,"kind":"PATCH","id":"episode1","cell":"A","delta":1}
+{"t":3,"kind":"FIRE","id":"episode1","prop":"p_sync_A_B","inputs":{"A":1},"delta":{"B":1}}
+{"t":4,"kind":"JOIN","id":"episode1","cell":"B","before":null,"delta":1,"after":1}
+{"t":5,"kind":"FIRE","id":"episode1","prop":"p_sync_A_C","inputs":{"A":1},"delta":{"C":1}}
+{"t":6,"kind":"JOIN","id":"episode1","cell":"C","before":null,"delta":1,"after":1}
+{"t":7,"kind":"FIRE","id":"episode1","prop":"p_sync_B_D","inputs":{"B":1},"delta":{"D":1}}
+{"t":8,"kind":"JOIN","id":"episode1","cell":"D","before":null,"delta":1,"after":1}
+{"t":9,"kind":"FIRE","id":"episode1","prop":"p_sync_C_D","inputs":{"C":1},"delta":{"D":1}}
+{"t":10,"kind":"JOIN","id":"episode1","cell":"D","before":1,"delta":1,"after":1}
+{"t":11,"kind":"COMMIT"}
+{"t":12,"kind":"END_EPISODE"}

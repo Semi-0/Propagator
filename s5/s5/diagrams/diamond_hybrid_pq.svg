@@ -1,0 +1,49 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+<title>Schedule Diagram - hybrid_pq on micro_diamond</title>
+<rect width="800" height="400" fill="#f8f9fa"/>
+<text x="400" y="30" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold">hybrid_pq Schedule</text>
+<rect x="50" y="80" width="46.66666666666667" height="30" fill="#95a5a6" stroke="#333" stroke-width="1"/>
+<text x="73.33333333333334" y="100" text-anchor="middle" font-family="Arial" font-size="10">BEGIN_EPISODE</text>
+<line x1="96.66666666666667" y1="95" x2="108.33333333333334" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="108.33333333333334" y="80" width="46.66666666666667" height="30" fill="#ff6b6b" stroke="#333" stroke-width="1"/>
+<text x="131.66666666666669" y="100" text-anchor="middle" font-family="Arial" font-size="10">PATCH(A)</text>
+<line x1="155" y1="95" x2="166.66666666666669" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="166.66666666666669" y="80" width="46.66666666666667" height="30" fill="#4ecdc4" stroke="#333" stroke-width="1"/>
+<text x="190.00000000000003" y="100" text-anchor="middle" font-family="Arial" font-size="10">FIRE(p_sync_A_B)</text>
+<line x1="213.33333333333337" y1="95" x2="225.00000000000003" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="225" y="80" width="46.66666666666667" height="30" fill="#45b7d1" stroke="#333" stroke-width="1"/>
+<text x="248.33333333333334" y="100" text-anchor="middle" font-family="Arial" font-size="10">JOIN(B)</text>
+<line x1="271.6666666666667" y1="95" x2="283.3333333333333" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="283.33333333333337" y="80" width="46.66666666666667" height="30" fill="#4ecdc4" stroke="#333" stroke-width="1"/>
+<text x="306.6666666666667" y="100" text-anchor="middle" font-family="Arial" font-size="10">FIRE(p_sync_A_C)</text>
+<line x1="330.00000000000006" y1="95" x2="341.6666666666667" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="341.6666666666667" y="80" width="46.66666666666667" height="30" fill="#45b7d1" stroke="#333" stroke-width="1"/>
+<text x="365" y="100" text-anchor="middle" font-family="Arial" font-size="10">JOIN(C)</text>
+<line x1="388.33333333333337" y1="95" x2="400" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="400" y="80" width="46.66666666666667" height="30" fill="#4ecdc4" stroke="#333" stroke-width="1"/>
+<text x="423.3333333333333" y="100" text-anchor="middle" font-family="Arial" font-size="10">FIRE(p_sync_B_D)</text>
+<line x1="446.6666666666667" y1="95" x2="458.3333333333333" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="458.33333333333337" y="80" width="46.66666666666667" height="30" fill="#45b7d1" stroke="#333" stroke-width="1"/>
+<text x="481.6666666666667" y="100" text-anchor="middle" font-family="Arial" font-size="10">JOIN(D)</text>
+<line x1="505.00000000000006" y1="95" x2="516.6666666666667" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="516.6666666666667" y="80" width="46.66666666666667" height="30" fill="#4ecdc4" stroke="#333" stroke-width="1"/>
+<text x="540.0000000000001" y="100" text-anchor="middle" font-family="Arial" font-size="10">FIRE(p_sync_C_D)</text>
+<line x1="563.3333333333334" y1="95" x2="575.0000000000001" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="575" y="80" width="46.66666666666667" height="30" fill="#45b7d1" stroke="#333" stroke-width="1"/>
+<text x="598.3333333333334" y="100" text-anchor="middle" font-family="Arial" font-size="10">JOIN(D)</text>
+<line x1="621.6666666666666" y1="95" x2="633.3333333333334" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="633.3333333333334" y="80" width="46.66666666666667" height="30" fill="#96ceb4" stroke="#333" stroke-width="1"/>
+<text x="656.6666666666667" y="100" text-anchor="middle" font-family="Arial" font-size="10">COMMIT</text>
+<line x1="680" y1="95" x2="691.6666666666667" y2="95" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+<rect x="691.6666666666667" y="80" width="46.66666666666667" height="30" fill="#f39c12" stroke="#333" stroke-width="1"/>
+<text x="715.0000000000001" y="100" text-anchor="middle" font-family="Arial" font-size="10">END</text>
+<defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#333"/></marker></defs>
+<rect x="50" y="340" width="20" height="15" fill="#ff6b6b" stroke="#333"/>
+<text x="75" y="352" font-family="Arial" font-size="12">PATCH</text>
+<rect x="200" y="340" width="20" height="15" fill="#4ecdc4" stroke="#333"/>
+<text x="225" y="352" font-family="Arial" font-size="12">FIRE</text>
+<rect x="350" y="340" width="20" height="15" fill="#45b7d1" stroke="#333"/>
+<text x="375" y="352" font-family="Arial" font-size="12">JOIN</text>
+<rect x="500" y="340" width="20" height="15" fill="#96ceb4" stroke="#333"/>
+<text x="525" y="352" font-family="Arial" font-size="12">COMMIT</text>
+</svg>

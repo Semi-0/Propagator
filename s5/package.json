@@ -1,0 +1,23 @@
+{
+  "name": "s5-scheduling-probes",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "bun -p .",
+    "t:hybrid": "bun tools/fuzz_compare.ts --runner=hybrid --policy=fifo --task=all --seeds=50",
+    "t:yampa": "bun tools/fuzz_compare.ts --runner=yampa --task=all --seeds=50",
+    "t:context": "bun tools/fuzz_compare.ts --runner=contextual --task=all --seeds=50",
+    "viz": "bun inspect/to_graphviz.ts",
+    "why": "bun inspect/why.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "seedrandom": "^3.0.5",
+    "graphology": "^0.25.4"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.0",
+    "bun-types": "latest"
+  }
+}
