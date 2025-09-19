@@ -28,7 +28,8 @@ export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
     const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
-    const disposalQueue: Set<string> = new Set() // Track IDs of items to be disposed
+    // With weak ref disposal by default, disposal queue is a no-op kept for API compatibility
+    const disposalQueue: Set<string> = new Set()
     var immediate_execute = false
     var record_alerted_propagator = false
 
@@ -62,29 +63,17 @@ export const simple_scheduler = (): Scheduler => {
         }
     }
 
-    const markForDisposal = (id: string) => {
-        disposalQueue.add(id)
+    const markForDisposal = (_id: string) => {
+        // no-op in weak disposal mode
     }
 
     const cleanupDisposedItems = () => {
-        disposalQueue.forEach(id => {
-            // Try to find and dispose cell
-            const cell = find_cell_by_id(id)
-            if (cell) {
-                set_global_state(PublicStateCommand.REMOVE_CELL, cell)
-            }
-            
-            // Try to find and dispose propagator
-            const propagator = find_propagator_by_id(id)
-            if (propagator) {
-                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
-            }
-        })
+        // no-op in weak disposal mode
         disposalQueue.clear()
     }
 
     const getDisposalQueueSize = () => {
-        return disposalQueue.size
+        return 0
     }
 
     const run_scheduler = (error_handler: (e: Error) => void) => {

@@ -10,8 +10,6 @@ import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
-import { the_disposed, is_disposed } from "../Cell/CellValue";
-import { markForDisposal } from "../Shared/Scheduler/Scheduler";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -61,36 +59,20 @@ export function construct_propagator(inputs: Cell<any>[],
     getRelation: () => relation,
     getInputsID: () => inputs_ids,
     getOutputsID: () => outputs_ids,
-    summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
+    summarize: () => `propagator: ${name} inputs: ${inputs_ids.join(",")} outputs: ${outputs_ids.join(",")}`,
     activate: () => {
-      // Check if any inputs are disposed
-      const hasDisposedInput = inputs.some(cell => is_disposed(cell_strongest(cell)));
-      const hasDisposedOutput = outputs.some(cell => is_disposed(cell_strongest(cell)));
-      
-      if (hasDisposedInput || hasDisposedOutput) {
-        // Mark propagator for disposal
-        markForDisposal(propagator_id(propagator));
-        // Propagate disposal to outputs
-        outputs.forEach(cell => {
-          if (!is_disposed(cell_strongest(cell))) {
-            cell.addContent(the_disposed);
-          }
-        });
-        return;
-      }
-      
-      // Normal activation
       activate();
     },
     dispose: () => {
-      [...inputs, ...outputs].forEach(cell => {
-        const neighbors = cell.getNeighbors();
-        if (neighbors.has(relation.get_id())) {
-          neighbors.delete(relation.get_id());
-        }
-      });
-      // Mark for cleanup
-      markForDisposal(propagator_id(propagator));
+      // remove neighbor weak links by id
+      [...inputs_ids, ...outputs_ids]
+        .map(find_cell_by_id)
+        .filter((c): c is Cell<any> => !!c)
+        .forEach(cell => {
+          if ((cell as any).removeNeighborById) {
+            (cell as any).removeNeighborById(relation.get_id())
+          }
+        });
     }
   };
 
