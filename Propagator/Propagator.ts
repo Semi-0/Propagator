@@ -95,15 +95,26 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             ? [cells.slice(0, -1), cells[cells.length - 1]]
             : [cells, null];
 
+        // Capture only IDs to avoid retaining strong references to cells via closures
+        const inputIds = inputs.map(cell => cell_id(cell));
+        const outputId = output ? cell_id(output as Cell<any>) : null;
+
         const prop = construct_propagator(
             inputs,
             output ? [output] : [],
             () => {
-                const inputs_values = inputs.map(cell => cell_strongest(cell));
+                // Resolve cells by id at activation time; skip compute if inputs are missing
+                const inputs_values = inputIds.map(id => {
+                    const c = find_cell_by_id(id);
+                    return c ? cell_strongest(c) : no_compute;
+                });
                 const output_value = f(...inputs_values);
 
-                if ((output) && (is_not_no_compute(output_value))){
-                    add_cell_content(output as Cell<any>, output_value);
+                if (outputId && is_not_no_compute(output_value)){
+                    const outCell = find_cell_by_id(outputId);
+                    if (outCell) {
+                        add_cell_content(outCell as Cell<any>, output_value);
+                    }
                 }
            }, 
             name

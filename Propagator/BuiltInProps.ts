@@ -395,13 +395,20 @@ export const p_remove_duplicates = (input: Cell<any>, output: Cell<any>) =>  {
     )(input, output)
 }
 
-export const p_tap = (prop: Cell<any>, f: (x: any) => void) => 
-    construct_propagator(
+export const p_tap = (prop: Cell<any>, f: (x: any) => void) => {
+    const propId = cell_id(prop);
+    return construct_propagator(
         [prop],
         [],
-        () => f(cell_strongest(prop)),
+        () => {
+            const c = find_cell_by_id(propId);
+            if (c) {
+                f(cell_strongest(c));
+            }
+        },
         "p_tap"
     );
+}
 
 export const p_combine =  (...cells: Cell<any>[]) => function_to_primitive_propagator("p_combine",
     (...args: any[]) => {
