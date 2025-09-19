@@ -143,6 +143,8 @@ export function cell_constructor<A>(
         for (const [pid, _] of neighborsWeak) {
           neighborsWeak.delete(pid)
         }
+        // Mark for removal from registries in next cleanup
+        Current_Scheduler.markForDisposal(relation.get_id())
       }
     };
 

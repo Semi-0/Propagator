@@ -179,7 +179,8 @@ subscribe((msg: PublicStateMessage) => {
             clean_hypothetical_store()
             Current_Scheduler.clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
-            
+            // Let scheduler remove anything explicitly marked for disposal
+            Current_Scheduler.cleanupDisposedItems()
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:

@@ -28,7 +28,7 @@ export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
     const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
-    // With weak ref disposal by default, disposal queue is a no-op kept for API compatibility
+    // Disposal queue keeps only IDs to avoid retaining strong references
     const disposalQueue: Set<string> = new Set()
     var immediate_execute = false
     var record_alerted_propagator = false
@@ -63,17 +63,38 @@ export const simple_scheduler = (): Scheduler => {
         }
     }
 
-    const markForDisposal = (_id: string) => {
-        // no-op in weak disposal mode
+    const markForDisposal = (id: string) => {
+        disposalQueue.add(id)
     }
 
     const cleanupDisposedItems = () => {
-        // no-op in weak disposal mode
-        disposalQueue.clear()
+        if (disposalQueue.size === 0) return
+        // Remove disposed items from global state weak registries
+        // We dynamically import here to avoid circular deps at module load
+        const { set_global_state, PublicStateCommand } = require("../../Shared/PublicState")
+        const { find_cell_by_id, find_propagator_by_id } = require("../../Shared/GraphTraversal")
+
+        for (const id of Array.from(disposalQueue)) {
+            // Prefer removing propagator first; if not found then try cell
+            const p = find_propagator_by_id(id)
+            if (p) {
+                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, p)
+                disposalQueue.delete(id)
+                continue
+            }
+            const c = find_cell_by_id(id)
+            if (c) {
+                set_global_state(PublicStateCommand.REMOVE_CELL, c)
+                disposalQueue.delete(id)
+            } else {
+                // If neither found, just drop the id
+                disposalQueue.delete(id)
+            }
+        }
     }
 
     const getDisposalQueueSize = () => {
-        return 0
+        return disposalQueue.size
     }
 
     const run_scheduler = (error_handler: (e: Error) => void) => {

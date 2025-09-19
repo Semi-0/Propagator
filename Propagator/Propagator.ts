@@ -73,6 +73,11 @@ export function construct_propagator(inputs: Cell<any>[],
             (cell as any).removeNeighborById(relation.get_id())
           }
         });
+      // Mark for removal from registries in next cleanup
+      try {
+        const { Current_Scheduler } = require("../Shared/Scheduler/Scheduler")
+        Current_Scheduler.markForDisposal(relation.get_id())
+      } catch {}
     }
   };
 
