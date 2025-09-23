@@ -28,7 +28,8 @@ export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
     const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
-    const disposalQueue: Set<string> = new Set() // Track IDs of items to be disposed
+    // Disposal queue keeps only IDs to avoid retaining strong references
+    const disposalQueue: Set<string> = new Set()
     var immediate_execute = false
     var record_alerted_propagator = false
 
@@ -67,20 +68,29 @@ export const simple_scheduler = (): Scheduler => {
     }
 
     const cleanupDisposedItems = () => {
-        disposalQueue.forEach(id => {
-            // Try to find and dispose cell
-            const cell = find_cell_by_id(id)
-            if (cell) {
-                set_global_state(PublicStateCommand.REMOVE_CELL, cell)
+        if (disposalQueue.size === 0) return
+        // Remove disposed items from global state weak registries
+        // We dynamically import here to avoid circular deps at module load
+        const { set_global_state, PublicStateCommand } = require("../../Shared/PublicState")
+        const { find_cell_by_id, find_propagator_by_id } = require("../../Shared/GraphTraversal")
+
+        for (const id of Array.from(disposalQueue)) {
+            // Prefer removing propagator first; if not found then try cell
+            const p = find_propagator_by_id(id)
+            if (p) {
+                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, p)
+                disposalQueue.delete(id)
+                continue
             }
-            
-            // Try to find and dispose propagator
-            const propagator = find_propagator_by_id(id)
-            if (propagator) {
-                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
+            const c = find_cell_by_id(id)
+            if (c) {
+                set_global_state(PublicStateCommand.REMOVE_CELL, c)
+                disposalQueue.delete(id)
+            } else {
+                // If neither found, just drop the id
+                disposalQueue.delete(id)
             }
-        })
-        disposalQueue.clear()
+        }
     }
 
     const getDisposalQueueSize = () => {

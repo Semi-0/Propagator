@@ -14,8 +14,13 @@ import { set_handle_contradiction } from '@/cell/Cell';
 import { subscribe } from './Reactivity/MiniReactor/MrCombinators';
 //@ts-ignore
 var parent: Stepper<Primitive_Relation> = construct_state(make_relation("root", null));
-// Todo: make this read only
-const all_cells: Stepper<Cell<any>[]> = construct_state<Cell<any>[]>([]) 
+// Weak registries for cells and propagators
+import { WeakRegistry } from "./WeakRegistry";
+const cellRegistry = new WeakRegistry<Cell<any>>((c) => c.getRelation().get_id());
+const propagatorRegistry = new WeakRegistry<Propagator>((p) => p.getRelation().get_id());
+const ambPropagatorRegistry = new WeakRegistry<Propagator>((p) => p.getRelation().get_id());
+// Light notifiers for observers; keep stepper shape for compatibility
+const all_cells: Stepper<Cell<any>[]> = construct_state<Cell<any>[]>([])
 const all_propagators: Stepper<Propagator[]> = construct_state<Propagator[]>([])
 const all_amb_propagators: Stepper<Propagator[]> = construct_state<Propagator[]>([])
 export const failed_count : Stepper<number> = construct_state<number>(0)
@@ -99,7 +104,7 @@ subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.ADD_CELL:
             if (msg.args.every(o => is_cell(o))) {
-                all_cells.receive([...all_cells.get_value(), ...msg.args]);
+                msg.args.forEach((c: Cell<any>) => cellRegistry.add(c))
             }
             else{
                 console.warn('ADD_CELL with invalid args', msg.args)
@@ -108,7 +113,7 @@ subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.ADD_PROPAGATOR:
             if (msg.args.every(o => is_propagator(o))) {
-                all_propagators.receive([...all_propagators.get_value(), ...msg.args]);
+                msg.args.forEach((p: Propagator) => propagatorRegistry.add(p))
             }
             else{
                 console.warn('ADD_PROPAGATOR with invalid args')
@@ -166,11 +171,16 @@ subscribe((msg: PublicStateMessage) => {
             all_cells.receive([])
             all_propagators.receive([])
             all_amb_propagators.receive([])
+            // prune weak registries of cleared references
+            cellRegistry.prune()
+            propagatorRegistry.prune()
+            ambPropagatorRegistry.prune()
             clean_premises_store()
             clean_hypothetical_store()
             Current_Scheduler.clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
-            
+            // Let scheduler remove anything explicitly marked for disposal
+            Current_Scheduler.cleanupDisposedItems()
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:
@@ -192,22 +202,25 @@ subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.REMOVE_CELL:
             if (msg.args.every(o => is_cell(o))) {
-                all_cells.receive(all_cells.get_value().filter(c => c !== msg.args[0]));
+                const id = (msg.args[0] as Cell<any>).getRelation().get_id()
+                cellRegistry.removeById(id)
             } else {
                 console.warn('REMOVE_CELL with invalid args', msg.args);
             }
             break;
         case PublicStateCommand.REMOVE_PROPAGATOR:
             if (msg.args.every(o => is_propagator(o))) {
-                all_propagators.receive(all_propagators.get_value().filter(p => p !== msg.args[0]));
-                all_amb_propagators.receive(all_amb_propagators.get_value().filter(p => p !== msg.args[0]));
+                const id = (msg.args[0] as Propagator).getRelation().get_id()
+                propagatorRegistry.removeById(id)
+                ambPropagatorRegistry.removeById(id)
             } else {
                 console.warn('REMOVE_PROPAGATOR with invalid args', msg.args);
             }
             break;
         case PublicStateCommand.REMOVE_AMB_PROPAGATOR:
             if (msg.args.every(o => is_propagator(o))) {
-                all_amb_propagators.receive(all_amb_propagators.get_value().filter(p => p !== msg.args[0]));
+                const id = (msg.args[0] as Propagator).getRelation().get_id()
+                ambPropagatorRegistry.removeById(id)
             } else {
                 console.warn('REMOVE_AMB_PROPAGATOR with invalid args', msg.args);
             }
@@ -260,9 +273,9 @@ export const observe_all_propagators_update = (observePropagator: (propagator: a
 
 export const observe_cell_array = (f: (cells: any[]) => void) => subscribe(f)(all_cells.node)
 export const observe_propagator_array = (f: (propagators: any[]) => void) => subscribe(f)(all_propagators.node)
-export const cell_snapshot = () => all_cells.get_value()
-export const propagator_snapshot = () => all_propagators.get_value()
-export const amb_propagator_snapshot = () => all_amb_propagators.get_value()
+export const cell_snapshot = () => cellRegistry.values()
+export const propagator_snapshot = () => propagatorRegistry.values()
+export const amb_propagator_snapshot = () => ambPropagatorRegistry.values()
 export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => subscribe(f)(all_amb_propagators.node)
 export const observe_failed_count = (f: (failed_count: number) => void) => subscribe(f)(failed_count.node)
 

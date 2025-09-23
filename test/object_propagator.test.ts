@@ -399,3 +399,4 @@ describe("construct_simple_object_propagator", () => {
     });
   });
 });
+>>>>>>> patch-system-prototype

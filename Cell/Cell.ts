@@ -3,7 +3,7 @@ import {type Propagator, propagator_dispose} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction, the_disposed, is_disposed } from "./CellValue";
+import { is_nothing, the_nothing, is_contradiction, the_contradiction, get_base_value, is_layered_contradiction } from "./CellValue";
 import { generic_merge } from "./Merge"
 import { PublicStateCommand } from "../Shared/PublicState";
 import { describe } from "../Helper/UI";
@@ -20,7 +20,7 @@ import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { disposeSubtree } from "../Shared/GraphTraversal";
-import { Current_Scheduler, markForDisposal } from "../Shared/Scheduler/Scheduler";
+import { Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
@@ -49,6 +49,7 @@ export interface Cell<A> {
   addContent: (increment: CellValue<A>) => void;
   testContent: () => void;
   addNeighbor: (propagator: Propagator) => void;
+  removeNeighborById: (propagatorId: string) => void;
   summarize: () => string;
   dispose: () => void;  // <-- new dispose method
 }
@@ -73,7 +74,8 @@ export function cell_constructor<A>(
   return (name: string, id: string | null = null) => {
     let disposed = false;
     const relation = make_relation(name, get_global_parent(), id);
-    const neighbors: Map<string, Propagator> = new Map();
+    // store weak references to propagators to avoid strong retention
+    const neighborsWeak: Map<string, WeakRef<Propagator>> = new Map();
     // build two stateful streams for content and strongest
     var content: CellValue<A>[] = initial;
     var strongest: CellValue<A> = initial;
@@ -88,18 +90,16 @@ export function cell_constructor<A>(
         strongest = new_strongest
         handle_cell_contradiction()
       }
-      else if (is_disposed(new_strongest)){
-        strongest = new_strongest
-        // Mark cell for disposal
-        markForDisposal(cell_id(cell))
-        // Propagate disposal to connected cells
-        neighbors.forEach(propagator => {
-          propagator.activate()
-        })
-      }
       else{
         strongest = new_strongest
-        Current_Scheduler.alert_propagators(Array.from(neighbors.values()))
+        // alert currently alive neighbors
+        const alive: Propagator[] = []
+        for (const [pid, wref] of neighborsWeak) {
+          const p = wref.deref()
+          if (p) alive.push(p)
+          else neighborsWeak.delete(pid)
+        }
+        Current_Scheduler.alert_propagators(alive)
       }
     }
 
@@ -107,20 +107,28 @@ export function cell_constructor<A>(
       getRelation: () => relation,
       getContent: () => content,
       getStrongest: () => strongest,
-      getNeighbors: () => neighbors,
+      getNeighbors: () => {
+        // return a live map view of dereferenced neighbors
+        const view = new Map<string, Propagator>()
+        for (const [pid, wref] of neighborsWeak) {
+          const p = wref.deref()
+          if (p) view.set(pid, p)
+          else neighborsWeak.delete(pid)
+        }
+        return view
+      },
       testContent: () => test_content(),
       addContent: (increment: CellValue<A>) => {
-        // If cell is disposed, ignore new content
-        if (is_disposed(strongest)) {
-          return;
-        }
         content = cell_merge(content, increment)
         test_content()
       },
 
       addNeighbor: (propagator: Propagator) => {
-        neighbors.set(propagator.getRelation().get_id(), propagator);
+        neighborsWeak.set(propagator.getRelation().get_id(), new WeakRef(propagator));
         Current_Scheduler.alert_propagator(propagator)
+      },
+      removeNeighborById: (propagatorId: string) => {
+        neighborsWeak.delete(propagatorId)
       },
       summarize: () => {
         const name = relation.get_name();
@@ -131,15 +139,12 @@ export function cell_constructor<A>(
 
       dispose: () => {
         disposed = true;
-        // Set the cell to disposed value
-        content = [the_disposed]
-        strongest = the_disposed
-        // Mark for cleanup
-        markForDisposal(cell_id(cell))
-        // Trigger propagation to connected cells
-        neighbors.forEach(propagator => {
-          propagator.activate()
-        })
+        // Break neighbor links so GC can collect
+        for (const [pid, _] of neighborsWeak) {
+          neighborsWeak.delete(pid)
+        }
+        // Mark for removal from registries in next cleanup
+        Current_Scheduler.markForDisposal(relation.get_id())
       }
     };
 

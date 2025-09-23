@@ -395,19 +395,58 @@ export const p_remove_duplicates = (input: Cell<any>, output: Cell<any>) =>  {
     )(input, output)
 }
 
-export const p_tap = (prop: Cell<any>, f: (x: any) => void) => 
-    construct_propagator(
+export const p_tap = (prop: Cell<any>, f: (x: any) => void) => {
+    const propId = cell_id(prop);
+    return construct_propagator(
         [prop],
         [],
-        () => f(cell_strongest(prop)),
+        () => {
+            const c = find_cell_by_id(propId);
+            if (c) {
+                f(cell_strongest(c));
+            }
+        },
         "p_tap"
     );
+}
 
 export const p_combine =  (...cells: Cell<any>[]) => function_to_primitive_propagator("p_combine",
     (...args: any[]) => {
         return args
     }
 )(...cells)
+
+export const p_array_index =  function_to_primitive_propagator("array_index", (input: any[], index: number) => {
+    // TODO: MEMORY LEAK
+    if (is_array(input) && index < input.length){
+        return input[index]
+    }
+    else{
+        return no_compute
+    }
+})
+
+export const p_array_do = (index: Cell<number>, input: Cell<any>, do_something: (...cells: Cell<any>[]) => void, output: Cell<any>) => {
+    return compound_propagator([index, input], [output], () => {
+        const selected = make_temp_cell()
+        p_array_index(index, input, selected)
+        do_something(selected, output)
+    }, "array_do")
+}
+
+
+export const p_spread = (input: Cell<any>, outputs: Cell<any>[]) => {
+    // fix this cannot handles dynamic updates 
+
+    return compound_propagator([input], outputs, () => {
+        p_tap(input, (collection: any[]) => {
+            if (is_array(collection)){
+
+            }
+
+        })
+    }, "spread")
+}
 
 
 export const ce_combine = make_ce_arithmetical(p_combine, "combine")
