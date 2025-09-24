@@ -1,5 +1,9 @@
-MEMORY LEAKKKKKK
+1. virtual environment for handling  propagator(can it be compose with reactivity?)
 
+2. unify reactivity and supported value with generic merge  
+
+
+MEMORY LEAKKKKKK
 
 revert memory testing to the last one 
 
