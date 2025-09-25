@@ -203,7 +203,7 @@ export const virtual_copy_contradictory = (vcs: VirtualCopySet): boolean => {
 
 // 4) v-c i/o-unpacking
 // Applies f over full-frame-content for all inputs on each "good" frame,
-// anchoring the output mapping to the occurring parent frame in the output copy set when found.
+// anchoring the output mapping to the occurring parent frame in the output copy set when found.wsa
 export const v_c_io_unpacking = (f: (...inputs: any[]) => any) =>
     (...args: [...VirtualCopySet[], VirtualCopySet]): VirtualCopySet => {
         const outputAnchor = args[args.length - 1]
@@ -224,6 +224,7 @@ export const v_c_io_unpacking = (f: (...inputs: any[]) => any) =>
 // 5) i/o-function->propagator-constructor
 export const io_function_to_propagator_constructor = (name: string, f: (...inputs: any[]) => any) =>
     (...cells: Cell<any>[]) => function_to_primitive_propagator(name, f)(...cells)
+
 
 // 6) doit: compose short-circuit on the_nothing with virtualization-aware unpacking
 export const doit = (name: string, f: (...inputs: any[]) => any) =>
