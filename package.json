@@ -22,5 +22,15 @@
     "sando-layer": "0.1.16",
     "superjson": "^2.2.2",
     "uuid": "^10.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./*": "./*.ts",
+    "./Cell/*": "./Cell/*.ts",
+    "./AdvanceReactivity/*": "./AdvanceReactivity/*.ts",
+    "./Shared/*": "./Shared/*.ts",
+    "./Propagator/*": "./Propagator/*.ts",
+    "./Helper/*": "./Helper/*.ts",
+    "./PatchSystem/*": "./PatchSystem/*.ts"
   }
 }

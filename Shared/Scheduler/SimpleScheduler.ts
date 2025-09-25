@@ -4,16 +4,9 @@
 // and it should also considered cycles
 // if the propagators is already in the queue, then it should move to the end
 
-import { construct_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
-import { add_item, remove_item } from "generic-handler/built_in_generics/generic_collection";
+
 import { propagator_id as _propagator_id, propagator_id, type Propagator } from "../../Propagator/Propagator";
-import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-import { get_base_value } from "sando-layer/Basic/Layer";
-import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { match_args } from "generic-handler/Predicates";
-import { cell_id } from "@/cell/Cell";
-import { type Cell } from "@/cell/Cell";
+
 import type { Scheduler } from "./SchedulerType";
 import { PropagatorError } from "../../Error/PropagatorError";
 import { propagator_activate } from "../../Propagator/Propagator";

@@ -24,9 +24,9 @@ export function update<A>(a: Cell<A>, v: A){
     add_cell_content(a, annotated as A);
     update_store.set(cell_id(a), annotated)
 
-    execute_all_tasks_sequential((e) => {
-        throw e
-    })
+    // execute_all_tasks_sequential((e) => {
+    //     throw e
+    // })
 
 }
 

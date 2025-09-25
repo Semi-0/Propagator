@@ -67,8 +67,7 @@ function testContent(content: any, strongest: any): any | null {
 
 export function cell_constructor<A>(
       initial: any,
-      strongest_value_fn: (x: any) => any,
-      cell_merge: (content: CellValue<A>[], increment: CellValue<A>) => CellValue<A>[]
+
   ) {
   return (name: string, id: string | null = null) => {
     let disposed = false;
@@ -80,7 +79,7 @@ export function cell_constructor<A>(
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
     function test_content(){
-      const new_strongest = strongest_value_fn(content)
+      const new_strongest = strongest_value(content)
       if (is_equal(new_strongest, strongest)){
     
       }
@@ -114,6 +113,7 @@ export function cell_constructor<A>(
         if (is_disposed(strongest)) {
           return;
         }
+  
         content = cell_merge(content, increment)
         test_content()
       },
@@ -150,11 +150,11 @@ export function cell_constructor<A>(
 }
 
 export function construct_cell<A>(name: string): Cell<A> {
-  return cell_constructor<A>(the_nothing, strongest_value, cell_merge)(name)
+  return cell_constructor<A>(the_nothing)(name)
 }
 
 export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
-  return cell_constructor<A>(value, strongest_value, cell_merge)(name, id)
+  return cell_constructor<A>(value)(name, id)
 }
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
@@ -184,10 +184,16 @@ export function add_cell_content<A>(cell: Cell<A>, content: A){
 }
 
 export function cell_strongest<A>(cell: Cell<A>): CellValue<A>{
+  if (cell === undefined){
+    throw new Error("Cell is undefined" + to_string(cell))
+  }
   return cell.getStrongest();
 } 
 
 export function cell_content<A>(cell: Cell<A>): any{
+  if (cell === undefined){
+    throw new Error("Cell is undefined" + to_string(cell))
+  }
   return cell.getContent();
 }
 

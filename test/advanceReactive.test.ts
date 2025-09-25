@@ -28,7 +28,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -268,6 +268,97 @@ describe("timestamp value merge tests", () => {
     });
   });
 
+  describe("p_drop / p_take / p_first tests", () => {
+    test("p_drop should ignore first N values and pass subsequent ones", async () => {
+      const input = construct_cell("dropInput");
+      const output = construct_cell("dropOutput");
+      p_drop(2)(input, output);
+
+      update(input, "a");
+      update(input, "b");
+      update(input, "c");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("c");
+
+      update(input, "d");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("d");
+    });
+
+    test("p_drop with 0 should pass all values through", async () => {
+      const input = construct_cell("dropZeroInput");
+      const output = construct_cell("dropZeroOutput");
+      p_drop(0)(input, output);
+
+      update(input, 1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(1);
+
+      update(input, 2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(2);
+    });
+
+    test("p_take should emit first N values then stop (no_compute)", async () => {
+      const input = construct_cell("takeInput");
+      const output = construct_cell("takeOutput");
+      p_take(2)(input, output);
+
+      update(input, "x");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("x");
+
+      update(input, "y");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("y");
+
+      // further updates should be ignored
+      update(input, "z");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("y");
+    });
+
+    test("p_first should only pass the first value", async () => {
+      const input = construct_cell("firstInput");
+      const output = construct_cell("firstOutput");
+      p_index(1)(input, output);
+      await execute_all_tasks_sequential((error: Error) => {});
+
+      update(input, 100);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+
+      update(input, 200);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+    });
+
+
+
+    test("edge cases: negative and oversized counts", async () => {
+      const inputA = construct_cell("edgeA");
+      const outA = construct_cell("outA");
+      // negative drop behaves like 0 -> pass through
+      p_drop(-1 as unknown as number)(inputA, outA);
+      update(inputA, "p");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(outA)).toBe("p");
+
+      const inputB = construct_cell("edgeB");
+      const outB = construct_cell("outB");
+      // take more than provided: should take whatever comes until N consumed
+      p_take(5)(inputB, outB);
+      update(inputB, 1);
+      update(inputB, 2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(outB)).toBe(2);
+
+      // still has remaining quota; after more values, last one should be reflected
+      update(inputB, 3);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(outB)).toBe(3);
+    });
+  });
 
   // -------------------------
   describe("Composable, chainable operators tests", () => {

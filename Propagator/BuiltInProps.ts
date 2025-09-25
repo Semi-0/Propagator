@@ -64,6 +64,9 @@ export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     })
 }
 
+
+
+
 export const p_filter_a = (f: (a: any) => boolean) => {
     return function_to_primitive_propagator("filter", (inputs: any) => {
         if (f(inputs)){
@@ -545,6 +548,12 @@ export const c_fold = (f: (i: any, a: any) => any) => (input: Cell<any>, acc_cel
     }, "fold")
 }
 
+export const behaviour_fold = (f: (i: any, a: any) => any, initial: any) => (input: Cell<any>) =>{
+    const accum = r_constant(initial)
+    c_fold(f)(input, accum)
+    return accum
+}
+
 export const c_fold_pack = (f: (acc: any, input: any) => any) => (input: Cell<any[]>, acc_cell: Cell<any>) => {
     return compound_propagator([input, acc_cell], [acc_cell], () => {
         const pulled = ce_pull(acc_cell, input) 
@@ -563,3 +572,16 @@ export const c_reduce = (f: (i: any, a: any) => any) => (input: Cell<any>, acc_g
         internal(input, pulled, acc_setter)
     }, "reduce")
 }
+
+
+export const p_to_string = function_to_primitive_propagator("to_string", to_string)
+
+export const ce_to_string = make_ce_arithmetical(p_to_string) as (input: Cell<any>) => Cell<string>
+
+
+export const p_array = function_to_primitive_propagator("array", (...x: any[]) => {
+    console.log("array", x)
+    return x
+})
+
+export const ce_array = make_ce_arithmetical(p_array) as (...inputs: Cell<any>[]) => Cell<any[]>
