@@ -1,7 +1,7 @@
-import { match_args, register_predicate } from "generic-handler/Predicates";
+import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_nothing } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value } from "@/cell/CellValue";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { type traced_timestamp } from "./type";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -15,7 +15,12 @@ export const is_traced_timestamp = register_predicate("is_traced_timestamp", (a:
 
 export const is_fresh = register_predicate("is_fresh", (a: any) => _is_fresh(a))
 
-export const _is_fresh = construct_simple_generic_procedure("is_fresh", 1, (a: any) => false)
+export const has_staled = register_predicate("has_staled", (a: any) => !_is_fresh(a))
+
+
+define_generic_procedure_handler(is_unusable_value, one_of_args_match(has_staled), (a:any) => true)
+
+export const _is_fresh = construct_simple_generic_procedure("is_fresh", 1, (a: any) => true)
 
 define_generic_procedure_handler(_is_fresh, match_args(is_nothing),
     (a: any) => {

@@ -44,7 +44,6 @@ export const merge_layered = make_layered_procedure("merge_layered", 2, generic_
 export var cell_merge = generic_merge;
 
 export function set_merge(merge_func: (a: any, b: any) => any){
-   console.log("setting merge", merge_func)
    cell_merge = merge_func;
 }
 

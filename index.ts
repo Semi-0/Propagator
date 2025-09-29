@@ -63,7 +63,6 @@ import {
   constraint_propagator,
   primitive_propagator,
   function_to_primitive_propagator,
-  error_logged_primitive_propagator,
   propagator_id,
   propagator_name,
   propagator_dispose,
@@ -278,7 +277,7 @@ export const name = cell_name;
  */
 export function reactive_mode() {
   set_global_state(PublicStateCommand.CLEAN_UP);
-  set_global_state(PublicStateCommand.SET_SCHEDULER, reactive_scheduler());
+
   set_merge(reactive_fresh_merge);
   clear_all_tasks();
   console.log("✅ Reactive mode enabled");
@@ -456,7 +455,7 @@ export const propagator = {
   constraint_propagator: constraint_propagator,
   primitive: primitive_propagator,
   function: function_to_primitive_propagator,
-  error_logged: error_logged_primitive_propagator
+
 };
 
 /**
@@ -643,7 +642,7 @@ export const prop_ops = {
   constraint: constraint_propagator,
   primitive: primitive_propagator,
   function: function_to_primitive_propagator,
-  error_logged: error_logged_primitive_propagator,
+  
   
   // Management
   id: propagator_id,
@@ -711,7 +710,7 @@ export {
   constraint_propagator,
   primitive_propagator,
   function_to_primitive_propagator,
-  error_logged_primitive_propagator,
+
   propagator_id,
   propagator_name,
   propagator_dispose,

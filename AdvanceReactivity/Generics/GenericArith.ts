@@ -25,24 +25,24 @@ const _and = construct_simple_generic_procedure("and", 2, (a: any, b: any) => a 
 const _or = construct_simple_generic_procedure("or", 2, (a: any, b: any) => a || b)
 const _not = construct_simple_generic_procedure("not", 1, (x: any) => !x)
 
-export const extend_nothing_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
-    one_of_args_match(is_nothing), 
-    (a: any, b: any) => {
-            return no_compute 
-    })
+// export const extend_nothing_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
+//     one_of_args_match(is_nothing), 
+//     (a: any, b: any) => {
+//             return no_compute 
+//     })
 
 
 
-export const extend_contradiction_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
-    one_of_args_match(is_contradiction),
-    (a: any, b: any) => {
-        return the_contradiction
-    }
-)
+// export const extend_contradiction_arithmetic_handler = (op: any) => define_generic_procedure_handler(op, 
+//     one_of_args_match(is_contradiction),
+//     (a: any, b: any) => {
+//         return no_compute 
+//     }
+// )
 
 export const extend_propagator_arithmetic_pack = (name: string, arity: number, op: (a: any, b: any) => any) => {
-   extend_nothing_arithmetic_handler(op)
-   extend_contradiction_arithmetic_handler(op)
+//    extend_nothing_arithmetic_handler(op)
+//    extend_contradiction_arithmetic_handler(op)
    return make_layered_procedure(name, arity, op)
 }
 

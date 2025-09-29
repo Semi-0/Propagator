@@ -1,6 +1,6 @@
-import {  register_predicate } from "generic-handler/Predicates"
+import {  one_of_args_match, register_predicate } from "generic-handler/Predicates"
 import { is_layered_object } from "../Helper/Predicate"
-import { construct_simple_generic_procedure } from "generic-handler/GenericProcedure"
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
 
@@ -42,6 +42,10 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
     }
     return value === the_contradiction
 })
+
+
+define_generic_procedure_handler(is_unusable_value, one_of_args_match(is_contradiction), (a:any) => true)
+define_generic_procedure_handler(is_unusable_value, one_of_args_match(is_nothing), (a:any) => true)
 
 export const is_layered_contradiction = register_predicate("is_layered_contradiction", (value: any) => {
     if (is_layered_object(value)) {

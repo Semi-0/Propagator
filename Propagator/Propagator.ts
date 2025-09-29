@@ -10,8 +10,9 @@ import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
-import { the_disposed, is_disposed } from "../Cell/CellValue";
+import { the_disposed, is_disposed, is_unusable_value } from "../Cell/CellValue";
 import { markForDisposal } from "../Shared/Scheduler/Scheduler";
+import { trace_func } from "../helper";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -118,10 +119,16 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             output ? [output] : [],
             () => {
                 const inputs_values = inputs.map(cell => cell_strongest(cell));
-                const output_value = f(...inputs_values);
 
-                if ((output) && (is_not_no_compute(output_value))){
-                    add_cell_content(output as Cell<any>, output_value);
+                if (inputs_values.some(is_unusable_value)){
+                    // do nothing
+                }
+                else{
+                    const output_value = f(...inputs_values);
+
+                    if ((output) && (is_not_no_compute(output_value))){
+                        add_cell_content(output as Cell<any>, output_value);
+                    }
                 }
            }, 
             name
@@ -131,17 +138,17 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
     };
 }
 
-export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
-    primitive_propagator(
-        error_handling_function(name, f),
-        name
-    )
+// export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
+//     primitive_propagator(
+//         error_handling_function(name, f),
+//         name
+//     )
 
 export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
     // limitation: does not support rest or optional parameters
     const rf = install_propagator_arith_pack(name, f.length, f)
 
-    return error_logged_primitive_propagator(rf, name)
+    return primitive_propagator(rf, name)
 }
 
 // compound propagator might need virtualized inner cells
