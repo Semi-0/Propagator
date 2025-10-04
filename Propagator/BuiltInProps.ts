@@ -379,6 +379,9 @@ export const ce_between: (input: Cell<number>, min: Cell<number>, max: Cell<numb
 // @ts-ignore
 export const ce_zip = make_ce_arithmetical(p_zip, "zip");
 
+
+export const ce_filter_a = (f: (a: any) => boolean) => make_ce_arithmetical(p_filter_a(f), "filter_a");
+
 export const ce_zip_passthrough = (cells: Cell<any>[]) => {
     return ce_zip(cells[0], r_constant(cells.slice(1), "pulse"))
 }
@@ -541,6 +544,7 @@ export const c_merge_queue = (until: number) => (a: Cell<any>, b: Cell<any>, out
 }, "merge_queue")
 
 export const c_fold = (f: (i: any, a: any) => any) => (input: Cell<any>, acc_cell: Cell<any>) => {
+    //TODO: consider a gotcha  if acc_cell is nothing then this would never fire
     return compound_propagator([input, acc_cell], [acc_cell], () => {
         const pulled = ce_pull(acc_cell, input) 
         const internal = function_to_primitive_propagator("fold", f) 
@@ -581,7 +585,6 @@ export const ce_to_string = make_ce_arithmetical(p_to_string) as (input: Cell<an
 
 
 export const p_array = function_to_primitive_propagator("array", (...x: any[]) => {
-    console.log("array", x)
     return x
 })
 
