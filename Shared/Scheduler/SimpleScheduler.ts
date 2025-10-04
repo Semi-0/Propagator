@@ -47,6 +47,12 @@ export const simple_scheduler = (): Scheduler => {
 
     const alert_propagator = (p: Propagator) => {
         propagators_to_alert.add(p)
+
+        if (immediate_execute){
+            execute_propagator(p, (e) => {
+                throw e
+            })
+        }
     }
 
     const alert_propagators = (propagators: Propagator[]) => {

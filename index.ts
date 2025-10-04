@@ -277,7 +277,6 @@ export const name = cell_name;
  */
 export function reactive_mode() {
   set_global_state(PublicStateCommand.CLEAN_UP);
-
   set_merge(reactive_fresh_merge);
   clear_all_tasks();
   console.log("✅ Reactive mode enabled");
