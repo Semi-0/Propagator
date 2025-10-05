@@ -120,7 +120,7 @@ export function cell_constructor<A>(
 
       addNeighbor: (propagator: Propagator) => {
         neighbors.set(propagator.getRelation().get_id(), propagator);
-        Current_Scheduler.alert_propagator(propagator)
+        Current_Scheduler.alert_propagators(Array.from(neighbors.values()))
       },
       summarize: () => {
         const name = relation.get_name();

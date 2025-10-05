@@ -115,6 +115,10 @@ export const simple_scheduler = (): Scheduler => {
         },
         markForDisposal,
         cleanupDisposedItems,
-        getDisposalQueueSize
+        getDisposalQueueSize,
+        hasPendingTasks: () => {
+            return propagators_to_alert.get_items().length > 0
+        }
+
     }
 }

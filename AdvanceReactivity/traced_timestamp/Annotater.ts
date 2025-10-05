@@ -15,7 +15,7 @@ import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { flat_map, map, for_each } from "generic-handler/built_in_generics/generic_collection.ts";
 
-
+// this is totally not scalable, should use a more efficient way to get the relative time
 const get_new_relative_time = reference_store()
 
 

@@ -110,9 +110,7 @@ export const p_array_first = function_to_primitive_propagator("array_first", (in
 })
 
 export const p_map_a = (f: (...a: any[]) => any) => {
-    return function_to_primitive_propagator("map", (...inputs: any[]) => {
-        return f(...inputs);
-    })
+    return function_to_primitive_propagator("map", f)
 } 
 
 export const p_map_b = function_to_primitive_propagator("map", (input: any, f: (a: any) => any) => {
@@ -458,7 +456,8 @@ export const p_case = (predicate: (cell: Cell<string>) => Propagator, execute: (
     execute(result)
 }
 
-export const ce_map = (f: (...a: any[]) => any) => make_ce_arithmetical(p_map_a(f), "map")
+export const ce_map: (f: (...a: any[]) => any) => (...inputs: Cell<any>[]) => Cell<any> = 
+(f: (...a: any[]) => any) => make_ce_arithmetical(p_map_a(f), "map") 
 
 // export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => primitive_propagator((condition: boolean, value: any) => {
 //     if (base_equal(condition, true)){

@@ -51,3 +51,7 @@ export function set_scheduler(scheduler: Scheduler){
 export function markForDisposal(id: string) {
     Current_Scheduler.markForDisposal(id)
 }
+
+export function hasPendingTasks(){
+    return Current_Scheduler.hasPendingTasks()
+}

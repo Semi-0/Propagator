@@ -13,4 +13,5 @@ export interface Scheduler{
     markForDisposal: (id: string) => void;
     cleanupDisposedItems: () => void;
     getDisposalQueueSize: () => number;
+    hasPendingTasks: () => boolean;
 }
