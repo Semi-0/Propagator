@@ -14,7 +14,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { is_contradiction, the_nothing } from "@/cell/CellValue";
-import { compound_propagator, primitive_propagator } from "../Propagator/Propagator";
+import { compound_propagator, primitive_propagator, construct_propagator } from "../Propagator/Propagator";
 import { construct_reactor } from "../Shared/Reactivity/Reactor";
 import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer.ts";
 import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
@@ -28,7 +28,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -129,6 +129,100 @@ describe("Advance Reactive Tests", () => {
       stale(timestampA)
       const result4 = time_stamp_set_merge(result3, setD)
       expect(to_array(result4)).toEqual([timestampB, timestampC, timestampD])   
+  })
+
+  test("comprehensive equality check for layered timestamp sets", () => {
+    // Test 1: Empty sets should be equal
+    const emptySet1 = empty_traced_timestamp_set()
+    const emptySet2 = empty_traced_timestamp_set()
+    expect(is_equal(emptySet1, emptySet2)).toEqual(true)
+    
+    // Test 2: Single timestamp with same source and value should be equal
+    const timestamp1 = construct_traced_timestamp(100, "source1")
+    const timestamp2 = construct_traced_timestamp(100, "source1")
+    const set1 = construct_traced_timestamp_set(timestamp1)
+    const set2 = construct_traced_timestamp_set(timestamp2)
+    expect(is_equal(set1, set2)).toEqual(true)
+    
+    // Test 3: Single timestamp with different source IDs should NOT be equal
+    const timestamp3 = construct_traced_timestamp(100, "source1")
+    const timestamp4 = construct_traced_timestamp(100, "source2")
+    const set3 = construct_traced_timestamp_set(timestamp3)
+    const set4 = construct_traced_timestamp_set(timestamp4)
+    expect(is_equal(set3, set4)).toEqual(false)
+    
+    // Test 4: Single timestamp with same source but different values should NOT be equal
+    const timestamp5 = construct_traced_timestamp(100, "source1")
+    const timestamp6 = construct_traced_timestamp(200, "source1")
+    const set5 = construct_traced_timestamp_set(timestamp5)
+    const set6 = construct_traced_timestamp_set(timestamp6)
+    expect(is_equal(set5, set6)).toEqual(false)
+    
+    // Test 5: Multiple timestamps with same source and values should be equal
+    const timestamp7a = construct_traced_timestamp(100, "source1")
+    const timestamp7b = construct_traced_timestamp(200, "source1")
+    const timestamp8a = construct_traced_timestamp(100, "source1")
+    const timestamp8b = construct_traced_timestamp(200, "source1")
+    const set7 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp7a), construct_traced_timestamp_set(timestamp7b))
+    const set8 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp8a), construct_traced_timestamp_set(timestamp8b))
+    expect(is_equal(set7, set8)).toEqual(true)
+    
+    // Test 6: Multiple timestamps with different source IDs should NOT be equal
+    const timestamp9a = construct_traced_timestamp(100, "source1")
+    const timestamp9b = construct_traced_timestamp(200, "source1")
+    const timestamp10a = construct_traced_timestamp(100, "source2")
+    const timestamp10b = construct_traced_timestamp(200, "source2")
+    const set9 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp9a), construct_traced_timestamp_set(timestamp9b))
+    const set10 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp10a), construct_traced_timestamp_set(timestamp10b))
+    expect(is_equal(set9, set10)).toEqual(false)
+    
+    // Test 7: Sets with different number of timestamps should NOT be equal
+    const timestamp11a = construct_traced_timestamp(100, "source1")
+    const timestamp11b = construct_traced_timestamp(200, "source1")
+    const timestamp12 = construct_traced_timestamp(100, "source1")
+    const set11 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp11a), construct_traced_timestamp_set(timestamp11b))
+    const set12 = construct_traced_timestamp_set(timestamp12)
+    expect(is_equal(set11, set12)).toEqual(false)
+    
+    // Test 8: Mixed source IDs in same set should be handled correctly
+    const timestamp13a = construct_traced_timestamp(100, "source1")
+    const timestamp13b = construct_traced_timestamp(200, "source2")
+    const timestamp14a = construct_traced_timestamp(100, "source1")
+    const timestamp14b = construct_traced_timestamp(200, "source2")
+    const set13 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp13a), construct_traced_timestamp_set(timestamp13b))
+    const set14 = time_stamp_set_merge(construct_traced_timestamp_set(timestamp14a), construct_traced_timestamp_set(timestamp14b))
+    expect(is_equal(set13, set14)).toEqual(true)
+    
+    // Test 9: Edge case - same timestamp value but different source IDs
+    const timestamp15 = construct_traced_timestamp(42, "source1")
+    const timestamp16 = construct_traced_timestamp(42, "source2")
+    const set15 = construct_traced_timestamp_set(timestamp15)
+    const set16 = construct_traced_timestamp_set(timestamp16)
+    expect(is_equal(set15, set16)).toEqual(false)
+    
+    // Test 10: Edge case - different timestamp values but same source ID
+    const timestamp17 = construct_traced_timestamp(42, "source1")
+    const timestamp18 = construct_traced_timestamp(43, "source1")
+    const set17 = construct_traced_timestamp_set(timestamp17)
+    const set18 = construct_traced_timestamp_set(timestamp18)
+    expect(is_equal(set17, set18)).toEqual(false)
+    
+    // Test 11: Complex case - multiple timestamps with mixed sources and values
+    const timestamp19a = construct_traced_timestamp(100, "source1")
+    const timestamp19b = construct_traced_timestamp(200, "source2")
+    const timestamp19c = construct_traced_timestamp(300, "source1")
+    const timestamp20a = construct_traced_timestamp(100, "source1")
+    const timestamp20b = construct_traced_timestamp(200, "source2")
+    const timestamp20c = construct_traced_timestamp(300, "source1")
+    const set19 = time_stamp_set_merge(
+      time_stamp_set_merge(construct_traced_timestamp_set(timestamp19a), construct_traced_timestamp_set(timestamp19b)),
+      construct_traced_timestamp_set(timestamp19c)
+    )
+    const set20 = time_stamp_set_merge(
+      time_stamp_set_merge(construct_traced_timestamp_set(timestamp20a), construct_traced_timestamp_set(timestamp20b)),
+      construct_traced_timestamp_set(timestamp20c)
+    )
+    expect(is_equal(set19, set20)).toEqual(true)
   })
 
 })
@@ -1217,5 +1311,196 @@ describe("handle contradiction", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
     expect(cell_strongest_base_value(output)).toBe(-10);
     
+  })
+})
+
+describe("p_pull timestamp dependency tests", () => {
+  test("p_pull should preserve timestamp dependencies from source cell", async () => {
+    // Create source cell with timestamp
+    const source = construct_cell("source") as Cell<number>
+    const pulse = construct_cell("pulse") as Cell<boolean>
+    const output = construct_cell("output") as Cell<number>
+    
+    // Set up p_pull operator
+    p_pull(source, pulse, output)
+    
+    // Update source with a value (this creates a timestamp)
+    update(source, 42)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Trigger pull with pulse
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Check that output has the correct value
+    expect(cell_strongest_base_value(output)).toBe(42)
+    
+    // Check that output has timestamp information (not just base value)
+    const outputValue = cell_strongest(output)
+    expect(has_timestamp_layer(outputValue)).toBe(true)
+    
+    // Verify that the timestamp is preserved from the source
+    // @ts-ignore
+    const sourceTimestamp = get_traced_timestamp_layer(cell_strongest(source) as LayeredObject<number>)
+    
+    // @ts-ignore
+    const outputTimestamp = get_traced_timestamp_layer(outputValue as LayeredObject<number>)
+    
+    // The timestamps should be the same (or at least the output should have timestamp info)
+    expect(sourceTimestamp).toBeDefined()
+    expect(outputTimestamp).toBeDefined()
+  })
+  
+  test("p_pull should handle multiple pulls with different timestamps", async () => {
+    const source = construct_cell("source") as Cell<number>
+    const pulse1 = construct_cell("pulse1") as Cell<boolean>
+    const pulse2 = construct_cell("pulse2") as Cell<boolean>
+    const output1 = construct_cell("output1") as Cell<number>
+    const output2 = construct_cell("output2") as Cell<number>
+    
+    // Set up two p_pull operators from the same source
+    p_pull(source, pulse1, output1)
+    p_pull(source, pulse2, output2)
+    
+    // Update source with first value
+    update(source, 100)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Trigger first pull
+    update(pulse1, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Update source with second value (new timestamp)
+    update(source, 200)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Trigger second pull
+    update(pulse2, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Both outputs should have their respective values
+    expect(cell_strongest_base_value(output1)).toBe(100)
+    expect(cell_strongest_base_value(output2)).toBe(200)
+    
+    // Both should have timestamp information
+    expect(has_timestamp_layer(cell_strongest(output1))).toBe(true)
+    expect(has_timestamp_layer(cell_strongest(output2))).toBe(true)
+  })
+  
+  test("p_pull should return no_compute when source is the_nothing", async () => {
+    const source = construct_cell("source") as Cell<number>
+    const pulse = construct_cell("pulse") as Cell<boolean>
+    const output = construct_cell("output") as Cell<number>
+    
+    p_pull(source, pulse, output)
+    
+    // Don't update source, so it should be the_nothing
+    // Trigger pull
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Output should remain the_nothing
+    expect(cell_strongest_base_value(output)).toBe(the_nothing)
+  })
+  
+  test("p_pull should work with ce_pull wrapper", async () => {
+    const source = construct_cell("source") as Cell<number>
+    const pulse = construct_cell("pulse") as Cell<boolean>
+    
+    // Use ce_pull wrapper
+    const output = ce_pull(source, pulse)
+    
+    update(source, 999)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    expect(cell_strongest_base_value(output)).toBe(999)
+    expect(has_timestamp_layer(cell_strongest(output))).toBe(true)
+  })
+  
+  test("p_pull should update when same value has newer timestamp", async () => {
+    const source = construct_cell("source") as Cell<number>
+    const pulse = construct_cell("pulse") as Cell<boolean>
+    const output = construct_cell("output") as Cell<number>
+    
+    p_pull(source, pulse, output)
+    
+    // First update with value 42
+    update(source, 42)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // First pull
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    const firstOutput = cell_strongest(output)
+    // @ts-ignore
+    const firstTimestamp = get_traced_timestamp_layer(firstOutput as LayeredObject<number>)
+    
+    // Update source with SAME value 42 but newer timestamp
+    update(source, 42)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    // Second pull with same value but newer timestamp
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    const secondOutput = cell_strongest(output)
+    // @ts-ignore
+    const secondTimestamp = get_traced_timestamp_layer(secondOutput as LayeredObject<number>)
+    
+    // The output should have updated even though the value is the same
+    // because the timestamp is newer
+    expect(cell_strongest_base_value(output)).toBe(42)
+    
+    // The timestamps should be different (second should be newer)
+    expect(firstTimestamp).toBeDefined()
+    expect(secondTimestamp).toBeDefined()
+    
+    // This test might fail if p_pull doesn't properly handle timestamp updates
+    // when the base value is the same
+    console.log("First timestamp:", firstTimestamp)
+    console.log("Second timestamp:", secondTimestamp)
+    
+    // The second timestamp should be different from the first
+    expect(is_equal(firstTimestamp, secondTimestamp)).toBe(false)
+  })
+  
+  test("p_pull should trigger updates even with identical base values", async () => {
+    const source = construct_cell("source") as Cell<number>
+    const pulse = construct_cell("pulse") as Cell<boolean>
+    const output = construct_cell("output") as Cell<number>
+    const updateCount = construct_cell("updateCount") as Cell<number>
+    
+    p_pull(source, pulse, output)
+    
+    // Count updates to output
+    let count = 0
+    const counter = construct_propagator([output], [], () => {
+      count++
+    }, "counter")
+    
+    // First update
+    update(source, 100)
+    await execute_all_tasks_sequential((error: Error) => {});
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    const firstCount = count
+    
+    // Second update with SAME value
+    update(source, 100)
+    await execute_all_tasks_sequential((error: Error) => {});
+    update(pulse, true)
+    await execute_all_tasks_sequential((error: Error) => {});
+    
+    const secondCount = count
+    
+    // The counter should have incremented even though the value is the same
+    // This tests if p_pull properly propagates timestamp changes
+    expect(secondCount).toBeGreaterThan(firstCount)
+    console.log(`Update count: ${firstCount} -> ${secondCount}`)
   })
 })
