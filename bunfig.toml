@@ -1,0 +1,3 @@
+[test]
+# Set a reasonable timeout (10 seconds per test)
+timeout = 10000

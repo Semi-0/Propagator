@@ -308,3 +308,6 @@ describe("Premises and Hypotheticals", () => {
         });
     })
 })
+// Ensure cleanup after tests to prevent state leaking
+import { cleanupAfterTests } from './cleanup-helper';
+cleanupAfterTests();

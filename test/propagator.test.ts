@@ -960,3 +960,6 @@ test("propagator disposal", async () => {
     expect(cell_strongest_base_value(result)).toBe(5); // Still the old value
 })
 })
+// Ensure cleanup after tests to prevent state leaking
+import { cleanupAfterTests } from './cleanup-helper';
+cleanupAfterTests();

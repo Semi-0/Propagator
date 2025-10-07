@@ -42,7 +42,6 @@ import { to_array } from "generic-handler/built_in_generics/generic_collection.t
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
-  // set_global_state(PublicStateCommand.SET_SCHEDULER, reactive_scheduler())
   set_handle_contradiction(trace_earliest_emerged_value)
   set_merge(reactive_merge)
 });
