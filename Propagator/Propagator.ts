@@ -1,6 +1,6 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
 import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
-import { set_global_state, get_global_parent} from "../Shared/PublicState";
+import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
@@ -81,7 +81,9 @@ export function construct_propagator(inputs: Cell<any>[],
       }
       
       // Normal activation
-      activate();
+      parameterize_parent(relation)(() => {
+        activate();
+      })
     },
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
@@ -181,6 +183,10 @@ export function propagator_name(propagator: Propagator): string{
 
 export function propagator_dispose(propagator: Propagator){
     propagator.dispose();
+}
+
+export function propagator_level(propagator: Propagator): number{
+    return propagator.getRelation().get_level();
 }
 
 export function propagator_inputs(propagator: Propagator): Cell<any>[] {

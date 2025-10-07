@@ -205,6 +205,10 @@ export function cell_id<A>(cell: Cell<A>){
   return cell.getRelation().get_id();
 }
 
+export function cell_level<A>(cell: Cell<A>){
+  return cell.getRelation().get_level();
+}
+
 export function cell_name<A>(cell: Cell<A>){
   return cell.getRelation().get_name()
 }

@@ -1,7 +1,8 @@
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { Cell } from "../Cell/Cell";
-import { cell_id } from "../Cell/Cell";
+import { cell_id, cell_level } from "../Cell/Cell";
 import type { Propagator } from "../Propagator/Propagator";
-import { propagator_id } from "../Propagator/Propagator";
+import { propagator_id, propagator_level } from "../Propagator/Propagator";
 import { cell_snapshot, propagator_snapshot } from "./PublicState";
 
 /**
@@ -58,6 +59,17 @@ export const traverse_downstream_graph = (
   trace_cell_recursive(root);
   return { cells: visited_cells, propagators: visited_props };
 };
+
+export const traverse_with_level = (level: number) => {
+  const t = traverse_downstream_graph(
+    (c: Cell<any>) => is_equal(cell_level(c), level),
+    (propagator: Propagator) => is_equal(propagator_level(propagator), level)
+  )
+  return t;
+}
+
+
+export const traverse_primitive_level = traverse_with_level(0);
 
 export interface TraceResult {
   cells: Map<string, Cell<any>>;
