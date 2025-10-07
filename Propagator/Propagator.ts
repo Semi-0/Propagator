@@ -1,11 +1,11 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_strongest } from "../Cell/Cell";
+import { type Cell, add_cell_content, cell_id, cell_strongest, cell_dispose } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { error_handling_function } from "./ErrorHandling";
-import { find_cell_by_id } from "../Shared/GraphTraversal";
+import { find_cell_by_id, find_propagator_by_id } from "../Shared/GraphTraversal";
 import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -156,16 +156,112 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 // compound propagator might need virtualized inner cells
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string, id: string | null = null): Propagator {
-    // Create the propagator using the basic constructor
-    var built = false
-    const prop = construct_propagator(inputs, outputs, () => {
-        if (!built){
-            to_build()
-            built = true
-        }
-    }, name, id);
+    // Create the propagator first without calling to_build
+    const relation = make_relation(name, get_global_parent(), id);
+    const inputs_ids = inputs.map(cell => cell_id(cell));
+    const outputs_ids = outputs.map(cell => cell_id(cell));
     
-    return prop;
+    var built = false
+    
+    const propagator: Propagator = {
+        get_name: () => name,
+        getRelation: () => relation,
+        getInputsID: () => inputs_ids,
+        getOutputsID: () => outputs_ids,
+        summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
+        activate: () => {
+            // Check if any inputs are disposed
+            const hasDisposedInput = inputs.some(cell => is_disposed(cell_strongest(cell)));
+            const hasDisposedOutput = outputs.some(cell => is_disposed(cell_strongest(cell)));
+            
+            if (hasDisposedInput || hasDisposedOutput) {
+                // Mark propagator for disposal
+                markForDisposal(propagator_id(propagator));
+                // Propagate disposal to outputs
+                outputs.forEach(cell => {
+                    if (!is_disposed(cell_strongest(cell))) {
+                        cell.addContent(the_disposed);
+                    }
+                });
+                return;
+            }
+            
+            // Build if not built yet, with proper parent context
+            if (!built) {
+                parameterize_parent(relation)(() => {
+                    to_build();
+                });
+                built = true;
+            }
+        },
+        dispose: () => {
+            [...inputs, ...outputs].forEach(cell => {
+                const neighbors = cell.getNeighbors();
+                if (neighbors.has(relation.get_id())) {
+                    neighbors.delete(relation.get_id());
+                }
+            });
+            // Mark for cleanup
+            markForDisposal(propagator_id(propagator));
+        }
+    };
+    
+    inputs.forEach(cell => {
+        cell.addNeighbor(propagator);
+    });
+    
+    set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation());
+    set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
+    
+    // Trigger initial activation to build the compound structure
+    propagator.activate();
+    
+    // Override the dispose method to include child disposal
+    const original_dispose = propagator.dispose;
+    propagator.dispose = () => {
+        // First, dispose all child propagators and cells
+        const children = propagator.getRelation().get_children();
+        
+        // Separate children into propagators and cells
+        const childPropagators: Propagator[] = [];
+        const childCells: Cell<any>[] = [];
+        
+        children.forEach(childRelation => {
+            const childId = childRelation.get_id();
+            const childProp = find_propagator_by_id(childId);
+            const childCell = find_cell_by_id(childId);
+            
+            if (childProp) {
+                childPropagators.push(childProp);
+            }
+            if (childCell) {
+                childCells.push(childCell);
+            }
+        });
+        
+        // Dispose propagators first (in case they reference cells)
+        childPropagators.forEach(childProp => {
+            childProp.dispose();
+        });
+        
+        // Then dispose cells
+        childCells.forEach(childCell => {
+            cell_dispose(childCell);
+        });
+        
+        // Finally, dispose the compound propagator itself
+        original_dispose();
+        
+        // Immediately remove children from global state
+        childPropagators.forEach(childProp => {
+            set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, childProp);
+        });
+        childCells.forEach(childCell => {
+            set_global_state(PublicStateCommand.REMOVE_CELL, childCell);
+        });
+    };
+    
+    return propagator;
 }
 
 export function constraint_propagator(cells: Cell<any>[], to_build: () => void, name: string): Propagator {
