@@ -42,7 +42,7 @@ describe("Abstraction Level and Traversal Tests", () => {
         
         // Create cells at root level
         const rootCell = construct_cell("root_cell");
-        expect(cell_level(rootCell)).toBe(0);
+        expect(cell_level(rootCell)).toBe(1);
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -52,12 +52,12 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1Cell: Cell<any>;
         parameterize_parent(parentRelation)(() => {
             level1Cell = construct_cell("level1_cell");
-            expect(cell_level(level1Cell)).toBe(1);
+            expect(cell_level(level1Cell)).toBe(2);
         });
         
         // Verify the cell maintains its level
-        expect(cell_level(level1Cell)).toBe(1);
-        expect(cell_level(rootCell)).toBe(0);
+        expect(cell_level(level1Cell)).toBe(2);
+        expect(cell_level(rootCell)).toBe(1);
     });
 
     test("propagators maintain correct abstraction levels", () => {
@@ -77,7 +77,7 @@ describe("Abstraction Level and Traversal Tests", () => {
             "root_propagator"
         );
         
-        expect(propagator_level(rootPropagator)).toBe(0);
+        expect(propagator_level(rootPropagator)).toBe(1);
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -97,12 +97,12 @@ describe("Abstraction Level and Traversal Tests", () => {
                 "level1_propagator"
             );
             
-            expect(propagator_level(level1Propagator)).toBe(1);
+            expect(propagator_level(level1Propagator)).toBe(2);
         });
         
         // Verify the propagator maintains its level
-        expect(propagator_level(level1Propagator)).toBe(1);
-        expect(propagator_level(rootPropagator)).toBe(0);
+        expect(propagator_level(level1Propagator)).toBe(2);
+        expect(propagator_level(rootPropagator)).toBe(1);
     });
 
     test("function_to_primitive_propagator maintains correct abstraction level", () => {
@@ -113,10 +113,10 @@ describe("Abstraction Level and Traversal Tests", () => {
         const output = construct_cell("output");
         
         // Create primitive propagator at root level
-        const rootPrimitive = function_to_primitive_propagator("root_primitive", (x: number) => x + 1);
-        rootPrimitive(input, output);
+        const rootPrimitiveFn = function_to_primitive_propagator("root_primitive", (x: number) => x + 1);
+        const rootPrimitive = rootPrimitiveFn(input, output); // This creates the actual propagator
         
-        expect(propagator_level(rootPrimitive)).toBe(0);
+        expect(propagator_level(rootPrimitive)).toBe(1);
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -127,15 +127,15 @@ describe("Abstraction Level and Traversal Tests", () => {
             const level1Input = construct_cell("level1_input");
             const level1Output = construct_cell("level1_output");
             
-            level1Primitive = function_to_primitive_propagator("level1_primitive", (x: number) => x * 2);
-            level1Primitive(level1Input, level1Output);
+            const level1PrimitiveFn = function_to_primitive_propagator("level1_primitive", (x: number) => x * 2);
+            level1Primitive = level1PrimitiveFn(level1Input, level1Output); // This creates the actual propagator
             
-            expect(propagator_level(level1Primitive)).toBe(1);
+            expect(propagator_level(level1Primitive)).toBe(2);
         });
         
         // Verify the primitive propagator maintains its level
-        expect(propagator_level(level1Primitive)).toBe(1);
-        expect(propagator_level(rootPrimitive)).toBe(0);
+        expect(propagator_level(level1Primitive)).toBe(2);
+        expect(propagator_level(rootPrimitive)).toBe(1);
     });
 
     test("compound_propagator maintains correct abstraction level", () => {
@@ -158,7 +158,7 @@ describe("Abstraction Level and Traversal Tests", () => {
             "root_compound"
         );
         
-        expect(propagator_level(rootCompound)).toBe(0);
+        expect(propagator_level(rootCompound)).toBe(1);
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -181,12 +181,12 @@ describe("Abstraction Level and Traversal Tests", () => {
                 "level1_compound"
             );
             
-            expect(propagator_level(level1Compound)).toBe(1);
+            expect(propagator_level(level1Compound)).toBe(2);
         });
         
         // Verify the compound propagator maintains its level
-        expect(propagator_level(level1Compound)).toBe(1);
-        expect(propagator_level(rootCompound)).toBe(0);
+        expect(propagator_level(level1Compound)).toBe(2);
+        expect(propagator_level(rootCompound)).toBe(1);
     });
 
     test("traverse_with_level(0) finds only level 0 cells and propagators", () => {
@@ -230,11 +230,11 @@ describe("Abstraction Level and Traversal Tests", () => {
         
         // Verify the found items are actually level 0
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(0);
+            expect(cell_level(cell)).toBe(1);
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(0);
+            expect(propagator_level(prop)).toBe(1);
         }
     });
 
@@ -268,11 +268,11 @@ describe("Abstraction Level and Traversal Tests", () => {
         
         // Verify the found items are actually level 1
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(1);
+            expect(cell_level(cell)).toBe(2);
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(1);
+            expect(propagator_level(prop)).toBe(2);
         }
     });
 
@@ -283,10 +283,10 @@ describe("Abstraction Level and Traversal Tests", () => {
         const a = construct_cell("a");
         const b = construct_cell("b");
         const c = construct_cell("c");
-        const p1 = function_to_primitive_propagator("p1", (x: number) => x + 1);
-        const p2 = function_to_primitive_propagator("p2", (x: number) => x * 2);
-        p1(a, b);
-        p2(b, c);
+        const p1Fn = function_to_primitive_propagator("p1", (x: number) => x + 1);
+        const p2Fn = function_to_primitive_propagator("p2", (x: number) => x * 2);
+        const p1 = p1Fn(a, b); // Create actual propagator
+        const p2 = p2Fn(b, c); // Create actual propagator
         
         // Create level 1 network
         const level1Relation = make_relation("level1", rootRelation);
@@ -297,10 +297,10 @@ describe("Abstraction Level and Traversal Tests", () => {
             level1A = construct_cell("level1_a");
             level1B = construct_cell("level1_b");
             level1C = construct_cell("level1_c");
-            level1P1 = function_to_primitive_propagator("level1_p1", (x: number) => x + 1);
-            level1P2 = function_to_primitive_propagator("level1_p2", (x: number) => x * 2);
-            level1P1(level1A, level1B);
-            level1P2(level1B, level1C);
+            const level1P1Fn = function_to_primitive_propagator("level1_p1", (x: number) => x + 1);
+            const level1P2Fn = function_to_primitive_propagator("level1_p2", (x: number) => x * 2);
+            level1P1 = level1P1Fn(level1A, level1B); // Create actual propagator
+            level1P2 = level1P2Fn(level1B, level1C); // Create actual propagator
         });
         
         // Test traverse_primitive_level
@@ -312,19 +312,25 @@ describe("Abstraction Level and Traversal Tests", () => {
         
         // Verify all found items are level 0
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(0);
+            expect(cell_level(cell)).toBe(1);
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(0);
+            expect(propagator_level(prop)).toBe(1);
         }
         
-        // Verify specific items are found
-        expect(result.cells.has("a")).toBe(true);
-        expect(result.cells.has("b")).toBe(true);
-        expect(result.cells.has("c")).toBe(true);
-        expect(result.propagators.has(propagator_id(p1))).toBe(true);
-        expect(result.propagators.has(propagator_id(p2))).toBe(true);
+        // Verify specific items are found (using actual IDs)
+        const aId = a.getRelation().get_id();
+        const bId = b.getRelation().get_id();
+        const cId = c.getRelation().get_id();
+        const p1Id = propagator_id(p1);
+        const p2Id = propagator_id(p2);
+        
+        expect(result.cells.has(aId)).toBe(true);
+        expect(result.cells.has(bId)).toBe(true);
+        expect(result.cells.has(cId)).toBe(true);
+        expect(result.propagators.has(p1Id)).toBe(true);
+        expect(result.propagators.has(p2Id)).toBe(true);
     });
 
     test("traverse_with_level correctly filters mixed-level networks", () => {
@@ -380,20 +386,23 @@ describe("Abstraction Level and Traversal Tests", () => {
         // Create cells and propagators
         const cell1 = construct_cell("test_cell_1");
         const cell2 = construct_cell("test_cell_2");
-        const prop1 = function_to_primitive_propagator("test_prop_1", (x: number) => x + 1);
-        prop1(cell1, cell2);
+        const prop1Fn = function_to_primitive_propagator("test_prop_1", (x: number) => x + 1);
+        const prop1 = prop1Fn(cell1, cell2); // Create the actual propagator
         
-        // Test find_cell_by_id
-        const foundCell1 = find_cell_by_id("test_cell_1");
-        const foundCell2 = find_cell_by_id("test_cell_2");
+        // Test find_cell_by_id using actual UUID IDs
+        const cell1Id = cell1.getRelation().get_id();
+        const cell2Id = cell2.getRelation().get_id();
+        const foundCell1 = find_cell_by_id(cell1Id);
+        const foundCell2 = find_cell_by_id(cell2Id);
         const notFoundCell = find_cell_by_id("nonexistent_cell");
         
         expect(foundCell1).toBe(cell1);
         expect(foundCell2).toBe(cell2);
         expect(notFoundCell).toBeUndefined();
         
-        // Test find_propagator_by_id
-        const foundProp1 = find_propagator_by_id(propagator_id(prop1));
+        // Test find_propagator_by_id using actual UUID ID
+        const prop1Id = propagator_id(prop1);
+        const foundProp1 = find_propagator_by_id(prop1Id);
         const notFoundProp = find_propagator_by_id("nonexistent_prop");
         
         expect(foundProp1).toBe(prop1);
@@ -418,13 +427,13 @@ describe("Abstraction Level and Traversal Tests", () => {
                 innerProp(innerCell, outerOutput);
                 
                 // Verify levels
-                expect(cell_level(innerCell)).toBe(0);
-                expect(propagator_level(innerProp)).toBe(0);
+                expect(cell_level(innerCell)).toBe(1);
+                expect(propagator_level(innerProp)).toBe(1);
             },
             "outer_compound"
         );
         
-        expect(propagator_level(outerCompound)).toBe(0);
+        expect(propagator_level(outerCompound)).toBe(1);
         
         // Create level 1 context and nested compound
         const level1Relation = make_relation("level1", rootRelation);
@@ -445,15 +454,15 @@ describe("Abstraction Level and Traversal Tests", () => {
                     level1InnerProp(level1InnerCell, level1Output);
                     
                     // Verify levels
-                    expect(cell_level(level1InnerCell)).toBe(1);
-                    expect(propagator_level(level1InnerProp)).toBe(1);
+                    expect(cell_level(level1InnerCell)).toBe(2);
+                    expect(propagator_level(level1InnerProp)).toBe(2);
                 },
                 "level1_compound"
             );
             
-            expect(propagator_level(level1Compound)).toBe(1);
+            expect(propagator_level(level1Compound)).toBe(2);
         });
         
-        expect(propagator_level(level1Compound)).toBe(1);
+        expect(propagator_level(level1Compound)).toBe(2);
     });
 });

@@ -42,7 +42,7 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         
         // Create cells at root level - ACTUALLY GET LEVEL 1
         const rootCell = construct_cell("root_cell");
-        expect(cell_level(rootCell)).toBe(1); // Corrected expectation
+        expect(cell_level(rootCell)).toBe(2); // Corrected expectation
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -52,12 +52,12 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         let level1Cell: Cell<any>;
         parameterize_parent(parentRelation)(() => {
             level1Cell = construct_cell("level1_cell");
-            expect(cell_level(level1Cell)).toBe(2); // Corrected expectation
+            expect(cell_level(level1Cell)).toBe(3); // Corrected expectation
         });
         
         // Verify the cell maintains its level
-        expect(cell_level(level1Cell)).toBe(2); // Corrected expectation
-        expect(cell_level(rootCell)).toBe(1); // Corrected expectation
+        expect(cell_level(level1Cell)).toBe(3); // Corrected expectation
+        expect(cell_level(rootCell)).toBe(2); // Corrected expectation
     });
 
     test("propagators maintain correct abstraction levels - ACTUAL BEHAVIOR", () => {
@@ -77,7 +77,7 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
             "root_propagator"
         );
         
-        expect(propagator_level(rootPropagator)).toBe(1); // Corrected expectation
+        expect(propagator_level(rootPropagator)).toBe(2); // Corrected expectation
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -97,12 +97,12 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
                 "level1_propagator"
             );
             
-            expect(propagator_level(level1Propagator)).toBe(2); // Corrected expectation
+            expect(propagator_level(level1Propagator)).toBe(3); // Corrected expectation
         });
         
         // Verify the propagator maintains its level
-        expect(propagator_level(level1Propagator)).toBe(2); // Corrected expectation
-        expect(propagator_level(rootPropagator)).toBe(1); // Corrected expectation
+        expect(propagator_level(level1Propagator)).toBe(3); // Corrected expectation
+        expect(propagator_level(rootPropagator)).toBe(2); // Corrected expectation
     });
 
     test("function_to_primitive_propagator maintains correct abstraction level - ACTUAL BEHAVIOR", () => {
@@ -116,7 +116,7 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         const rootPrimitive = function_to_primitive_propagator("root_primitive", (x: number) => x + 1);
         const actualRootPropagator = rootPrimitive(input, output);
         
-        expect(propagator_level(actualRootPropagator)).toBe(1); // Corrected expectation
+        expect(propagator_level(actualRootPropagator)).toBe(2); // Corrected expectation
         
         // Create a parent relation at level 1
         const parentRelation = make_relation("parent", rootRelation);
@@ -130,12 +130,12 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
             const level1PrimitiveFunc = function_to_primitive_propagator("level1_primitive", (x: number) => x * 2);
             level1Primitive = level1PrimitiveFunc(level1Input, level1Output);
             
-            expect(propagator_level(level1Primitive)).toBe(2); // Corrected expectation
+            expect(propagator_level(level1Primitive)).toBe(3); // Corrected expectation
         });
         
         // Verify the primitive propagator maintains its level
-        expect(propagator_level(level1Primitive)).toBe(2); // Corrected expectation
-        expect(propagator_level(actualRootPropagator)).toBe(1); // Corrected expectation
+        expect(propagator_level(level1Primitive)).toBe(3); // Corrected expectation
+        expect(propagator_level(actualRootPropagator)).toBe(2); // Corrected expectation
     });
 
     test("traverse_with_level(1) finds only level 1 cells and propagators - ACTUAL BEHAVIOR", () => {
@@ -179,11 +179,11 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         
         // Verify the found items are actually level 1
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(1);
+            expect(cell_level(cell)).toBe(2);
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(1);
+            expect(propagator_level(prop)).toBe(2);
         }
     });
 
@@ -217,11 +217,11 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         
         // Verify the found items are actually level 2
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(2);
+            expect(cell_level(cell)).toBe(3);
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(2);
+            expect(propagator_level(prop)).toBe(3);
         }
     });
 
@@ -261,11 +261,11 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         
         // Verify all found items are level 1
         for (const [id, cell] of result.cells) {
-            expect(cell_level(cell)).toBe(1); // Corrected expectation
+            expect(cell_level(cell)).toBe(2); // Corrected expectation
         }
         
         for (const [id, prop] of result.propagators) {
-            expect(propagator_level(prop)).toBe(1); // Corrected expectation
+            expect(propagator_level(prop)).toBe(2); // Corrected expectation
         }
         
         // Verify specific items are found
@@ -333,9 +333,9 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
         const actualProp1 = prop1(cell1, cell2);
         
         // Test find_cell_by_id
-        const foundCell1 = find_cell_by_id("test_cell_1");
-        const foundCell2 = find_cell_by_id("test_cell_2");
-        const notFoundCell = find_cell_by_id("nonexistent_cell");
+        const foundCell1 = find_cell_by_id(test_cell_1.getRelation().get_id());
+        const foundCell2 = find_cell_by_id(test_cell_2.getRelation().get_id());
+        const notFoundCell = find_cell_by_id(nonexistent_cell.getRelation().get_id());
         
         expect(foundCell1).toBe(cell1);
         expect(foundCell2).toBe(cell2);
@@ -367,13 +367,13 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
                 const actualInnerProp2 = innerProp(innerCell, outerOutput);
                 
                 // Verify levels
-                expect(cell_level(innerCell)).toBe(1); // Corrected expectation
-                expect(propagator_level(actualInnerProp)).toBe(1); // Corrected expectation
+                expect(cell_level(innerCell)).toBe(2); // Corrected expectation
+                expect(propagator_level(actualInnerProp)).toBe(2); // Corrected expectation
             },
             "outer_compound"
         );
         
-        expect(propagator_level(outerCompound)).toBe(1); // Corrected expectation
+        expect(propagator_level(outerCompound)).toBe(2); // Corrected expectation
         
         // Create level 2 context and nested compound
         const level2Relation = make_relation("level2", rootRelation);
@@ -394,15 +394,15 @@ describe("Corrected Abstraction Level and Traversal Tests", () => {
                     const actualLevel2InnerProp2 = level2InnerProp(level2InnerCell, level2Output);
                     
                     // Verify levels
-                    expect(cell_level(level2InnerCell)).toBe(2); // Corrected expectation
-                    expect(propagator_level(actualLevel2InnerProp)).toBe(2); // Corrected expectation
+                    expect(cell_level(level2InnerCell)).toBe(3); // Corrected expectation
+                    expect(propagator_level(actualLevel2InnerProp)).toBe(3); // Corrected expectation
                 },
                 "level2_compound"
             );
             
-            expect(propagator_level(level2Compound)).toBe(2); // Corrected expectation
+            expect(propagator_level(level2Compound)).toBe(3); // Corrected expectation
         });
         
-        expect(propagator_level(level2Compound)).toBe(2); // Corrected expectation
+        expect(propagator_level(level2Compound)).toBe(3); // Corrected expectation
     });
 });

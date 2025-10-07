@@ -7,6 +7,7 @@ import { the_disposed, is_disposed, the_nothing } from "../Cell/CellValue";
 import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
 import { compound_propagator, propagator_id, propagator_dispose, function_to_primitive_propagator } from "../Propagator/Propagator";
 import { find_cell_by_id, find_propagator_by_id } from "../Shared/GraphTraversal";
+import { update } from "../AdvanceReactivity/interface";
 
 describe("Compound Propagator Child Disposal", () => {
     beforeEach(() => {
@@ -421,6 +422,13 @@ describe("Compound Propagator Child Disposal", () => {
                 internalCellId = cell_id(internal);
                 // No propagators connecting them
             }, "cells_only_compound");
+            
+            // Trigger activation to build internal structure
+            update(input, 42);
+            await execute_all_tasks_sequential(() => {});
+            
+            // Verify internal cell was created
+            expect(find_cell_by_id(internalCellId!)).toBeDefined();
             
             // Dispose
             compound.dispose();

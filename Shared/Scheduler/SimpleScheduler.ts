@@ -112,6 +112,10 @@ export const simple_scheduler = (): Scheduler => {
         },
         clear_all_tasks: () => {
             propagators_to_alert.clear()
+            propagators_alerted.clear()
+            disposalQueue.clear()
+            immediate_execute = false
+            record_alerted_propagator = false
         },
         markForDisposal,
         cleanupDisposedItems,

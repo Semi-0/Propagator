@@ -187,6 +187,8 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
             }
             
             // Build if not built yet, with proper parent context
+            // Build happens on FIRST activation, regardless of input values
+            // Once built, the internal propagators handle all subsequent updates automatically
             if (!built) {
                 parameterize_parent(relation)(() => {
                     to_build();
@@ -212,9 +214,6 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
     
     set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation());
     set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
-    
-    // Trigger initial activation to build the compound structure
-    propagator.activate();
     
     // Override the dispose method to include child disposal
     const original_dispose = propagator.dispose;
