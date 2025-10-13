@@ -198,11 +198,12 @@ export function cell_content<A>(cell: Cell<A>): any{
 }
 
 export function cell_id<A>(cell: Cell<A>){
-  if (cell === undefined){
-    return "undefined";
+  if (is_cell(cell)) {
+    return cell.getRelation().get_id();
   }
-
-  return cell.getRelation().get_id();
+  else{
+    throw new Error("Cell is not a cell" + to_string(cell))
+  }
 }
 
 export function cell_level<A>(cell: Cell<A>){

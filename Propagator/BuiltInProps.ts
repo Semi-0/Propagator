@@ -1,6 +1,6 @@
 import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
-import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value } from "../Cell/Cell";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value, is_cell } from "../Cell/Cell";
 import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -19,6 +19,10 @@ import { r_constant } from "../AdvanceReactivity/interface";
 import { reduce } from "fp-ts/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Subject, throttleTime, distinctUntilChanged, distinct } from "rxjs";
+import { generic_merge } from "../Cell/Merge";
+import { match_args } from "generic-handler/Predicates";
+import { is_array } from "generic-handler/built_in_generics/generic_predicates";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
@@ -29,6 +33,12 @@ export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cel
     }
 })(condition, value, output)
 
+
+export const p_identity = function_to_primitive_propagator("identity", (input: any) => {
+    return input
+})
+
+export const ce_identity = make_ce_arithmetical(p_identity, "identity")
 
 export const p_equal =  primitive_propagator(equal, "equal")
 
@@ -57,12 +67,23 @@ export const p_and = primitive_propagator(and, "and")
 
 export const p_or = primitive_propagator(or, "or")
 
+export const p_constant = (value: any) => primitive_propagator(() => {
+    return value;
+}, "constant")
+
+export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant")
+
+export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [b], () => {
+    p_sync(a, b)
+    p_sync(b, a)
+}, "sync")
+
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;
-    return function_to_primitive_propagator("reduce", (inputs: any) => {
+    return (inputs: Cell<any>, acc_cell: Cell<any>) => function_to_primitive_propagator("reduce", (inputs: any) => {
         acc = f(acc, inputs);
         return acc;
-    })
+    })(inputs, acc_cell)
 }
 
 
@@ -102,6 +123,56 @@ export const p_index = (index: number) => {
         }
     })
 }
+
+
+export const bi_array_index = (array: Cell<Cell<any>>, index: Cell<number>, output: Cell<any>) => compound_propagator([array, index], [output], () => {
+    p_array_index(array, index, output)
+}, "array_index")
+
+
+// maybe also merge propagator?
+// higher order propagator maybe can be more generic?
+export const ce_map_expr = (expr: (cell: Cell<any>) => Cell<any>, array: Cell<Cell<any>[]>, output: Cell<Cell<any>[]>) => 
+    compound_propagator([array, output], [output], () => {
+       const ce_array_accessor = (index: number, array: Cell<Cell<any>[]>) => {
+            const current_value = cell_strongest_base_value(array)
+            // @ts-ignore
+            if (is_array(current_value) && (is_cell(current_value[index]))) {
+                // @ts-ignore
+                return current_value[index]
+            }
+            else {
+                return ce_array_index(array, ce_constant(index)(array))
+            }
+       } 
+
+       var index = -1
+       const map_item_network = (current_index: Cell<any>,  array: Cell<Cell<any>[]>) => {
+        // @ts-ignore
+            index++
+            //@ts-ignore
+            const not_exhausted = ce_less_than(current_index, ce_length(array) as Cell<Cell<any>[]>)
+            // or because cell is merged we can just through accessored item to destination
+            const current_item_from = ce_array_accessor(index, array)
+            
+            const transformed = expr(current_item_from)
+            const current_item_to = ce_array_accessor(index, output)
+            p_sync(transformed, current_item_to)
+
+
+            const next_index = construct_cell("next_index")
+            // @ts-ignore
+            p_switch(not_exhausted, ce_add(current_index, ce_constant(1)(current_index)), next_index)
+            // @ts-ignore
+            map_item_network(next_index, array)
+       }
+
+       map_item_network(ce_constant(0)(array), array)
+
+
+       
+    }, "map_expr")
+
 
 export const p_first = p_index(0);
 
@@ -532,6 +603,20 @@ export const p_as_array = (inputs: Cell<any>[], output: Cell<any[]>) => function
         return inputs
     }
 )(...inputs, output)
+
+export const p_length = function_to_primitive_propagator("length", (input: any[]) => {
+    return input.length
+})
+
+export const ce_length = make_ce_arithmetical(p_length, "length")
+
+export const p_array_index = function_to_primitive_propagator("array_index", (input: any[], index: number) => {
+    return input[index]
+})
+
+export const ce_array_index = make_ce_arithmetical(p_array_index, "array_index")
+
+
 
 
 export const c_merge_queue = (until: number) => (a: Cell<any>, b: Cell<any>, out: Cell<any>) =>  compound_propagator([a, b], [out], () => {
