@@ -1,21 +1,29 @@
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { every, reduce } from "generic-handler/built_in_generics/generic_collection";
 import { remove_item, add_item } from "generic-handler/built_in_generics/generic_collection";
-import { layers_reduce } from "sando-layer/Basic/helper";
+import { layer_pair_value, layers_reduce } from "sando-layer/Basic/helper";
 import { BetterSet, construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { make_layered_procedure, define_layered_procedure_handler } from "sando-layer/Basic/LayeredProcedure";
-import { support_layer } from "sando-layer/Specified/SupportLayer";
+import { get_support_layer_value, support_layer } from "sando-layer/Specified/SupportLayer";
 import { and, not } from "../AdvanceReactivity/Generics/GenericArith";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { filter } from "generic-handler/built_in_generics/generic_collection";
-import { construct_layered_consolidator, define_consolidator_per_layer_dispatcher } from "sando-layer/Basic/LayeredCombinators";
-import { register_predicate } from "generic-handler/Predicates";
+import { construct_layered_consolidator, define_consolidator_per_layer_dispatcher, exclude_base_layer } from "sando-layer/Basic/LayeredCombinators";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
-import { get_base_value } from "sando-layer/Basic/Layer";
-import { layers_base_equal } from "sando-layer/Equality";
-import { get_support_layer_set_length } from "./ValueSet";
+import { get_base_value } from "../Cell/CellValue";
+import { layered_deep_equal, layers_base_equal } from "sando-layer/Equality";
+import { get_support_layer_set_length, strongest_consequence } from "./ValueSet";
 import { length } from "generic-handler/built_in_generics/generic_collection";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { is_nothing, is_unusable_value } from "@/cell/CellValue";
+import { strongest_value } from "@/cell/StrongestValue";
+import { log_tracer, trace_function } from "generic-handler/built_in_generics/generic_debugger";
+import type { Layer } from "sando-layer/Basic/Layer";
+import { pipe } from "fp-ts/lib/function";
+import { some } from "generic-handler/built_in_generics/generic_collection";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 // TOD: there should be more efficient way to do this
 // it this surely would be a performance bottleneck
 // but let's maxiumize expressiveness first
@@ -23,7 +31,9 @@ export type GenericValueSet<T> = Array<LayeredObject<T>>
 
 export const is_generic_value_set = is_array
 
-export const generic_value_set_merge = (set: GenericValueSet<any>, elt: any) => {
+
+
+export const _merge_generic_value_set = (set: GenericValueSet<any>, elt: any) => {
     // so supposely, it should find all existing related elements
     // and if related elements is more informative than the new element, new element should be rejected
     // and if related elements is less informative than the new element, new element should be added 
@@ -31,14 +41,14 @@ export const generic_value_set_merge = (set: GenericValueSet<any>, elt: any) => 
 
     // the type error is unrelated because if if can't find layer for set it will just return the default value
     // @ts-ignore
-    const related_elements = find_related_elements(set, elt)
+    const related_elements = log_tracer("find_related_elements", find_related_elements)(set, elt)
 
     if (related_elements.length > 0) {
-        if (subsumes(related_elements, elt)) {
+        if (log_tracer("subsumes", subsumes)(related_elements, elt)) {
             return set;
         }
         else {
-            return add_item(drop(set, related_elements), elt)
+            return log_tracer("add_item", add_item)(drop(set, related_elements), elt)
         }
     } else {
         return add_item(set, elt)
@@ -46,18 +56,51 @@ export const generic_value_set_merge = (set: GenericValueSet<any>, elt: any) => 
 }
 
 export const drop = (set: GenericValueSet<any>, elements: GenericValueSet<any>): GenericValueSet<any> => {
-    return reduce(elements, remove_item, set)
+   
+    return filter(set, (a: LayeredObject<any>) => {
+        return !some(elements, (b: LayeredObject<any>) => {
+            return log_tracer("layered_deep_equal", layered_deep_equal)(a, b)
+        })
+    })
 }
 
-export const merge_sets = (a: any[], b: any[]) => {
-    return [...a, ...b]
+export const merge_sets = (a: any[], layer_pair: [Layer<any>, any]) => {
+   var copy = [...a]
+   var value = layer_pair_value(layer_pair);
+   if (value.length === 0) {
+    return copy;
+   }
+   else {
+    value.forEach((v: any) => {
+        copy = add_item(copy, v)
+    })
+   }
+   return copy
 }
+
+export  const exclude_empty_value = (f: (acc: any, layer_pair: [Layer<any>, any]) => any) => (acc: any, layer_pair: [Layer<any>, any]) => {
+    if (layer_pair_value(layer_pair).length == 0) {
+        return acc;
+    }
+    return f(acc, layer_pair);
+}
+
+export const e_merge_sets =  pipe(merge_sets, exclude_empty_value, exclude_base_layer)
 
 // find related elements would outputs: LayeredObject<any>[]
-export const find_related_elements: (...args: any[]) => LayeredObject<any>[] = construct_layered_consolidator("find_related_elements", 2, merge_sets, []) 
+export const find_related_elements: (...args: any[]) => LayeredObject<any>[] = construct_layered_consolidator("find_related_elements", 2, log_tracer("merge_sets", e_merge_sets), []) 
+
 
 // 
-export const subsumes: (existed_candidates: LayeredObject<any>[], new_candidate: LayeredObject<any>) => boolean = construct_layered_consolidator("more_informative", 2, and, true)
+export const e_and = (a: boolean, b: boolean) => a && b
+
+export const subsumes: (existed_candidates: LayeredObject<any>[], new_candidate: LayeredObject<any>) => boolean = construct_layered_consolidator(
+    "more_informative", 
+    2, (a: boolean, b: [Layer<any>, any]) => {
+ 
+        return log_tracer("e_and", e_and)(a, layer_pair_value(b))
+    }, 
+    true)
 
 // for strongest consepquences its just the original strongest consequence because that is defined using generic procedure
 // so we don't need to define it again
@@ -65,10 +108,14 @@ export const subsumes: (existed_candidates: LayeredObject<any>[], new_candidate:
 
 // the rest to be done is to define the layer dispatcher for find related elements and more_informative
 
+
+const _base_equal = curryArgument(0, layers_base_equal)
+
 define_consolidator_per_layer_dispatcher(
     find_related_elements, 
     support_layer, 
     (base_args: any[], set_supports: BetterSet<any>, elt_supports: BetterSet<any>) => {
+
         const [set, elt] = base_args;
         // for supported value there should be only one distinct value 
         // but for reactive values there protentially be various value share the same base value 
@@ -78,7 +125,9 @@ define_consolidator_per_layer_dispatcher(
         // if they from different timestamps, they at least one of them should be consolidated
         // set: LayeredObject<any>[] 
         // elt: based_value
-        return filter(set, curryArgument(0, layers_base_equal)(elt))
+        return filter(set, (a: LayeredObject<any>) => {
+            return log_tracer("base_equal", layers_base_equal)(a, elt)
+        })
     })
 
 export const support_value_stronger = (a: BetterSet<any>, b: BetterSet<any>) => {
@@ -99,8 +148,8 @@ export const support_value_stronger = (a: BetterSet<any>, b: BetterSet<any>) => 
 const supported_value_subsumes: (a: LayeredObject<any>, b: BetterSet<any>) => boolean = generic_wrapper(
     support_value_stronger,
     (a: boolean) => a,
-    get_support_layer_set_length,
-    length
+    get_support_layer_value,
+    (a: BetterSet<any>) => a
 )
 
 
@@ -124,7 +173,36 @@ define_consolidator_per_layer_dispatcher(
     }
 )
 
+define_generic_procedure_handler(
+    get_base_value,
+    match_args(is_generic_value_set),
+    compose(strongest_consequence, get_base_value)
+)
 
+define_generic_procedure_handler(
+    is_unusable_value,
+    match_args(is_generic_value_set),
+    compose(strongest_consequence, is_unusable_value)
+)
+
+define_generic_procedure_handler(
+    strongest_value,
+    match_args(is_generic_value_set),
+    strongest_consequence
+)
+
+export const to_generic_value_set = (a: any) => {
+    if (is_generic_value_set(a)){
+        return a
+    }
+    else{
+        return [a]
+    }
+}
+
+export const merge_generic_value_sets = (content: GenericValueSet<any>, increment: LayeredObject<any>) => {
+    return is_nothing(increment) ?  to_generic_value_set(content) : _merge_generic_value_set(content, increment)
+}
 // export const layered_find_related_elements = make_layered_procedure(
 //     "layered_find_related_elements",
 //     2,

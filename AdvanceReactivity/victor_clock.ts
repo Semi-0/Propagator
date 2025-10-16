@@ -5,13 +5,28 @@ import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapp
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { make_annotation_layer, type Layer } from "sando-layer/Basic/Layer";
+import { define_consolidator_per_layer_dispatcher } from "sando-layer/Basic/LayeredCombinators";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { find_related_elements, subsumes } from "../DataTypes/GenericValueSet";
+import { filter } from "generic-handler/built_in_generics/generic_collection";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+
+
 
 type SourceID = string;
 
 type VersionVector = Map<SourceID, number>;
 
 export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map )
+
+define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), (a: VersionVector, b: VersionVector) => {
+    return a.entries().every(([source, value]) => {
+        if (!b.has(source)) {
+            return false;
+        }
+        return value === b.get(source);
+    });
+})
 
 const version_vector_forward = (version_vector: VersionVector, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
@@ -129,9 +144,29 @@ define_generic_procedure_handler(any_unusable_values, one_of_args_match(has_vict
 })
 
 
+define_consolidator_per_layer_dispatcher(
+    find_related_elements,
+    victor_clock_layer,
+    (base_args: any[], contentClock: VersionVector, elt_clock: VersionVector) => {
+       const [set, elt] = base_args;
+       // finding all the victor clock that is staled
+       // victor clock guarantee only same source clock stale
+       return filter(set, (a: LayeredObject<any>) => generic_version_clock_less_than(victor_clock_layer.get_value(a), elt_clock))
+    }
+)
+
+define_consolidator_per_layer_dispatcher(
+    // @ts-ignore
+    subsumes,
+    victor_clock_layer,
+    // we have already guaranteed that the new element is more precise
+    (...args: any[]) => false
+)
+
+// TODO: BEHAVIORS
 // TODO: Merge
 // any unusable value? 
 // strongest?
 // merge can just merge with value set
 // strongest we can see whether uses 
-
+// contradiction handler with multiple inputs

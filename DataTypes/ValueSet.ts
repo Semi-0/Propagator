@@ -135,7 +135,7 @@ export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<
 
 
 
-function strongest_consequence<A>(set: any): A {
+export function strongest_consequence<A>(set: any): A {
     return pipe(
         set,
         (elements) => filter(elements, compose(get_support_layer_value, is_premises_in)),
