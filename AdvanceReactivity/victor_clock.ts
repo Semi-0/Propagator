@@ -129,9 +129,10 @@ export const _has_victor_clock_layer = (a: any) => {
 export const has_victor_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => is_layered_object(a) && _has_victor_clock_layer(a));
 
 
-define_generic_procedure_handler(any_unusable_values, one_of_args_match(has_victor_clock_layer), (as: LayeredObject<any>[] | any[]) => {
+define_generic_procedure_handler(any_unusable_values, match_args(has_victor_clock_layer, has_victor_clock_layer), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
+
 
     const result = pipe(
         as,
