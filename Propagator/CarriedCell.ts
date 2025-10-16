@@ -115,7 +115,7 @@ export const make_propagator_closure = (cells_info: string[], propagator_constru
 
 // export const is_propagator_closure = register_predicate("is_propagator_closure", (c: any) => c !== null && c !== undefined 
 //                                                                     && c.environment !== undefined && c.propagator !== undefined)
-
+// map itself could be generalize to virtual propagator
 
 // define_generic_procedure_handler(generic_merge, all_match(is_propagator_closure),
 // (content: PropagatorClosure, increment: PropagatorClosure) => {
@@ -146,6 +146,11 @@ export const diff_map = (a: Map<string, any>, b: Map<string, any>) => {
     }
     return diff
 }
+
+// is everything has the same collection?
+// maybe lets do with the specific then the generic?
+
+
 
 
 // i know this is not generic but lets stay simple for now

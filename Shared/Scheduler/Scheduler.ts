@@ -28,7 +28,7 @@ export function reset_scheduler(){
 export function execute_all_tasks_sequential(error_handler: (e: Error) => void) {
     const result = Current_Scheduler.execute_sequential(error_handler)
     // Clean up disposed items after execution
-    Current_Scheduler.cleanupDisposedItems()
+    Current_Scheduler.cleanup_disposed_items()
     return result
 }
 
@@ -49,9 +49,9 @@ export function set_scheduler(scheduler: Scheduler){
 }
 
 export function markForDisposal(id: string) {
-    Current_Scheduler.markForDisposal(id)
+    Current_Scheduler.mark_for_disposal(id)
 }
 
 export function hasPendingTasks(){
-    return Current_Scheduler.hasPendingTasks()
+    return Current_Scheduler.has_pending_tasks()
 }

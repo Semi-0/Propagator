@@ -360,14 +360,14 @@ export function clear_tasks() {
  * Get the current disposal queue size
  */
 export function get_disposal_queue_size() {
-  return Current_Scheduler.getDisposalQueueSize();
+  return Current_Scheduler.has_disposal_queue_size();
 }
 
 /**
  * Clean up disposed items
  */
 export function cleanup() {
-  Current_Scheduler.cleanupDisposedItems();
+  Current_Scheduler.cleanup_disposed_items();
 }
 
 // ============================================================================

@@ -3,12 +3,20 @@ import { is_layered_object } from "../Helper/Predicate"
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
+import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 
 export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
     (value: any) => {
         return false;
     }
 )
+
+export const any_unusable_values = construct_simple_generic_procedure("any_unusable_values", 1, (values: any[]) => {
+    if (is_array(values)) {
+        return values.some(is_unusable_value)
+    }
+    return false
+})
 
 export const value_imples = construct_simple_generic_procedure("value_imples", 2,
     (a: any, b: any) => {

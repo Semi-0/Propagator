@@ -67,7 +67,6 @@ function testContent(content: any, strongest: any): any | null {
 
 export function cell_constructor<A>(
       initial: any,
-
   ) {
   return (name: string, id: string | null = null) => {
     let disposed = false;

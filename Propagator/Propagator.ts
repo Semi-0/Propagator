@@ -13,6 +13,7 @@ import { identify_by } from "generic-handler/built_in_generics/generic_better_se
 import { the_disposed, is_disposed, is_unusable_value } from "../Cell/CellValue";
 import { markForDisposal } from "../Shared/Scheduler/Scheduler";
 import { trace_func } from "../helper";
+import { any_unusable_values } from "../Cell/CellValue";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -122,7 +123,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
             () => {
                 const inputs_values = inputs.map(cell => cell_strongest(cell));
 
-                if (inputs_values.some(is_unusable_value)){
+                if (any_unusable_values(inputs_values)){
                     // do nothing
                 }
                 else{

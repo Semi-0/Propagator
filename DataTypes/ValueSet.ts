@@ -1,27 +1,25 @@
 // -*- TypeScript -*-
 
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { type BetterSet, construct_better_set, is_better_set,  set_remove } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { is_layered_object } from "../Helper/Predicate";
-import { add, divide, is_equal, multiply, subtract } from "generic-handler/built_in_generics/generic_arithmetic"
-import { is_atom, is_function, is_array, is_any } from "generic-handler/built_in_generics/generic_predicates";
-import { less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
+import {  is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
+import {  is_array, } from "generic-handler/built_in_generics/generic_predicates";
+
+import { get_support_layer_value, support_layer } from "sando-layer/Specified/SupportLayer";
 import { is_premises_in } from "./Premises";
 import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imples } from "../Cell/CellValue";
-import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item } from "generic-handler/built_in_generics/generic_collection";
+import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
-import { generic_merge, merge_layered } from "../Cell/Merge";
-import { guard } from "generic-handler/built_in_generics/other_generic_helper";
-import {trace_func} from "../helper.ts";
-import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
-import { compose } from "generic-handler/built_in_generics/generic_combinator.ts";
-// ValueSet class definition
+import { merge_layered } from "../Cell/Merge";
 
+import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
+import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
+import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
+// ValueSet class definition
 
 type ValueSet<A> = BetterSet<A>;
 
@@ -38,6 +36,20 @@ define_generic_procedure_handler(to_string,
     (set: ValueSet<any>) => set.toString()
 );
 
+export const value_set_adjoin = (set: ValueSet<any>, element: any) => {
+   const existed = find(set, (e: any) => get_base_value(e) === get_base_value(element))
+   if (existed){
+     if (element_subsumes(existed, element)){
+        return set
+     }
+     else{
+        return add_item(remove_item(set, existed), element)
+     }
+   }
+   else{
+    return add_item(set, element)
+   }
+}
 
 
 
@@ -83,36 +95,47 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
 }
 
 
-
-function value_set_adjoin<LayeredObject>(set: ValueSet<LayeredObject>, elt: LayeredObject): ValueSet<LayeredObject> {
-    // TODO: SUBSTITUTE ELEMENT MIGHT NOT WORK HERE!!!
-    // @ts-ignore
-    const existed = has(set, elt);
-    if (existed){
-        const existed_elt = find(set, (a: LayeredObject) => get_base_value(a) === get_base_value(elt));
-        // @ts-ignore
-        if (element_subsumes(elt, existed_elt)){
-            return set;
-        } else {
-            return substitute(set, existed_elt, elt);
-        }
-    } else {
-        const result = add_item(set, elt);
-        return result;
-    }
+export const get_support_layer_set_length : (value: LayeredObject<any>) => number = compose(get_support_layer_value, length)
 
 
-}
+
+export const supported_value_less_than = generic_wrapper(
+    less_than,
+    (a: any) => a,
+    get_support_layer_set_length,
+    get_support_layer_set_length
+)
+
+export const supported_value_equal = generic_wrapper(
+    is_equal,
+    (a: any) => a,
+    get_support_layer_set_length,
+    get_support_layer_set_length
+)
+
+export const base_value_implies = generic_wrapper(
+    value_imples,
+    (a: any) => a,
+    get_base_value,
+    get_base_value
+)
+
+// this could be more generic
+// still we need a more generic layer to handle this situation
+// a parrelle computing procedure and deciding how to merge the results at end
+// ironically this might be best solve by propagators
 
 export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<A>): boolean {
     return (
-        value_imples(get_base_value(elt1), get_base_value(elt2)) &&
-        (less_than(get_support_layer_value(elt1), get_support_layer_value(elt2)) || 
-        is_equal(get_support_layer_value(elt1), get_support_layer_value(elt2)))
+        base_value_implies(elt1, elt2) &&
+        (supported_value_less_than(elt1, elt2) || 
+        supported_value_equal(elt1, elt2))
     );
 }
 
-function strongest_consequence<A>(set: ValueSet<A>): A {
+
+
+function strongest_consequence<A>(set: any): A {
     return pipe(
         set,
         (elements) => filter(elements, compose(get_support_layer_value, is_premises_in)),

@@ -132,9 +132,9 @@ export const reactive_scheduler = (): Scheduler => {
         clear_all_tasks: () => {
             propagators_to_alert.clear()
         },
-        markForDisposal,
-        cleanupDisposedItems,
-        getDisposalQueueSize
+        mark_for_disposal: markForDisposal,
+        cleanup_disposed_items: cleanupDisposedItems,
+        has_disposal_queue_size: getDisposalQueueSize
     }
 }
 

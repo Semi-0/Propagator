@@ -245,13 +245,13 @@ describe("Comprehensive Disposal System", () => {
             
             const prop = p_add(a, b, result);
             
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
             
             cell_dispose(a);
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             await execute_all_tasks_sequential(() => {});
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle multiple disposals in same round", async () => {
@@ -265,10 +265,10 @@ describe("Comprehensive Disposal System", () => {
             cell_dispose(a);
             cell_dispose(b);
             
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(1);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(1);
             
             await execute_all_tasks_sequential(() => {});
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should clean up disposed items after execution", async () => {
@@ -281,12 +281,12 @@ describe("Comprehensive Disposal System", () => {
             cell_dispose(a);
             
             // Before cleanup, items should be marked for disposal
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             await execute_all_tasks_sequential(() => {});
             
             // After cleanup, disposal queue should be empty
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
     });
 
@@ -304,7 +304,7 @@ describe("Comprehensive Disposal System", () => {
             expect(cell_strongest_base_value(result)).toBe(8);
             
             prop.dispose();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             await execute_all_tasks_sequential(() => {});
             
@@ -312,7 +312,7 @@ describe("Comprehensive Disposal System", () => {
             expect(cell_strongest_base_value(a)).toBe(5);
             expect(cell_strongest_base_value(b)).toBe(3);
             expect(cell_strongest_base_value(result)).toBe(8);
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of intermediate cells", async () => {
@@ -531,11 +531,11 @@ describe("Comprehensive Disposal System", () => {
             // Dispose all cells
             cells.forEach(cell => cell_dispose(cell));
             
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             await execute_all_tasks_sequential(() => {});
             
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
     });
 
@@ -951,7 +951,7 @@ describe("Comprehensive Disposal System", () => {
             
             // Dispose the cell
             cell_dispose(cell);
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             // Before cleanup, cell should still exist in global state
             expect(find_cell_by_id(cellId)).toBeDefined();
@@ -961,7 +961,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, cell should be removed from global state
             expect(find_cell_by_id(cellId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should remove disposed propagators from global state after cleanup", async () => {
@@ -977,7 +977,7 @@ describe("Comprehensive Disposal System", () => {
             
             // Dispose the propagator
             prop.dispose();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             // Before cleanup, propagator should still exist in global state
             expect(find_propagator_by_id(propId)).toBeDefined();
@@ -987,7 +987,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, propagator should be removed from global state
             expect(find_propagator_by_id(propId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should remove multiple disposed items from global state", async () => {
@@ -1011,7 +1011,7 @@ describe("Comprehensive Disposal System", () => {
             cell_dispose(cell2);
             prop.dispose();
             
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(2);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(2);
             
             // Execute cleanup
             await execute_all_tasks_sequential(() => {});
@@ -1020,7 +1020,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(cell1Id)).toBeUndefined();
             expect(find_cell_by_id(cell2Id)).toBeUndefined();
             expect(find_propagator_by_id(propId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle cleanup with reactive scheduler", async () => {
@@ -1041,14 +1041,14 @@ describe("Comprehensive Disposal System", () => {
             
             // Dispose the cell
             cell_dispose(cell);
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             // Execute cleanup
             await execute_all_tasks_sequential(() => {});
             
             // After cleanup, cell should be removed from global state
             expect(find_cell_by_id(cellId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle cleanup of complex networks", async () => {
@@ -1091,7 +1091,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(resultId)).toBeUndefined();
             expect(find_propagator_by_id(prop1Id)).toBeUndefined();
             expect(find_propagator_by_id(prop2Id)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle cleanup with compound propagators", async () => {
@@ -1128,7 +1128,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(aId)).toBeDefined();
             expect(find_cell_by_id(bId)).toBeDefined();
             expect(find_cell_by_id(resultId)).toBeDefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle cleanup with reactive bi-directional propagators", async () => {
@@ -1170,7 +1170,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(celsiusId)).toBeUndefined();
             expect(find_cell_by_id(fahrenheitId)).toBeUndefined();
             expect(find_propagator_by_id(biPropId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should verify cleanup happens in next execution round", async () => {
@@ -1182,7 +1182,7 @@ describe("Comprehensive Disposal System", () => {
             
             // Dispose the cell
             cell_dispose(cell);
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             // Before any execution, cell should still exist in global state
             expect(find_cell_by_id(cellId)).toBeDefined();
@@ -1192,14 +1192,14 @@ describe("Comprehensive Disposal System", () => {
             
             // Cell should still exist because cleanup wasn't called
             expect(find_cell_by_id(cellId)).toBeDefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBeGreaterThan(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBeGreaterThan(0);
             
             // Now execute with cleanup
             await execute_all_tasks_sequential(() => {});
             
             // After cleanup, cell should be removed from global state
             expect(find_cell_by_id(cellId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle cleanup with disposal during active propagation", async () => {
@@ -1234,7 +1234,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(bId)).toBeUndefined(); // Should be removed
             expect(find_cell_by_id(resultId)).toBeUndefined(); // Should be removed due to disposal propagation
             expect(find_propagator_by_id(propId)).toBeUndefined(); // Should be removed
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
     });
 
@@ -1295,7 +1295,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(cell_id(a))).toBeDefined();
             expect(find_cell_by_id(cell_id(b))).toBeDefined();
             expect(find_cell_by_id(cell_id(c))).toBeDefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators with circular dependencies", async () => {
@@ -1340,7 +1340,7 @@ describe("Comprehensive Disposal System", () => {
             // Cells should remain since they weren't disposed
             expect(find_cell_by_id(cell_id(x))).toBeDefined();
             expect(find_cell_by_id(cell_id(y))).toBeDefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators with multiple constraints", async () => {
@@ -1397,7 +1397,7 @@ describe("Comprehensive Disposal System", () => {
             // After cleanup, first constraint should be removed
             expect(find_propagator_by_id(constraint1Id)).toBeUndefined();
             expect(find_propagator_by_id(constraint2Id)).toBeDefined(); // Should remain
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
             
             // Dispose the second constraint
             constraint2.dispose();
@@ -1405,7 +1405,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, second constraint should also be removed
             expect(find_propagator_by_id(constraint2Id)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators with reactive scheduler", async () => {
@@ -1445,7 +1445,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, constraint should be removed from global state
             expect(find_propagator_by_id(constraintId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators when cells are disposed", async () => {
@@ -1484,7 +1484,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(bId)).toBeUndefined(); // Should also be removed due to constraint dependency
             expect(find_cell_by_id(cId)).toBeUndefined(); // Should be removed due to disposal propagation
             expect(find_propagator_by_id(constraintId)).toBeUndefined(); // Should be removed
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators with complex constraints", async () => {
@@ -1542,7 +1542,7 @@ describe("Comprehensive Disposal System", () => {
             // After cleanup, area constraint should be removed
             expect(find_propagator_by_id(areaConstraintId)).toBeUndefined();
             expect(find_propagator_by_id(circumferenceConstraintId)).toBeDefined(); // Should remain
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
             
             // Dispose the second constraint
             circumferenceConstraint.dispose();
@@ -1550,7 +1550,7 @@ describe("Comprehensive Disposal System", () => {
             
             // After cleanup, both constraints should be removed
             expect(find_propagator_by_id(circumferenceConstraintId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
 
         it("should handle disposal of constraint propagators with generic dispose function", async () => {
@@ -1590,7 +1590,7 @@ describe("Comprehensive Disposal System", () => {
             expect(find_cell_by_id(aId)).toBeUndefined();
             expect(find_cell_by_id(bId)).toBeUndefined();
             expect(find_cell_by_id(cId)).toBeUndefined();
-            expect(Current_Scheduler.getDisposalQueueSize()).toBe(0);
+            expect(Current_Scheduler.has_disposal_queue_size()).toBe(0);
         });
     });
 }); 

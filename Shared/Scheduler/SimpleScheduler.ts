@@ -117,10 +117,10 @@ export const simple_scheduler = (): Scheduler => {
             immediate_execute = false
             record_alerted_propagator = false
         },
-        markForDisposal,
-        cleanupDisposedItems,
-        getDisposalQueueSize,
-        hasPendingTasks: () => {
+        mark_for_disposal: markForDisposal,
+        cleanup_disposed_items: cleanupDisposedItems,
+        has_disposal_queue_size: getDisposalQueueSize,
+        has_pending_tasks: () => {
             return propagators_to_alert.get_items().length > 0
         }
 

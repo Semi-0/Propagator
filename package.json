@@ -13,6 +13,7 @@
     "async-mutex": "^0.5.0",
     "cancelable-promise": "^4.3.1",
     "dependency-cruiser": "^16.5.0",
+    "effect": "^3.18.4",
     "effect-ts": "^0.0.1",
     "fp-ts": "^2.16.9",
     "generic-handler": "file:../GenericProcedure",

@@ -10,8 +10,8 @@ export interface Scheduler{
     clear_all_tasks: () => void;
     set_immediate_execute: (value: boolean) => void; 
     record_alerted_propagator: (value: boolean) => void; 
-    markForDisposal: (id: string) => void;
-    cleanupDisposedItems: () => void;
-    getDisposalQueueSize: () => number;
-    hasPendingTasks: () => boolean;
+    mark_for_disposal: (id: string) => void;
+    cleanup_disposed_items: () => void;
+    has_disposal_queue_size: () => number;
+    has_pending_tasks: () => boolean;
 }
