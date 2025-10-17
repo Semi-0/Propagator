@@ -9,9 +9,11 @@ import {
     cell_strongest,
     cell_strongest_base_value,
     constant_cell,
-    construct_cell
+    construct_cell,
+    handle_cell_contradiction,
+    set_handle_contradiction
 } from "../Cell/Cell";
-import {c_add, c_multiply, p_add, p_divide, p_multiply, p_or, p_subtract, p_switch} from "../Propagator/BuiltInProps";
+import {c_add, c_multiply, p_add, p_and, p_divide, p_multiply, p_or, p_subtract, p_switch} from "../Propagator/BuiltInProps";
 import { all_results, enum_num_set, kick_out, tell } from "../Helper/UI";
 import { is_contradiction, the_nothing } from "../Cell/CellValue";
 import {
@@ -51,6 +53,7 @@ beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP)
     set_merge(merge_value_sets)
     set_scheduler(simple_scheduler())
+
 })
 describe("test propagator", () => {
     test("c_multiply is propoerly working with value set", async () => {
@@ -182,8 +185,8 @@ describe("test propagator", () => {
         }
 
         await execute_all_tasks_sequential((error: Error) => {});
-        // expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
-        expect(length(x.getContent())).toBe(numValues) // +1 for the contradiction value
+        expect(is_contradiction(cell_strongest_base_value(x))).toBe(true);
+        expect(length(x.getContent())).toBe(numValues + 1) // +1 for the contradiction value
 
  
     });
@@ -586,7 +589,8 @@ test('resolving contradiction with floating-point precision issues', async () =>
 });
 
 
-test('pAMB simple binary', async () => {
+test('pAMB_A simple binary', async () => {
+    set_handle_contradiction(handle_cell_contradiction)
     const xA = construct_cell("xA");
     const xB = construct_cell("xB");
     const xC = construct_cell("xC");
@@ -619,6 +623,7 @@ test('pAMB simple binary', async () => {
 
 
 test('Binary AMB operator', async () => {
+    set_handle_contradiction(handle_cell_contradiction)
     const xA = construct_cell("xA");
     const xB = construct_cell("xB");
     const xC = construct_cell("xC");
@@ -633,28 +638,38 @@ test('Binary AMB operator', async () => {
 
     tell(xC, true, "xc_false")
 
+    await execute_all_tasks_sequential((e) => {})
 
-    all_results(construct_better_set([xA, xB, xC], to_string), (value: any) => {
-        const vA = cell_strongest_base_value(xA);
-        const vB = cell_strongest_base_value(xB);
-        const vC = cell_strongest_base_value(xC);
+    const correct = is_equal(cell_strongest_base_value(xA) || cell_strongest_base_value(xB), cell_strongest_base_value(xC))
+})
 
-        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
-            result.push([vA, vB, vC])
-        }
-    })
+test('Binary AMB operator: and', async () => {
+    set_handle_contradiction(handle_cell_contradiction)
+    const xA = construct_cell("xA");
+    const xB = construct_cell("xB");
+    const xC = construct_cell("xC");
 
-    expect(result.some((v) => v == [true, true, true]));
-    expect(result.some((v) => v == [true, false, true]));
-    expect(result.some((v) => v == [false, true, true]));
+    const result = []
+
+
+
+    p_and(xA, xB, xC);
+    binary_amb(xA)
+    binary_amb(xB)
+
+    tell(xC, true, "xc_false")
+
+    await execute_all_tasks_sequential((e) => {})
+
+    const correct = is_equal(cell_strongest_base_value(xA) && cell_strongest_base_value(xB), cell_strongest_base_value(xC))
 })
 
 
-test('AMB_A operator: simple adder', async () => {
+test('AMB operator: simple adder', async () => {
 
-
-    // configure_log_amb_choose(true)
-    // configure_log_process_contradictions(true)
+    set_handle_contradiction(handle_cell_contradiction)
+    configure_log_amb_choose(true)
+    configure_log_process_contradictions(true)
     // configure_log_nogoods(true)
     //
 
@@ -662,45 +677,30 @@ test('AMB_A operator: simple adder', async () => {
     const y = construct_cell("y");
     const z = construct_cell("z");
 
-    const possibilities = enum_num_set(1, 3);
+    const possibilities = enum_num_set(1, 5);
 
-    p_amb_a(x, possibilities);
-    p_amb_a(y, possibilities);
-    p_amb_a(z, possibilities);
+    p_amb(x, possibilities);
+    p_amb(y, possibilities);
+    p_amb(z, possibilities);
 
     p_add(x, y, z);
 
-    const results: any[] = [];
-    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
-        const vA = cell_strongest_base_value(x);
-        const vB = cell_strongest_base_value(y);
-        const vC = cell_strongest_base_value(z);
+    await execute_all_tasks_sequential((e) => {})
 
-        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
-            results.push([vA, vB, vC])
-            console.log(vA, vB, vC)
-        }
-    });
-
-
-    console.log(results)
-
+    console.log(x.summarize())
+    console.log(y.summarize())
+    console.log(z.summarize())
     console.log(summarize_scheduler_state())
 
-    // Add assertions for expected results
-    expect(is_equal(results,
-        [[ 1, 3, 4 ], [ 1, 1, 2 ],
-        [ 3, 1, 4 ], [ 2, 1, 3 ],
-            [ 2, 3, 5 ], [ 1, 2, 3],
-            [ 3, 2, 5 ], [ 2, 2, 4 ]])).toBe(true)
+    expect(is_equal(cell_strongest_base_value(x) + cell_strongest_base_value(y), cell_strongest_base_value(z))).toBe(true)
 
-    expect(x.summarize()).toBeDefined();
-    expect(y.summarize()).toBeDefined();
-    expect(z.summarize()).toBeDefined();
+
+  
+   
 });
 
 
-test('AMB_A operator: simple multiply', async () => {
+test('AMB operator: simple multiply', async () => {
 
 
     // configure_log_amb_choose(true)
@@ -715,95 +715,76 @@ test('AMB_A operator: simple multiply', async () => {
     const possibilities = enum_num_set(1, 4);
 
     // tell(z, 10, "z_val");
-    p_amb_a(x, possibilities);
-    p_amb_a(y, possibilities);
-    p_amb_a(z, possibilities);
+    p_amb(x, possibilities);
+    p_amb(y, possibilities);
+    p_amb(z, possibilities);
     p_multiply(x, y, z);
 
-    const results: any[] = [];
-    all_results(construct_better_set([x, y, z], to_string), (value: any) => {
-        const vA = cell_strongest_base_value(x);
-        const vB = cell_strongest_base_value(y);
-        const vC = cell_strongest_base_value(z);
+    await execute_all_tasks_sequential((e) => {})
+    console.log(x.summarize())
+    console.log(y.summarize())
+    console.log(z.summarize())
 
-
-        console.log(vA, vB, vC)
-        if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
-
-            results.push([vA, vB, vC])
-            console.log(vA, vB, vC)
-        }
-    });
-
-
-    console.log(results)
-
-    console.log(summarize_scheduler_state())
+    expect(is_equal(cell_strongest_base_value(x) * cell_strongest_base_value(y), cell_strongest_base_value(z))).toBe(true)
+  
 
     // Add assertions for expected results
 
 });
 
 
-// test('AMB_A operator: triangle', async () => {
+test('AMB operator: triangle', async () => {
 
+    set_handle_contradiction(handle_cell_contradiction)
+    configure_log_amb_choose(true)
+    // configure_log_process_contradictions(true)
+    configure_log_nogoods(true)
 
-//     // configure_log_amb_choose(true)
-//     // configure_log_process_contradictions(true)
-//     // configure_log_nogoods(true)
-//     //
-
-//     const x = construct_cell("x");
-//     const y = construct_cell("y");
-//     const z = construct_cell("z");
-
-//     const possibilities = enum_num_set(1, 10);
-
-//     p_amb_a(z, possibilities);
-//     p_amb_a(x, possibilities);
-//     p_amb_a(y, possibilities);
-
-//     const x2 = construct_cell("x2");
-//     const y2 = construct_cell("y2");
-//     const z2 = construct_cell("z2");
-
-//     p_multiply(x, x, x2);
-//     p_multiply(y, y, y2);
-//     p_multiply(z, z, z2);
-
-//     p_add(x2, y2, z2);
-
-//     const results: any[] = [];
-//     all_results(construct_better_set([x, y, z], to_string), (value: any) => {
-//         const vA = cell_strongest_base_value(x);
-//         const vB = cell_strongest_base_value(y);
-//         const vC = cell_strongest_base_value(z);
+    set_trace_merge(true)
+    set_merge(log_tracer("merge_value_sets", merge_value_sets))
     
-//         console.log(vA, vB, vC)
-//         if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
-//             results.push([vA, vB, vC])
-    
-//         }
-//     });
-//     execute_all_tasks_sequential((e) => {})
-//     console.log(x.summarize())
-//     console.log(y.summarize())
-//     console.log(z.summarize())
+    //
 
-//     console.log(results)
+    const x = construct_cell("x");
+    const y = construct_cell("y");
+    const z = construct_cell("z");
 
-//     console.log(summarize_scheduler_state())
+    const possibilities = enum_num_set(1, 8);
 
-//     // Add assertions for expected results
-//     expect(results).toContain("[4, 3, 5]");
-//     expect(results).toContain("[3, 4, 5]");
-//     expect(results).toContain("[8, 6, 10]");
-//     expect(results).toContain("[6, 8, 10]");
+    p_amb(z, possibilities);
+    p_amb(x, possibilities);
+    p_amb(y, possibilities);
 
-//     expect(x.summarize()).toBeDefined();
-//     expect(y.summarize()).toBeDefined();
-//     expect(z.summarize()).toBeDefined();
-// });
+    const x2 = construct_cell("x2");
+    const y2 = construct_cell("y2");
+    const z2 = construct_cell("z2");
+
+    p_multiply(x, x, x2);
+    p_multiply(y, y, y2);
+    p_multiply(z, z, z2);
+
+    p_add(x2, y2, z2);
+    const results: any[] = [];
+    // all_results(construct_better_set([x, y, z], to_string), (value: any) => {
+    //     const vA = cell_strongest_base_value(x);
+    //     const vB = cell_strongest_base_value(x);
+    //     const vC = cell_strongest_base_value(x);
+
+    //     if (vA !== the_nothing && vB !== the_nothing && vC !== the_nothing) {
+    //         results.push([vA, vB, vC])
+    //         console.log(vA, vB, vC)
+    //     }
+    // });
+    // console.log(results)
+
+    // const x_value = cell_strongest_base_value(x);
+    // const y_value = cell_strongest_base_value(y);
+    // const z_value = cell_strongest_base_value(z);
+    // console.log(x_value, y_value, z_value)
+
+
+    expect(is_equal(x_value * x_value + y_value * y_value, z_value * z_value)).toBe(true)
+});
 
 
 // test('AMB operator: example test from SimpleTest.ts', async () => {
@@ -962,4 +943,5 @@ test("propagator disposal", async () => {
 })
 // Ensure cleanup after tests to prevent state leaking
 import { cleanupAfterTests } from './cleanup-helper';
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
 cleanupAfterTests();

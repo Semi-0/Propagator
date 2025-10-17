@@ -9,6 +9,7 @@ import { reduce, map, filter, add_item, some, every, for_each } from "generic-ha
 import { pipe } from "fp-ts/lib/function";
 import {
     construct_better_set,
+    is_better_set,
     set_merge,
     type BetterSet,
 } from "generic-handler/built_in_generics/generic_better_set";
@@ -49,6 +50,10 @@ export function describe(v: any){
     if (is_layered_object(v)){
         return v.describe_self()
     }
+    else if (is_better_set(v)){
+        return reduce(v, (acc: string, value: any) => acc + to_string(value), '')
+    }
+        
     return to_string(v)
 }
 

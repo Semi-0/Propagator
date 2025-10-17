@@ -118,6 +118,7 @@ subscribe((msg: PublicStateMessage) => {
 
         case PublicStateCommand.ALERT_ALL_AMBS:
             all_amb_propagators.get_value().forEach((propagator: Propagator) => {
+    
                Current_Scheduler.alert_propagator(propagator)
             })
             break;

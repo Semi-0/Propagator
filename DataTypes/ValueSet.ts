@@ -2,16 +2,16 @@
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { type BetterSet, construct_better_set, is_better_set,  set_remove } from "generic-handler/built_in_generics/generic_better_set";
+import { type BetterSet, construct_better_set, is_better_set,  is_subset_of,  set_remove } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import {  is_equal } from "generic-handler/built_in_generics/generic_arithmetic"
+import {  is_equal, less_than_or_equal } from "generic-handler/built_in_generics/generic_arithmetic"
 import {  is_array, } from "generic-handler/built_in_generics/generic_predicates";
 
 import { get_support_layer_value, support_layer } from "sando-layer/Specified/SupportLayer";
 import { is_premises_in } from "./Premises";
 import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imples } from "../Cell/CellValue";
-import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length } from "generic-handler/built_in_generics/generic_collection";
+import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length, every } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
 import { merge_layered } from "../Cell/Merge";
@@ -97,21 +97,13 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
 
 export const get_support_layer_set_length : (value: LayeredObject<any>) => number = compose(get_support_layer_value, length)
 
-
-
-export const supported_value_less_than = generic_wrapper(
-    less_than,
-    (a: any) => a,
-    get_support_layer_set_length,
-    get_support_layer_set_length
+const supported_value_less_than_or_equal = generic_wrapper(
+    is_subset_of,
+    (a: boolean) => a,
+    get_support_layer_value,
+    get_support_layer_value
 )
 
-export const supported_value_equal = generic_wrapper(
-    is_equal,
-    (a: any) => a,
-    get_support_layer_set_length,
-    get_support_layer_set_length
-)
 
 export const base_value_implies = generic_wrapper(
     value_imples,
@@ -128,8 +120,7 @@ export const base_value_implies = generic_wrapper(
 export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<A>): boolean {
     return (
         base_value_implies(elt1, elt2) &&
-        (supported_value_less_than(elt1, elt2) || 
-        supported_value_equal(elt1, elt2))
+        supported_value_less_than_or_equal(elt1, elt2)
     );
 }
 

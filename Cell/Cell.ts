@@ -9,7 +9,7 @@ import { PublicStateCommand } from "../Shared/PublicState";
 import { describe } from "../Helper/UI";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../Propagator/Search";
-import { construct_better_set, identify_by, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
+import { construct_better_set, identify_by, is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { length } from "generic-handler/built_in_generics/generic_collection"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { strongest_value } from "./StrongestValue";
@@ -125,7 +125,7 @@ export function cell_constructor<A>(
         const name = relation.get_name();
         const strongVal = strongest
         const contVal = content
-        return `name: ${name}\nstrongest: ${describe(strongVal)}\ncontent: ${describe(contVal)}`;
+        return `name: ${name}\nstrongest: ${to_string(strongVal)}\ncontent: ${describe(contVal)}`;
       },
 
       dispose: () => {

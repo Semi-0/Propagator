@@ -169,14 +169,19 @@ export function p_amb(cell: Cell<any>, values: BetterSet<any>): Propagator{
             const premise_to_choose = find_premise_to_choose(premises)
 
 
-            if (log_amb_choose){
-                console.log("premise_to_choose: ", premise_to_choose, "cell: ", cell_name(cell))
-            }
 
             if (premise_to_choose !== undefined){
-               mark_only_chosen_premise(premises, premise_to_choose)
+                if (log_amb_choose){
+                    console.log("premise_to_choose: ", premise_to_choose)
+                    console.log("cell: ", cell.summarize())
+                }
+                mark_only_chosen_premise(premises, premise_to_choose)
             }
             else{
+                if (log_amb_choose){
+                    console.log("no premise to choose, all premises are out")
+                    console.log("cell: ", cell.summarize())
+                }
 
                 const nogoods = cross_product_union(map(premises, (p: string) => filter(premises_nogoods(p), 
                     is_premises_in)))

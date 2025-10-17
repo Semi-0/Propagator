@@ -18,7 +18,6 @@ define_generic_procedure_handler(to_string, match_args(is_function), (value: Fun
 
 define_generic_procedure_handler(is_equal, match_args(is_layered_object), layered_deep_equal)
 
-define_generic_procedure_handler(to_string, match_args(is_layered_object), (value: LayeredObject<any>) => value.describe_self())
 
 export interface SimpleSet<T> {
     add: (item: T) => void
