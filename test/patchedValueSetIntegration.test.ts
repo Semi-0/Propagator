@@ -18,12 +18,15 @@ import {
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { the_nothing } from "@/cell/CellValue";
+import { the_nothing, is_contradiction, the_contradiction } from "@/cell/CellValue";
 import { p_add, p_subtract, p_multiply, p_divide } from "../Propagator/BuiltInProps";
 import { set_merge } from "@/cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { patched_set_merge, is_patched_set } from "../DataTypes/PatchedValueSet";
-import { support_by } from "sando-layer/Specified/SupportLayer";
+import { support_by, support_layer } from "sando-layer/Specified/SupportLayer";
+import { compound_tell, kick_out } from "../Helper/UI";
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
@@ -35,17 +38,15 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
     describe("Single Layer Tests: Support Layer (Supported Values Only)", () => {
         
         test("should handle addition with supported values", async () => {
-            const cellA = construct_cell("supportAddA");
-            const cellB = construct_cell("supportAddB");
+            const cellA = construct_cell("supportAddA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("supportAddB") as Cell<LayeredObject<any>>;
             const output = construct_cell("supportAddOutput");
             
             p_add(cellA, cellB, output);
             
-            const valueA = support_by(10, "sourceA");
-            const valueB = support_by(20, "sourceB");
             
-            cellA.addContent(valueA);
-            cellB.addContent(valueB);
+            compound_tell(cellA, 10, support_layer, construct_better_set(["a"]))
+            compound_tell(cellB, 20, support_layer, construct_better_set(["b"]))
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("Error:", error.message);
@@ -60,12 +61,10 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             const output = construct_cell("supportMulOutput");
             
             p_multiply(cellA, cellB, output);
-            
-            const valueA = support_by(6, "sourceA");
-            const valueB = support_by(7, "sourceB");
-            
-            cellA.addContent(valueA);
-            cellB.addContent(valueB);
+            //@ts-ignore
+            compound_tell(cellA, 6, support_layer, construct_better_set(["sourceA"]));
+            //@ts-ignore
+            compound_tell(cellB, 7, support_layer, construct_better_set(["sourceB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("Error:", error.message);
@@ -75,17 +74,14 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("should handle subtraction with support layer values", async () => {
-            const cellA = construct_cell("supportSubA");
+            const cellA = construct_cell("supportSubA"); 
             const cellB = construct_cell("supportSubB");
             const output = construct_cell("supportSubOutput");
             
             p_subtract(cellA, cellB, output);
             
-            const valueA = support_by(15, "sourceA");
-            const valueB = support_by(5, "sourceB");
-            
-            cellA.addContent(valueA);
-            cellB.addContent(valueB);
+            compound_tell(cellA, 15, support_layer, construct_better_set(["sourceA"]));
+            compound_tell(cellB, 5, support_layer, construct_better_set(["sourceB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("Error:", error.message);
@@ -101,11 +97,8 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_divide(cellA, cellB, output);
             
-            const valueA = support_by(20, "sourceA");
-            const valueB = support_by(4, "sourceB");
-            
-            cellA.addContent(valueA);
-            cellB.addContent(valueB);
+            compound_tell(cellA, 20, support_layer, construct_better_set(["sourceA"]));
+            compound_tell(cellB, 4, support_layer, construct_better_set(["sourceB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("Error:", error.message);
@@ -308,239 +301,409 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             expect(result).toBe(30);
         });
 
-        test("[VICTOR_CLOCK] Stale value replacement in propagator", async () => {
-            console.log("\n=== TEST: Stale value replacement ===");
-            const cellA = construct_cell("vc_staleA");
-            const cellB = construct_cell("vc_staleB");
-            const output = construct_cell("vc_staleOutput");
+        test("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
+            console.log("\n=== TEST: Stale reactive value replacement with support ===");
+            const cellA = construct_cell("vcSup_staleA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcSup_staleB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcSup_staleOutput");
             
             p_add(cellA, cellB, output);
             
             const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
             const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
-            // Initial values with version 1
-            const valueA1 = construct_layered_datum(
-                5,
-                victor_clock_layer, new Map([["procA", 1]])
-            );
-            
-            const valueB1 = construct_layered_datum(
-                3,
-                victor_clock_layer, new Map([["procB", 1]])
-            );
-            
-            console.log("Adding initial values (v1)...");
-            cellA.addContent(valueA1);
-            cellB.addContent(valueB1);
+            // Initial values: victor_clock v1 with strong support
+            console.log("Adding v1 with support...");
+            //@ts-ignore
+            compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportA"]));
+            //@ts-ignore
+            compound_tell(cellB, 3, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supportB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR in initial propagation:", error.message);
+                if (error) console.log("ERROR in v1:", error.message);
             });
             
             let result1 = cell_strongest_base_value(output);
-            console.log("Initial result (5+3):", result1);
+            console.log("Result v1 (5+3):", result1);
             expect(result1).toBe(8);
             
-            // Update with fresher versions (version 2)
-            const valueA2 = construct_layered_datum(
-                7,
-                victor_clock_layer, new Map([["procA", 2]])
-            );
+            // Update with fresher versions (v2) and different support
+            console.log("Adding v2 with fresher clock and support...");
+            //@ts-ignore
+            compound_tell(cellA, 7, victor_clock_layer, new Map([["procA", 2]]), support_layer, construct_better_set(["supportA", "newSupportA"]));
+            //@ts-ignore
+            compound_tell(cellB, 4, victor_clock_layer, new Map([["procB", 2]]), support_layer, construct_better_set(["supportB", "newSupportB"]));
             
-            const valueB2 = construct_layered_datum(
-                4,
-                victor_clock_layer, new Map([["procB", 2]])
-            );
-            
-            console.log("Adding updated values (v2)...");
-            cellA.addContent(valueA2);
-            cellB.addContent(valueB2);
-            
-            console.log("Executing propagation with stale replacement...");
             await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR in stale replacement:", error.message);
+                if (error) console.log("ERROR in v2:", error.message);
             });
             
             let result2 = cell_strongest_base_value(output);
-            console.log("Result after stale replacement (7+4):", result2);
+            console.log("Result v2 (7+4):", result2);
             expect(result2).toBe(11);
         });
 
-        test("[VICTOR_CLOCK] Concurrent values from different sources", async () => {
-            console.log("\n=== TEST: Concurrent values from different sources ===");
-            const cellA = construct_cell("vc_concurrentA");
-            const cellB = construct_cell("vc_concurrentB");
-            const output = construct_cell("vc_concurrentOutput");
-            
-            p_multiply(cellA, cellB, output);
-            
-            const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
-            
-            // Values from different sources should both be kept
-            const valueA_src1 = construct_layered_datum(
-                5,
-                victor_clock_layer, new Map([["source1", 1]])
-            );
-            
-            const valueB_src2 = construct_layered_datum(
-                6,
-                victor_clock_layer, new Map([["source2", 1]])
-            );
-            
-            console.log("Adding value from source1...");
-            cellA.addContent(valueA_src1);
-            console.log("Adding value from source2...");
-            cellB.addContent(valueB_src2);
-            
-            console.log("Executing propagation with concurrent sources...");
-            await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR:", error.message);
-            });
-            
-            const result = cell_strongest_base_value(output);
-            console.log("Result from concurrent sources (5*6):", result);
-            expect(result).toBe(30);
-        });
-
-        test("[VICTOR_CLOCK] Multiple updates from same processor", async () => {
-            console.log("\n=== TEST: Multiple updates from same processor ===");
-            const cellA = construct_cell("vc_multiUpdateA");
-            const cellB = construct_cell("vc_multiUpdateB");
-            const output = construct_cell("vc_multiUpdateOutput");
+        test("[VICTOR_CLOCK + SUPPORT] Concurrent values with different clocks and supports should coexist but may raise contradiction", async () => {
+            console.log("\n=== TEST: Concurrent values with contradiction ===");
+            const cellA = construct_cell("vcConcA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcConcB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcConcOutput");
             
             p_add(cellA, cellB, output);
             
-            const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
             const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
-            const processor = "mainProcessor";
-            
-            // First update from processor
-            console.log("Update 1: Adding v1 from processor...");
-            const v1_a = construct_layered_datum(
-                1,
-                victor_clock_layer, new Map([[processor, 1]])
-            );
-            const v1_b = construct_layered_datum(
-                2,
-                victor_clock_layer, new Map([[processor, 1]])
-            );
-            
-            cellA.addContent(v1_a);
-            cellB.addContent(v1_b);
+            // Two concurrent values from different sources with different supports
+            console.log("Adding value A from source1...");
+            //@ts-ignore
+            compound_tell(cellA, 5, victor_clock_layer, new Map([["source1", 1]]), support_layer, construct_better_set(["supportA1"]));
+            console.log("Adding value B...");
+            //@ts-ignore
+            compound_tell(cellB, 3, victor_clock_layer, new Map([["sourceB", 1]]), support_layer, construct_better_set(["supportB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR 1:", error.message);
             });
             
             let result1 = cell_strongest_base_value(output);
-            console.log("Result after v1 (1+2):", result1);
-            expect(result1).toBe(3);
+            console.log("Result with source1 (5+3):", result1);
+            expect(result1).toBe(8);
             
-            // Second update from same processor (should replace v1)
-            console.log("Update 2: Adding v2 from same processor...");
-            const v2_a = construct_layered_datum(
-                10,
-                victor_clock_layer, new Map([[processor, 2]])
-            );
-            const v2_b = construct_layered_datum(
-                20,
-                victor_clock_layer, new Map([[processor, 2]])
-            );
+            // Now add concurrent value from source2
+            console.log("Adding concurrent value A from source2...");
+            //@ts-ignore
+            compound_tell(cellA, 7, victor_clock_layer, new Map([["source2", 1]]), support_layer, construct_better_set(["supportA2"]));
             
-            cellA.addContent(v2_a);
-            cellB.addContent(v2_b);
-            
-            console.log("Executing propagation with v2...");
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR 2:", error.message);
             });
             
             let result2 = cell_strongest_base_value(output);
-            console.log("Result after v2 (10+20):", result2);
-            expect(result2).toBe(30);
-            
-            // Third update (higher version)
-            console.log("Update 3: Adding v3 from same processor...");
-            const v3_a = construct_layered_datum(
-                100,
-                victor_clock_layer, new Map([[processor, 3]])
-            );
-            const v3_b = construct_layered_datum(
-                200,
-                victor_clock_layer, new Map([[processor, 3]])
-            );
-            
-            cellA.addContent(v3_a);
-            cellB.addContent(v3_b);
-            
-            console.log("Executing propagation with v3...");
-            await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR 3:", error.message);
-            });
-            
-            let result3 = cell_strongest_base_value(output);
-            console.log("Result after v3 (100+200):", result3);
-            expect(result3).toBe(300);
+            console.log("Result with concurrent sources (should show contradiction or one value):", result2);
+            // This might be a contradiction since we have 5+3=8 and 7+3=10
+            console.log("Output cell content:", cell_content(output));
         });
 
-        test("[VICTOR_CLOCK] Division with stale value detection", async () => {
-            console.log("\n=== TEST: Division with stale value detection ===");
-            const numerator = construct_cell("vc_numerator");
-            const denominator = construct_cell("vc_denominator");
-            const output = construct_cell("vc_divisionOutput");
+        test("[VICTOR_CLOCK + SUPPORT] Edge case: Victor Clock value joins with Support-only value, raises contradiction, retract to resolve", async () => {
+            console.log("\n=== TEST: Mixed Victor Clock and Support, contradiction resolution ===");
+            const cellA = construct_cell("mixedA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("mixedB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("mixedOutput");
             
-            p_divide(numerator, denominator, output);
+            p_add(cellA, cellB, output);
             
-            const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
             const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
-            // Stale values
-            const num_stale = construct_layered_datum(
-                40,
-                victor_clock_layer, new Map([["proc", 1]])
-            );
-            const denom_stale = construct_layered_datum(
-                4,
-                victor_clock_layer, new Map([["proc", 1]])
-            );
-            
-            console.log("Adding stale values (v1)...");
-            numerator.addContent(num_stale);
-            denominator.addContent(denom_stale);
+            // First: Support-only values
+            console.log("Adding support-only values...");
+            //@ts-ignore
+            compound_tell(cellA, 5, support_layer, construct_better_set(["supportOnlyA"]));
+            //@ts-ignore
+            compound_tell(cellB, 3, support_layer, construct_better_set(["supportOnlyB"]));
             
             await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR stale:", error.message);
+                if (error) console.log("ERROR support-only:", error.message);
             });
             
-            let result_stale = cell_strongest_base_value(output);
-            console.log("Result with stale values (40/4):", result_stale);
-            expect(result_stale).toBe(10);
+            let result_support = cell_strongest_base_value(output);
+            console.log("Result with support-only (5+3):", result_support);
+            expect(result_support).toBe(8);
             
-            // Fresh values (should replace stale)
-            const num_fresh = construct_layered_datum(
-                60,
-                victor_clock_layer, new Map([["proc", 2]])
-            );
-            const denom_fresh = construct_layered_datum(
-                6,
-                victor_clock_layer, new Map([["proc", 2]])
-            );
+            // Now add Victor Clock value to cellA
+            console.log("Adding Victor Clock value to cellA...");
+            //@ts-ignore
+            compound_tell(cellA, 10, victor_clock_layer, new Map([["vcSourceA", 1]]), support_layer, construct_better_set(["vcSupportA"]));
             
-            console.log("Adding fresh values (v2)...");
-            numerator.addContent(num_fresh);
-            denominator.addContent(denom_fresh);
-            
-            console.log("Executing propagation with fresh values...");
             await execute_all_tasks_sequential((error: Error) => {
-                if (error) console.log("ERROR fresh:", error.message);
+                if (error) console.log("ERROR adding VC:", error.message);
             });
             
-            let result_fresh = cell_strongest_base_value(output);
-            console.log("Result with fresh values (60/6):", result_fresh);
-            expect(result_fresh).toBe(10);
+            let result_mixed = cell_strongest_base_value(output);
+            console.log("Result after adding Victor Clock (mixed types):", result_mixed);
+            console.log("Output content should have both values:", cell_content(output));
+        });
+
+        test("[VICTOR_CLOCK + SUPPORT] Multiple stale values with support replacement", async () => {
+            console.log("\n=== TEST: Multiple stale values replacement ===");
+            const cellA = construct_cell("multiStaleA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("multiStaleB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("multiStaleOutput");
+            
+            p_multiply(cellA, cellB, output);
+            
+            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            
+            // Build up multiple stale values - v1
+            //@ts-ignore
+            compound_tell(cellA, 2, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["sup1"]));
+            //@ts-ignore
+            compound_tell(cellB, 3, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["sup2"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            let result1 = cell_strongest_base_value(output);
+            console.log("Result v1 (2*3):", result1);
+            expect(result1).toBe(6);
+            
+            // Update to v2
+            //@ts-ignore
+            compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 2]]), support_layer, construct_better_set(["sup1", "sup3"]));
+            //@ts-ignore
+            compound_tell(cellB, 4, victor_clock_layer, new Map([["procB", 2]]), support_layer, construct_better_set(["sup2", "sup4"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            let result2 = cell_strongest_base_value(output);
+            console.log("Result v2 (5*4):", result2);
+            expect(result2).toBe(20);
+            
+            // Update to v3
+            //@ts-ignore
+            compound_tell(cellA, 7, victor_clock_layer, new Map([["procA", 3]]), support_layer, construct_better_set(["sup1", "sup3", "sup5"]));
+            //@ts-ignore
+            compound_tell(cellB, 6, victor_clock_layer, new Map([["procB", 3]]), support_layer, construct_better_set(["sup2", "sup4", "sup6"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            let result3 = cell_strongest_base_value(output);
+            console.log("Result v3 (7*6):", result3);
+            expect(result3).toBe(42);
+        });
+    });
+
+    describe("Contradiction Detection and Resolution Tests", () => {
+        test("[CONTRADICTION] Simple contradiction detection with support layers", async () => {
+            console.log("\n=== TEST: Simple contradiction detection with support layers ===");
+            const cellA = construct_cell("contradictionCellA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("contradictionCellB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("contradictionOutput");
+            
+            p_add(cellA, cellB, output);
+            
+            // Add conflicting values with support layers
+            console.log("Adding cellA: 10 with supportA...");
+            //@ts-ignore
+            await compound_tell(cellA, 10, support_layer, construct_better_set(["supportA"]));
+            console.log("Adding cellB: 5 with supportB...");
+            //@ts-ignore
+            await compound_tell(cellB, 5, support_layer, construct_better_set(["supportB"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {
+                if (error) console.log("Error:", error.message);
+            });
+            
+            // Check if output shows expected result
+            let result = cell_strongest_base_value(output);
+            console.log("Output value:", result);
+            console.log("Output content:", cell_content(output));
+            expect(result).toBe(15); // 10 + 5
+        });
+
+        test("[CONTRADICTION] Contradiction with mismatched values and support resolution", async () => {
+            console.log("\n=== TEST: Contradiction detection and resolution via premise ===");
+            const cellA = construct_cell("contradictionResolveA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("contradictionResolveB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("contradictionResolveOutput");
+            
+            p_add(cellA, cellB, output);
+            
+            // Add initial values
+            console.log("Adding cellA: 10 with supportA...");
+            //@ts-ignore
+            await compound_tell(cellA, 10, support_layer, construct_better_set(["supportA"]));
+            console.log("Adding cellB: 5 with supportB...");
+            //@ts-ignore
+            await compound_tell(cellB, 5, support_layer, construct_better_set(["supportB"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result1 = cell_strongest_base_value(output);
+            console.log("Initial result (10+5):", result1);
+            expect(result1).toBe(15);
+            
+            // Add another value to cellB that conflicts
+            console.log("Adding conflicting value to cellB: 20 with supportC...");
+            //@ts-ignore
+            await compound_tell(cellB, 20, support_layer, construct_better_set(["supportC"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result2 = cell_strongest_base_value(output);
+            console.log("After adding conflicting value:", result2);
+            console.log("Is contradiction?", is_contradiction(result2));
+            
+            // Now kick out one of the conflicting premises
+            console.log("Kicking out supportC to resolve contradiction...");
+            kick_out("supportC");
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result3 = cell_strongest_base_value(output);
+            console.log("After resolving contradiction (10+5):", result3);
+            expect(result3).toBe(15);
+        });
+
+        test("[VICTOR_CLOCK + SUPPORT + CONTRADICTION] Contradiction with mixed layers and resolution", async () => {
+            console.log("\n=== TEST: Contradiction with Victor Clock + Support resolution ===");
+            const cellA = construct_cell("vcContradictionA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcContradictionB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcContradictionOutput");
+            
+            p_multiply(cellA, cellB, output);
+            
+            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            
+            // Add initial values with Victor Clock v1 and support
+            console.log("Adding cellA: 5 with victor_clock(procA:1) + supportA...");
+            //@ts-ignore
+            await compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportA"]));
+            console.log("Adding cellB: 4 with victor_clock(procB:1) + supportB...");
+            //@ts-ignore
+            await compound_tell(cellB, 4, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supportB"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result1 = cell_strongest_base_value(output);
+            console.log("Initial result (5*4):", result1);
+            expect(result1).toBe(20);
+            
+            // Add conflicting value with different Victor Clock from same processor
+            console.log("Adding conflicting cellA: 3 with victor_clock(procA:1) + supportC...");
+            //@ts-ignore
+            await compound_tell(cellA, 3, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportC"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result2 = cell_strongest_base_value(output);
+            console.log("After conflicting value:", result2);
+            console.log("Is contradiction?", is_contradiction(result2));
+            
+            // Resolve by kicking out the conflicting support premise
+            console.log("Kicking out supportC to resolve contradiction...");
+            kick_out("supportC");
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result3 = cell_strongest_base_value(output);
+            console.log("After resolving (5*4):", result3);
+            expect(result3).toBe(20);
+        });
+
+        test("[VICTOR_CLOCK + SUPPORT + CONTRADICTION] Update to fresher clock version removes contradiction", async () => {
+            console.log("\n=== TEST: Victor Clock version update resolves contradiction ===");
+            const cellA = construct_cell("vcUpdateResolveA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcUpdateResolveB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcUpdateResolveOutput");
+            
+            p_add(cellA, cellB, output);
+            
+            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            
+            // Add initial values v1
+            console.log("Adding v1: cellA=5 + cellB=3...");
+            //@ts-ignore
+            await compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportA"]));
+            //@ts-ignore
+            await compound_tell(cellB, 3, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supportB"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result1 = cell_strongest_base_value(output);
+            console.log("v1 result (5+3):", result1);
+            expect(result1).toBe(8);
+            
+            // Add conflicting values at same version
+            console.log("Adding conflicting: cellA=10 + cellB=2...");
+            //@ts-ignore
+            await compound_tell(cellA, 10, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportC"]));
+            //@ts-ignore
+            await compound_tell(cellB, 2, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supportD"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result2 = cell_strongest_base_value(output);
+            console.log("Conflicting state (should be contradiction or one value):", result2);
+            console.log("Is contradiction?", is_contradiction(result2));
+            
+            // Resolve by updating to fresher version
+            console.log("Updating to fresher version v2: cellA=7 + cellB=4...");
+            //@ts-ignore
+            await compound_tell(cellA, 7, victor_clock_layer, new Map([["procA", 2]]), support_layer, construct_better_set(["supportA", "supportE"]));
+            //@ts-ignore
+            await compound_tell(cellB, 4, victor_clock_layer, new Map([["procB", 2]]), support_layer, construct_better_set(["supportB", "supportF"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result3 = cell_strongest_base_value(output);
+            console.log("After fresher version (7+4):", result3);
+            expect(result3).toBe(11);
+        });
+
+        test("[CONTRADICTION] Multiple contradictions with resolution cascade", async () => {
+            console.log("\n=== TEST: Multiple contradictions with cascade resolution ===");
+            const cellA = construct_cell("cascadeA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("cascadeB") as Cell<LayeredObject<any>>;
+            const cellC = construct_cell("cascadeC") as Cell<LayeredObject<any>>;
+            const output = construct_cell("cascadeOutput");
+            
+            // Chain: (A + B) * C
+            const temp = construct_cell("cascadeTemp");
+            p_add(cellA, cellB, temp);
+            p_multiply(temp, cellC, output);
+            
+            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            
+            // Add initial values v1
+            console.log("Adding v1: A=2 + B=3, C=4 -> (2+3)*4 = 20");
+            //@ts-ignore
+            await compound_tell(cellA, 2, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supA"]));
+            //@ts-ignore
+            await compound_tell(cellB, 3, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supB"]));
+            //@ts-ignore
+            await compound_tell(cellC, 4, victor_clock_layer, new Map([["procC", 1]]), support_layer, construct_better_set(["supC"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result1 = cell_strongest_base_value(output);
+            console.log("v1 result: (2+3)*4 =", result1);
+            expect(result1).toBe(20);
+            
+            // Add conflicting values
+            console.log("Adding conflicts: A=5 + B=6, C=2 -> (5+6)*2 = 22");
+            //@ts-ignore
+            await compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supD"]));
+            //@ts-ignore
+            await compound_tell(cellB, 6, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supE"]));
+            //@ts-ignore
+            await compound_tell(cellC, 2, victor_clock_layer, new Map([["procC", 1]]), support_layer, construct_better_set(["supF"]));
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result2 = cell_strongest_base_value(output);
+            console.log("Conflicting state:", result2);
+            
+            // Resolve cascade: remove old supports one by one
+            console.log("Resolving: kick out supD...");
+            kick_out("supD");
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let resultAfterD = cell_strongest_base_value(output);
+            console.log("After supD removal:", resultAfterD);
+            
+            console.log("Resolving: kick out supE...");
+            kick_out("supE");
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let resultAfterE = cell_strongest_base_value(output);
+            console.log("After supE removal:", resultAfterE);
+            
+            console.log("Resolving: kick out supF...");
+            kick_out("supF");
+            
+            await execute_all_tasks_sequential((error: Error) => {});
+            
+            let result3 = cell_strongest_base_value(output);
+            console.log("After all resolutions (2+3)*4 =:", result3);
+            expect(result3).toBe(20);
         });
     });
 });

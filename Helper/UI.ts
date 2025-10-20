@@ -1,5 +1,5 @@
 import { add_cell_content, type Cell, cell_strongest_base_value, cell_strongest, construct_cell } from "../Cell/Cell"; 
-import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";
+import { get_support_layer_value, support_by, support_layer } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "../DataTypes/Premises";
 import { failed_count } from "../Shared/PublicState";
 import {  type PublicStateMessage } from "../Shared/PublicState";
@@ -18,16 +18,31 @@ import { process_contradictions } from "../Propagator/Search";
 import { is_contradiction, is_nothing } from "../Cell/CellValue";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 
 function range(start: number, end: number): BetterSet<number>{
     return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i))
 }
 
+
+export async function compound_tell<A>(cell: Cell<LayeredObject<A>>, information: A, ...layered_alist: any[]) {
+    const layered : LayeredObject<A>= construct_layered_datum(information, ...layered_alist);
+
+    for_each(support_layer.get_value(layered), (support: string) => {
+        register_premise(support, information);
+    });
+
+    add_cell_content(cell, layered);
+
+    await steppable_run_task((e) => {
+    });
+}
+
+
 export async function tell<A>(cell: Cell<A>, information: A, ...premises: string[]) {
-    const constructor = (a: A) => a;
 
     for_each(premises, (premise: string) => {
-        register_premise(premise, constructor(information));
+        register_premise(premise, information);
     });
 
     add_cell_content(cell,
@@ -37,7 +52,6 @@ export async function tell<A>(cell: Cell<A>, information: A, ...premises: string
                         reduce(premises, 
                                 (acc: any, premise: string) => support_by(acc, premise), 
                                 info),
-            constructor
         )
     );
 
