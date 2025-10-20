@@ -739,7 +739,7 @@ test('AMB operator: triangle', async () => {
     configure_log_amb_choose(true)
     // configure_log_process_contradictions(true)
     configure_log_nogoods(true)
-
+    track_premise()
     set_trace_merge(true)
     set_merge(log_tracer("merge_value_sets", merge_value_sets))
     
@@ -777,10 +777,11 @@ test('AMB operator: triangle', async () => {
     // });
     // console.log(results)
 
-    // const x_value = cell_strongest_base_value(x);
-    // const y_value = cell_strongest_base_value(y);
-    // const z_value = cell_strongest_base_value(z);
-    // console.log(x_value, y_value, z_value)
+    await execute_all_tasks_sequential((e) => {})
+    const x_value = cell_strongest_base_value(x);
+    const y_value = cell_strongest_base_value(y);
+    const z_value = cell_strongest_base_value(z);
+    console.log(x_value, y_value, z_value)
 
 
     expect(is_equal(x_value * x_value + y_value * y_value, z_value * z_value)).toBe(true)
@@ -944,4 +945,5 @@ test("propagator disposal", async () => {
 // Ensure cleanup after tests to prevent state leaking
 import { cleanupAfterTests } from './cleanup-helper';
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
+import { track_premise } from "../DataTypes/PremiseMetaData.ts";
 cleanupAfterTests();

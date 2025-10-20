@@ -78,6 +78,7 @@ export function cell_constructor<A>(
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
     function test_content(){
+      console.log("testing content", name)
       const new_strongest = strongest_value(content)
       if (is_equal(new_strongest, strongest)){
     

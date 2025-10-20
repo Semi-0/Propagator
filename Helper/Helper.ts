@@ -5,6 +5,10 @@ import { first as _first, find, length, to_array} from "generic-handler/built_in
 import { is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
+import { curryArgument } from "generic-handler/built_in_generics/generic_combinator"
+import { filter, map } from "generic-handler/built_in_generics/generic_collection"
+import { is_map } from "../Propagator/CarriedCell"
+
 
 define_generic_procedure_handler(to_string, match_args(is_number), (number: number) => {
     return number.toString()
@@ -22,7 +26,9 @@ export function reference_store(){
 
 export let get_new_reference_count = reference_store()
 
+export const curried_filter = curryArgument(1, filter)
 
+export const curried_map = curryArgument(1, map)
 
 // // better way is to use layered equal
 // export function layered_is_true(value: any): boolean {
@@ -49,6 +55,10 @@ define_generic_procedure_handler(second,
     }
 )
 
+
+define_generic_procedure_handler(to_string, match_args(is_map), (map: Map<any, any>) => {
+    return `Map(${Array.from(map.entries()).map(([key, value]) => `${key}: ${to_string(value)}`).join(", ")})`
+})
 
 // // check if the object has circular dependency 
 

@@ -31,11 +31,6 @@ export function substitute<A>(set: ValueSet<A>, old_elt: A, new_elt: A): ValueSe
 // Predicates and handlers
 const is_value_set = register_predicate("is_value_set", (value: any) => is_better_set(value));
 
-define_generic_procedure_handler(to_string,
-    match_args(is_value_set),
-    (set: ValueSet<any>) => set.toString()
-);
-
 export const value_set_adjoin = (set: ValueSet<any>, element: any) => {
    const existed = find(set, (e: any) => get_base_value(e) === get_base_value(element))
    if (existed){
@@ -97,7 +92,7 @@ export function merge_value_sets<LayeredObject>(content: ValueSet<LayeredObject>
 
 export const get_support_layer_set_length : (value: LayeredObject<any>) => number = compose(get_support_layer_value, length)
 
-const supported_value_less_than_or_equal = generic_wrapper(
+export const supported_value_less_than_or_equal = generic_wrapper(
     is_subset_of,
     (a: boolean) => a,
     get_support_layer_value,

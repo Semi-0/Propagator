@@ -104,6 +104,8 @@ export function find_premise_to_choose(premises: BetterSet<string>): string | un
 
 export function mark_only_chosen_premise(premises: BetterSet<string>, chosen_premise: string){
 
+    console.log("marking only chosen premise", chosen_premise)
+    console.log("premises", premises)
     mark_premise_in(chosen_premise)
 
     for_each(premises, (premise: string) => {

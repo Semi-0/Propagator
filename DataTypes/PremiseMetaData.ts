@@ -38,8 +38,12 @@ export class PremiseMetaData {
     set_believed(){
         if(track_premises_changed){
            console.log("premises:", this.name, "is believed")
+           console.log("previous belief state", this.belief_state)
         }
         if (this.belief_state == BeliefState.NotBelieved){
+            if(track_premises_changed){
+                console.log("setting belief state to believed")
+            }
             this.set_belief_state(BeliefState.Believed);
         }
   
@@ -48,21 +52,30 @@ export class PremiseMetaData {
     set_not_believed(){
         if(track_premises_changed){
             console.log("premises:", this.name, "is not believed")
-         }
+            console.log("previous belief state", this.belief_state)
+        }
         if (this.belief_state == BeliefState.Believed){
+            if(track_premises_changed){
+                console.log("setting belief state to not believed")
+            }
             this.set_belief_state(BeliefState.NotBelieved);
         }
     } 
 
     wake_up_roots(){
+          // TODO: force update propagators
+        console.log("waking up roots", this.name)
+        console.log("alerting all ambs")
+       set_global_state(PublicStateCommand.ALERT_ALL_AMBS)
+
+       console.log("forcing update all cells")
+       //TODO:  alert amb propagatorm
         // TODO: this can be even simplified with define relationship between premises cells and ambs
         // if add content is scheduled cannot make sure amb is only notified after all the current content has been all propagated
        set_global_state(PublicStateCommand.FORCE_UPDATE_ALL_CELLS)
         
 
-        // TODO: force update propagators
-       set_global_state(PublicStateCommand.ALERT_ALL_AMBS)
-       //TODO:  alert amb propagatorm
+      
     }
 
     get_roots(): BetterSet<any>{
