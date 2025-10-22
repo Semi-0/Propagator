@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { construct_cell, cell_strongest, cell_content, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
+import { primitive_construct_cell, cell_strongest, cell_content, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
 import { p_add, p_multiply, p_subtract, p_divide, c_add, c_multiply } from "../Propagator/BuiltInProps";
 import { clear_all_tasks, execute_all_tasks_sequential, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
@@ -24,7 +24,7 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Basic Disposal Operations", () => {
         it("should mark cell as disposed when dispose() is called", () => {
-            const cell = construct_cell("test_cell");
+            const cell = primitive_construct_cell("test_cell");
             cell_dispose(cell);
             
             expect(cell_strongest_base_value(cell)).toBe(the_disposed);
@@ -32,7 +32,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should ignore new content after disposal", async () => {
-            const cell = construct_cell("test_cell");
+            const cell = primitive_construct_cell("test_cell");
             cell.addContent(5);
             await execute_all_tasks_sequential(() => {});
             expect(cell_strongest_base_value(cell)).toBe(5);
@@ -53,7 +53,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of cells with layered values", async () => {
-            const cell = construct_cell("layered_cell");
+            const cell = primitive_construct_cell("layered_cell");
             tell(cell, 5, "premise1");
             await execute_all_tasks_sequential(() => {});
             
@@ -64,9 +64,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Disposal Propagation", () => {
         it("should propagate disposal through simple propagator chain", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -83,11 +83,11 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should propagate disposal through multiple propagators", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const c = construct_cell("c");
-            const result1 = construct_cell("result1");
-            const result2 = construct_cell("result2");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const c = primitive_construct_cell("c");
+            const result1 = primitive_construct_cell("result1");
+            const result2 = primitive_construct_cell("result2");
             
             const prop1 = p_add(a, b, result1);
             const prop2 = p_multiply(result1, c, result2);
@@ -108,10 +108,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal propagation in diamond dependency", async () => {
-            const source = construct_cell("source");
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const source = primitive_construct_cell("source");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop1 = p_add(source, source, a); // a = source + source
             const prop2 = p_multiply(source, source, b); // b = source * source
@@ -135,9 +135,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Circular Disposal Scenarios", () => {
         it("should handle circular disposal correctly", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop1 = p_add(a, b, result);
             const prop2 = p_multiply(result, a, b); // Creates circular dependency
@@ -155,8 +155,8 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle self-referential disposal", async () => {
-            const a = construct_cell("a");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const result = primitive_construct_cell("result");
             
             // Create a propagator that feeds back into itself
             const prop = compound_propagator([a], [result], () => {
@@ -181,9 +181,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Compound and Constraint Propagators", () => {
         it("should handle disposal of compound propagators", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const compound = compound_propagator([a, b], [result], () => {
                 const valA = cell_strongest_base_value(a) as number;
@@ -207,9 +207,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const c = construct_cell("c");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const c = primitive_construct_cell("c");
             
             const constraint = constraint_propagator([a, b, c], () => {
                 const valA = cell_strongest_base_value(a) as number;
@@ -239,9 +239,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Disposal Queue and Cleanup", () => {
         it("should track disposal queue correctly", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -255,10 +255,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle multiple disposals in same round", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const c = construct_cell("c");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const c = primitive_construct_cell("c");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, c, result);
             
@@ -272,9 +272,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should clean up disposed items after execution", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -292,9 +292,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Partial Disposal", () => {
         it("should allow partial disposal of propagators", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -316,10 +316,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of intermediate cells", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const intermediate = construct_cell("intermediate");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const intermediate = primitive_construct_cell("intermediate");
+            const result = primitive_construct_cell("result");
             
             const prop1 = p_add(a, b, intermediate);
             const prop2 = p_multiply(intermediate, intermediate, result);
@@ -343,9 +343,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Disposal with Contradictions", () => {
         it("should handle disposal when contradiction exists", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop1 = p_add(a, b, result);
             const prop2 = p_subtract(a, b, result); // Creates contradiction
@@ -363,9 +363,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of contradiction cells", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -390,12 +390,12 @@ describe("Comprehensive Disposal System", () => {
         it("should handle disposal in complex multi-layer network", async () => {
             // Create a complex network: a -> b -> c -> d
             //                          \-> e -> f -> d
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const c = construct_cell("c");
-            const d = construct_cell("d");
-            const e = construct_cell("e");
-            const f = construct_cell("f");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const c = primitive_construct_cell("c");
+            const d = primitive_construct_cell("d");
+            const e = primitive_construct_cell("e");
+            const f = primitive_construct_cell("f");
             
             const prop1 = p_add(a, a, b); // b = a + a
             const prop2 = p_multiply(b, b, c); // c = b * b
@@ -424,13 +424,13 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with multiple independent branches", async () => {
-            const source1 = construct_cell("source1");
-            const source2 = construct_cell("source2");
-            const branch1_a = construct_cell("branch1_a");
-            const branch1_b = construct_cell("branch1_b");
-            const branch2_a = construct_cell("branch2_a");
-            const branch2_b = construct_cell("branch2_b");
-            const result = construct_cell("result");
+            const source1 = primitive_construct_cell("source1");
+            const source2 = primitive_construct_cell("source2");
+            const branch1_a = primitive_construct_cell("branch1_a");
+            const branch1_b = primitive_construct_cell("branch1_b");
+            const branch2_a = primitive_construct_cell("branch2_a");
+            const branch2_b = primitive_construct_cell("branch2_b");
+            const result = primitive_construct_cell("result");
             
             // Branch 1: source1 -> branch1_a -> branch1_b
             const prop1 = p_add(source1, source1, branch1_a);
@@ -472,7 +472,7 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Edge Cases and Error Handling", () => {
         it("should handle disposal of already disposed cells", async () => {
-            const cell = construct_cell("cell");
+            const cell = primitive_construct_cell("cell");
             cell.addContent(5);
             await execute_all_tasks_sequential(() => {});
             
@@ -484,7 +484,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of cells with nothing values", async () => {
-            const cell = construct_cell("cell");
+            const cell = primitive_construct_cell("cell");
             expect(cell_strongest_base_value(cell)).toBe(the_nothing);
             
             cell_dispose(cell);
@@ -492,9 +492,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal during active propagation", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -515,14 +515,14 @@ describe("Comprehensive Disposal System", () => {
             
             // Create a large network
             for (let i = 0; i < 10; i++) {
-                const cell = construct_cell(`cell_${i}`);
+                const cell = primitive_construct_cell(`cell_${i}`);
                 cells.push(cell);
                 cell.addContent(i);
             }
             
             // Create propagators connecting them
             for (let i = 0; i < 9; i++) {
-                const prop = p_add(cells[i], cells[i + 1], construct_cell(`result_${i}`));
+                const prop = p_add(cells[i], cells[i + 1], primitive_construct_cell(`result_${i}`));
                 propagators.push(prop);
             }
             
@@ -541,9 +541,9 @@ describe("Comprehensive Disposal System", () => {
 
     describe("Integration with Generic Disposal", () => {
         it("should work with generic dispose function", async () => {
-            const a = construct_cell("a");
-            const b = construct_cell("b");
-            const result = construct_cell("result");
+            const a = primitive_construct_cell("a");
+            const b = primitive_construct_cell("b");
+            const result = primitive_construct_cell("result");
             
             const prop = p_add(a, b, result);
             
@@ -559,10 +559,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle subtree disposal correctly", async () => {
-            const root = construct_cell("root");
-            const child1 = construct_cell("child1");
-            const child2 = construct_cell("child2");
-            const grandchild = construct_cell("grandchild");
+            const root = primitive_construct_cell("root");
+            const child1 = primitive_construct_cell("child1");
+            const child2 = primitive_construct_cell("child2");
+            const grandchild = primitive_construct_cell("grandchild");
             
             const prop1 = p_add(root, root, child1);
             const prop2 = p_multiply(root, root, child2);
@@ -592,7 +592,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal in reactive update system", async () => {
-            const cell = construct_cell("reactive_cell");
+            const cell = primitive_construct_cell("reactive_cell");
             
             // Use reactive update
             update(cell, 42);
@@ -612,9 +612,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive compound propagators", async () => {
-            const a = construct_cell("reactive_a");
-            const b = construct_cell("reactive_b");
-            const result = construct_cell("reactive_result");
+            const a = primitive_construct_cell("reactive_a");
+            const b = primitive_construct_cell("reactive_b");
+            const result = primitive_construct_cell("reactive_result");
             
             const compound = compound_propagator([a, b], [result], () => {
                 const valA = cell_strongest_base_value(a) as number;
@@ -638,8 +638,8 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive bi-directional propagators", async () => {
-            const celsius = construct_cell("reactive_celsius");
-            const fahrenheit = construct_cell("reactive_fahrenheit");
+            const celsius = primitive_construct_cell("reactive_celsius");
+            const fahrenheit = primitive_construct_cell("reactive_fahrenheit");
             
             // Create bi-directional temperature conversion
             compound_propagator([celsius, fahrenheit], [celsius, fahrenheit], () => {
@@ -672,8 +672,8 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive pipe operations", async () => {
-            const input = construct_cell("reactive_input");
-            const output = construct_cell("reactive_output");
+            const input = primitive_construct_cell("reactive_input");
+            const output = primitive_construct_cell("reactive_output");
             
             // Create a reactive pipe: input -> map -> filter -> output
             const mapped = ce_pipe(input, p_map_a((x: number) => x * 2));
@@ -696,10 +696,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive conditional operators", async () => {
-            const condition = construct_cell("reactive_condition") as Cell<boolean>;
-            const thenValue = construct_cell("reactive_then") as Cell<number>;
-            const elseValue = construct_cell("reactive_else") as Cell<number>;
-            const output = construct_cell("reactive_conditional_output") as Cell<number>;
+            const condition = primitive_construct_cell("reactive_condition") as Cell<boolean>;
+            const thenValue = primitive_construct_cell("reactive_then") as Cell<number>;
+            const elseValue = primitive_construct_cell("reactive_else") as Cell<number>;
+            const output = primitive_construct_cell("reactive_conditional_output") as Cell<number>;
             
             // Set up conditional operator
             c_if_a(condition, thenValue, elseValue, output);
@@ -719,9 +719,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive arithmetic operators", async () => {
-            const a = construct_cell("reactive_arithmetic_a");
-            const b = construct_cell("reactive_arithmetic_b");
-            const result = construct_cell("reactive_arithmetic_result");
+            const a = primitive_construct_cell("reactive_arithmetic_a");
+            const b = primitive_construct_cell("reactive_arithmetic_b");
+            const result = primitive_construct_cell("reactive_arithmetic_result");
             
             p_add(a, b, result);
             
@@ -740,7 +740,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive timestamp tracking", async () => {
-            const cell = construct_cell("reactive_timestamp_cell");
+            const cell = primitive_construct_cell("reactive_timestamp_cell");
             
             // Update with timestamp tracking
             update(cell, 1);
@@ -762,9 +762,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive contradiction handling", async () => {
-            const a = construct_cell("reactive_contradiction_a");
-            const b = construct_cell("reactive_contradiction_b");
-            const output = construct_cell("reactive_contradiction_output");
+            const a = primitive_construct_cell("reactive_contradiction_a");
+            const b = primitive_construct_cell("reactive_contradiction_b");
+            const output = primitive_construct_cell("reactive_contradiction_output");
             
             // Create contradiction
             p_add(a, b, output);
@@ -785,9 +785,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive composite operators", async () => {
-            const cellA = construct_cell("reactive_composite_a");
-            const cellB = construct_cell("reactive_composite_b");
-            const output = construct_cell("reactive_composite_output");
+            const cellA = primitive_construct_cell("reactive_composite_a");
+            const cellB = primitive_construct_cell("reactive_composite_b");
+            const output = primitive_construct_cell("reactive_composite_output");
             
             // Create composite operator (selects fresher value)
             p_composite([cellA, cellB], output);
@@ -817,10 +817,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive range constraints", async () => {
-            const input = construct_cell("reactive_range_input") as Cell<number>;
-            const min = construct_cell("reactive_range_min") as Cell<number>;
-            const max = construct_cell("reactive_range_max") as Cell<number>;
-            const output = construct_cell("reactive_range_output") as Cell<number>;
+            const input = primitive_construct_cell("reactive_range_input") as Cell<number>;
+            const min = primitive_construct_cell("reactive_range_min") as Cell<number>;
+            const max = primitive_construct_cell("reactive_range_max") as Cell<number>;
+            const output = primitive_construct_cell("reactive_range_output") as Cell<number>;
             
             p_range(input, min, max, output);
             
@@ -851,10 +851,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal with reactive zip operations", async () => {
-            const cell1 = construct_cell("reactive_zip_1");
-            const cell2 = construct_cell("reactive_zip_2");
-            const zipFunc = construct_cell("reactive_zip_func");
-            const output = construct_cell("reactive_zip_output");
+            const cell1 = primitive_construct_cell("reactive_zip_1");
+            const cell2 = primitive_construct_cell("reactive_zip_2");
+            const zipFunc = primitive_construct_cell("reactive_zip_func");
+            const output = primitive_construct_cell("reactive_zip_output");
             
             p_zip([cell1, cell2], zipFunc, output);
             
@@ -890,10 +890,10 @@ describe("Comprehensive Disposal System", () => {
 
         it("should handle disposal with reactive complex network", async () => {
             // Create a complex reactive network similar to advanceReactive.test.ts
-            const radius = construct_cell("reactive_radius");
-            const diameter = construct_cell("reactive_diameter");
-            const circumference = construct_cell("reactive_circumference");
-            const area = construct_cell("reactive_area");
+            const radius = primitive_construct_cell("reactive_radius");
+            const diameter = primitive_construct_cell("reactive_diameter");
+            const circumference = primitive_construct_cell("reactive_circumference");
+            const area = primitive_construct_cell("reactive_area");
             
             // Set up bi-directional constraints
             compound_propagator([radius, diameter], [radius, diameter], () => {
@@ -943,7 +943,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should remove disposed cells from global state after cleanup", async () => {
-            const cell = construct_cell("cleanup_test_cell");
+            const cell = primitive_construct_cell("cleanup_test_cell");
             const cellId = cell_id(cell);
             
             // Verify cell exists in global state
@@ -965,9 +965,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should remove disposed propagators from global state after cleanup", async () => {
-            const a = construct_cell("cleanup_prop_a");
-            const b = construct_cell("cleanup_prop_b");
-            const result = construct_cell("cleanup_prop_result");
+            const a = primitive_construct_cell("cleanup_prop_a");
+            const b = primitive_construct_cell("cleanup_prop_b");
+            const result = primitive_construct_cell("cleanup_prop_result");
             
             const prop = p_add(a, b, result);
             const propId = propagator_id(prop);
@@ -991,9 +991,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should remove multiple disposed items from global state", async () => {
-            const cell1 = construct_cell("cleanup_multi_cell1");
-            const cell2 = construct_cell("cleanup_multi_cell2");
-            const result = construct_cell("cleanup_multi_result");
+            const cell1 = primitive_construct_cell("cleanup_multi_cell1");
+            const cell2 = primitive_construct_cell("cleanup_multi_cell2");
+            const result = primitive_construct_cell("cleanup_multi_result");
             
             const prop = p_add(cell1, cell2, result);
             
@@ -1028,7 +1028,7 @@ describe("Comprehensive Disposal System", () => {
             set_global_state(PublicStateCommand.SET_SCHEDULER, reactive_scheduler());
             clear_all_tasks();
             
-            const cell = construct_cell("reactive_cleanup_cell");
+            const cell = primitive_construct_cell("reactive_cleanup_cell");
             const cellId = cell_id(cell);
             
             // Verify cell exists in global state
@@ -1052,10 +1052,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle cleanup of complex networks", async () => {
-            const a = construct_cell("complex_cleanup_a");
-            const b = construct_cell("complex_cleanup_b");
-            const c = construct_cell("complex_cleanup_c");
-            const result = construct_cell("complex_cleanup_result");
+            const a = primitive_construct_cell("complex_cleanup_a");
+            const b = primitive_construct_cell("complex_cleanup_b");
+            const c = primitive_construct_cell("complex_cleanup_c");
+            const result = primitive_construct_cell("complex_cleanup_result");
             
             const prop1 = p_add(a, b, c);
             const prop2 = p_multiply(c, c, result);
@@ -1095,9 +1095,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle cleanup with compound propagators", async () => {
-            const a = construct_cell("compound_cleanup_a");
-            const b = construct_cell("compound_cleanup_b");
-            const result = construct_cell("compound_cleanup_result");
+            const a = primitive_construct_cell("compound_cleanup_a");
+            const b = primitive_construct_cell("compound_cleanup_b");
+            const result = primitive_construct_cell("compound_cleanup_result");
             
             const compound = compound_propagator([a, b], [result], () => {
                 const valA = cell_strongest_base_value(a) as number;
@@ -1136,8 +1136,8 @@ describe("Comprehensive Disposal System", () => {
             set_global_state(PublicStateCommand.SET_SCHEDULER, reactive_scheduler());
             clear_all_tasks();
             
-            const celsius = construct_cell("reactive_cleanup_celsius");
-            const fahrenheit = construct_cell("reactive_cleanup_fahrenheit");
+            const celsius = primitive_construct_cell("reactive_cleanup_celsius");
+            const fahrenheit = primitive_construct_cell("reactive_cleanup_fahrenheit");
             
             const biProp = compound_propagator([celsius, fahrenheit], [celsius, fahrenheit], () => {
                 const c = cell_strongest_base_value(celsius) as number;
@@ -1174,7 +1174,7 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should verify cleanup happens in next execution round", async () => {
-            const cell = construct_cell("round_cleanup_cell");
+            const cell = primitive_construct_cell("round_cleanup_cell");
             const cellId = cell_id(cell);
             
             // Verify cell exists in global state
@@ -1203,9 +1203,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle cleanup with disposal during active propagation", async () => {
-            const a = construct_cell("active_cleanup_a");
-            const b = construct_cell("active_cleanup_b");
-            const result = construct_cell("active_cleanup_result");
+            const a = primitive_construct_cell("active_cleanup_a");
+            const b = primitive_construct_cell("active_cleanup_b");
+            const result = primitive_construct_cell("active_cleanup_result");
             
             const prop = p_add(a, b, result);
             
@@ -1246,9 +1246,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with simple constraints", async () => {
-            const a = construct_cell("constraint_a");
-            const b = construct_cell("constraint_b");
-            const c = construct_cell("constraint_c");
+            const a = primitive_construct_cell("constraint_a");
+            const b = primitive_construct_cell("constraint_b");
+            const c = primitive_construct_cell("constraint_c");
             
             // Create a constraint: a + b = c
             const constraint = constraint_propagator([a, b, c], () => {
@@ -1299,8 +1299,8 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with circular dependencies", async () => {
-            const x = construct_cell("constraint_x");
-            const y = construct_cell("constraint_y");
+            const x = primitive_construct_cell("constraint_x");
+            const y = primitive_construct_cell("constraint_y");
             
             // Create a circular constraint: x = y + 1, y = x - 1
             const constraint = constraint_propagator([x, y], () => {
@@ -1344,10 +1344,10 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with multiple constraints", async () => {
-            const a = construct_cell("multi_constraint_a");
-            const b = construct_cell("multi_constraint_b");
-            const c = construct_cell("multi_constraint_c");
-            const d = construct_cell("multi_constraint_d");
+            const a = primitive_construct_cell("multi_constraint_a");
+            const b = primitive_construct_cell("multi_constraint_b");
+            const c = primitive_construct_cell("multi_constraint_c");
+            const d = primitive_construct_cell("multi_constraint_d");
             
             // Create multiple constraints: a + b = c, c * 2 = d
             const constraint1 = constraint_propagator([a, b, c], () => {
@@ -1413,8 +1413,8 @@ describe("Comprehensive Disposal System", () => {
             set_global_state(PublicStateCommand.SET_SCHEDULER, reactive_scheduler());
             clear_all_tasks();
             
-            const x = construct_cell("reactive_constraint_x");
-            const y = construct_cell("reactive_constraint_y");
+            const x = primitive_construct_cell("reactive_constraint_x");
+            const y = primitive_construct_cell("reactive_constraint_y");
             
             const constraint = constraint_propagator([x, y], () => {
                 const valX = cell_strongest_base_value(x) as number;
@@ -1449,9 +1449,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators when cells are disposed", async () => {
-            const a = construct_cell("constraint_dispose_a") as Cell<number>;
-            const b = construct_cell("constraint_dispose_b") as Cell<number>;
-            const c = construct_cell("constraint_dispose_c") as Cell<number>;
+            const a = primitive_construct_cell("constraint_dispose_a") as Cell<number>;
+            const b = primitive_construct_cell("constraint_dispose_b") as Cell<number>;
+            const c = primitive_construct_cell("constraint_dispose_c") as Cell<number>;
             
             // Use built-in constraint propagator from BuiltInProps.ts
             const constraint = c_add(a, b, c);
@@ -1488,9 +1488,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with complex constraints", async () => {
-            const radius = construct_cell("constraint_radius");
-            const area = construct_cell("constraint_area");
-            const circumference = construct_cell("constraint_circumference");
+            const radius = primitive_construct_cell("constraint_radius");
+            const area = primitive_construct_cell("constraint_area");
+            const circumference = primitive_construct_cell("constraint_circumference");
             
             // Create circle constraints: area = π * r², circumference = 2π * r
             const areaConstraint = constraint_propagator([radius, area], () => {
@@ -1554,9 +1554,9 @@ describe("Comprehensive Disposal System", () => {
         });
 
         it("should handle disposal of constraint propagators with generic dispose function", async () => {
-            const a = construct_cell("generic_constraint_a") as Cell<number>;
-            const b = construct_cell("generic_constraint_b") as Cell<number>;
-            const c = construct_cell("generic_constraint_c") as Cell<number>;
+            const a = primitive_construct_cell("generic_constraint_a") as Cell<number>;
+            const b = primitive_construct_cell("generic_constraint_b") as Cell<number>;
+            const c = primitive_construct_cell("generic_constraint_c") as Cell<number>;
             
             // Use built-in constraint propagator from BuiltInProps.ts
             const constraint = c_multiply(a, b, c);

@@ -37,7 +37,7 @@ export const traverse_downstream_graph = (
         pf(prop);
       }
       // process inputs
-      prop.getInputsID().forEach(cid => {
+      prop.getInputs().forEach(cid => {
         const c = find_cell_by_id(cid);
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);
@@ -45,7 +45,7 @@ export const traverse_downstream_graph = (
         }
       });
       // process outputs
-      prop.getOutputsID().forEach(cid => {
+      prop.getOutputs().forEach(cid => {
         const c = find_cell_by_id(cid);
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);

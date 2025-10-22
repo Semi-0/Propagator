@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { construct_cell, cell_strongest_base_value } from "../Cell/Cell";
+import { primitive_construct_cell, cell_strongest_base_value } from "../Cell/Cell";
 import { tell } from "../Helper/UI";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { dispose } from "../Shared/Reactivity/Dispose";

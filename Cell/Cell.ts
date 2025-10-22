@@ -19,9 +19,9 @@ import { get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { disposeSubtree } from "../Shared/GraphTraversal";
-import { Current_Scheduler, markForDisposal } from "../Shared/Scheduler/Scheduler";
+import { Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -46,9 +46,10 @@ export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
   handle_contradiction = func;
 }
 
+
 export interface Cell<A> {
   getRelation: () => Primitive_Relation;
-  getContent: () => CellValue<A>[] 
+  getContent: () => CellValue<A>;
   getStrongest: () => CellValue<A>
   getNeighbors: () => Map<string, Propagator>;
   addContent: (increment: CellValue<A>) => void;
@@ -58,47 +59,25 @@ export interface Cell<A> {
   dispose: () => void;  // <-- new dispose method
 }
 
-function testContent(content: any, strongest: any): any | null {
- 
-  const _strongest = strongest_value(content);
 
-  if (general_contradiction(_strongest)){
-    return _strongest;
-  }
-  else {
-    return _strongest
-  }
-}
-
-export function cell_constructor<A>(
-      initial: any,
-  ) {
-  return (name: string, id: string | null = null) => {
-    let disposed = false;
+// how about hooks
+export function primitive_construct_cell<A>(initial: CellValue<A>, name: string, id: string | null = null): Cell<A> {
     const relation = make_relation(name, get_global_parent(), id);
     const neighbors: Map<string, Propagator> = new Map();
     // build two stateful streams for content and strongest
-    var content: CellValue<A>[] = initial;
+    var content: CellValue<A> = initial;
     var strongest: CellValue<A> = initial;
+    var active = true
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
     function test_content(){
       const new_strongest = strongest_value(content)
       if (is_equal(new_strongest, strongest)){
-    
+        // do nothing
       }
       else if (is_contradiction(new_strongest)){
         strongest = new_strongest
         handle_cell_contradiction()
-      }
-      else if (is_disposed(new_strongest)){
-        strongest = new_strongest
-        // Mark cell for disposal
-        markForDisposal(cell_id(cell))
-        // Propagate disposal to connected cells
-        neighbors.forEach(propagator => {
-          propagator.activate()
-        })
       }
       else{
         strongest = new_strongest
@@ -106,20 +85,19 @@ export function cell_constructor<A>(
       }
     }
 
+    
+
     const cell: Cell<A> = {
       getRelation: () => relation,
       getContent: () => content,
       getStrongest: () => strongest,
       getNeighbors: () => neighbors,
-      testContent: () => test_content(),
+      testContent: test_content,
       addContent: (increment: CellValue<A>) => {
-        // If cell is disposed, ignore new content
-        if (is_disposed(strongest)) {
-          return;
+        if (active) {
+          content = cell_merge(content, increment)
+          test_content()
         }
-  
-        content = cell_merge(content, increment)
-        test_content()
       },
 
       addNeighbor: (propagator: Propagator) => {
@@ -134,13 +112,15 @@ export function cell_constructor<A>(
       },
 
       dispose: () => {
-        disposed = true;
         // Set the cell to disposed value
-        content = [the_disposed]
+        content = the_disposed
         strongest = the_disposed
+        active = false
         // Mark for cleanup
-        markForDisposal(cell_id(cell))
+        mark_for_disposal(cell.getRelation())
         // Trigger propagation to connected cells
+
+        // but what about dependents?
         neighbors.forEach(propagator => {
           propagator.activate()
         })
@@ -150,15 +130,15 @@ export function cell_constructor<A>(
     set_global_state(PublicStateCommand.ADD_CELL, cell);
     set_global_state(PublicStateCommand.ADD_CHILD, relation);
     return cell;
-  };
-}
+  }
+
 
 export function construct_cell<A>(name: string): Cell<A> {
-  return cell_constructor<A>(the_nothing)(name)
+  return primitive_construct_cell<A>(the_nothing, name)
 }
 
 export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
-  return cell_constructor<A>(value)(name, id)
+  return primitive_construct_cell<A>(value, name, id)
 }
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
@@ -176,7 +156,7 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> =>
     
 export function make_temp_cell(){
     let name = "#temp_cell_" + get_new_reference_count();
-    return construct_cell(name);
+    return primitive_construct_cell(the_nothing, name);
 }
 
 export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator){
@@ -210,6 +190,10 @@ export function cell_id<A>(cell: Cell<A>){
   }
 }
 
+export function cell_children<A>(cell: Cell<A>){
+  return cell.getRelation().get_children();
+}
+
 export function cell_level<A>(cell: Cell<A>){
   return cell.getRelation().get_level();
 }
@@ -229,3 +213,14 @@ define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any
 })
 
 define_generic_procedure_handler(identify_by, match_args(is_cell), cell_id)
+
+
+define_generic_procedure_handler(get_id, match_args(is_cell), cell_id)
+
+define_generic_procedure_handler(get_children, match_args(is_cell), cell_children)
+
+
+export function summarize_cells(cells: Cell<any>[]): string{
+    return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
+}
+

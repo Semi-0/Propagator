@@ -6,21 +6,12 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { layer_pair_layer, layer_pair_value, layers_reduce, type LayerPair } from "sando-layer/Basic/helper";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
-var trace_merge = false; 
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
-export function set_trace_merge(trace: boolean){
-    trace_merge = trace;
-}
 
 export const generic_merge = construct_simple_generic_procedure("merge", 2,
     (content: any, increment: any) => {
-        if (trace_merge) {
-            console.log("merging", content, increment)
-        }
-        if (is_disposed(content) || is_disposed(increment)) {
-            return the_disposed
-        }
-        else if (is_nothing(content)) {
+        if (is_nothing(content)) {
             return increment
         }
         else if (is_nothing(increment)) {
@@ -48,6 +39,8 @@ export var cell_merge = generic_merge;
 export function set_merge(merge_func: (a: any, b: any) => any){
    cell_merge = merge_func;
 }
+
+export const set_trace_merge = set_merge(log_tracer("merge", cell_merge))
 
 export const define_handler = define_generic_procedure_handler;
 

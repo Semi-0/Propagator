@@ -1,4 +1,4 @@
-import { add_cell_content, cell_id, constant_cell, construct_cell } from "@/cell/Cell";
+import { add_cell_content, cell_id, constant_cell, primitive_construct_cell } from "@/cell/Cell";
 import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/Annotater";
 import type { Cell } from "@/cell/Cell";
 import { stale } from "./traced_timestamp/Annotater";
@@ -45,7 +45,7 @@ export const r_constant = <T>(value: T, name: string | undefined = undefined) =>
     if (name === undefined) {
         name = "reactive_constant_cell#" + get_new_reference_count()
     }
-    const cell = construct_cell<T>(name)
+    const cell = primitive_construct_cell<T>(name)
     update(cell, value)
     return cell
 }

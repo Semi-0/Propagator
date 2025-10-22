@@ -1,6 +1,6 @@
 import { p_sync } from "../Propagator/BuiltInProps";
 import type { Cell } from "..";
-import { construct_cell } from "../Cell/Cell";
+import { primitive_construct_cell } from "../Cell/Cell";
 import { constant_cell } from "../Cell/Cell";
 import { function_to_primitive_propagator, compound_propagator } from "../Propagator/Propagator";
 import type { Propagator } from "..";
@@ -16,7 +16,7 @@ export function proxyReactiveObject<T extends AnyObj>(name: string, obj: T) {
 
   const ensureCell = (k: PropertyKey) => {
     if (!fieldMap.has(k)) {
-      const c = construct_cell<any>(`${name}:${String(k)}`);
+      const c = primitive_construct_cell<any>(`${name}:${String(k)}`);
       // seed from object now
       p_sync(constant_cell(obj[k as keyof T], "constant"), c);
       fieldMap.set(k, c);

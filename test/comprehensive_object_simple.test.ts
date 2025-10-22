@@ -2,7 +2,7 @@ import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { 
   createVirtualOutputs, createShadowEnvs, shallowMergeEnv, toEnvCell
 } from "../ObjectSystem/comprehensive_object";
-import { construct_cell, make_temp_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
+import { primitive_construct_cell, make_temp_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 import { r_constant, the_nothing } from "..";
 import { tell } from "../Helper/UI";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
@@ -54,7 +54,7 @@ describe("Basic Comprehensive Object Functions", () => {
     expect(cell_strongest_base_value(recordCell).get("key2")).toBe("value2");
     
     // Test with existing Cell - should return the same cell
-    const existingCell = construct_cell<Map<string, any>>("existing");
+    const existingCell = primitive_construct_cell<Map<string, any>>("existing");
     tell(existingCell, new Map([["test", "value"]]), "test");
     const cellResult = toEnvCell(existingCell);
     expect(cellResult).toBe(existingCell);
@@ -62,7 +62,7 @@ describe("Basic Comprehensive Object Functions", () => {
   });
 
   test("createShadowEnvs should create shadow environments", async () => {
-    const baseEnv = construct_cell<Map<string, any>>("baseEnv");
+    const baseEnv = primitive_construct_cell<Map<string, any>>("baseEnv");
     const initialMap = new Map([["key1", "value1"]]);
     
     tell(baseEnv, initialMap, "test");
@@ -89,8 +89,8 @@ describe("Simple CE Helper Test", () => {
     const { ce_apply } = await import("../ObjectSystem/comprehensive_object");
     
     const add = ce_apply("add", (a: number, b: number) => a + b);
-    const a = construct_cell<number>("a");
-    const b = construct_cell<number>("b");
+    const a = primitive_construct_cell<number>("a");
+    const b = primitive_construct_cell<number>("b");
     
     const result = add(a, b);
     

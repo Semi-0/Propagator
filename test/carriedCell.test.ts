@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
 import {
-  construct_cell,
+  primitive_construct_cell,
   cell_strongest_base_value,
   set_handle_contradiction,
   cell_strongest,
@@ -91,8 +91,8 @@ describe("Carried Cell Tests", () => {
     });
 
     test("merge_carried_map should sync cells when keys exist", async () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
+      const cellA = primitive_construct_cell("cellA");
+      const cellB = primitive_construct_cell("cellB");
       
       const mapA = new Map([
         ["key1", cellA]
@@ -114,8 +114,8 @@ describe("Carried Cell Tests", () => {
     });
 
     test("merge_carried_map should handle mixed cell and non-cell values", async () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
+      const cellA = primitive_construct_cell("cellA");
+      const cellB = primitive_construct_cell("cellB");
       
       const mapA = new Map([
         ["cellKey", cellA],
@@ -144,9 +144,9 @@ describe("Carried Cell Tests", () => {
 
   describe("bi_switcher tests", () => {
     test("bi_switcher should route value to 'a' when condition is true", async () => {
-      const condition = construct_cell("condition") as Cell<boolean>;
-      const a = construct_cell("a") as Cell<number>;
-      const b = construct_cell("b") as Cell<number>;
+      const condition = primitive_construct_cell("condition") as Cell<boolean>;
+      const a = primitive_construct_cell("a") as Cell<number>;
+      const b = primitive_construct_cell("b") as Cell<number>;
 
       bi_switcher(condition, a, b);
 
@@ -159,9 +159,9 @@ describe("Carried Cell Tests", () => {
     });
 
     test("bi_switcher should route value to 'b' when condition is false", async () => {
-      const condition = construct_cell("condition") as Cell<boolean>;
-      const a = construct_cell("a") as Cell<number>;
-      const b = construct_cell("b") as Cell<number>;
+      const condition = primitive_construct_cell("condition") as Cell<boolean>;
+      const a = primitive_construct_cell("a") as Cell<number>;
+      const b = primitive_construct_cell("b") as Cell<number>;
 
       bi_switcher(condition, a, b);
 
@@ -174,9 +174,9 @@ describe("Carried Cell Tests", () => {
     });
 
     test("bi_switcher should switch routing when condition changes", async () => {
-      const condition = construct_cell("condition") as Cell<boolean>;
-      const a = construct_cell("a") as Cell<number>;
-      const b = construct_cell("b") as Cell<number>;
+      const condition = primitive_construct_cell("condition") as Cell<boolean>;
+      const a = primitive_construct_cell("a") as Cell<number>;
+      const b = primitive_construct_cell("b") as Cell<number>;
 
       bi_switcher(condition, a, b);
 
@@ -209,9 +209,9 @@ describe("Carried Cell Tests", () => {
 
   describe("make_map_carrier tests", () => {
     test("make_map_carrier should create a Map from cells", () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
-      const cellC = construct_cell("cellC");
+      const cellA = primitive_construct_cell("cellA");
+      const cellB = primitive_construct_cell("cellB");
+      const cellC = primitive_construct_cell("cellC");
 
       const cellMap = make_map_carrier(cell_id)(cellA, cellB, cellC);
 
@@ -223,7 +223,7 @@ describe("Carried Cell Tests", () => {
     });
 
     test("make_map_carrier should handle single cell", () => {
-      const cellA = construct_cell("cellA");
+      const cellA = primitive_construct_cell("cellA");
 
       const cellMap = make_map_carrier(cell_id)(cellA);
 
@@ -239,10 +239,10 @@ describe("Carried Cell Tests", () => {
 
 
     test("p_map_carrier should create a map carrier", () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
-      const cellC = construct_cell("cellC");
-      const output = construct_cell("output");
+      const cellA = primitive_construct_cell("cellA");
+      const cellB = primitive_construct_cell("cellB");
+      const cellC = primitive_construct_cell("cellC");
+      const output = primitive_construct_cell("output");
 
       p_map_carrier_default(cellA, cellB, cellC, output);
 
@@ -264,7 +264,7 @@ describe("Carried Cell Tests", () => {
   describe("make_propagator_closure tests", () => {
     test("make_propagator_closure should create a propagator closure with environment", () => {
       const propagatorConstructor = (a: Cell<number>, b: Cell<number>) => {
-        return p_add(a, b, construct_cell("output"));
+        return p_add(a, b, primitive_construct_cell("output"));
       };
 
       const closure = make_propagator_closure(
@@ -280,7 +280,7 @@ describe("Carried Cell Tests", () => {
 
     test("make_propagator_closure should create cells with correct names", () => {
       const propagatorConstructor = (a: Cell<number>) => {
-        return p_multiply(a, construct_cell("constant"), construct_cell("result"));
+        return p_multiply(a, primitive_construct_cell("constant"), primitive_construct_cell("result"));
       };
 
       const closure = make_propagator_closure(
@@ -298,7 +298,7 @@ describe("Carried Cell Tests", () => {
     test("is_propagator_closure should return true for valid closures", () => {
       const closure: PropagatorClosure = {
         environment: new Map(),
-        propagator: p_add(construct_cell("a"), construct_cell("b"), construct_cell("c"))
+        propagator: p_add(primitive_construct_cell("a"), primitive_construct_cell("b"), primitive_construct_cell("c"))
       };
 
       expect(is_propagator_closure(closure)).toBe(true);
@@ -307,7 +307,7 @@ describe("Carried Cell Tests", () => {
     test("is_propagator_closure should return false for invalid objects", () => {
       expect(is_propagator_closure({})).toBe(false);
       expect(is_propagator_closure({ environment: new Map() })).toBe(false);
-      expect(is_propagator_closure({ propagator: p_add(construct_cell("a"), construct_cell("b"), construct_cell("c")) })).toBe(false);
+      expect(is_propagator_closure({ propagator: p_add(primitive_construct_cell("a"), primitive_construct_cell("b"), primitive_construct_cell("c")) })).toBe(false);
       expect(is_propagator_closure(null)).toBe(false);
       expect(is_propagator_closure(undefined)).toBe(false);
       expect(is_propagator_closure("string")).toBe(false);
@@ -316,13 +316,13 @@ describe("Carried Cell Tests", () => {
 
   describe("propagator closure merge tests", () => {
     test("should merge propagator closures with same propagator ID", async () => {
-      const cellA1 = construct_cell("a1");
-      const cellB1 = construct_cell("b1");
-      const output1 = construct_cell("output1");
+      const cellA1 = primitive_construct_cell("a1");
+      const cellB1 = primitive_construct_cell("b1");
+      const output1 = primitive_construct_cell("output1");
       
-      const cellA2 = construct_cell("a2");
-      const cellB2 = construct_cell("b2");
-      const output2 = construct_cell("output2");
+      const cellA2 = primitive_construct_cell("a2");
+      const cellB2 = primitive_construct_cell("b2");
+      const output2 = primitive_construct_cell("output2");
 
       const propagator1 = p_add(cellA1, cellB1, output1);
       const propagator2 = p_add(cellA2, cellB2, output2);
@@ -352,9 +352,9 @@ describe("Carried Cell Tests", () => {
 
   describe("apply_propagator tests", () => {
     test("apply_propagator should apply a propagator closure with environment", async () => {
-      const cellA = construct_cell("a");
-      const cellB = construct_cell("b");
-      const output = construct_cell("output");
+      const cellA = primitive_construct_cell("a");
+      const cellB = primitive_construct_cell("b");
+      const output = primitive_construct_cell("output");
 
       const propagator = p_add(cellA, cellB, output);
 
@@ -367,7 +367,7 @@ describe("Carried Cell Tests", () => {
       };
 
       const additionalEnv = new Map([
-        ["z", construct_cell("z")]
+        ["z", primitive_construct_cell("z")]
       ]);
 
       const result = apply_propagator(closure, additionalEnv);
@@ -380,10 +380,10 @@ describe("Carried Cell Tests", () => {
     });
 
     test("apply_propagator should merge environments correctly", async () => {
-      const cellA = construct_cell("a");
-      const cellB = construct_cell("b");
-      const cellC = construct_cell("c");
-      const output = construct_cell("output");
+      const cellA = primitive_construct_cell("a");
+      const cellB = primitive_construct_cell("b");
+      const cellC = primitive_construct_cell("c");
+      const output = primitive_construct_cell("output");
 
       const propagator = p_add(cellA, cellB, output);
 
@@ -410,9 +410,9 @@ describe("Carried Cell Tests", () => {
 
   describe("Integration tests with reactive behavior", () => {
     test("carried map with reactive cells should update correctly", async () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
-      const cellC = construct_cell("cellC");
+      const cellA = primitive_construct_cell("cellA");
+      const cellB = primitive_construct_cell("cellB");
+      const cellC = primitive_construct_cell("cellC");
 
       const map1 = new Map([
         ["a", cellA],
@@ -421,7 +421,7 @@ describe("Carried Cell Tests", () => {
 
       const map2 = new Map([
         ["a", cellC],
-        ["c", construct_cell("cellD")]
+        ["c", primitive_construct_cell("cellD")]
       ]);
 
       update(cellA, 100);
@@ -443,9 +443,9 @@ describe("Carried Cell Tests", () => {
     });
 
     test("bi_switcher with reactive updates should maintain consistency", async () => {
-      const condition = construct_cell("condition") as Cell<boolean>;
-      const a = construct_cell("a") as Cell<number>;
-      const b = construct_cell("b") as Cell<number>;
+      const condition = primitive_construct_cell("condition") as Cell<boolean>;
+      const a = primitive_construct_cell("a") as Cell<number>;
+      const b = primitive_construct_cell("b") as Cell<number>;
 
       bi_switcher(condition, a, b);
 

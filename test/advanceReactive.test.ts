@@ -3,7 +3,7 @@ import type { Cell } from "@/cell/Cell";
 
 import { r_constant, update } from "../AdvanceReactivity/interface";
 import {
-  construct_cell,
+  primitive_construct_cell,
   cell_strongest_base_value,
   set_handle_contradiction,
   cell_content,
@@ -240,7 +240,7 @@ describe("timestamp value merge tests", () => {
 
 
   test("integrated test with cell", async () => {
-    const cell_a = construct_cell<number>("a")
+    const cell_a = primitive_construct_cell<number>("a")
 
     update(cell_a, 1)
 
@@ -269,7 +269,7 @@ describe("timestamp value merge tests", () => {
   describe("Update and subscribe functionality tests", () => {
     // Test update function without premise
     test("update (no premise) should update a cell with the annotated value", async () => {
-      const cell = construct_cell("updateNoPremise");
+      const cell = primitive_construct_cell("updateNoPremise");
       update(cell, 42);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(42);
@@ -277,7 +277,7 @@ describe("timestamp value merge tests", () => {
 
     // Test update function with premise
     test("update (with premise) should update a cell with support info", async () => {
-      const cell = construct_cell("updateWithPremise");
+      const cell = primitive_construct_cell("updateWithPremise");
       update(cell, 100);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(100);
@@ -292,9 +292,9 @@ describe("timestamp value merge tests", () => {
   describe("Non-chainable operators tests", () => {
     // Test until operator
     test("switch operator should output 'then' cell's value when condition is true", async () => {
-      const condition: Cell<boolean> = construct_cell("condition");
-      const thenCell = construct_cell("then");
-      const output = construct_cell("output");
+      const condition: Cell<boolean> = primitive_construct_cell("condition");
+      const thenCell = primitive_construct_cell("then");
+      const output = primitive_construct_cell("output");
       p_switch(condition, thenCell, output);
 
       update(condition, false);
@@ -309,8 +309,8 @@ describe("timestamp value merge tests", () => {
     });
 
     test("p_sync should update output when input changes", async () => {
-      const input = construct_cell("input");
-      const output = construct_cell("output");
+      const input = primitive_construct_cell("input");
+      const output = primitive_construct_cell("output");
       p_sync(input, output);
       
       update(input, 1);
@@ -328,9 +328,9 @@ describe("timestamp value merge tests", () => {
 
     // Test or operator
     test("or operator should select the fresher cell value", async () => {
-      const cellA = construct_cell("A");
-      const cellB = construct_cell("B");
-      const output = construct_cell("output");
+      const cellA = primitive_construct_cell("A");
+      const cellB = primitive_construct_cell("B");
+      const output = primitive_construct_cell("output");
       p_composite([cellA, cellB], output);
 
 
@@ -360,8 +360,8 @@ describe("timestamp value merge tests", () => {
 
   describe("p_drop / p_take / p_first tests", () => {
     test("p_drop should ignore first N values and pass subsequent ones", async () => {
-      const input = construct_cell("dropInput");
-      const output = construct_cell("dropOutput");
+      const input = primitive_construct_cell("dropInput");
+      const output = primitive_construct_cell("dropOutput");
       p_drop(2)(input, output);
 
       update(input, "a");
@@ -376,8 +376,8 @@ describe("timestamp value merge tests", () => {
     });
 
     test("p_drop with 0 should pass all values through", async () => {
-      const input = construct_cell("dropZeroInput");
-      const output = construct_cell("dropZeroOutput");
+      const input = primitive_construct_cell("dropZeroInput");
+      const output = primitive_construct_cell("dropZeroOutput");
       p_drop(0)(input, output);
 
       update(input, 1);
@@ -390,8 +390,8 @@ describe("timestamp value merge tests", () => {
     });
 
     test("p_take should emit first N values then stop (no_compute)", async () => {
-      const input = construct_cell("takeInput");
-      const output = construct_cell("takeOutput");
+      const input = primitive_construct_cell("takeInput");
+      const output = primitive_construct_cell("takeOutput");
       p_take(2)(input, output);
 
       update(input, "x");
@@ -409,8 +409,8 @@ describe("timestamp value merge tests", () => {
     });
 
     test("p_first should only pass the first value", async () => {
-      const input = construct_cell("firstInput");
-      const output = construct_cell("firstOutput");
+      const input = primitive_construct_cell("firstInput");
+      const output = primitive_construct_cell("firstOutput");
       p_index(1)(input, output);
       await execute_all_tasks_sequential((error: Error) => {});
 
@@ -426,16 +426,16 @@ describe("timestamp value merge tests", () => {
 
 
     test("edge cases: negative and oversized counts", async () => {
-      const inputA = construct_cell("edgeA");
-      const outA = construct_cell("outA");
+      const inputA = primitive_construct_cell("edgeA");
+      const outA = primitive_construct_cell("outA");
       // negative drop behaves like 0 -> pass through
       p_drop(-1 as unknown as number)(inputA, outA);
       update(inputA, "p");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(outA)).toBe("p");
 
-      const inputB = construct_cell("edgeB");
-      const outB = construct_cell("outB");
+      const inputB = primitive_construct_cell("edgeB");
+      const outB = primitive_construct_cell("outB");
       // take more than provided: should take whatever comes until N consumed
       p_take(5)(inputB, outB);
       update(inputB, 1);
@@ -455,7 +455,7 @@ describe("timestamp value merge tests", () => {
     // Test pipe_r with a single operator (apply_e).
     test("pipe_r with apply_e operator should apply function to cell value", async () => {
 
-      const input = construct_cell("applyPipeTest");
+      const input = primitive_construct_cell("applyPipeTest");
       update(input, 5);
       const output = ce_pipe(input, p_map_a((x: number) => {
         console.log("applyPipeTest")
@@ -473,7 +473,7 @@ describe("timestamp value merge tests", () => {
 
     // Test compose_r by chaining two apply_e operators.
     test("compose_r should chain multiple operators", async () => {
-      const input = construct_cell("composeTest");
+      const input = primitive_construct_cell("composeTest");
       const composed = ce_pipe(input, p_map_a((x: number) => x * 2), p_map_a((x: number) => x + 1));
 
       update(input, 3);
@@ -485,7 +485,7 @@ describe("timestamp value merge tests", () => {
 
     // Test pipe_r by chaining two operators.
     test("pipe_r should chain multiple operators", async () => {
-      const input = construct_cell("pipeTest");
+      const input = primitive_construct_cell("pipeTest");
       const piped = ce_pipe(
         input,
         p_map_a((x: number) => x * 3),
@@ -501,7 +501,7 @@ describe("timestamp value merge tests", () => {
     // Test pipe_r with filter_e.
     // If the value does not pass the predicate, the output stays at the_nothing.
     test("pipe_r with filter_e should filter cell value", async () => {
-      const input = construct_cell("filterTest");
+      const input = primitive_construct_cell("filterTest");
       const filtered = ce_pipe(input, p_filter_a((x: number) => x > 10));
 
       update(input, 5);
@@ -515,7 +515,7 @@ describe("timestamp value merge tests", () => {
 
     // Test pipe_r with reduce_e, which accumulates updates over time.
     test("pipe_r with reduce_e should accumulate values", async () => {
-      const input = construct_cell("reduceTest");
+      const input = primitive_construct_cell("reduceTest");
       const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
 
       update(input, 5);
@@ -537,8 +537,8 @@ describe("timestamp value merge tests", () => {
   // -------------------------
   describe("Bi-directional reactive propagator tests", () => {
     test("should maintain temperature conversion relationship bi-directionally", async () => {
-      const celsius = construct_cell("celsius");
-      const fahrenheit = construct_cell("fahrenheit");
+      const celsius = primitive_construct_cell("celsius");
+      const fahrenheit = primitive_construct_cell("fahrenheit");
 
       // Create bi-directional conversion using compound_propagator
       // @ts-ignore
@@ -565,9 +565,9 @@ describe("timestamp value merge tests", () => {
     });
 
     test("should handle multiple linked cells in a bi-directional chain", async () => {
-      const meters = construct_cell("meters");
-      const feet = construct_cell("feet");
-      const inches = construct_cell("inches");
+      const meters = primitive_construct_cell("meters");
+      const feet = primitive_construct_cell("feet");
+      const inches = primitive_construct_cell("inches");
 
       // Create bi-directional conversions between all three units
       // @ts-ignore
@@ -594,8 +594,8 @@ describe("timestamp value merge tests", () => {
 
 describe("Zip and First operator tests", () => {
   test("p_index operator should return the first value and ignore subsequent updates", async () => {
-    const cell = construct_cell("firstOpTest");
-    const output = construct_cell("firstOpTestOutput");
+    const cell = primitive_construct_cell("firstOpTest");
+    const output = primitive_construct_cell("firstOpTestOutput");
     const firstOutput = p_index(1)(cell, output);
     
     // Set the initial value.
@@ -630,10 +630,10 @@ describe("Zip and First operator tests", () => {
   })
 
   test("r_zip operator should output an array of values when cell values change", async () => {
-    const cell1 = construct_cell("zipOpTest1");
-    const cell2 = construct_cell("zipOpTest2");
-    const output = construct_cell("zipOpTestOutput");
-    const zip_func = construct_cell("zipOpTestFunc");
+    const cell1 = primitive_construct_cell("zipOpTest1");
+    const cell2 = primitive_construct_cell("zipOpTest2");
+    const output = primitive_construct_cell("zipOpTestOutput");
+    const zip_func = primitive_construct_cell("zipOpTestFunc");
     p_zip([cell1, cell2], zip_func, output);
 
     // First update: both cells are updated.
@@ -665,14 +665,14 @@ describe("Zip and First operator tests", () => {
 
   // New test: Verify that r_zip works with cells produced from other operators
   test("r_zip operator should combine values produced by other operators", async () => {
-    const raw1 = construct_cell("zipTransformTest1") as Cell<number>;
-    const raw2 = construct_cell("zipTransformTest2") as Cell<number>;
-    const zip_func = construct_cell("zipTransformTestFunc");
+    const raw1 = primitive_construct_cell("zipTransformTest1") as Cell<number>;
+    const raw2 = primitive_construct_cell("zipTransformTest2") as Cell<number>;
+    const zip_func = primitive_construct_cell("zipTransformTestFunc");
     // Create transformed cells using r_apply operator
     const transformed1 = ce_pipe(raw1, p_map_a((x: number) => x * 2));
     const transformed2 = ce_pipe(raw2, p_map_a((x: number) => x + 5));
 
-    const zipOutput = construct_cell("zipTransformOutput");
+    const zipOutput = primitive_construct_cell("zipTransformOutput");
     p_zip([transformed1, transformed2], zip_func, zipOutput);
     update(zip_func, (a: number, b: number) => [a, b]);
 
@@ -688,9 +688,9 @@ describe("Zip and First operator tests", () => {
 
 describe("Arithmetic Operators Tests", () => {
   test("r_add should correctly add the values of input cells", async () => {
-    const cell1 = construct_cell("rAddInput1");
-    const cell2 = construct_cell("rAddInput2");
-    const output = construct_cell("rAddOutput");
+    const cell1 = primitive_construct_cell("rAddInput1");
+    const cell2 = primitive_construct_cell("rAddInput2");
+    const output = primitive_construct_cell("rAddOutput");
     // Connect the add operator to the inputs and output.
     p_add(cell1, cell2, output);
 
@@ -701,9 +701,9 @@ describe("Arithmetic Operators Tests", () => {
   });
 
   test("r_subtract should correctly subtract the second cell from the first", async () => {
-    const cell1 = construct_cell("rSubtractInput1");
-    const cell2 = construct_cell("rSubtractInput2");
-    const output = construct_cell("rSubtractOutput");
+    const cell1 = primitive_construct_cell("rSubtractInput1");
+    const cell2 = primitive_construct_cell("rSubtractInput2");
+    const output = primitive_construct_cell("rSubtractOutput");
     p_subtract(cell1, cell2, output);
 
     update(cell1, 20);
@@ -713,9 +713,9 @@ describe("Arithmetic Operators Tests", () => {
   });
 
   test("r_multiply should correctly multiply the values of two input cells", async () => {
-    const cell1 = construct_cell("rMultiplyInput1");
-    const cell2 = construct_cell("rMultiplyInput2");
-    const output = construct_cell("rMultiplyOutput");
+    const cell1 = primitive_construct_cell("rMultiplyInput1");
+    const cell2 = primitive_construct_cell("rMultiplyInput2");
+    const output = primitive_construct_cell("rMultiplyOutput");
     p_multiply(cell1, cell2, output);
 
     update(cell1, 3);
@@ -725,9 +725,9 @@ describe("Arithmetic Operators Tests", () => {
   });
 
   test("r_divide should correctly divide the first cell by the second", async () => {
-    const cell1 = construct_cell("rDivideInput1");
-    const cell2 = construct_cell("rDivideInput2");
-    const output = construct_cell("rDivideOutput");
+    const cell1 = primitive_construct_cell("rDivideInput1");
+    const cell2 = primitive_construct_cell("rDivideInput2");
+    const output = primitive_construct_cell("rDivideOutput");
     p_divide(cell1, cell2, output);
 
     update(cell1, 100);
@@ -742,10 +742,10 @@ describe("Arithmetic Operators Tests", () => {
 describe("Reactive Conditional (com_if) Tests", () => {
   test("com_if should correctly route values based on the condition in reactive context", async () => {
     // Initialize cells
-    const condition = construct_cell("reactiveCondition") as Cell<boolean>;
-    const thenValue = construct_cell("reactiveThen") as Cell<number> ;
-    const otherwiseValue = construct_cell("reactiveElse") as Cell<number>;
-    const output = construct_cell("reactiveOutput") as Cell<number>;
+    const condition = primitive_construct_cell("reactiveCondition") as Cell<boolean>;
+    const thenValue = primitive_construct_cell("reactiveThen") as Cell<number> ;
+    const otherwiseValue = primitive_construct_cell("reactiveElse") as Cell<number>;
+    const output = primitive_construct_cell("reactiveOutput") as Cell<number>;
     
     // Set up the if propagator
     com_if(condition, thenValue, otherwiseValue, output);
@@ -843,8 +843,8 @@ function test_celsius_to_fahrenheit(celsius: Cell<number>, fahrenheit: Cell<numb
 describe("Complex Propagator Integration Tests", () => {
   test("Simple bi-directional temperature conversion with propagator", async () => {
     // Create cells for temperature in different units
-    const celsius = construct_cell("celsius") as Cell<number>;
-    const fahrenheit = construct_cell("fahrenheit") as Cell<number>;
+    const celsius = primitive_construct_cell("celsius") as Cell<number>;
+    const fahrenheit = primitive_construct_cell("fahrenheit") as Cell<number>;
     
     // Set up a simple bi-directional converter
     test_celsius_to_fahrenheit(celsius, fahrenheit);
@@ -896,10 +896,10 @@ describe("Complex Propagator Integration Tests", () => {
 
   test("Circle geometry with linked properties", async () => {
     // Create cells for circle properties
-    const radius = construct_cell("radius") as Cell<number>;
-    const diameter = construct_cell("diameter") as Cell<number>;
-    const circumference = construct_cell("circumference") as Cell<number>;
-    const area = construct_cell("area") as Cell<number>;
+    const radius = primitive_construct_cell("radius") as Cell<number>;
+    const diameter = primitive_construct_cell("diameter") as Cell<number>;
+    const circumference = primitive_construct_cell("circumference") as Cell<number>;
+    const area = primitive_construct_cell("area") as Cell<number>;
     
     // Set up bi-directional constraints between radius and diameter
     compound_propagator([radius, diameter], [radius, diameter], () => {
@@ -1067,10 +1067,10 @@ describe("Complex Propagator Integration Tests", () => {
 describe("Reactive c_if Conditional Tests", () => {
   test("c_if_a should correctly route values based on a boolean condition", async () => {
     // Initialize cells
-    const condition = construct_cell("c_ifCondition") as Cell<boolean>;
-    const thenValue = construct_cell("c_ifThen") as Cell<number>;
-    const otherwiseValue = construct_cell("c_ifElse") as Cell<number>;
-    const output = construct_cell("c_ifOutput") as Cell<number>;
+    const condition = primitive_construct_cell("c_ifCondition") as Cell<boolean>;
+    const thenValue = primitive_construct_cell("c_ifThen") as Cell<number>;
+    const otherwiseValue = primitive_construct_cell("c_ifElse") as Cell<number>;
+    const output = primitive_construct_cell("c_ifOutput") as Cell<number>;
     
     // Set up the c_if propagator
     c_if_a(condition, thenValue, otherwiseValue, output);
@@ -1137,10 +1137,10 @@ describe("Reactive c_if Conditional Tests", () => {
   
   test("c_if_a should handle different data types and update reactively", async () => {
     // Initialize cells with string values
-    const condition = construct_cell("c_ifStringCondition") as Cell<boolean>;
-    const thenValue = construct_cell("c_ifStringThen") as Cell<string>;
-    const otherwiseValue = construct_cell("c_ifStringElse") as Cell<string>;
-    const output = construct_cell("c_ifStringOutput") as Cell<string>;
+    const condition = primitive_construct_cell("c_ifStringCondition") as Cell<boolean>;
+    const thenValue = primitive_construct_cell("c_ifStringThen") as Cell<string>;
+    const otherwiseValue = primitive_construct_cell("c_ifStringElse") as Cell<string>;
+    const output = primitive_construct_cell("c_ifStringOutput") as Cell<string>;
     
     // Set up the c_if propagator
     c_if_a(condition, thenValue, otherwiseValue, output);
@@ -1167,10 +1167,10 @@ describe("Reactive c_if Conditional Tests", () => {
     expect(cell_strongest_base_value(output)).toBe("Condition is false");
     
     // Test with complex objects
-    const objectCondition = construct_cell("c_ifObjectCondition") as Cell<boolean>;
-    const objectThen = construct_cell("c_ifObjectThen") as Cell<{id: number, name: string}>;
-    const objectElse = construct_cell("c_ifObjectElse") as Cell<{id: number, name: string}>;
-    const objectOutput = construct_cell("c_ifObjectOutput") as Cell<{id: number, name: string}>;
+    const objectCondition = primitive_construct_cell("c_ifObjectCondition") as Cell<boolean>;
+    const objectThen = primitive_construct_cell("c_ifObjectThen") as Cell<{id: number, name: string}>;
+    const objectElse = primitive_construct_cell("c_ifObjectElse") as Cell<{id: number, name: string}>;
+    const objectOutput = primitive_construct_cell("c_ifObjectOutput") as Cell<{id: number, name: string}>;
     
     c_if_a(objectCondition, objectThen, objectElse, objectOutput);
     
@@ -1190,10 +1190,10 @@ describe("Reactive c_if Conditional Tests", () => {
 
 describe("p_range test", () => {
   test("p_range should correctly handle values within the range", async () => {
-    const input = construct_cell("input") as Cell<number>
-    const min = construct_cell("min") as Cell<number>
-    const max = construct_cell("max") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const input = primitive_construct_cell("input") as Cell<number>
+    const min = primitive_construct_cell("min") as Cell<number>
+    const max = primitive_construct_cell("max") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_range(input, min, max, output)
 
     update(input, 10)
@@ -1204,10 +1204,10 @@ describe("p_range test", () => {
   });
 
   test("p_range should correctly handle values outside the range", async () => {
-    const input = construct_cell("input") as Cell<number>
-    const min = construct_cell("min") as Cell<number>
-    const max = construct_cell("max") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const input = primitive_construct_cell("input") as Cell<number>
+    const min = primitive_construct_cell("min") as Cell<number>
+    const max = primitive_construct_cell("max") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_range(input, min, max, output)
 
     update(input, 20)
@@ -1218,10 +1218,10 @@ describe("p_range test", () => {
   });
 
   test("p_range should correctly handle values at the boundaries", async () => {
-    const input = construct_cell("input") as Cell<number>
-    const min = construct_cell("min") as Cell<number>
-    const max = construct_cell("max") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const input = primitive_construct_cell("input") as Cell<number>
+    const min = primitive_construct_cell("min") as Cell<number>
+    const max = primitive_construct_cell("max") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_range(input, min, max, output)
 
     update(input, 5)
@@ -1232,10 +1232,10 @@ describe("p_range test", () => {
   });
 
   test("p_range should correctly handle values at the boundaries", async () => {
-    const input = construct_cell("input") as Cell<number>
-    const min = construct_cell("min") as Cell<number>
-    const max = construct_cell("max") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const input = primitive_construct_cell("input") as Cell<number>
+    const min = primitive_construct_cell("min") as Cell<number>
+    const max = primitive_construct_cell("max") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_range(input, min, max, output)
 
     update(input, 15)
@@ -1251,9 +1251,9 @@ describe("p_range test", () => {
 describe("handle cyclic dependencies", () => {
   test("c_range", async () => {
     
-    const input = construct_cell("input") as Cell<number>
-    const min = construct_cell("min") as Cell<number>
-    const max = construct_cell("max") as Cell<number>
+    const input = primitive_construct_cell("input") as Cell<number>
+    const min = primitive_construct_cell("min") as Cell<number>
+    const max = primitive_construct_cell("max") as Cell<number>
 
     c_range(input, min, max)
 
@@ -1278,9 +1278,9 @@ describe("handle cyclic dependencies", () => {
 describe("handle contradiction", () => {
   test("trace_earliest_emerged_value", async () => {
     set_handle_contradiction(trace_earliest_emerged_value)
-    const a = construct_cell("a") as Cell<number>
-    const b = construct_cell("b") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const a = primitive_construct_cell("a") as Cell<number>
+    const b = primitive_construct_cell("b") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_add(a, b, output)
     p_subtract(a, b, output)
 
@@ -1294,9 +1294,9 @@ describe("handle contradiction", () => {
 
   test("trace_latest_emerged_value", async () => {
     set_handle_contradiction(trace_latest_emerged_value)
-    const a = construct_cell("a") as Cell<number>
-    const b = construct_cell("b") as Cell<number>
-    const output = construct_cell("output") as Cell<number>
+    const a = primitive_construct_cell("a") as Cell<number>
+    const b = primitive_construct_cell("b") as Cell<number>
+    const output = primitive_construct_cell("output") as Cell<number>
     p_add(a, b, output)
     p_subtract(a, b, output)
 
@@ -1313,9 +1313,9 @@ describe("handle contradiction", () => {
 describe("p_pull timestamp dependency tests", () => {
   test("p_pull should preserve timestamp dependencies from source cell", async () => {
     // Create source cell with timestamp
-    const source = construct_cell("source") as Cell<number>
-    const pulse = construct_cell("pulse") as Cell<boolean>
-    const output = construct_cell("output") as Cell<number>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse = primitive_construct_cell("pulse") as Cell<boolean>
+    const output = primitive_construct_cell("output") as Cell<number>
     
     // Set up p_pull operator
     p_pull(source, pulse, output)
@@ -1348,11 +1348,11 @@ describe("p_pull timestamp dependency tests", () => {
   })
   
   test("p_pull should handle multiple pulls with different timestamps", async () => {
-    const source = construct_cell("source") as Cell<number>
-    const pulse1 = construct_cell("pulse1") as Cell<boolean>
-    const pulse2 = construct_cell("pulse2") as Cell<boolean>
-    const output1 = construct_cell("output1") as Cell<number>
-    const output2 = construct_cell("output2") as Cell<number>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse1 = primitive_construct_cell("pulse1") as Cell<boolean>
+    const pulse2 = primitive_construct_cell("pulse2") as Cell<boolean>
+    const output1 = primitive_construct_cell("output1") as Cell<number>
+    const output2 = primitive_construct_cell("output2") as Cell<number>
     
     // Set up two p_pull operators from the same source
     p_pull(source, pulse1, output1)
@@ -1384,9 +1384,9 @@ describe("p_pull timestamp dependency tests", () => {
   })
   
   test("p_pull should return no_compute when source is the_nothing", async () => {
-    const source = construct_cell("source") as Cell<number>
-    const pulse = construct_cell("pulse") as Cell<boolean>
-    const output = construct_cell("output") as Cell<number>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse = primitive_construct_cell("pulse") as Cell<boolean>
+    const output = primitive_construct_cell("output") as Cell<number>
     
     p_pull(source, pulse, output)
     
@@ -1400,8 +1400,8 @@ describe("p_pull timestamp dependency tests", () => {
   })
   
   test("p_pull should work with ce_pull wrapper", async () => {
-    const source = construct_cell("source") as Cell<number>
-    const pulse = construct_cell("pulse") as Cell<boolean>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse = primitive_construct_cell("pulse") as Cell<boolean>
     
     // Use ce_pull wrapper
     const output = ce_pull(source, pulse)
@@ -1417,9 +1417,9 @@ describe("p_pull timestamp dependency tests", () => {
   })
   
   test("p_pull should update when same value has newer timestamp", async () => {
-    const source = construct_cell("source") as Cell<number>
-    const pulse = construct_cell("pulse") as Cell<boolean>
-    const output = construct_cell("output") as Cell<number>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse = primitive_construct_cell("pulse") as Cell<boolean>
+    const output = primitive_construct_cell("output") as Cell<number>
     
     p_pull(source, pulse, output)
     
@@ -1465,10 +1465,10 @@ describe("p_pull timestamp dependency tests", () => {
   })
   
   test("p_pull should trigger updates even with identical base values", async () => {
-    const source = construct_cell("source") as Cell<number>
-    const pulse = construct_cell("pulse") as Cell<boolean>
-    const output = construct_cell("output") as Cell<number>
-    const updateCount = construct_cell("updateCount") as Cell<number>
+    const source = primitive_construct_cell("source") as Cell<number>
+    const pulse = primitive_construct_cell("pulse") as Cell<boolean>
+    const output = primitive_construct_cell("output") as Cell<number>
+    const updateCount = primitive_construct_cell("updateCount") as Cell<number>
     
     p_pull(source, pulse, output)
     

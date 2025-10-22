@@ -1,4 +1,4 @@
-import { construct_cell } from "./Cell/Cell";
+import { primitive_construct_cell } from "./Cell/Cell";
 import { compound_propagator, propagator_id } from "./Propagator/Propagator";
 import { p_drop } from "./Propagator/BuiltInProps";
 import { update } from "./AdvanceReactivity/interface";
@@ -11,8 +11,8 @@ set_global_state(PublicStateCommand.CLEAN_UP);
 set_global_state(PublicStateCommand.SET_SCHEDULER, simple_scheduler());
 // NO reactive_merge!
 
-const input = construct_cell<number>("drop_input");
-const output = construct_cell<number>("drop_output");
+const input = primitive_construct_cell<number>("drop_input");
+const output = primitive_construct_cell<number>("drop_output");
 
 let dropPropId: string;
 let activationCount = 0;

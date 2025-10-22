@@ -1,5 +1,5 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_strongest, cell_dispose } from "../Cell/Cell";
+import { type Cell, add_cell_content, cell_id, cell_strongest, cell_dispose, summarize_cells } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -11,9 +11,11 @@ import { define_generic_procedure_handler } from "generic-handler/GenericProcedu
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
 import { the_disposed, is_disposed, is_unusable_value } from "../Cell/CellValue";
-import { markForDisposal } from "../Shared/Scheduler/Scheduler";
+
 import { trace_func } from "../helper";
 import { any_unusable_values } from "../Cell/CellValue";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -22,8 +24,8 @@ import { any_unusable_values } from "../Cell/CellValue";
 export interface Propagator {
   get_name: () => string;
   getRelation: () => Primitive_Relation;
-  getInputsID: () => string[];
-  getOutputsID: () => string[];
+  getInputs: () => Cell<any>[];
+  getOutputs: () => Cell<any>[];
   summarize: () => string;
   activate: () => void;
   dispose: () => void;
@@ -35,17 +37,23 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
         typeof propagator === 'object' &&
         'get_name' in propagator &&
         'getRelation' in propagator &&
-        'getInputsID' in propagator &&
-        'getOutputsID' in propagator &&
+        'getInputs' in propagator &&
+        'getOutputs' in propagator &&
         'summarize' in propagator &&
         'dispose' in propagator
     );
 });
 
-export function summarize_cells(cells: Cell<any>[]): string{
-    return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
+
+define_generic_procedure_handler(get_id, match_args(is_propagator), propagator_id)
+
+
+
+export const disposing_scan = (cells: Cell<any>[]) => {
+    return cells.some((c: any) => c || is_disposed(cell_strongest(c)))
 }
 
+// dispose is too low level, we need to abstract it away!!!
 export function construct_propagator(inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
                                  activate: () => void,
@@ -53,38 +61,25 @@ export function construct_propagator(inputs: Cell<any>[],
                                  id: string | null = null): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
 
-  const inputs_ids = inputs.map(cell => cell_id(cell));
-  const outputs_ids = outputs.map(cell => cell_id(cell));
-
   activate();
 
   const propagator: Propagator = {
     get_name: () => name,
     getRelation: () => relation,
-    getInputsID: () => inputs_ids,
-    getOutputsID: () => outputs_ids,
+    getInputs: () => inputs,
+    getOutputs: () => outputs,
     summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
     activate: () => {
-      // Check if any inputs are disposed
-      const hasDisposedInput = inputs.some(cell => is_disposed(cell_strongest(cell)));
-      const hasDisposedOutput = outputs.some(cell => is_disposed(cell_strongest(cell)));
-      
-      if (hasDisposedInput || hasDisposedOutput) {
-        // Mark propagator for disposal
-        markForDisposal(propagator_id(propagator));
-        // Propagate disposal to outputs
-        outputs.forEach(cell => {
-          if (!is_disposed(cell_strongest(cell))) {
-            cell.addContent(the_disposed);
-          }
-        });
-        return;
+
+      if (disposing_scan([...inputs, ...outputs])) {
+        propagator.dispose();
       }
-      
-      // Normal activation
-      parameterize_parent(relation)(() => {
-        activate();
-      })
+      else {
+          // Normal activation
+          parameterize_parent(relation)(() => {
+              activate();
+          })
+      }
     },
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
@@ -94,7 +89,7 @@ export function construct_propagator(inputs: Cell<any>[],
         }
       });
       // Mark for cleanup
-      markForDisposal(propagator_id(propagator));
+      mark_for_disposal(propagator);
     }
   };
 
@@ -141,11 +136,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
     };
 }
 
-// export const error_logged_primitive_propagator = (f: (...args: any[]) => any, name: string) => 
-//     primitive_propagator(
-//         error_handling_function(name, f),
-//         name
-//     )
+ 
 
 export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any){
     // limitation: does not support rest or optional parameters
@@ -160,54 +151,23 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
     // Create the propagator first without calling to_build
     const relation = make_relation(name, get_global_parent(), id);
     const inputs_ids = inputs.map(cell => cell_id(cell));
-    const outputs_ids = outputs.map(cell => cell_id(cell));
     
     var built = false
     
-    const propagator: Propagator = {
-        get_name: () => name,
-        getRelation: () => relation,
-        getInputsID: () => inputs_ids,
-        getOutputsID: () => outputs_ids,
-        summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
-        activate: () => {
-            // Check if any inputs are disposed
-            const hasDisposedInput = inputs.some(cell => is_disposed(cell_strongest(cell)));
-            const hasDisposedOutput = outputs.some(cell => is_disposed(cell_strongest(cell)));
-            
-            if (hasDisposedInput || hasDisposedOutput) {
-                // Mark propagator for disposal
-                markForDisposal(propagator_id(propagator));
-                // Propagate disposal to outputs
-                outputs.forEach(cell => {
-                    if (!is_disposed(cell_strongest(cell))) {
-                        cell.addContent(the_disposed);
-                    }
-                });
-                return;
-            }
-            
-            // Build if not built yet, with proper parent context
-            // Build happens on FIRST activation, regardless of input values
-            // Once built, the internal propagators handle all subsequent updates automatically
-            if (!built) {
-                parameterize_parent(relation)(() => {
-                    to_build();
-                });
-                built = true;
-            }
-        },
-        dispose: () => {
-            [...inputs, ...outputs].forEach(cell => {
-                const neighbors = cell.getNeighbors();
-                if (neighbors.has(relation.get_id())) {
-                    neighbors.delete(relation.get_id());
-                }
+    const propagator: Propagator = construct_propagator(
+        inputs,
+        outputs,
+        () => {
+           if (!built) {
+            parameterize_parent(relation)(() => {
+                to_build();
             });
-            // Mark for cleanup
-            markForDisposal(propagator_id(propagator));
-        }
-    };
+            built = true;
+           }
+        },
+        name,
+        id
+    )
     
     inputs.forEach(cell => {
         cell.addNeighbor(propagator);
@@ -215,51 +175,6 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
     
     set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation());
     set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
-    
-    // Override the dispose method to include child disposal
-    const original_dispose = propagator.dispose;
-    propagator.dispose = () => {
-        // First, dispose all child propagators and cells
-        const children = propagator.getRelation().get_children();
-        
-        // Separate children into propagators and cells
-        const childPropagators: Propagator[] = [];
-        const childCells: Cell<any>[] = [];
-        
-        children.forEach(childRelation => {
-            const childId = childRelation.get_id();
-            const childProp = find_propagator_by_id(childId);
-            const childCell = find_cell_by_id(childId);
-            
-            if (childProp) {
-                childPropagators.push(childProp);
-            }
-            if (childCell) {
-                childCells.push(childCell);
-            }
-        });
-        
-        // Dispose propagators first (in case they reference cells)
-        childPropagators.forEach(childProp => {
-            childProp.dispose();
-        });
-        
-        // Then dispose cells
-        childCells.forEach(childCell => {
-            cell_dispose(childCell);
-        });
-        
-        // Finally, dispose the compound propagator itself
-        original_dispose();
-        
-        // Immediately remove children from global state
-        childPropagators.forEach(childProp => {
-            set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, childProp);
-        });
-        childCells.forEach(childCell => {
-            set_global_state(PublicStateCommand.REMOVE_CELL, childCell);
-        });
-    };
     
     return propagator;
 }
@@ -271,6 +186,10 @@ export function constraint_propagator(cells: Cell<any>[], to_build: () => void, 
 
 export function propagator_id(propagator: Propagator): string{
     return propagator.getRelation().get_id();
+}
+
+export function propagator_children(propagator: Propagator){
+    return propagator.getRelation().get_children();
 }
 
 export function propagator_name(propagator: Propagator): string{
@@ -286,11 +205,11 @@ export function propagator_level(propagator: Propagator): number{
 }
 
 export function propagator_inputs(propagator: Propagator): Cell<any>[] {
-    return propagator.getInputsID().map(id => find_cell_by_id(id) as Cell<any>).filter(cell => cell !== undefined);
+    return propagator.getInputs();
 }
 
 export function propagator_outputs(propagator: Propagator): Cell<any>[] {
-    return propagator.getOutputsID().map(id => find_cell_by_id(id) as Cell<any>).filter(cell => cell !== undefined);
+    return propagator.getOutputs();
 }
 
 export function propagator_activate(propagator: Propagator){
@@ -302,3 +221,5 @@ define_generic_procedure_handler(to_string, match_args(is_propagator), (propagat
 })
 
 define_generic_procedure_handler(identify_by, match_args(is_propagator), propagator_id)
+
+define_generic_procedure_handler(get_children, match_args(is_propagator), propagator_children)

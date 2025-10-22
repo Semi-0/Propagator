@@ -1,7 +1,7 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler, error_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import { is_array, is_function, is_number } from "generic-handler/built_in_generics/generic_predicates"
 import { guard, throw_error, throw_type_mismatch } from "generic-handler/built_in_generics/other_generic_helper"
-import { first as _first, find, length, to_array} from "generic-handler/built_in_generics/generic_collection"
+import { first as _first, find, for_each, length, to_array} from "generic-handler/built_in_generics/generic_collection"
 import { is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
 import { match_args } from "generic-handler/Predicates"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
@@ -29,6 +29,8 @@ export let get_new_reference_count = reference_store()
 export const curried_filter = curryArgument(1, filter)
 
 export const curried_map = curryArgument(1, map)
+
+export const curried_for_each = curryArgument(1, for_each)
 
 // // better way is to use layered equal
 // export function layered_is_true(value: any): boolean {

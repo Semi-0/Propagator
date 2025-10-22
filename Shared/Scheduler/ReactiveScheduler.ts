@@ -86,7 +86,7 @@ export const reactive_scheduler = (): Scheduler => {
     }
 
     const alert_propagator = (propagator: Propagator) => {
-        const cell_values =  propagator.getInputsID()
+        const cell_values =  propagator.getInputs()
                                  .map(compose(find_cell_by_id, cell_strongest)) 
 
         const all_fresh = reduce(

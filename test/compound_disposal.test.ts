@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { construct_cell, cell_strongest, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
+import { primitive_construct_cell, cell_strongest, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
 import { p_add, p_multiply, p_subtract } from "../Propagator/BuiltInProps";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
@@ -18,16 +18,16 @@ describe("Compound Propagator Child Disposal", () => {
 
     describe("Basic Child Disposal", () => {
         it("should dispose internal cells when compound propagator is disposed", async () => {
-            const input = construct_cell<number>("compound_input");
-            const output = construct_cell<number>("compound_output");
+            const input = primitive_construct_cell<number>("compound_input");
+            const output = primitive_construct_cell<number>("compound_output");
             
             // Track the IDs of internal cells
             let step1Id: string;
             let step2Id: string;
             
             const compound = compound_propagator([input], [output], () => {
-                const step1 = construct_cell<number>("compound_step1");
-                const step2 = construct_cell<number>("compound_step2");
+                const step1 = primitive_construct_cell<number>("compound_step1");
+                const step2 = primitive_construct_cell<number>("compound_step2");
                 
                 step1Id = cell_id(step1);
                 step2Id = cell_id(step2);
@@ -66,16 +66,16 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should dispose internal propagators when compound propagator is disposed", async () => {
-            const input = construct_cell<number>("compound_input2");
-            const output = construct_cell<number>("compound_output2");
+            const input = primitive_construct_cell<number>("compound_input2");
+            const output = primitive_construct_cell<number>("compound_output2");
             
             // Track the IDs of internal propagators
             let addOnePropId: string;
             let multiplyTwoPropId: string;
             
             const compound = compound_propagator([input], [output], () => {
-                const step1 = construct_cell<number>("compound_step1_2");
-                const step2 = construct_cell<number>("compound_step2_2");
+                const step1 = primitive_construct_cell<number>("compound_step1_2");
+                const step2 = primitive_construct_cell<number>("compound_step2_2");
                 
                 const addOne = function_to_primitive_propagator("add_one_2", (x: number) => x + 1);
                 const multiplyTwo = function_to_primitive_propagator("multiply_two_2", (x: number) => x * 2);
@@ -106,14 +106,14 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should dispose propagators before cells", async () => {
-            const input = construct_cell<number>("compound_input3");
-            const output = construct_cell<number>("compound_output3");
+            const input = primitive_construct_cell<number>("compound_input3");
+            const output = primitive_construct_cell<number>("compound_output3");
             
             const disposalOrder: string[] = [];
             
             const compound = compound_propagator([input], [output], () => {
-                const step1 = construct_cell<number>("compound_step1_3");
-                const step2 = construct_cell<number>("compound_step2_3");
+                const step1 = primitive_construct_cell<number>("compound_step1_3");
+                const step2 = primitive_construct_cell<number>("compound_step2_3");
                 
                 // Override dispose to track order
                 const originalStep1Dispose = step1.dispose;
@@ -185,19 +185,19 @@ describe("Compound Propagator Child Disposal", () => {
 
     describe("Nested Compound Propagators", () => {
         it("should dispose nested compound propagators and their children", async () => {
-            const input = construct_cell<number>("nested_input");
-            const output = construct_cell<number>("nested_output");
+            const input = primitive_construct_cell<number>("nested_input");
+            const output = primitive_construct_cell<number>("nested_output");
             
             let innerCellId: string;
             let innerPropId: string;
             let outerCellId: string;
             
             const outerCompound = compound_propagator([input], [output], () => {
-                const outerStep = construct_cell<number>("outer_step");
+                const outerStep = primitive_construct_cell<number>("outer_step");
                 outerCellId = cell_id(outerStep);
                 
                 const innerCompound = compound_propagator([input], [outerStep], () => {
-                    const innerCell = construct_cell<number>("inner_cell");
+                    const innerCell = primitive_construct_cell<number>("inner_cell");
                     innerCellId = cell_id(innerCell);
                     
                     const double = function_to_primitive_propagator("double", (x: number) => x * 2);
@@ -232,21 +232,21 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should handle deeply nested compound propagators", async () => {
-            const input = construct_cell<number>("deep_input");
-            const output = construct_cell<number>("deep_output");
+            const input = primitive_construct_cell<number>("deep_input");
+            const output = primitive_construct_cell<number>("deep_output");
             
             const cellIds: string[] = [];
             
             const level1 = compound_propagator([input], [output], () => {
-                const cell1 = construct_cell<number>("level1_cell");
+                const cell1 = primitive_construct_cell<number>("level1_cell");
                 cellIds.push(cell_id(cell1));
                 
                 const level2 = compound_propagator([input], [cell1], () => {
-                    const cell2 = construct_cell<number>("level2_cell");
+                    const cell2 = primitive_construct_cell<number>("level2_cell");
                     cellIds.push(cell_id(cell2));
                     
                     const level3 = compound_propagator([input], [cell2], () => {
-                        const cell3 = construct_cell<number>("level3_cell");
+                        const cell3 = primitive_construct_cell<number>("level3_cell");
                         cellIds.push(cell_id(cell3));
                         
                         const addOne = function_to_primitive_propagator("add_one_l3", (x: number) => x + 1);
@@ -286,14 +286,14 @@ describe("Compound Propagator Child Disposal", () => {
 
     describe("Input/Output Cell Handling", () => {
         it("should not dispose input and output cells of compound propagator", async () => {
-            const input = construct_cell<number>("io_input");
-            const output = construct_cell<number>("io_output");
+            const input = primitive_construct_cell<number>("io_input");
+            const output = primitive_construct_cell<number>("io_output");
             
             const inputId = cell_id(input);
             const outputId = cell_id(output);
             
             const compound = compound_propagator([input], [output], () => {
-                const step = construct_cell<number>("io_step");
+                const step = primitive_construct_cell<number>("io_step");
                 
                 const addOne = function_to_primitive_propagator("add_one_io", (x: number) => x + 1);
                 addOne(input, step);
@@ -322,15 +322,15 @@ describe("Compound Propagator Child Disposal", () => {
 
     describe("Complex Network Disposal", () => {
         it("should dispose compound propagator with branching internal network", async () => {
-            const input = construct_cell<number>("branch_input");
-            const output1 = construct_cell<number>("branch_output1");
-            const output2 = construct_cell<number>("branch_output2");
+            const input = primitive_construct_cell<number>("branch_input");
+            const output1 = primitive_construct_cell<number>("branch_output1");
+            const output2 = primitive_construct_cell<number>("branch_output2");
             
             const internalCellIds: string[] = [];
             
             const compound = compound_propagator([input], [output1, output2], () => {
-                const branch1 = construct_cell<number>("branch1");
-                const branch2 = construct_cell<number>("branch2");
+                const branch1 = primitive_construct_cell<number>("branch1");
+                const branch2 = primitive_construct_cell<number>("branch2");
                 
                 internalCellIds.push(cell_id(branch1), cell_id(branch2));
                 
@@ -364,13 +364,13 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should handle disposal with shared internal cells", async () => {
-            const input = construct_cell<number>("shared_input");
-            const output = construct_cell<number>("shared_output");
+            const input = primitive_construct_cell<number>("shared_input");
+            const output = primitive_construct_cell<number>("shared_output");
             
             let sharedCellId: string;
             
             const compound = compound_propagator([input], [output], () => {
-                const shared = construct_cell<number>("shared_cell");
+                const shared = primitive_construct_cell<number>("shared_cell");
                 sharedCellId = cell_id(shared);
                 
                 // Multiple propagators using the same cell
@@ -379,7 +379,7 @@ describe("Compound Propagator Child Disposal", () => {
                 const triple = function_to_primitive_propagator("triple_shared", (x: number) => x * 3);
                 
                 addOne(input, shared);
-                const temp = construct_cell<number>("temp_shared");
+                const temp = primitive_construct_cell<number>("temp_shared");
                 double(shared, temp);
                 triple(temp, output);
             }, "shared_compound");
@@ -399,8 +399,8 @@ describe("Compound Propagator Child Disposal", () => {
 
     describe("Edge Cases", () => {
         it("should handle empty compound propagator", async () => {
-            const input = construct_cell<number>("empty_input");
-            const output = construct_cell<number>("empty_output");
+            const input = primitive_construct_cell<number>("empty_input");
+            const output = primitive_construct_cell<number>("empty_output");
             
             const compound = compound_propagator([input], [output], () => {
                 // No internal structure
@@ -412,13 +412,13 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should handle compound propagator with only cells", async () => {
-            const input = construct_cell<number>("cells_only_input");
-            const output = construct_cell<number>("cells_only_output");
+            const input = primitive_construct_cell<number>("cells_only_input");
+            const output = primitive_construct_cell<number>("cells_only_output");
             
             let internalCellId: string;
             
             const compound = compound_propagator([input], [output], () => {
-                const internal = construct_cell<number>("cells_only_internal");
+                const internal = primitive_construct_cell<number>("cells_only_internal");
                 internalCellId = cell_id(internal);
                 // No propagators connecting them
             }, "cells_only_compound");
@@ -439,8 +439,8 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should handle compound propagator with only propagators", async () => {
-            const input = construct_cell<number>("props_only_input");
-            const output = construct_cell<number>("props_only_output");
+            const input = primitive_construct_cell<number>("props_only_input");
+            const output = primitive_construct_cell<number>("props_only_output");
             
             let propId: string;
             
@@ -463,11 +463,11 @@ describe("Compound Propagator Child Disposal", () => {
         });
 
         it("should handle double disposal gracefully", async () => {
-            const input = construct_cell<number>("double_disposal_input");
-            const output = construct_cell<number>("double_disposal_output");
+            const input = primitive_construct_cell<number>("double_disposal_input");
+            const output = primitive_construct_cell<number>("double_disposal_output");
             
             const compound = compound_propagator([input], [output], () => {
-                const step = construct_cell<number>("double_disposal_step");
+                const step = primitive_construct_cell<number>("double_disposal_step");
                 const addOne = function_to_primitive_propagator("add_one_double", (x: number) => x + 1);
                 addOne(input, step);
                 addOne(step, output);

@@ -2,7 +2,7 @@ import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { 
   ce_eq, ce_and, ce_not, ce_gate, ce_collect_defined, ce_maxN
 } from "../ObjectSystem/comprehensive_object";
-import { construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
+import { primitive_construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 import { r_constant, the_nothing } from "..";
 import { tell } from "../Helper/UI";
 import { update } from "../AdvanceReactivity/interface";
@@ -24,8 +24,8 @@ afterEach(async () => {
 
 describe("CE Helper Debug Tests", () => {
   test("ce_eq should propagate changes correctly", async () => {
-    const a = construct_cell<string>("a");
-    const b = construct_cell<string>("b");
+    const a = primitive_construct_cell<string>("a");
+    const b = primitive_construct_cell<string>("b");
     
     const result = ce_eq(a, b);
     
@@ -46,8 +46,8 @@ describe("CE Helper Debug Tests", () => {
   });
 
   test("ce_and should propagate changes correctly", async () => {
-    const a = construct_cell<boolean>("a");
-    const b = construct_cell<boolean>("b");
+    const a = primitive_construct_cell<boolean>("a");
+    const b = primitive_construct_cell<boolean>("b");
     
     const result = ce_and(a, b);
     
@@ -68,7 +68,7 @@ describe("CE Helper Debug Tests", () => {
   });
 
   test("ce_not should propagate changes correctly", async () => {
-    const a = construct_cell<boolean>("a");
+    const a = primitive_construct_cell<boolean>("a");
     
     const result = ce_not(a);
     
@@ -88,8 +88,8 @@ describe("CE Helper Debug Tests", () => {
   });
 
   test("ce_gate should propagate changes correctly", async () => {
-    const on = construct_cell<boolean>("on");
-    const value = construct_cell<string>("value");
+    const on = primitive_construct_cell<boolean>("on");
+    const value = primitive_construct_cell<string>("value");
     
     const result = ce_gate(on, value);
     

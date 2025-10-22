@@ -2,7 +2,7 @@
 // Disable TypeScript checking for this test file
 import { expect, test, beforeEach, describe } from "bun:test";
 
-import { construct_cell, type Cell } from "../Cell/Cell";
+import { primitive_construct_cell, type Cell } from "../Cell/Cell";
 import { construct_propagator, type Propagator } from "../Propagator/Propagator";
 import { make_relation, type Primitive_Relation } from "../DataTypes/Relation";
 import { 
@@ -58,8 +58,8 @@ describe("Abstraction Level Tests", () => {
         expect(parentRelation.get_level()).toBe(1);
         
         // Create cells for the propagator
-        const input = construct_cell("input");
-        const output = construct_cell("output");
+        const input = primitive_construct_cell("input");
+        const output = primitive_construct_cell("output");
         
         // Create a propagator using parameterize_parent
         let childRelation: Primitive_Relation;
@@ -96,8 +96,8 @@ describe("Abstraction Level Tests", () => {
         expect(level2Relation.get_level()).toBe(2);
         
         // Create cells
-        const input = construct_cell("input");
-        const output = construct_cell("output");
+        const input = primitive_construct_cell("input");
+        const output = primitive_construct_cell("output");
         
         // Create propagator with nested parameterize_parent calls
         let childRelation: Primitive_Relation;
@@ -128,10 +128,10 @@ describe("Abstraction Level Tests", () => {
         const parentRelation = make_relation("parent", rootRelation);
         
         // Create cells
-        const input1 = construct_cell("input1");
-        const output1 = construct_cell("output1");
-        const input2 = construct_cell("input2");
-        const output2 = construct_cell("output2");
+        const input1 = primitive_construct_cell("input1");
+        const output1 = primitive_construct_cell("output1");
+        const input2 = primitive_construct_cell("input2");
+        const output2 = primitive_construct_cell("output2");
         
         let childRelation1: Primitive_Relation;
         let childRelation2: Primitive_Relation;
@@ -191,8 +191,8 @@ describe("Abstraction Level Tests", () => {
         const parentRelation = make_relation("parent", rootRelation);
         
         // Create cells
-        const input = construct_cell("input");
-        const output = construct_cell("output");
+        const input = primitive_construct_cell("input");
+        const output = primitive_construct_cell("output");
         
         let childRelation: Primitive_Relation;
         let activationLevel: number;
@@ -231,8 +231,8 @@ describe("Abstraction Level Tests", () => {
         const level3Relation = make_relation("level3", level2Relation);
         
         // Create cells
-        const input = construct_cell("input");
-        const output = construct_cell("output");
+        const input = primitive_construct_cell("input");
+        const output = primitive_construct_cell("output");
         
         let finalChildRelation: Primitive_Relation;
         

@@ -1,6 +1,6 @@
 import type { Cell, Propagator } from "..";
 
-import { construct_cell } from "../Cell/Cell";
+import { primitive_construct_cell } from "../Cell/Cell";
 import { p_sync } from "../Propagator/BuiltInProps";
 import { constant_cell } from "../Cell/Cell";
 import { p_map_a } from "../Propagator/BuiltInProps";
@@ -41,7 +41,7 @@ export function object_wrapper<T extends Record<string, any>>(
   const ensureFieldCell = (k: string) => {
     let c = fieldMap.get(k);
     if (!c) {
-      c = construct_cell<any>(`${name}:${k}`);
+      c = primitive_construct_cell<any>(`${name}:${k}`);
       // seed from object once
       p_sync(constant_cell(obj[k], "constant"), c);
       fieldMap.set(k, c);

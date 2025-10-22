@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "bun:test"; 
-import { type Cell, cell_content, construct_cell, handle_cell_contradiction, set_handle_contradiction, cell_content as  track_content } from "../Cell/Cell";
+import { type Cell, cell_content, primitive_construct_cell, handle_cell_contradiction, set_handle_contradiction, cell_content as  track_content } from "../Cell/Cell";
 import {
     mark_premise_in,
     mark_premise_out,
@@ -45,9 +45,9 @@ describe("Premises and Hypotheticals", () => {
         set_merge(merge_value_sets);
 
         // Set up cells
-        a = construct_cell("a");
-        b = construct_cell("b");
-        sum = construct_cell("sum");
+        a = primitive_construct_cell("a");
+        b = primitive_construct_cell("b");
+        sum = primitive_construct_cell("sum");
         p_add(a, b, sum);
     });
 
@@ -82,7 +82,7 @@ describe("Premises and Hypotheticals", () => {
     it("hypotheticals should be automatically handled", async () => {
         // configure_log_process_contradictions(true)
 
-        const test_cell = construct_cell("test_cell") as Cell<number>;
+        const test_cell = primitive_construct_cell("test_cell") as Cell<number>;
         // configure_debug_scheduler(true);
         make_hypotheticals(test_cell, construct_better_set([1, 2, 3, 4, 5, 6]));
         execute_all_tasks_sequential((error: Error) => {
@@ -311,11 +311,11 @@ describe("Premises and Hypotheticals", () => {
 
     it("should kick out premises until only one remains when multiple hypotheses cause contradictions", async () => {
         // Set up a scenario where multiple hypotheses will cause contradictions
-        const test_cell = construct_cell("test_cell") as Cell<number>;
-        const constraint_cell = construct_cell("constraint_cell") as Cell<number>;
+        const test_cell = primitive_construct_cell("test_cell") as Cell<number>;
+        const constraint_cell = primitive_construct_cell("constraint_cell") as Cell<number>;
         
         // Create a constraint: test_cell + constraint_cell = 10
-        p_add(test_cell, constraint_cell, construct_cell("sum"));
+        p_add(test_cell, constraint_cell, primitive_construct_cell("sum"));
         
         // Tell constraint_cell a specific value that will cause contradictions
         tell(constraint_cell, 5, "constraint_value");
@@ -326,7 +326,7 @@ describe("Premises and Hypotheticals", () => {
         const hypotheses = make_hypotheticals(test_cell, construct_better_set([1, 2, 3, 4, 5]));
         
         // Set up constraint that sum must equal 10
-        const sum_cell = construct_cell("sum");
+        const sum_cell = primitive_construct_cell("sum");
         p_add(test_cell, constraint_cell, sum_cell);
         tell(sum_cell, 10, "sum_constraint");
         
@@ -381,14 +381,14 @@ describe("Premises and Hypotheticals", () => {
 
     it("should handle complex contradiction scenarios with multiple constraint violations", async () => {
         // Create a more complex scenario with multiple constraints
-        const x = construct_cell("x") as Cell<number>;
-        const y = construct_cell("y") as Cell<number>;
-        const z = construct_cell("z") as Cell<number>;
+        const x = primitive_construct_cell("x") as Cell<number>;
+        const y = primitive_construct_cell("y") as Cell<number>;
+        const z = primitive_construct_cell("z") as Cell<number>;
         
         // Set up constraints: x + y = 10, y + z = 15, x + z = 12
-        const sum1 = construct_cell("sum1");
-        const sum2 = construct_cell("sum2");
-        const sum3 = construct_cell("sum3");
+        const sum1 = primitive_construct_cell("sum1");
+        const sum2 = primitive_construct_cell("sum2");
+        const sum3 = primitive_construct_cell("sum3");
         
         p_add(x, y, sum1);
         p_add(y, z, sum2);
@@ -432,11 +432,11 @@ describe("Premises and Hypotheticals", () => {
 
     it("should demonstrate premise kickout mechanism step by step", async () => {
         // Create a simple scenario to clearly demonstrate premise kickout
-        const test_cell = construct_cell("test_cell") as Cell<number>;
-        const constraint_cell = construct_cell("constraint_cell") as Cell<number>;
+        const test_cell = primitive_construct_cell("test_cell") as Cell<number>;
+        const constraint_cell = primitive_construct_cell("constraint_cell") as Cell<number>;
         
         // Set up constraint: test_cell + constraint_cell = 7
-        const sum_cell = construct_cell("sum");
+        const sum_cell = primitive_construct_cell("sum");
         p_add(test_cell, constraint_cell, sum_cell);
         tell(constraint_cell, 3, "constraint_value");
         tell(sum_cell, 7, "sum_constraint");

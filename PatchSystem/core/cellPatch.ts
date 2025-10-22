@@ -1,4 +1,4 @@
-import { add_cell_content, cell_id, construct_cell, cell_strongest, cell_content } from "@/cell/Cell";
+import { add_cell_content, cell_id, primitive_construct_cell, cell_strongest, cell_content } from "@/cell/Cell";
 import { update } from "../../AdvanceReactivity/interface";
 import { annotate_now_with_id } from "../../AdvanceReactivity/traced_timestamp/Annotater";
 import { traced_timestamp_layer, has_timestamp_layer, get_traced_timestamp_layer } from "../../AdvanceReactivity/traced_timestamp/TracedTimestampLayer";
@@ -262,7 +262,7 @@ export const cps_effective = (cell: Cell<any>): any => {
 
 // Create a patched cell that works with existing propagators
 export const create_patched_cell = (name: string, initialValue?: any): Cell<any> => {
-    const cell = construct_cell(name);
+    const cell = primitive_construct_cell(name);
     
     if (initialValue !== undefined) {
         // Use existing update function which handles reactive layer

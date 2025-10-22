@@ -1,5 +1,5 @@
 import { link, p_filter_a, p_map_a, register_predicate, the_nothing, values } from "ppropogator"
-import { cell_name, construct_cell, make_temp_cell, type Cell } from "../Cell/Cell"
+import { cell_name, primitive_construct_cell, make_temp_cell, type Cell } from "../Cell/Cell"
 import  { compound_propagator, function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator"
 import { for_each } from "generic-handler/built_in_generics/generic_collection"
 import type { ComponentPropsWithRef } from "react"
@@ -160,7 +160,7 @@ export const virtual_copy_set_equal = (copy_set_1: VirtualCopySet, copy_set_2: V
 }
 
 // Helpers
-const occurring_frames_star = (copy_sets: VirtualCopySet[]): Frame[] => {
+const good_frames = (copy_sets: VirtualCopySet[]): Frame[] => {
     const byId = new Map<string, Frame>()
     for (const cs of copy_sets){
         for (const f of occurring_frames(cs)){
@@ -172,7 +172,7 @@ const occurring_frames_star = (copy_sets: VirtualCopySet[]): Frame[] => {
 
 const frame_by_frame = (f: (...values: any[]) => any) => (...copy_sets: VirtualCopySet[]): VirtualCopySet => {
     const entries: [string, any][] = pipe(
-        occurring_frames_star(copy_sets),
+        good_frames(copy_sets),
         A.map((frame) => [
             frame.identity,
             f(...copy_sets.map((cs) => full_frame_content(cs, frame)))
@@ -209,7 +209,7 @@ export const v_c_io_unpacking = (f: (...inputs: any[]) => any) =>
         const outputAnchor = args[args.length - 1]
         const inputs = args.slice(0, -1) as VirtualCopySet[]
         // Compute over frames that occur in any input copy set
-        const goodFrames: Frame[] = occurring_frames_star(inputs)
+        const goodFrames: Frame[] = good_frames(inputs)
 
         const entries: [string, any][] = goodFrames.map((frame) => {
             const parentOpt = find_the_occcurrence_parent(outputAnchor, frame)

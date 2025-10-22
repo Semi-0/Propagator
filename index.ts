@@ -40,7 +40,7 @@
 
 // Cell-related imports
 import { 
-  construct_cell, 
+  primitive_construct_cell, 
   constant_cell,
   cell_dispose,
   cell_strongest,
@@ -141,7 +141,7 @@ import {
   execute_all_tasks_sequential,
   steppable_run_task,
   set_immediate_execute,
-  markForDisposal
+  mark_for_disposal
 } from "./Shared/Scheduler/Scheduler";
 import { simple_scheduler } from "./Shared/Scheduler/SimpleScheduler";
 import { reactive_scheduler } from "./Shared/Scheduler/ReactiveScheduler";
@@ -217,7 +217,7 @@ import { trace_func } from "./helper";
 /**
  * Shorthand for construct_cell
  */
-export const cell = construct_cell;
+export const cell = primitive_construct_cell;
 
 /**
  * Shorthand for constant_cell
@@ -461,7 +461,7 @@ export const propagator = {
  * Convenience object for cell operations
  */
 export const cells = {
-  create: construct_cell,
+  create: primitive_construct_cell,
   constant: constant_cell,
   reactive_constant: r_constant,
   temp: make_temp_cell,
@@ -565,7 +565,7 @@ export const system = {
  */
 export const cell_ops = {
   // Cell creation
-  create: construct_cell,
+  create: primitive_construct_cell,
   constant: constant_cell,
   reactive_constant: r_constant,
   temp: make_temp_cell,
@@ -688,7 +688,7 @@ export const sys_ops = {
 // Core exports
 export {
   // Cell exports
-    construct_cell,
+    primitive_construct_cell as construct_cell,
   constant_cell,
   cell_dispose,
   cell_strongest,
@@ -780,7 +780,7 @@ export {
   execute_all_tasks_sequential,
   steppable_run_task,
   set_immediate_execute,
-  markForDisposal,
+  mark_for_disposal as markForDisposal,
   simple_scheduler,
   reactive_scheduler,
   
@@ -874,7 +874,7 @@ export default {
   sys_ops,
   
   // Core functionality
-  construct_cell,
+  construct_cell: primitive_construct_cell,
   construct_propagator,
   p_add,
   p_multiply,

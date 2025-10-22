@@ -83,3 +83,5 @@ export function force_load_CellValue(){
 export type CellValue<A> = A | typeof the_nothing | typeof the_contradiction | typeof the_disposed
 
 
+
+define_generic_procedure_handler(is_unusable_value, match_args(is_disposed), (a:any) => true)

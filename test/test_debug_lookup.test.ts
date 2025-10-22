@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { expect, test, beforeEach, describe } from "bun:test";
 
-import { construct_cell, type Cell, cell_id } from "../Cell/Cell";
+import { primitive_construct_cell, type Cell, cell_id } from "../Cell/Cell";
 import { 
     function_to_primitive_propagator,
     propagator_id,
@@ -30,8 +30,8 @@ beforeEach(() => {
 describe("Debug Lookup Tests", () => {
     
     test("debug: cell IDs and lookup", () => {
-        const cell1 = construct_cell("test_cell_1");
-        const cell2 = construct_cell("test_cell_2");
+        const cell1 = primitive_construct_cell("test_cell_1");
+        const cell2 = primitive_construct_cell("test_cell_2");
         
         console.log("Cell 1 ID:", cell_id(cell1));
         console.log("Cell 2 ID:", cell_id(cell2));
@@ -48,8 +48,8 @@ describe("Debug Lookup Tests", () => {
     });
 
     test("debug: propagator IDs and lookup", () => {
-        const cell1 = construct_cell("test_cell_1");
-        const cell2 = construct_cell("test_cell_2");
+        const cell1 = primitive_construct_cell("test_cell_1");
+        const cell2 = primitive_construct_cell("test_cell_2");
         
         const prop1 = function_to_primitive_propagator("test_prop_1", (x: number) => x + 1);
         const actualProp1 = prop1(cell1, cell2);
@@ -65,9 +65,9 @@ describe("Debug Lookup Tests", () => {
     });
 
     test("debug: traverse_primitive_level result", () => {
-        const a = construct_cell("a");
-        const b = construct_cell("b");
-        const c = construct_cell("c");
+        const a = primitive_construct_cell("a");
+        const b = primitive_construct_cell("b");
+        const c = primitive_construct_cell("c");
         
         console.log("Cell a ID:", cell_id(a));
         console.log("Cell b ID:", cell_id(b));

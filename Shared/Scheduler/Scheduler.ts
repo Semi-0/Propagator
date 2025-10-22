@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { simple_scheduler } from "./SimpleScheduler";
 import type { Propagator } from '../../Propagator/Propagator';
 import type { Scheduler } from './SchedulerType';
@@ -48,10 +47,10 @@ export function set_scheduler(scheduler: Scheduler){
     Current_Scheduler = scheduler
 }
 
-export function markForDisposal(id: string) {
+export function mark_for_disposal(id: string) {
     Current_Scheduler.mark_for_disposal(id)
 }
 
-export function hasPendingTasks(){
+export function has_pending_task(){
     return Current_Scheduler.has_pending_tasks()
 }
