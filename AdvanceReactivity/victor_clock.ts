@@ -110,7 +110,7 @@ export const result_is_equal = (a: number) => a === 0;
 
 export const clock_channels_subsume = (b: VersionVector, a: VersionVector): boolean => {
     // Return true if b "covers" all channels in a and their counters are >= a's
-    if (b.size < a.size) {
+    if (b.size <= a.size) {
         return false;
     }
 
@@ -158,20 +158,23 @@ export const _has_victor_clock_layer = (a: any) => {
 
 export const has_victor_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => is_layered_object(a) && _has_victor_clock_layer(a));
 
+export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) => {
+    return pipe(
+        as,
+        A.filter(has_victor_clock_layer),
+        A.map(victor_clock_layer.get_value),
+        A.reduce(0, generic_version_vector_clock_compare)
+    ) !== 0
+}
 
 define_generic_procedure_handler(any_unusable_values, match_args(has_victor_clock_layer, has_victor_clock_layer), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
 
 
-    const result = pipe(
-        as,
-        A.filter(has_victor_clock_layer),
-        A.map(victor_clock_layer.get_value),
-        A.reduce(0, generic_version_vector_clock_compare)
-    )
+   
 
-    return result !== 0
+    return any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, any_unusable_values))
 })
 
 
@@ -199,7 +202,6 @@ export const prove_staled = (a: any, b: any) => {
     const vb = to_victor_clock(b);
 
     const compared = generic_version_vector_clock_compare(va, vb);
-    console.log("compared", compared);
 
     if (result_is_less_than(compared)) {
         return true;
@@ -230,8 +232,6 @@ define_consolidator_per_layer_dispatcher(
 
         
         // missed join the new element
-        console.log("set_victor_clock", set_victor_clock);
-        console.log("elt_victor_clock", elt_victor_clock);
         return add_item(
             pipe(set, 
                 curried_filter(proved_staled_with(elt_victor_clock)), 

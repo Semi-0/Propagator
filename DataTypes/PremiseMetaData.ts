@@ -64,11 +64,8 @@ export class PremiseMetaData {
 
     wake_up_roots(){
           // TODO: force update propagators
-        console.log("waking up roots", this.name)
-        console.log("alerting all ambs")
        set_global_state(PublicStateCommand.ALERT_ALL_AMBS)
 
-       console.log("forcing update all cells")
        //TODO:  alert amb propagatorm
         // TODO: this can be even simplified with define relationship between premises cells and ambs
         // if add content is scheduled cannot make sure amb is only notified after all the current content has been all propagated

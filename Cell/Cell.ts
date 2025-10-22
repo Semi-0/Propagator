@@ -34,7 +34,12 @@ export function handle_cell_contradiction<A>(cell: Cell<A>) {
   process_contradictions(construct_better_set([support]), cell);
 }
 
-export var handle_contradiction = handle_cell_contradiction;
+
+export function not_handle_cell_contradiction<A>(cell: Cell<A>) {
+  // do nothing
+}
+
+export var handle_contradiction = not_handle_cell_contradiction;
 
 export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
   // @ts-ignore
@@ -78,7 +83,6 @@ export function cell_constructor<A>(
     const handle_cell_contradiction = () => handle_contradiction(cell);
 
     function test_content(){
-      console.log("testing content", name)
       const new_strongest = strongest_value(content)
       if (is_equal(new_strongest, strongest)){
     

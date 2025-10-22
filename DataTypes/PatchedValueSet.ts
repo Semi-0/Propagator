@@ -115,7 +115,7 @@ define_generic_procedure_handler(
 export const patch_join : (new_elt: LayeredObject<any>) => ContentPatch = (new_elt: LayeredObject<any>) => {
     return {
         type: "join",
-        index_elt: new_elt
+        index_elt: get_base_value(new_elt)
     }
 }
 
@@ -132,7 +132,7 @@ export const patch_join : (new_elt: LayeredObject<any>) => ContentPatch = (new_e
 export const patch_remove : (existed: LayeredObject<any>) => ContentPatch = (existed: LayeredObject<any>) => {
     return {
         type: "remove",
-        index_elt: existed
+        index_elt: get_base_value(existed)
     }
 }
 
@@ -187,7 +187,8 @@ export const scan_for_patches: (
 ) => BetterSet<ContentPatch> = construct_layered_consolidator(
     "scan_for_patches",
     2,
-    log_tracer("scan_for_patches", merge_patch_set),
+    // @ts-ignore
+    merge_patch_set,
     construct_better_set([])
 );
 
@@ -215,13 +216,19 @@ define_consolidator_per_layer_dispatcher(
         }
         
         // Find existing element with matching base value
-        const existed = find(content, (a: LayeredObject<any>) => {
+        const existed: LayeredObject<any> | undefined = find(content, (a: LayeredObject<any>) => {
             return base_value_implies(a, elt)
         })
 
         // If found and new element is stronger, replace it
-        if ((existed) && (supported_value_less_than_or_equal(existed, elt)))  {
-            return construct_better_set([patch_remove(existed), patch_join(elt)])
+        if ((existed))  {
+            if (supported_value_less_than_or_equal(existed, elt)) {
+                // if support value is subset of the existed one, rejecting the new one
+                return construct_better_set([])
+            }
+            else{
+                return construct_better_set([patch_join(elt)])
+            }
         }
         // If no matching element, add new one
         else {

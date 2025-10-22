@@ -55,20 +55,17 @@ describe("ContentPatch Tests", () => {
             const value = support_by(10, "source1");
             const patch = patch_join(value);
 
-            expect(patch.type).toBe("join");
-            expect(patch.index_elt).toBe(value);
             expect(type_of_content_patch(patch)).toBe("join");
-            expect(content_patch_elt(patch)).toBe(value);
+            expect(content_patch_elt(patch)).toBe(get_base_value(value));
         });
 
         test("patch_remove should create remove patch with correct structure", () => {
             const value = support_by(20, "source1");
             const patch = patch_remove(value);
 
-            expect(patch.type).toBe("remove");
-            expect(patch.index_elt).toBe(value);
+   
             expect(type_of_content_patch(patch)).toBe("remove");
-            expect(content_patch_elt(patch)).toBe(value);
+            expect(content_patch_elt(patch)).toBe(get_base_value(value));
         });
 
         test("is_content_patch should identify valid patches", () => {
@@ -99,8 +96,8 @@ describe("ContentPatch Tests", () => {
             const patch1 = patch_join(value1);
             const patch2 = patch_remove(value2);
 
-            expect(content_patch_elt(patch1)).toBe(value1);
-            expect(content_patch_elt(patch2)).toBe(value2);
+            expect(content_patch_elt(patch1)).toBe(get_base_value(value1));
+            expect(content_patch_elt(patch2)).toBe(get_base_value(value2));
         });
     });
 });
@@ -340,7 +337,7 @@ describe("scan_for_patches Tests", () => {
             expect(hasValue20).toBe(true);
         });
 
-        test("should replace stale value with fresher version from same source", () => {
+        test("should replace stale value with fresher version from same source isolated", () => {
             const v1 = construct_layered_datum(
                 50,
                 victor_clock_layer, new Map([["proc1", 1]]),
@@ -366,6 +363,38 @@ describe("scan_for_patches Tests", () => {
             // Verify the version is v2
             const resultClock = victor_clock_layer.get_value(to_array(set)[0]);
             expect(resultClock.get("proc1")).toBe(2);
+        });
+
+        test("should handle multiple stale values needing removal isolated", () => {
+            // Three values with increasing versions
+            const v1 = construct_layered_datum(
+                10,
+                victor_clock_layer, new Map([["source", 1]]),
+            );
+
+            const v2 = construct_layered_datum(
+                10,
+                victor_clock_layer, new Map([["source", 2]]),
+            );
+
+            const v3 = construct_layered_datum(
+                10,
+                victor_clock_layer, new Map([["source", 5]]),
+            );
+
+            let set = construct_better_set([v1, v2]);
+            
+            // Adding fresher version should remove older ones
+            set = patched_set_merge(set, v3);
+
+            // Should have only one value (v3 replaced both v1 and v2)
+            expect(length(set)).toBe(1);
+            
+            const array = to_array(set);
+            const victor_clock_value = victor_clock_layer.get_value(array[0]);
+
+            // The remaining value should have version 5
+            expect(victor_clock_value.get("source")).toBe(5);
         });
 
         test("should handle multiple stale values needing removal", () => {

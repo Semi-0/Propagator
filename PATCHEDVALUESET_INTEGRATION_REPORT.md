@@ -161,3 +161,6 @@ standalone reactivity → PatchedValueSet (BetterSet-based) ✅
 - `patchedValueSet.test.ts`: 42/42 passing ✅
 - `patchedValueSetIntegration.test.ts`: 0/10 passing (architectural mismatch)
 - Victor Clock layer tests: All passing when used standalone ✅
+
+
+

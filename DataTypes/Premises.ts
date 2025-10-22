@@ -232,7 +232,6 @@ function _make_hypothetical<A>(output: Cell<A>, value: A): string {
     set_global_state(PublicStateCommand.ADD_CHILD, relation, output)
     register_hypothesis(id, self)
     register_premise(id, output);
-    console.log("add_cell_content",  cell_name(output))
     //@ts-ignore
     add_cell_content<LayeredObject>(output, support_by(value, id));
 
