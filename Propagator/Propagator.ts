@@ -163,7 +163,6 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
         outputs,
         () => {
            if (!built) {
-                console.log("built")
                 parameterize_parent(propagator.getRelation())(() => {
                     to_build();
                 });

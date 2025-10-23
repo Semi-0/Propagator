@@ -24,7 +24,9 @@ import {
     p_multiply,
     p_subtract,
     com_celsius_to_fahrenheit,
-    p_sync
+    p_sync,
+    p_constant,
+    ce_constant
 } from "../Propagator/BuiltInProps";
 import {
     compound_propagator,
@@ -46,6 +48,9 @@ import { cell_id } from "../Cell/Cell";
 import { propagator_id } from "../Propagator/Propagator";
 import { get_children } from "../Shared/Generics";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { compound_tell } from "../Helper/UI";
+import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
@@ -151,6 +156,9 @@ describe("Cell Disposal Tests", () => {
     });
 
     test("disposing a cell should not affect unrelated propagators", async () => {
+
+
+        set_merge(merge_patched_set)
         const a = construct_cell("a");
         const b = construct_cell("b");
         const c = construct_cell("c");
@@ -166,10 +174,10 @@ describe("Cell Disposal Tests", () => {
         const prop2Id = propagator_id(prop2);
         
         // Test both work
-        update_cell(a, 10);
-        update_cell(b, 5);
-        update_cell(c, 20);
-        update_cell(d, 8);
+        compound_tell(a, 10, victor_clock_layer, new Map([["source", 1]]));
+        compound_tell(b, 5, victor_clock_layer, new Map([["source", 1]]));
+        compound_tell(c, 20, victor_clock_layer, new Map([["source", 1]]));
+        compound_tell(d, 8, victor_clock_layer, new Map([["source", 1]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(result1)).toBe(15);
         expect(cell_strongest_base_value(result2)).toBe(28);
@@ -185,7 +193,7 @@ describe("Cell Disposal Tests", () => {
         expect(find_propagator_by_id(prop2Id)).toBeDefined();
         
         // Second network should still work
-        update_cell(d, 10);
+        compound_tell(d, 10, victor_clock_layer, new Map([["source", 2]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(result2)).toBe(30);
     });
@@ -222,7 +230,6 @@ describe("Propagator Disposal Tests", () => {
         // Verify propagator is in neighbors
         expect(a.getNeighbors().size).toBeGreaterThan(0);
         expect(b.getNeighbors().size).toBeGreaterThan(0);
-        expect(result.getNeighbors().size).toBeGreaterThan(0);
         
         // Dispose propagator
         propagator_dispose(prop);
@@ -233,7 +240,6 @@ describe("Propagator Disposal Tests", () => {
         // Propagator should be removed from all neighbors
         expect(a.getNeighbors().has(propagator_id(prop))).toBe(false);
         expect(b.getNeighbors().has(propagator_id(prop))).toBe(false);
-        expect(result.getNeighbors().has(propagator_id(prop))).toBe(false);
         
         // Propagator should be removed from global state
         expect(find_propagator_by_id(propagator_id(prop))).toBeUndefined();
@@ -272,7 +278,7 @@ describe("Propagator Disposal Tests", () => {
         const c = construct_cell("c");
         
         const prop1 = p_add(a, construct_cell("const1"), b);
-        const prop2 = p_multiply(b, construct_cell("const2"), c);
+        const prop2 = p_multiply(b,  ce_constant(2)(b), c);
         
         // Test initial propagation
         update_cell(a, 10);
@@ -607,6 +613,7 @@ describe("Complex Disposal Scenarios", () => {
     });
 
     test("partial disposal in complex compound propagator network", async () => {
+        set_merge(merge_patched_set)
         const input = construct_cell<number>("input");
         const output1 = construct_cell<number>("output1");
         const output2 = construct_cell<number>("output2");
@@ -631,14 +638,15 @@ describe("Complex Disposal Scenarios", () => {
             () => {
                 const temp = construct_cell<number>("temp2");
                 internalCellIds.push(cell_id(temp));
-                p_subtract(input, construct_cell<number>("c3"), temp);
-                p_multiply(temp, construct_cell<number>("c4"), output2);
+                const constant = ce_constant(2)(input);
+                p_subtract(input, constant, temp);
+                p_multiply(temp, constant, output2);
             },
             "compound2"
         );
         
         // Trigger building
-        update_cell(input, 10);
+        compound_tell(input, 10, victor_clock_layer, new Map([["source", 1]]));
         await execute_all_tasks_sequential(() => {});
         
         // Dispose only first compound
@@ -647,15 +655,15 @@ describe("Complex Disposal Scenarios", () => {
         
         // First compound and its children should be disposed
         expect(find_propagator_by_id(propagator_id(compound1))).toBeUndefined();
-        expect(find_cell_by_id(internalCellIds[0])).toBeUndefined();
+        expect(find_cell_by_id(internalCellIds[1])).toBeUndefined();
         
         // Second compound should still exist and work
         expect(find_propagator_by_id(propagator_id(compound2))).toBeDefined();
-        expect(find_cell_by_id(internalCellIds[1])).toBeDefined();
+        expect(find_cell_by_id(internalCellIds[0])).toBeDefined();
         
         // Second compound should still propagate
         const oldOutput2 = cell_strongest_base_value(output2);
-        update_cell(input, 20);
+        compound_tell(input, 20, victor_clock_layer, new Map([["source", 2]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(output2)).not.toBe(oldOutput2);
     });

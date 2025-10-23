@@ -35,7 +35,7 @@ import {
     _patched_set_join,
     is_patched_set,
     to_patched_set,
-    patched_set_merge
+    merge_patched_set
 } from "./PatchedValueSet";
 
 // TOD: there should be more efficient way to do this
@@ -257,7 +257,7 @@ export {
     _patched_set_join,
     is_patched_set,
     to_patched_set,
-    patched_set_merge,
+    merge_patched_set as patched_set_merge,
     type_of_content_patch,
     content_patch_elt,
     is_content_patch,

@@ -25,7 +25,7 @@ function range(start: number, end: number): BetterSet<number>{
 }
 
 
-export async function compound_tell<A>(cell: Cell<LayeredObject<A>>, information: A, ...layered_alist: any[]) {
+export async function compound_tell<A>(cell: Cell<any>, information: A, ...layered_alist: any[]) {
     const layered : LayeredObject<A>= construct_layered_datum(information, ...layered_alist);
 
     for_each(support_layer.get_value(layered), (support: string) => {

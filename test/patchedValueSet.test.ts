@@ -30,7 +30,7 @@ import {
     apply_content_patch,
     _patched_set_join,
     to_patched_set,
-    patched_set_merge,
+    merge_patched_set,
     is_patched_set,
     type ContentPatch,
     type PatchedSet
@@ -46,7 +46,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     set_handle_contradiction(trace_earliest_emerged_value);
-    set_merge(patched_set_merge);
+    set_merge(merge_patched_set);
 });
 
 describe("ContentPatch Tests", () => {
@@ -324,7 +324,7 @@ describe("scan_for_patches Tests", () => {
             let set = construct_better_set([value1]);
             
             // Add value from different source
-            set = patched_set_merge(set, value2);
+            set = merge_patched_set(set, value2);
 
             // Both should be kept since they're from different sources
             expect(length(set)).toBe(2);
@@ -351,7 +351,7 @@ describe("scan_for_patches Tests", () => {
             );
 
             let set = construct_better_set([v1]);
-            set = patched_set_merge(set, v2);
+            set = merge_patched_set(set, v2);
 
             // Should have exactly one value (the fresh one replaced the stale one)
             expect(length(set)).toBe(1);
@@ -385,7 +385,7 @@ describe("scan_for_patches Tests", () => {
             let set = construct_better_set([v1, v2]);
             
             // Adding fresher version should remove older ones
-            set = patched_set_merge(set, v3);
+            set = merge_patched_set(set, v3);
 
             // Should have only one value (v3 replaced both v1 and v2)
             expect(length(set)).toBe(1);
@@ -420,7 +420,7 @@ describe("scan_for_patches Tests", () => {
             let set = construct_better_set([v1, v2]);
             
             // Adding fresher version should remove older ones
-            set = patched_set_merge(set, v3);
+            set = merge_patched_set(set, v3);
 
             // Should have only one value (v3 replaced both v1 and v2)
             expect(length(set)).toBe(1);
@@ -447,7 +447,7 @@ describe("scan_for_patches Tests", () => {
             );
 
             let set = construct_better_set([olderClock]);
-            set = patched_set_merge(set, newerClock);
+            set = merge_patched_set(set, newerClock);
 
             // Should have only the newer value
             expect(length(set)).toBe(1);
@@ -472,7 +472,7 @@ describe("scan_for_patches Tests", () => {
             );
 
             let set = construct_better_set([clockA]);
-            set = patched_set_merge(set, clockB);
+            set = merge_patched_set(set, clockB);
 
             // Both concurrent values should be kept (incomparable clocks)
             expect(length(set)).toBe(2);
@@ -504,7 +504,7 @@ describe("scan_for_patches Tests", () => {
             );
 
             // Merge should replace old result with new
-            content = patched_set_merge(content, updated);
+            content = merge_patched_set(content, updated);
 
             // Should have exactly one value after replacement
             expect(length(content)).toBe(1);
@@ -521,7 +521,7 @@ describe("scan_for_patches Tests", () => {
             );
 
             // Should add concurrent value from different source
-            content = patched_set_merge(content, concurrent);
+            content = merge_patched_set(content, concurrent);
 
             // Now should have two values (from different sources)
             expect(length(content)).toBe(2);
@@ -694,7 +694,7 @@ describe("patched_set_merge Tests", () => {
         let set = construct_better_set([v1]);
 
         const v2 = support_by(20, "source2");
-        set = patched_set_merge(set, v2);
+        set = merge_patched_set(set, v2);
 
         // Should complete without error
         expect(set).toBeDefined();
@@ -704,7 +704,7 @@ describe("patched_set_merge Tests", () => {
         const value = support_by(42, "source1");
         let set = construct_better_set([value]);
 
-        set = patched_set_merge(set, the_nothing);
+        set = merge_patched_set(set, the_nothing);
 
         // Should remain unchanged for the_nothing
         expect(set).toBeDefined();
@@ -714,7 +714,7 @@ describe("patched_set_merge Tests", () => {
         const value = support_by(100, "source1");
         let set = construct_better_set([value]);
 
-        set = patched_set_merge(set, undefined);
+        set = merge_patched_set(set, undefined);
 
         // Should complete without error
         expect(set).toBeDefined();
@@ -723,10 +723,10 @@ describe("patched_set_merge Tests", () => {
     test("should build complex set through sequential merges", () => {
         let set = construct_better_set([]);
 
-        set = patched_set_merge(set, support_by(10, "s1"));
-        set = patched_set_merge(set, support_by(20, "s2"));
-        set = patched_set_merge(set, support_by(30, "s3"));
-        set = patched_set_merge(set, the_nothing);
+        set = merge_patched_set(set, support_by(10, "s1"));
+        set = merge_patched_set(set, support_by(20, "s2"));
+        set = merge_patched_set(set, support_by(30, "s3"));
+        set = merge_patched_set(set, the_nothing);
 
         // Should complete without error
         expect(set).toBeDefined();
@@ -739,7 +739,7 @@ describe("Edge Cases and Complex Scenarios", () => {
         expect(length(emptySet)).toBe(0);
 
         const value = support_by(42, "source1");
-        const set = patched_set_merge(emptySet, value);
+        const set = merge_patched_set(emptySet, value);
 
         expect(length(set)).toBe(1);
     });
@@ -756,7 +756,7 @@ describe("Edge Cases and Complex Scenarios", () => {
         );
 
         let set = construct_better_set([value1]);
-        set = patched_set_merge(set, value2);
+        set = merge_patched_set(set, value2);
 
         // Should handle merge without error and produce a result
         expect(length(set)).toBeGreaterThan(0);
@@ -781,7 +781,7 @@ describe("Edge Cases and Complex Scenarios", () => {
         ];
 
         values.forEach(v => {
-            set = patched_set_merge(set, v);
+            set = merge_patched_set(set, v);
         });
 
         // Should successfully merge all values without error
@@ -800,7 +800,7 @@ describe("Edge Cases and Complex Scenarios", () => {
         );
 
         let set = construct_better_set([original]);
-        set = patched_set_merge(set, replacement);
+        set = merge_patched_set(set, replacement);
 
         // Should consolidate successfully
         expect(length(set)).toBeGreaterThan(0);
@@ -812,7 +812,7 @@ describe("Edge Cases and Complex Scenarios", () => {
 
         // Apply same patches multiple times
         for (let i = 0; i < 3; i++) {
-            set = patched_set_merge(set, value);
+            set = merge_patched_set(set, value);
         }
 
         // Should not duplicate entries
@@ -833,7 +833,7 @@ describe("Comparison: PatchedSet vs GenericValueSet", () => {
         );
 
         let set = construct_better_set([value1]);
-        set = patched_set_merge(set, value2);
+        set = merge_patched_set(set, value2);
 
         // PatchedSet should consolidate or keep multiple entries
         // depending on layer-specific consolidation rules

@@ -338,7 +338,7 @@ export const to_patched_set = (a: any) => {
  * set = patched_set_merge(set, value1);
  * set = patched_set_merge(set, value2);
  */
-export const patched_set_merge = (content: PatchedSet, increment: LayeredObject<any>) => {
+export const merge_patched_set = (content: PatchedSet, increment: LayeredObject<any>) => {
     // Handle nothing values
     if (is_nothing(increment)) {
         return content;

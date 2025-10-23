@@ -96,6 +96,9 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
   // build two stateful streams for content and strongest
   // can be more performative to fine grain observe method args
   // but how?
+  // TODO:
+  // a better way foe cell disposal is to let cell remember its dependents
+  // so disposing can be isolated totally from propagation 
   var content: CellValue<A> = initial;
   var strongest: CellValue<A> = initial;
   var active = true

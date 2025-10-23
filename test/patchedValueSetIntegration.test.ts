@@ -22,7 +22,7 @@ import { the_nothing, is_contradiction, the_contradiction } from "@/cell/CellVal
 import { p_add, p_subtract, p_multiply, p_divide } from "../Propagator/BuiltInProps";
 import { set_merge } from "@/cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
-import { patched_set_merge, is_patched_set } from "../DataTypes/PatchedValueSet";
+import { merge_patched_set, is_patched_set } from "../DataTypes/PatchedValueSet";
 import { support_by, support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out } from "../Helper/UI";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -30,7 +30,7 @@ import { construct_better_set } from "generic-handler/built_in_generics/generic_
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
-    set_merge(patched_set_merge);
+    set_merge(merge_patched_set);
 });
 
 describe("PatchedValueSet Propagator Integration Tests", () => {
