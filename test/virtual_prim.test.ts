@@ -11,7 +11,7 @@ import {
 } from "../VirtualEnvironment/virtual_prim";
 
 import {
-  primitive_construct_cell,
+  construct_cell,
   cell_strongest_base_value
 } from "@/cell/Cell";
 
@@ -57,9 +57,9 @@ describe("virtual_prim basics", () => {
   });
 
   test("io_function_to_propagator_constructor wires a simple sum", async () => {
-    const a = primitive_construct_cell<number>("a");
-    const b = primitive_construct_cell<number>("b");
-    const out = primitive_construct_cell<number>("out");
+    const a = construct_cell<number>("a");
+    const b = construct_cell<number>("b");
+    const out = construct_cell<number>("out");
 
     const sumCtor = io_function_to_propagator_constructor(
       "sum",
@@ -75,9 +75,9 @@ describe("virtual_prim basics", () => {
   });
 
   test("doit short-circuits the_nothing and otherwise behaves like plain f", async () => {
-    const a = primitive_construct_cell<number>("a2");
-    const b = primitive_construct_cell<number>("b2");
-    const out = primitive_construct_cell<number>("out2");
+    const a = construct_cell<number>("a2");
+    const b = construct_cell<number>("b2");
+    const out = construct_cell<number>("out2");
 
     const sumCtor = doit("sum2", (x: number, y: number) => x + y);
     sumCtor(a, b, out);

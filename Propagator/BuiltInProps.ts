@@ -1,6 +1,6 @@
 import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
-import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, primitive_construct_cell, cell_strongest_base_value, is_cell } from "../Cell/Cell";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value, is_cell } from "../Cell/Cell";
 import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -23,6 +23,7 @@ import { generic_merge } from "../Cell/Merge";
 import { match_args } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
@@ -51,7 +52,7 @@ export const p_add = primitive_propagator(add, "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 
-export const p_multiply =  primitive_propagator(multiply, "*");
+export const p_multiply =  primitive_propagator(log_tracer("multiply", multiply), "*");
 
 export const p_divide = primitive_propagator(divide, "/"); 
 
@@ -160,7 +161,7 @@ export const ce_map_expr = (expr: (cell: Cell<any>) => Cell<any>, array: Cell<Ce
             p_sync(transformed, current_item_to)
 
 
-            const next_index = primitive_construct_cell("next_index")
+            const next_index = construct_cell("next_index")
             // @ts-ignore
             p_switch(not_exhausted, ce_add(current_index, ce_constant(1)(current_index)), next_index)
             // @ts-ignore
@@ -248,7 +249,7 @@ export const c_range = (input: Cell<number>, min: Cell<number>, max: Cell<number
         const less_than: Cell<boolean> = ce_less_than(input, min)
         const greater_than: Cell<boolean> = ce_greater_than(input, max)
         
-        const temp: Cell<number> = primitive_construct_cell("temp")
+        const temp: Cell<number> = construct_cell("temp")
 
         
         p_switch(less_than, min, temp)
@@ -495,7 +496,7 @@ export const p_as_false = p_map_a((x: any) => false)
 
 export const p_pulse = (pulse: Cell<any>, input: Cell<any>, output: Cell<any>) => {
     return compound_propagator([pulse, input], [output], () => {
-        const switcher: Cell<boolean> = primitive_construct_cell("switcher")
+        const switcher: Cell<boolean> = construct_cell("switcher")
         p_as_true(pulse, switcher)
         p_as_false(input, switcher)
 
@@ -508,7 +509,7 @@ export const p_pulse = (pulse: Cell<any>, input: Cell<any>, output: Cell<any>) =
 
 export const p_increment = (pulse: Cell<any>, output: Cell<number>, increment: Cell<number> ) => {
     return compound_propagator([pulse, output], [output], () => {
-        const temp = primitive_construct_cell("temp")
+        const temp = construct_cell("temp")
 
         p_pulse(pulse, ce_add(output, increment), temp)
         p_feedback(temp, output)
@@ -620,7 +621,7 @@ export const ce_array_index = make_ce_arithmetical(p_array_index, "array_index")
 
 
 export const c_merge_queue = (until: number) => (a: Cell<any>, b: Cell<any>, out: Cell<any>) =>  compound_propagator([a, b], [out], () => {
-    const input = primitive_construct_cell("input")
+    const input = construct_cell("input")
     p_sync(a, input)
     p_sync(b, input)
     p_take(until)(input, out)

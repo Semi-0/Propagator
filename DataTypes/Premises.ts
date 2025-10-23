@@ -1,4 +1,4 @@
-import { add_cell_content, cell_name, type Cell } from "../Cell/Cell";
+import { update_cell, cell_name, type Cell } from "../Cell/Cell";
 import { set_global_state } from "../Shared/PublicState";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import type { Layer } from "sando-layer/Basic/Layer";
@@ -233,7 +233,7 @@ function _make_hypothetical<A>(output: Cell<A>, value: A): string {
     register_hypothesis(id, self)
     register_premise(id, output);
     //@ts-ignore
-    add_cell_content<LayeredObject>(output, support_by(value, id));
+    update_cell<LayeredObject>(output, support_by(value, id));
 
     return id;       
 }

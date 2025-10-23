@@ -10,18 +10,20 @@ import { describe } from "../Helper/UI";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../Propagator/Search";
 import { construct_better_set, identify_by, is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
-import { length } from "generic-handler/built_in_generics/generic_collection"
+import { length, to_array } from "generic-handler/built_in_generics/generic_collection"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { get_new_reference_count } from "../Helper/Helper";
+import { curried_filter, curried_map, get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { Current_Scheduler } from "../Shared/Scheduler/Scheduler";
+import { alert_propagators, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
+import { pipe } from "fp-ts/lib/function";
+import { toArray } from "fp-ts/lib/Map";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -51,87 +53,166 @@ export interface Cell<A> {
   getRelation: () => Primitive_Relation;
   getContent: () => CellValue<A>;
   getStrongest: () => CellValue<A>
-  getNeighbors: () => Map<string, Propagator>;
-  addContent: (increment: CellValue<A>) => void;
-  testContent: () => void;
-  addNeighbor: (propagator: Propagator) => void;
+  getNeighbors: () => Map<string, interesetedNeighbors>;
+  update: (increment: CellValue<A>) => boolean;
+  testContent: () => boolean;
+  addNeighbor: (propagator: Propagator, interested_in: string[]) => void;
+  removeNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
   dispose: () => void;  // <-- new dispose method
 }
-
-
 // how about hooks
+
+export interface interesetedNeighbors{
+  interested_in: string[];
+  propagator: Propagator
+}
+
+export const is_interested_neighbor = (prop: string) => (neighbor: interesetedNeighbors) => {
+  return neighbor.interested_in.includes(prop)
+}
+
+export const fetch_propagators_from_neighbors = (prop: string) => (neighbors: Map<string, interesetedNeighbors>) => {
+  return pipe(
+    neighbors, 
+    to_array, 
+    curried_filter(is_interested_neighbor(prop)),
+    curried_map((n: interesetedNeighbors) => n.propagator)
+  )
+}
+
+export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbors>, prop: string) => {
+  return pipe(
+    neighbors, 
+    fetch_propagators_from_neighbors(prop),
+    alert_propagators
+  )
+}
+
+
 export function primitive_construct_cell<A>(initial: CellValue<A>, name: string, id: string | null = null): Cell<A> {
-    const relation = make_relation(name, get_global_parent(), id);
-    const neighbors: Map<string, Propagator> = new Map();
-    // build two stateful streams for content and strongest
-    var content: CellValue<A> = initial;
-    var strongest: CellValue<A> = initial;
-    var active = true
-    const handle_cell_contradiction = () => handle_contradiction(cell);
+  const relation = make_relation(name, get_global_parent(), id);
+  const neighbors: Map<string, interesetedNeighbors> = new Map();
+  // build two stateful streams for content and strongest
+  // can be more performative to fine grain observe method args
+  // but how?
+  var content: CellValue<A> = initial;
+  var strongest: CellValue<A> = initial;
+  var active = true
 
-    function test_content(){
-      const new_strongest = strongest_value(content)
-      if (is_equal(new_strongest, strongest)){
-        // do nothing
-      }
-      else if (is_contradiction(new_strongest)){
-        strongest = new_strongest
-        handle_cell_contradiction()
-      }
-      else{
-        strongest = new_strongest
-        Current_Scheduler.alert_propagators(Array.from(neighbors.values()))
-      }
-    }
+  const handle_cell_contradiction = () => handle_contradiction(cell);
 
-    
+  function set_content(new_content: CellValue<A>){
+    content = new_content
 
-    const cell: Cell<A> = {
-      getRelation: () => relation,
-      getContent: () => content,
-      getStrongest: () => strongest,
-      getNeighbors: () => neighbors,
-      testContent: test_content,
-      addContent: (increment: CellValue<A>) => {
-        if (active) {
-          content = cell_merge(content, increment)
-          test_content()
-        }
-      },
-
-      addNeighbor: (propagator: Propagator) => {
-        neighbors.set(propagator.getRelation().get_id(), propagator);
-        Current_Scheduler.alert_propagators(Array.from(neighbors.values()))
-      },
-      summarize: () => {
-        const name = relation.get_name();
-        const strongVal = strongest
-        const contVal = content
-        return `name: ${name}\nstrongest: ${to_string(strongVal)}\ncontent: ${describe(contVal)}`;
-      },
-
-      dispose: () => {
-        // Set the cell to disposed value
-        content = the_disposed
-        strongest = the_disposed
-        active = false
-        // Mark for cleanup
-        mark_for_disposal(cell.getRelation())
-        // Trigger propagation to connected cells
-
-        // but what about dependents?
-        neighbors.forEach(propagator => {
-          propagator.activate()
-        })
-      }
-    };
-
-    set_global_state(PublicStateCommand.ADD_CELL, cell);
-    set_global_state(PublicStateCommand.ADD_CHILD, relation);
-    return cell;
   }
 
+  function set_strongest(new_strongest: CellValue<A>){
+    strongest = new_strongest
+
+  }
+
+  function test_content(): boolean {
+    const new_strongest = strongest_value(content)
+    if (is_equal(new_strongest, strongest)){
+      // do nothing
+      return false 
+    }
+    else if (is_contradiction(new_strongest)){
+      set_strongest(new_strongest)
+      handle_cell_contradiction()
+      return true
+    }
+    else{
+      set_strongest(new_strongest)
+      return true
+    }
+  }
+
+  
+
+  const cell = {
+    getRelation: () => relation,
+    getContent: () => content,
+    getStrongest: () => strongest,
+    getNeighbors: () => neighbors,
+    testContent: test_content,
+    update: (increment: CellValue<A> = the_nothing) => {
+      if (active) {
+        set_content(cell_merge(content, increment))
+        return test_content()
+      }
+      return false
+    },
+
+    addNeighbor: (propagator: Propagator, interested_in: string[]) => {
+      neighbors.set(propagator.getRelation().get_id(), {
+        interested_in: interested_in,
+        propagator: propagator
+      });
+    },
+    removeNeighbor: (propagator: Propagator) => {
+      neighbors.delete(get_id(propagator));
+    },
+    summarize: () => {
+      const name = relation.get_name();
+      const strongVal = strongest
+      const contVal = content
+      return `name: ${name}\nstrongest: ${to_string(strongVal)}\ncontent: ${describe(contVal)}`;
+    },
+
+    dispose: () => {
+      // Set the cell to disposed value
+      content = the_disposed
+      strongest = the_disposed
+      active = false
+      // Mark for cleanup
+      mark_for_disposal(cell.getRelation())
+      // Trigger propagation to connected cells
+
+      // but what about dependents?
+      neighbors.forEach(n => {
+        n.propagator.activate()
+      })
+    }
+  };
+
+  const hookable_cell = new Proxy(cell, {
+    get(target: Cell<A>, prop: string | symbol, receiver: any){
+      const original_method = target[prop as keyof Cell<A>]
+
+      if (typeof original_method === 'function'){
+        return function(...args: any[]){
+         // timeing might have problems
+          const result =  (original_method as any).apply(cell, args)
+        
+          if ((prop === 'update')){
+              if (result){
+                alert_interested_propagators(neighbors, prop)
+              }
+              else{
+                // do nothing
+              }
+          }
+          else{
+            alert_interested_propagators(neighbors, prop)
+          }      
+          
+          return result
+        }
+      }
+      else{
+        return original_method
+      }
+    }
+  })
+
+  set_global_state(PublicStateCommand.ADD_CELL, hookable_cell);
+  set_global_state(PublicStateCommand.ADD_CHILD, relation);
+  return hookable_cell;
+}
+
+  // source layer triggers propagator to updates
 
 export function construct_cell<A>(name: string): Cell<A> {
   return primitive_construct_cell<A>(the_nothing, name)
@@ -147,24 +228,25 @@ export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> =>
   && a.getContent !== undefined 
   && a.getStrongest !== undefined 
   && a.getNeighbors !== undefined 
-  && a.addContent !== undefined 
+  && a.update !== undefined 
   && a.testContent !== undefined 
   && a.addNeighbor !== undefined 
+  && a.removeNeighbor !== undefined 
   && a.summarize !== undefined 
   && a.dispose !== undefined
 );
     
 export function make_temp_cell(){
     let name = "#temp_cell_" + get_new_reference_count();
-    return primitive_construct_cell(the_nothing, name);
+    return construct_cell<any>(name);
 }
 
-export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator){
-  cell.addNeighbor(propagator);
+export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: string[]){
+  cell.addNeighbor(propagator, interested_in);
 }
 
-export function add_cell_content<A>(cell: Cell<A>, content: A){
-  cell.addContent(content);
+export function update_cell<A>(cell: Cell<A>, content: A){
+  cell.update(content);
 }
 
 export function cell_strongest<A>(cell: Cell<A>): CellValue<A>{

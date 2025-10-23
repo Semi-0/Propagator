@@ -2,7 +2,7 @@
 // Ergonomic critics
 // ========================================
 import { r_constant } from "..";
-import { make_temp_cell, primitive_construct_cell, type Cell } from "../Cell/Cell";
+import { make_temp_cell, construct_cell, type Cell } from "../Cell/Cell";
 import { function_to_primitive_propagator, compound_propagator, type Propagator } from "../Propagator/Propagator";
 import { 
   p_feedback, 

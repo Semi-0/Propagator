@@ -1,5 +1,5 @@
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
-import { type Cell, add_cell_content, cell_id, cell_strongest, cell_dispose, summarize_cells } from "../Cell/Cell";
+import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, summarize_cells } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -22,7 +22,7 @@ import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
 // TODO: memory leak?
 
 export interface Propagator {
-  get_name: () => string;
+  getName: () => string;
   getRelation: () => Primitive_Relation;
   getInputs: () => Cell<any>[];
   getOutputs: () => Cell<any>[];
@@ -35,7 +35,7 @@ export const is_propagator = register_predicate("is_propagator", (propagator: an
     return (
         propagator &&
         typeof propagator === 'object' &&
-        'get_name' in propagator &&
+        'getName' in propagator &&
         'getRelation' in propagator &&
         'getInputs' in propagator &&
         'getOutputs' in propagator &&
@@ -50,21 +50,24 @@ define_generic_procedure_handler(get_id, match_args(is_propagator), propagator_i
 
 
 export const disposing_scan = (cells: Cell<any>[]) => {
-    return cells.some((c: any) => c || is_disposed(cell_strongest(c)))
+    return cells.some((c: any) => c === undefined || c === null || is_disposed(cell_strongest(c)))
 }
 
 // dispose is too low level, we need to abstract it away!!!
-export function construct_propagator(inputs: Cell<any>[], 
+export function construct_propagator(
+                                 inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
                                  activate: () => void,
                                  name: string,
-                                 id: string | null = null): Propagator {
+                                 id: string | null = null,
+                                 interested_in: string[] = ["update"]
+                                ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
 
   activate();
 
   const propagator: Propagator = {
-    get_name: () => name,
+    getName: () => name,
     getRelation: () => relation,
     getInputs: () => inputs,
     getOutputs: () => outputs,
@@ -72,9 +75,11 @@ export function construct_propagator(inputs: Cell<any>[],
     activate: () => {
 
       if (disposing_scan([...inputs, ...outputs])) {
+       
         propagator.dispose();
       }
       else {
+  
           // Normal activation
           parameterize_parent(relation)(() => {
               activate();
@@ -85,7 +90,7 @@ export function construct_propagator(inputs: Cell<any>[],
       [...inputs, ...outputs].forEach(cell => {
         const neighbors = cell.getNeighbors();
         if (neighbors.has(relation.get_id())) {
-          neighbors.delete(relation.get_id());
+          cell.removeNeighbor(propagator);
         }
       });
       // Mark for cleanup
@@ -94,7 +99,7 @@ export function construct_propagator(inputs: Cell<any>[],
   };
 
   inputs.forEach(cell => {
-    cell.addNeighbor(propagator);
+    cell.addNeighbor(propagator, interested_in);
   })
   
   set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
@@ -102,7 +107,7 @@ export function construct_propagator(inputs: Cell<any>[],
   return propagator;
 }
 
-export function primitive_propagator(f: (...inputs: any[]) => any, name: string) {
+export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: string[] = ["update"]) {
     return (...cells: Cell<any>[]): Propagator => {
         if (cells.length === 0) {
             throw new Error("Primitive propagator must have at least one input");
@@ -125,7 +130,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string)
                     const output_value = f(...inputs_values);
 
                     if ((output) && (is_not_no_compute(output_value))){
-                        add_cell_content(output as Cell<any>, output_value);
+                        update_cell(output as Cell<any>, output_value);
                     }
                 }
            }, 
@@ -169,10 +174,6 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
         id
     )
     
-    inputs.forEach(cell => {
-        cell.addNeighbor(propagator);
-    });
-    
     set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation());
     set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
     
@@ -193,7 +194,7 @@ export function propagator_children(propagator: Propagator){
 }
 
 export function propagator_name(propagator: Propagator): string{
-    return propagator.get_name();
+    return propagator.getName();
 }
 
 export function propagator_dispose(propagator: Propagator){

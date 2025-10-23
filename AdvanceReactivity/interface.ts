@@ -1,4 +1,4 @@
-import { add_cell_content, cell_id, constant_cell, primitive_construct_cell } from "@/cell/Cell";
+import { update_cell, cell_id, constant_cell, construct_cell } from "@/cell/Cell";
 import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/Annotater";
 import type { Cell } from "@/cell/Cell";
 import { stale } from "./traced_timestamp/Annotater";
@@ -21,7 +21,7 @@ export function update<A>(a: Cell<A>, v: A){
     const with_traced_timestamp = annotate_now_with_id(cell_id(a))
     const annotated = with_traced_timestamp(v)
 
-    add_cell_content(a, annotated as A);
+    update_cell(a, annotated as A);
     update_store.set(cell_id(a), annotated)
 
     // execute_all_tasks_sequential((e) => {
@@ -36,7 +36,7 @@ export function initialize<A>(a: Cell<A>, v: A){
         stale(update_store.get(cell_id(a)))
     }
 
-    add_cell_content(a, annotate_smallest_time_with_id(cell_id(a))(v) as A)
+    update_cell(a, annotate_smallest_time_with_id(cell_id(a))(v) as A)
     update_store.set(cell_id(a), v)
 }
 
@@ -45,7 +45,7 @@ export const r_constant = <T>(value: T, name: string | undefined = undefined) =>
     if (name === undefined) {
         name = "reactive_constant_cell#" + get_new_reference_count()
     }
-    const cell = primitive_construct_cell<T>(name)
+    const cell = construct_cell<T>(name)
     update(cell, value)
     return cell
 }

@@ -26,6 +26,41 @@ export function reference_store(){
 
 export let get_new_reference_count = reference_store()
 
+define_generic_procedure_handler(to_array,
+    match_args(is_map),
+    (map: Map<any, any>) => {
+        return Array.from(map.values())
+    }
+)
+
+define_generic_procedure_handler(
+    filter,
+    match_args(is_map),
+    (
+        map: Map<any, any>,
+        predicate: (value: any) => boolean
+    ) => {
+        const filteredEntries = Array.from(map.entries()).filter(
+            ([key, value]) => predicate(value)
+        );
+        return new Map(filteredEntries);
+    }
+);
+
+define_generic_procedure_handler(
+    map,
+    match_args(is_map),
+    (
+        map: Map<any, any>,
+        mapper: (value: any) => any
+    ) => {
+        const mappedEntries = Array.from(map.entries()).map(
+            ([key, value]) => [key, mapper(value)] as [any, any]
+        );
+        return new Map(mappedEntries as [any, any][]);
+    }
+);
+
 export const curried_filter = curryArgument(1, filter)
 
 export const curried_map = curryArgument(1, map)

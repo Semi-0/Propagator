@@ -1,6 +1,6 @@
 import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { construct_simple_object_propagator } from "../ObjectSystem/object_propagator";
-import { primitive_construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
+import { construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 import { the_nothing } from "..";
 import { tell } from "../Helper/UI";
 import { update } from "../AdvanceReactivity/interface";
@@ -36,8 +36,8 @@ describe("construct_simple_object_propagator", () => {
         }))(state, increment) as Cell<{ state: number; result?: any }>;
       };
 
-      const state = primitive_construct_cell<number>("counter");
-      const cmd = primitive_construct_cell<string>("cmd");
+      const state = construct_cell<number>("counter");
+      const cmd = construct_cell<string>("cmd");
       
       // Initialize state with a value
       update(state, 0);
@@ -85,8 +85,8 @@ describe("construct_simple_object_propagator", () => {
         })(state, cmd) as Cell<{ state: State; result?: any }>;
       };
 
-      const state = primitive_construct_cell<State>("state");
-      const cmd = primitive_construct_cell<string>("cmd");
+      const state = construct_cell<State>("state");
+      const cmd = construct_cell<string>("cmd");
       
       // Initialize state
       update(state, "idle");
@@ -138,9 +138,9 @@ describe("construct_simple_object_propagator", () => {
         })(state, cmd) as Cell<{ state: number; result?: number }>;
       };
 
-      const state = primitive_construct_cell<number>("calculator");
-      const cmd = primitive_construct_cell<{ op: string; value: number }>("cmd");
-      const result = primitive_construct_cell<number>("result");
+      const state = construct_cell<number>("calculator");
+      const cmd = construct_cell<{ op: string; value: number }>("cmd");
+      const result = construct_cell<number>("result");
       
       // Initialize state
       update(state, 0);
@@ -182,9 +182,9 @@ describe("construct_simple_object_propagator", () => {
         })(state, cmd);
       };
 
-      const state = primitive_construct_cell<number>("state");
-      const cmd = primitive_construct_cell<string>("cmd");
-      const result = primitive_construct_cell<number>("result");
+      const state = construct_cell<number>("state");
+      const cmd = construct_cell<string>("cmd");
+      const result = construct_cell<number>("result");
       
       // Initialize state
       update(state, 0);
@@ -218,8 +218,8 @@ describe("construct_simple_object_propagator", () => {
         })(state, cmd);
       };
 
-      const state = primitive_construct_cell<number>("state");
-      const cmd = primitive_construct_cell<any>("cmd");
+      const state = construct_cell<number>("state");
+      const cmd = construct_cell<any>("cmd");
       
       // Initialize state
       update(state, 42);
@@ -252,8 +252,8 @@ describe("construct_simple_object_propagator", () => {
         }))(state, cmd);
       };
 
-      const state = primitive_construct_cell<number>("state");
-      const cmd = primitive_construct_cell<number>("cmd");
+      const state = construct_cell<number>("state");
+      const cmd = construct_cell<number>("cmd");
       
       // Initialize state
       update(state, 0);
@@ -295,9 +295,9 @@ describe("construct_simple_object_propagator", () => {
         active: true
       };
 
-      const state = primitive_construct_cell<UserState>("user");
-      const cmd = primitive_construct_cell<Partial<UserState>>("cmd");
-      const result = primitive_construct_cell<UserState>("result");
+      const state = construct_cell<UserState>("user");
+      const cmd = construct_cell<Partial<UserState>>("cmd");
+      const result = construct_cell<UserState>("result");
       
       // Initialize state
       update(state, initialState);
@@ -340,8 +340,8 @@ describe("construct_simple_object_propagator", () => {
         }))(state, cmd);
       };
 
-      const state = primitive_construct_cell<number>("state");
-      const cmd = primitive_construct_cell<number>("cmd");
+      const state = construct_cell<number>("state");
+      const cmd = construct_cell<number>("cmd");
       
       // Initialize state
       update(state, 0);
@@ -368,9 +368,9 @@ describe("construct_simple_object_propagator", () => {
         }))(state, cmd);
       };
 
-      const state = primitive_construct_cell<number>("sharedState");
-      const cmd1 = primitive_construct_cell<number>("cmd1");
-      const cmd2 = primitive_construct_cell<number>("cmd2");
+      const state = construct_cell<number>("sharedState");
+      const cmd1 = construct_cell<number>("cmd1");
+      const cmd2 = construct_cell<number>("cmd2");
       
       // Initialize state
       update(state, 0);

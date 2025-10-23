@@ -1,5 +1,5 @@
 import { link, p_filter_a, p_map_a, register_predicate, the_nothing, values } from "ppropogator"
-import { cell_name, primitive_construct_cell, make_temp_cell, type Cell } from "../Cell/Cell"
+import { cell_name, construct_cell, make_temp_cell, type Cell } from "../Cell/Cell"
 import  { compound_propagator, function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator"
 import { for_each } from "generic-handler/built_in_generics/generic_collection"
 import type { ComponentPropsWithRef } from "react"

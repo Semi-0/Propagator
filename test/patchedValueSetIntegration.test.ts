@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
 import {
-    primitive_construct_cell,
+    construct_cell,
     cell_strongest_base_value,
     set_handle_contradiction,
     cell_content,
@@ -38,9 +38,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
     describe("Single Layer Tests: Support Layer (Supported Values Only)", () => {
         
         test("should handle addition with supported values", async () => {
-            const cellA = primitive_construct_cell("supportAddA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("supportAddB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("supportAddOutput");
+            const cellA = construct_cell("supportAddA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("supportAddB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("supportAddOutput");
             
             p_add(cellA, cellB, output);
             
@@ -56,9 +56,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("should handle multiplication with support layer values", async () => {
-            const cellA = primitive_construct_cell("supportMulA");
-            const cellB = primitive_construct_cell("supportMulB");
-            const output = primitive_construct_cell("supportMulOutput");
+            const cellA = construct_cell("supportMulA");
+            const cellB = construct_cell("supportMulB");
+            const output = construct_cell("supportMulOutput");
             
             p_multiply(cellA, cellB, output);
             //@ts-ignore
@@ -74,9 +74,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("should handle subtraction with support layer values", async () => {
-            const cellA = primitive_construct_cell("supportSubA"); 
-            const cellB = primitive_construct_cell("supportSubB");
-            const output = primitive_construct_cell("supportSubOutput");
+            const cellA = construct_cell("supportSubA"); 
+            const cellB = construct_cell("supportSubB");
+            const output = construct_cell("supportSubOutput");
             
             p_subtract(cellA, cellB, output);
             
@@ -93,9 +93,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("should handle division with support layer values", async () => {
-            const cellA = primitive_construct_cell("supportDivA");
-            const cellB = primitive_construct_cell("supportDivB");
-            const output = primitive_construct_cell("supportDivOutput");
+            const cellA = construct_cell("supportDivA");
+            const cellB = construct_cell("supportDivB");
+            const output = construct_cell("supportDivOutput");
             
             p_divide(cellA, cellB, output);
             
@@ -116,9 +116,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
     describe("Edge Cases with PatchedSets", () => {
         
         test("should handle empty cell values gracefully", async () => {
-            const cellA = primitive_construct_cell("emptyA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("emptyB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("emptyOutput");
+            const cellA = construct_cell("emptyA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("emptyB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("emptyOutput");
             
             p_add(cellA, cellB, output);
             
@@ -145,9 +145,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("should handle adding same base value multiple times", async () => {
-            const cell = primitive_construct_cell("duplicateTest") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("duplicateOutput") as Cell<LayeredObject<any>>;
-            const constant = primitive_construct_cell("constant") as Cell<LayeredObject<any>>;
+            const cell = construct_cell("duplicateTest") as Cell<LayeredObject<any>>;
+            const output = construct_cell("duplicateOutput") as Cell<LayeredObject<any>>;
+            const constant = construct_cell("constant") as Cell<LayeredObject<any>>;
             
             p_multiply(cell, constant, output);
             compound_tell(constant, 2, support_layer, construct_better_set(["c"]));
@@ -175,9 +175,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
     describe("VICTOR CLOCK + PATCHED SET PROPAGATOR TESTS", () => {
         
         test("[VICTOR_CLOCK] Basic addition with victor clock values in propagator", async () => {
-            const cellA = primitive_construct_cell("vc_addA");
-            const cellB = primitive_construct_cell("vc_addB");
-            const output = primitive_construct_cell("vc_addOutput");
+            const cellA = construct_cell("vc_addA");
+            const cellB = construct_cell("vc_addB");
+            const output = construct_cell("vc_addOutput");
             
             p_add(cellA, cellB, output);
             
@@ -196,8 +196,8 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
                 victor_clock_layer, new Map([["procB", 1]])
             );
             
-            cellA.addContent(valueA);
-            cellB.addContent(valueB);
+            cellA.update(valueA);
+            cellB.update(valueB);
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) {
@@ -210,9 +210,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
-            const cellA = primitive_construct_cell("vcSup_staleA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("vcSup_staleB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("vcSup_staleOutput");
+            const cellA = construct_cell("vcSup_staleA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcSup_staleB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcSup_staleOutput");
             
             p_add(cellA, cellB, output);
             
@@ -247,9 +247,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT] Concurrent values with different clocks and supports should coexist but may raise contradiction", async () => {
-            const cellA = primitive_construct_cell("vcConcA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("vcConcB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("vcConcOutput");
+            const cellA = construct_cell("vcConcA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcConcB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcConcOutput");
             
             p_add(cellA, cellB, output);
             
@@ -284,9 +284,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT] Edge case: Victor Clock value joins with Support-only value, raises contradiction, retract to resolve", async () => {
-            const cellA = primitive_construct_cell("mixedA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("mixedB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("mixedOutput");
+            const cellA = construct_cell("mixedA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("mixedB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("mixedOutput");
             
             p_add(cellA, cellB, output);
             
@@ -318,9 +318,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT] Multiple stale values with support replacement", async () => {
-            const cellA = primitive_construct_cell("multiStaleA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("multiStaleB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("multiStaleOutput");
+            const cellA = construct_cell("multiStaleA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("multiStaleB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("multiStaleOutput");
             
             p_multiply(cellA, cellB, output);
             
@@ -360,9 +360,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
 
     describe("Contradiction Detection and Resolution Tests", () => {
         test("[CONTRADICTION] Simple contradiction detection with support layers", async () => {
-            const cellA = primitive_construct_cell("contradictionCellA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("contradictionCellB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("contradictionOutput");
+            const cellA = construct_cell("contradictionCellA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("contradictionCellB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("contradictionOutput");
             
             p_add(cellA, cellB, output);
             
@@ -382,9 +382,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[CONTRADICTION] Contradiction with mismatched values and support resolution", async () => {
-            const cellA = primitive_construct_cell("contradictionResolveA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("contradictionResolveB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("contradictionResolveOutput");
+            const cellA = construct_cell("contradictionResolveA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("contradictionResolveB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("contradictionResolveOutput");
             
             p_add(cellA, cellB, output);
             
@@ -420,9 +420,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT + CONTRADICTION] Contradiction with mixed layers and resolution", async () => {
-            const cellA = primitive_construct_cell("vcContradictionA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("vcContradictionB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("vcContradictionOutput");
+            const cellA = construct_cell("vcContradictionA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcContradictionB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcContradictionOutput");
             
             p_multiply(cellA, cellB, output);
             
@@ -448,6 +448,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             await execute_all_tasks_sequential((error: Error) => {});
             
             let result2 = cell_strongest_base_value(output);
+
+            console.log("cellA", cellA.summarize())
+            console.log("result1", output.summarize())
             expect(result2).toBe(12); // 20 - 8 (5*4 - 3*4)
             
             // Resolve by kicking out the conflicting support premise
@@ -461,9 +464,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[VICTOR_CLOCK + SUPPORT + CONTRADICTION] Update to fresher clock version removes contradiction", async () => {
-            const cellA = primitive_construct_cell("vcUpdateResolveA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("vcUpdateResolveB") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("vcUpdateResolveOutput");
+            const cellA = construct_cell("vcUpdateResolveA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("vcUpdateResolveB") as Cell<LayeredObject<any>>;
+            const output = construct_cell("vcUpdateResolveOutput");
             
             p_add(cellA, cellB, output);
             
@@ -504,13 +507,13 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
 
         test("[CONTRADICTION] Multiple contradictions with resolution cascade", async () => {
-            const cellA = primitive_construct_cell("cascadeA") as Cell<LayeredObject<any>>;
-            const cellB = primitive_construct_cell("cascadeB") as Cell<LayeredObject<any>>;
-            const cellC = primitive_construct_cell("cascadeC") as Cell<LayeredObject<any>>;
-            const output = primitive_construct_cell("cascadeOutput");
+            const cellA = construct_cell("cascadeA") as Cell<LayeredObject<any>>;
+            const cellB = construct_cell("cascadeB") as Cell<LayeredObject<any>>;
+            const cellC = construct_cell("cascadeC") as Cell<LayeredObject<any>>;
+            const output = construct_cell("cascadeOutput");
             
             // Chain: (A + B) * C
-            const temp = primitive_construct_cell("cascadeTemp");
+            const temp = construct_cell("cascadeTemp");
             p_add(cellA, cellB, temp);
             p_multiply(temp, cellC, output);
             

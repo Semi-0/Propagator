@@ -76,7 +76,7 @@ function is_cell(o: any): boolean{
 }
 
 function is_propagator(o: any): boolean{
-    return o.getInputsID !== undefined && o.getOutputsID !== undefined && o.summarize !== undefined;
+    return o.getInputs !== undefined && o.getOutputs !== undefined && o.summarize !== undefined;
 }
 
 
@@ -93,7 +93,7 @@ subscribe((msg: PublicStateMessage) => {
             break;
         case PublicStateCommand.FORCE_UPDATE_ALL_CELLS:
             all_cells.get_value().forEach((cell: any) => {
-                cell.testContent()
+                cell.update()
             });
             break;
 

@@ -1,6 +1,6 @@
 import { test, expect, describe, beforeEach, afterEach } from "bun:test";
 import { construct_simple_object_propagator } from "../ObjectSystem/object_propagator";
-import { primitive_construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
+import { construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 
 import { update } from "../AdvanceReactivity/interface";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
@@ -27,8 +27,8 @@ describe("construct_simple_object_propagator - Simple Tests", () => {
       }))(state, cmd);
     };
 
-    const state = primitive_construct_cell<number>("counter");
-    const cmd = primitive_construct_cell<number>("cmd");
+    const state = construct_cell<number>("counter");
+    const cmd = construct_cell<number>("cmd");
     
     // Initialize state
     update(state, 0);
@@ -58,9 +58,9 @@ describe("construct_simple_object_propagator - Simple Tests", () => {
       }))(state, cmd);
     };
 
-    const state = primitive_construct_cell<number>("state");
-    const cmd = primitive_construct_cell<number>("cmd");
-    const result = primitive_construct_cell<number>("result");
+    const state = construct_cell<number>("state");
+    const cmd = construct_cell<number>("cmd");
+    const result = construct_cell<number>("result");
     
     // Initialize state
     update(state, 0);
@@ -91,8 +91,8 @@ describe("construct_simple_object_propagator - Simple Tests", () => {
       }))(state, cmd);
     };
 
-    const state = primitive_construct_cell<number>("state");
-    const cmd = primitive_construct_cell<number>("cmd");
+    const state = construct_cell<number>("state");
+    const cmd = construct_cell<number>("cmd");
     
     // Initialize state
     update(state, 0);
@@ -127,8 +127,8 @@ describe("construct_simple_object_propagator - Simple Tests", () => {
       })(state, cmd);
     };
 
-    const state = primitive_construct_cell<number>("state");
-    const cmd = primitive_construct_cell<string>("cmd");
+    const state = construct_cell<number>("state");
+    const cmd = construct_cell<string>("cmd");
     
     // Initialize state
     update(state, 0);

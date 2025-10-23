@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { expect, test, beforeEach, describe } from "bun:test";
 
-import { primitive_construct_cell, type Cell, cell_level } from "../Cell/Cell";
+import { construct_cell, type Cell, cell_level } from "../Cell/Cell";
 import { 
     construct_propagator, 
     function_to_primitive_propagator, 
@@ -41,7 +41,7 @@ describe("Abstraction Level and Traversal Tests", () => {
         expect(rootRelation.get_level()).toBe(0);
         
         // Create cells at root level
-        const rootCell = primitive_construct_cell("root_cell");
+        const rootCell = construct_cell("root_cell");
         expect(cell_level(rootCell)).toBe(1);
         
         // Create a parent relation at level 1
@@ -51,7 +51,7 @@ describe("Abstraction Level and Traversal Tests", () => {
         // Create cells within parameterize_parent context
         let level1Cell: Cell<any>;
         parameterize_parent(parentRelation)(() => {
-            level1Cell = primitive_construct_cell("level1_cell");
+            level1Cell = construct_cell("level1_cell");
             expect(cell_level(level1Cell)).toBe(2);
         });
         
@@ -64,15 +64,15 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create cells
-        const input = primitive_construct_cell("input");
-        const output = primitive_construct_cell("output");
+        const input = construct_cell("input");
+        const output = construct_cell("output");
         
         // Create propagator at root level
         const rootPropagator = construct_propagator(
             [input], 
             [output], 
             () => {
-                output.addContent(input.getStrongest());
+                output.update(input.getStrongest());
             },
             "root_propagator"
         );
@@ -85,14 +85,14 @@ describe("Abstraction Level and Traversal Tests", () => {
         // Create propagator within parameterize_parent context
         let level1Propagator: Propagator;
         parameterize_parent(parentRelation)(() => {
-            const level1Input = primitive_construct_cell("level1_input");
-            const level1Output = primitive_construct_cell("level1_output");
+            const level1Input = construct_cell("level1_input");
+            const level1Output = construct_cell("level1_output");
             
             level1Propagator = construct_propagator(
                 [level1Input], 
                 [level1Output], 
                 () => {
-                    level1Output.addContent(level1Input.getStrongest());
+                    level1Output.update(level1Input.getStrongest());
                 },
                 "level1_propagator"
             );
@@ -109,8 +109,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create cells
-        const input = primitive_construct_cell("input");
-        const output = primitive_construct_cell("output");
+        const input = construct_cell("input");
+        const output = construct_cell("output");
         
         // Create primitive propagator at root level
         const rootPrimitiveFn = function_to_primitive_propagator("root_primitive", (x: number) => x + 1);
@@ -124,8 +124,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         // Create primitive propagator within parameterize_parent context
         let level1Primitive: Propagator;
         parameterize_parent(parentRelation)(() => {
-            const level1Input = primitive_construct_cell("level1_input");
-            const level1Output = primitive_construct_cell("level1_output");
+            const level1Input = construct_cell("level1_input");
+            const level1Output = construct_cell("level1_output");
             
             const level1PrimitiveFn = function_to_primitive_propagator("level1_primitive", (x: number) => x * 2);
             level1Primitive = level1PrimitiveFn(level1Input, level1Output); // This creates the actual propagator
@@ -142,15 +142,15 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create cells
-        const input = primitive_construct_cell("input");
-        const output = primitive_construct_cell("output");
+        const input = construct_cell("input");
+        const output = construct_cell("output");
         
         // Create compound propagator at root level
         const rootCompound = compound_propagator(
             [input], 
             [output], 
             () => {
-                const innerCell = primitive_construct_cell("inner_cell");
+                const innerCell = construct_cell("inner_cell");
                 const innerProp = function_to_primitive_propagator("inner_prop", (x: number) => x + 1);
                 innerProp(input, innerCell);
                 innerProp(innerCell, output);
@@ -166,14 +166,14 @@ describe("Abstraction Level and Traversal Tests", () => {
         // Create compound propagator within parameterize_parent context
         let level1Compound: Propagator;
         parameterize_parent(parentRelation)(() => {
-            const level1Input = primitive_construct_cell("level1_input");
-            const level1Output = primitive_construct_cell("level1_output");
+            const level1Input = construct_cell("level1_input");
+            const level1Output = construct_cell("level1_output");
             
             level1Compound = compound_propagator(
                 [level1Input], 
                 [level1Output], 
                 () => {
-                    const innerCell = primitive_construct_cell("level1_inner_cell");
+                    const innerCell = construct_cell("level1_inner_cell");
                     const innerProp = function_to_primitive_propagator("level1_inner_prop", (x: number) => x * 2);
                     innerProp(level1Input, innerCell);
                     innerProp(innerCell, level1Output);
@@ -193,8 +193,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create level 0 cells and propagators
-        const level0Input = primitive_construct_cell("level0_input");
-        const level0Output = primitive_construct_cell("level0_output");
+        const level0Input = construct_cell("level0_input");
+        const level0Output = construct_cell("level0_output");
         const level0Prop = function_to_primitive_propagator("level0_prop", (x: number) => x + 1);
         level0Prop(level0Input, level0Output);
         
@@ -203,8 +203,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1Input: Cell<any>, level1Output: Cell<any>, level1Prop: Propagator;
         
         parameterize_parent(level1Relation)(() => {
-            level1Input = primitive_construct_cell("level1_input");
-            level1Output = primitive_construct_cell("level1_output");
+            level1Input = construct_cell("level1_input");
+            level1Output = construct_cell("level1_output");
             level1Prop = function_to_primitive_propagator("level1_prop", (x: number) => x * 2);
             level1Prop(level1Input, level1Output);
         });
@@ -214,8 +214,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level2Input: Cell<any>, level2Output: Cell<any>, level2Prop: Propagator;
         
         parameterize_parent(level2Relation)(() => {
-            level2Input = primitive_construct_cell("level2_input");
-            level2Output = primitive_construct_cell("level2_output");
+            level2Input = construct_cell("level2_input");
+            level2Output = construct_cell("level2_output");
             level2Prop = function_to_primitive_propagator("level2_prop", (x: number) => x - 1);
             level2Prop(level2Input, level2Output);
         });
@@ -242,8 +242,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create level 0 cells and propagators
-        const level0Input = primitive_construct_cell("level0_input");
-        const level0Output = primitive_construct_cell("level0_output");
+        const level0Input = construct_cell("level0_input");
+        const level0Output = construct_cell("level0_output");
         const level0Prop = function_to_primitive_propagator("level0_prop", (x: number) => x + 1);
         level0Prop(level0Input, level0Output);
         
@@ -252,8 +252,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1Input: Cell<any>, level1Output: Cell<any>, level1Prop: Propagator;
         
         parameterize_parent(level1Relation)(() => {
-            level1Input = primitive_construct_cell("level1_input");
-            level1Output = primitive_construct_cell("level1_output");
+            level1Input = construct_cell("level1_input");
+            level1Output = construct_cell("level1_output");
             level1Prop = function_to_primitive_propagator("level1_prop", (x: number) => x * 2);
             level1Prop(level1Input, level1Output);
         });
@@ -280,9 +280,9 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create level 0 network
-        const a = primitive_construct_cell("a");
-        const b = primitive_construct_cell("b");
-        const c = primitive_construct_cell("c");
+        const a = construct_cell("a");
+        const b = construct_cell("b");
+        const c = construct_cell("c");
         const p1Fn = function_to_primitive_propagator("p1", (x: number) => x + 1);
         const p2Fn = function_to_primitive_propagator("p2", (x: number) => x * 2);
         const p1 = p1Fn(a, b); // Create actual propagator
@@ -294,9 +294,9 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1P1: Propagator, level1P2: Propagator;
         
         parameterize_parent(level1Relation)(() => {
-            level1A = primitive_construct_cell("level1_a");
-            level1B = primitive_construct_cell("level1_b");
-            level1C = primitive_construct_cell("level1_c");
+            level1A = construct_cell("level1_a");
+            level1B = construct_cell("level1_b");
+            level1C = construct_cell("level1_c");
             const level1P1Fn = function_to_primitive_propagator("level1_p1", (x: number) => x + 1);
             const level1P2Fn = function_to_primitive_propagator("level1_p2", (x: number) => x * 2);
             level1P1 = level1P1Fn(level1A, level1B); // Create actual propagator
@@ -337,8 +337,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create a complex network with mixed levels
-        const rootA = primitive_construct_cell("root_a");
-        const rootB = primitive_construct_cell("root_b");
+        const rootA = construct_cell("root_a");
+        const rootB = construct_cell("root_b");
         const rootProp = function_to_primitive_propagator("root_prop", (x: number) => x + 1);
         rootProp(rootA, rootB);
         
@@ -347,8 +347,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1A: Cell<any>, level1B: Cell<any>, level1Prop: Propagator;
         
         parameterize_parent(level1Relation)(() => {
-            level1A = primitive_construct_cell("level1_a");
-            level1B = primitive_construct_cell("level1_b");
+            level1A = construct_cell("level1_a");
+            level1B = construct_cell("level1_b");
             level1Prop = function_to_primitive_propagator("level1_prop", (x: number) => x * 2);
             level1Prop(level1A, level1B);
         });
@@ -358,8 +358,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level2A: Cell<any>, level2B: Cell<any>, level2Prop: Propagator;
         
         parameterize_parent(level2Relation)(() => {
-            level2A = primitive_construct_cell("level2_a");
-            level2B = primitive_construct_cell("level2_b");
+            level2A = construct_cell("level2_a");
+            level2B = construct_cell("level2_b");
             level2Prop = function_to_primitive_propagator("level2_prop", (x: number) => x - 1);
             level2Prop(level2A, level2B);
         });
@@ -384,8 +384,8 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create cells and propagators
-        const cell1 = primitive_construct_cell("test_cell_1");
-        const cell2 = primitive_construct_cell("test_cell_2");
+        const cell1 = construct_cell("test_cell_1");
+        const cell2 = construct_cell("test_cell_2");
         const prop1Fn = function_to_primitive_propagator("test_prop_1", (x: number) => x + 1);
         const prop1 = prop1Fn(cell1, cell2); // Create the actual propagator
         
@@ -413,15 +413,15 @@ describe("Abstraction Level and Traversal Tests", () => {
         const rootRelation = get_global_parent();
         
         // Create outer compound propagator at level 0
-        const outerInput = primitive_construct_cell("outer_input");
-        const outerOutput = primitive_construct_cell("outer_output");
+        const outerInput = construct_cell("outer_input");
+        const outerOutput = construct_cell("outer_output");
         
         const outerCompound = compound_propagator(
             [outerInput], 
             [outerOutput], 
             () => {
                 // Inner cells and propagators should be at level 0
-                const innerCell = primitive_construct_cell("inner_cell");
+                const innerCell = construct_cell("inner_cell");
                 const innerProp = function_to_primitive_propagator("inner_prop", (x: number) => x + 1);
                 innerProp(outerInput, innerCell);
                 innerProp(innerCell, outerOutput);
@@ -440,15 +440,15 @@ describe("Abstraction Level and Traversal Tests", () => {
         let level1Compound: Propagator;
         
         parameterize_parent(level1Relation)(() => {
-            const level1Input = primitive_construct_cell("level1_input");
-            const level1Output = primitive_construct_cell("level1_output");
+            const level1Input = construct_cell("level1_input");
+            const level1Output = construct_cell("level1_output");
             
             level1Compound = compound_propagator(
                 [level1Input], 
                 [level1Output], 
                 () => {
                     // Inner cells and propagators should be at level 1
-                    const level1InnerCell = primitive_construct_cell("level1_inner_cell");
+                    const level1InnerCell = construct_cell("level1_inner_cell");
                     const level1InnerProp = function_to_primitive_propagator("level1_inner_prop", (x: number) => x * 2);
                     level1InnerProp(level1Input, level1InnerCell);
                     level1InnerProp(level1InnerCell, level1Output);

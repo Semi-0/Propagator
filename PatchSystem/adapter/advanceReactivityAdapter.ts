@@ -1,5 +1,5 @@
 import type { Cell } from "../../Cell/Cell";
-import { add_cell_content, cell_id, primitive_construct_cell } from "../../Cell/Cell";
+import { update_cell, cell_id, construct_cell } from "../../Cell/Cell";
 import { update, r_constant } from "../../AdvanceReactivity/interface";
 import type { 
     Strategy, 
@@ -287,7 +287,7 @@ export const ce_lineage = (cell: Cell<any>): Cell<any> => {
 
 // Utility functions
 export const create_patched_cell = <T>(name?: string): Cell<T> => {
-    const cell = primitive_construct_cell<T>(name || `patched_cell_${uuidv4()}`);
+    const cell = construct_cell<T>(name || `patched_cell_${uuidv4()}`);
     // Initialize with empty content
     getCellContent(cell);
     return cell;

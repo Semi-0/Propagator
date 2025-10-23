@@ -1,4 +1,4 @@
-import { primitive_construct_cell, type Cell } from "@/cell/Cell";
+import { construct_cell, type Cell } from "@/cell/Cell";
 import {  p_add, p_divide, p_equal, p_less_than, p_multiply, p_subtract, p_switch } from "./BuiltInProps";
 import type { Propagator } from "./Propagator";
 import { make_temp_cell } from "@/cell/Cell";
@@ -11,7 +11,7 @@ import { get_new_reference_count } from "../Helper/Helper";
 export function make_ce_arithmetical(propagator_constructor: (...args: any[]) => Propagator, name: string | undefined = undefined){
     return (...inputs: Cell<any>[]) => {
         if (name != undefined){
-            let result =  primitive_construct_cell(name + "_" +  String(get_new_reference_count()))
+            let result =  construct_cell(name + "_" +  String(get_new_reference_count()))
             propagator_constructor(...[...inputs, result]);
             return result;
         }

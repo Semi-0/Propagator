@@ -1,5 +1,5 @@
 import type { Cell } from "../../Cell/Cell";
-import { primitive_construct_cell, cell_id } from "../../Cell/Cell";
+import { construct_cell, cell_id } from "../../Cell/Cell";
 import { update, r_constant } from "../../AdvanceReactivity/interface";
 import type { 
     Strategy, 
@@ -280,7 +280,7 @@ export const get_effective_value = (cell: Cell<any>): any => {
 
 // Utility functions
 export const create_patched_cell = <T>(name?: string): Cell<T> => {
-    const cell = primitive_construct_cell<T>(name || `patched_cell_${uuidv4()}`);
+    const cell = construct_cell<T>(name || `patched_cell_${uuidv4()}`);
     // Initialize with empty content
     getCellContent(cell);
     return cell;

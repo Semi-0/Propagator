@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
-import { primitive_construct_cell, cell_strongest_base_value, set_handle_contradiction, cell_content, cell_strongest } from "@/cell/Cell";
+import { construct_cell, cell_strongest_base_value, set_handle_contradiction, cell_content, cell_strongest } from "@/cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
@@ -255,8 +255,8 @@ describe("Generic Value Set Tests", () => {
 
   describe("Integration with Propagators", () => {
     test("should work with propagators using victor clock values", async () => {
-      const cellA = primitive_construct_cell("victorClockA");
-      const cellB = primitive_construct_cell("victorClockB");
+      const cellA = construct_cell("victorClockA");
+      const cellB = construct_cell("victorClockB");
       
       // Create values with victor clocks
       const valueA1 = construct_layered_datum(
@@ -271,10 +271,10 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputB"])
       );
       
-      cellA.addContent(valueA1);
-      cellB.addContent(valueB1);
+      cellA.update(valueA1);
+      cellB.update(valueB1);
       
-      const output = primitive_construct_cell("victorClockOutput");
+      const output = construct_cell("victorClockOutput");
       p_add(cellA, cellB, output);
       
       await execute_all_tasks_sequential((error: Error) => {});
@@ -284,9 +284,9 @@ describe("Generic Value Set Tests", () => {
     });
 
     test("should update when one input gets fresher value", async () => {
-      const cellA = primitive_construct_cell("victorUpdateA");
-      const cellB = primitive_construct_cell("victorUpdateB");
-      const output = primitive_construct_cell("victorUpdateOutput");
+      const cellA = construct_cell("victorUpdateA");
+      const cellB = construct_cell("victorUpdateB");
+      const output = construct_cell("victorUpdateOutput");
       
       p_add(cellA, cellB, output);
       
@@ -303,8 +303,8 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputB"])
       );
       
-      cellA.addContent(valueA1);
-      cellB.addContent(valueB1);
+      cellA.update(valueA1);
+      cellB.update(valueB1);
       await execute_all_tasks_sequential((error: Error) => {});
       
       expect(cell_strongest_base_value(output)).toBe(15);
@@ -316,16 +316,16 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputA"])
       );
       
-      cellA.addContent(valueA2);
+      cellA.update(valueA2);
       await execute_all_tasks_sequential((error: Error) => {});
       
       expect(cell_strongest_base_value(output)).toBe(18);
     });
 
     test("should be glitch-free: not compute when clocks are out of sync", async () => {
-      const cellA = primitive_construct_cell("glitchA");
-      const cellB = primitive_construct_cell("glitchB");
-      const output = primitive_construct_cell("glitchOutput");
+      const cellA = construct_cell("glitchA");
+      const cellB = construct_cell("glitchB");
+      const output = construct_cell("glitchOutput");
       
       // Create a computation that should only run when inputs are synchronized
       let computeCount = 0;
@@ -353,8 +353,8 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputB"])
       );
       
-      cellA.addContent(valueA1);
-      cellB.addContent(valueB1);
+      cellA.update(valueA1);
+      cellB.update(valueB1);
       await execute_all_tasks_sequential((error: Error) => {});
       
       const firstCount = computeCount;
@@ -367,7 +367,7 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputA"])
       );
       
-      cellA.addContent(valueA2);
+      cellA.update(valueA2);
       await execute_all_tasks_sequential((error: Error) => {});
       
       // Propagator should potentially skip computation due to clock desync
@@ -381,7 +381,7 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["inputB"])
       );
       
-      cellB.addContent(valueB2);
+      cellB.update(valueB2);
       await execute_all_tasks_sequential((error: Error) => {});
       
       // Should compute again now that they're synced
@@ -389,7 +389,7 @@ describe("Generic Value Set Tests", () => {
     });
 
     test("should retract specific input marked with premises", async () => {
-      const cell = primitive_construct_cell("retractionTest");
+      const cell = construct_cell("retractionTest");
       
       // Add value with premise1
       const value1 = construct_layered_datum(
@@ -398,7 +398,7 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["premise1"])
       );
       
-      cell.addContent(value1);
+      cell.update(value1);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(100);
       
@@ -409,7 +409,7 @@ describe("Generic Value Set Tests", () => {
         support_layer, construct_better_set(["premise2"])
       );
       
-      cell.addContent(value2);
+      cell.update(value2);
       await execute_all_tasks_sequential((error: Error) => {});
       
       // Should have newer value
@@ -422,10 +422,10 @@ describe("Generic Value Set Tests", () => {
     });
 
     test("should handle propagator with multiple inputs having different clocks", async () => {
-      const cellA = primitive_construct_cell("multiClockA");
-      const cellB = primitive_construct_cell("multiClockB");
-      const cellC = primitive_construct_cell("multiClockC");
-      const output = primitive_construct_cell("multiClockOutput");
+      const cellA = construct_cell("multiClockA");
+      const cellB = construct_cell("multiClockB");
+      const cellC = construct_cell("multiClockC");
+      const output = construct_cell("multiClockOutput");
       
       // Create a custom propagator that adds three inputs
       const addThree = primitive_propagator((a: any, b: any, c: any) => {
@@ -439,19 +439,19 @@ describe("Generic Value Set Tests", () => {
       addThree(cellA, cellB, cellC, output);
       
       // Different clocks for each input
-      cellA.addContent(construct_layered_datum(
+      cellA.update(construct_layered_datum(
         10,
         victor_clock_layer, new Map([["sourceA", 5]]),
         support_layer, construct_better_set(["a"])
       ));
       
-      cellB.addContent(construct_layered_datum(
+      cellB.update(construct_layered_datum(
         20,
         victor_clock_layer, new Map([["sourceB", 3]]),
         support_layer, construct_better_set(["b"])
       ));
       
-      cellC.addContent(construct_layered_datum(
+      cellC.update(construct_layered_datum(
         30,
         victor_clock_layer, new Map([["sourceC", 7]]),
         support_layer, construct_better_set(["c"])

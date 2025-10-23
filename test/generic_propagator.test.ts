@@ -3,7 +3,7 @@ import type { Cell } from "@/cell/Cell";
 
 import { r_constant, update } from "../AdvanceReactivity/interface";
 import {
-  primitive_construct_cell,
+  construct_cell,
   cell_strongest_base_value,
   set_handle_contradiction,
   cell_content,
@@ -84,10 +84,10 @@ describe("Generic Propagator Tests", () => {
   describe("Basic Generic Propagator Prototype", () => {
     test("generic_propagator_prototype should create an interface propagator", async () => {
       // Create dispatcher and result cells
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const dispatcher2 = primitive_construct_cell("dispatcher2");
-      const result1 = primitive_construct_cell("result1");
-      const result2 = primitive_construct_cell("result2");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const dispatcher2 = construct_cell("dispatcher2");
+      const result1 = construct_cell("result1");
+      const result2 = construct_cell("result2");
       
       const dispatchers = [dispatcher1, dispatcher2];
       const dispatched_results = [result1, result2];
@@ -101,10 +101,10 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells for testing
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
-      const output2 = primitive_construct_cell("output2");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
+      const output2 = construct_cell("output2");
       
       const inputs = [input1, input2];
       const outputs = [output1, output2];
@@ -137,8 +137,8 @@ describe("Generic Propagator Tests", () => {
   describe("Define Generic Propagator Handler", () => {
     test("should handle numeric addition when inputs are numbers", async () => {
       // Create dispatcher and result cells
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const result1 = primitive_construct_cell("result1");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const result1 = construct_cell("result1");
 
       
       
@@ -146,9 +146,9 @@ describe("Generic Propagator Tests", () => {
       const interface_propagator = construct_simple_generic_propagator("test_interface", 2, 1)
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
       
       const inputs = [input1, input2];
       const outputs = [output1];
@@ -178,9 +178,9 @@ describe("Generic Propagator Tests", () => {
 
     test("should handle string concatenation when inputs are strings", async () => {
       // Create dispatcher and result cells - need 2 dispatchers for 2 inputs
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const dispatcher2 = primitive_construct_cell("dispatcher2");
-      const result1 = primitive_construct_cell("result1");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const dispatcher2 = construct_cell("dispatcher2");
+      const result1 = construct_cell("result1");
       
       const dispatchers = [dispatcher1, dispatcher2];
       const dispatched_results = [result1];
@@ -194,9 +194,9 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
       
       const inputs = [input1, input2];
       const outputs = [output1];
@@ -224,9 +224,9 @@ describe("Generic Propagator Tests", () => {
 
     test("should not trigger handler when inputs don't match critic", async () => {
       // Create dispatcher and result cells - need 2 dispatchers for 2 inputs
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const dispatcher2 = primitive_construct_cell("dispatcher2");
-      const result1 = primitive_construct_cell("result1");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const dispatcher2 = construct_cell("dispatcher2");
+      const result1 = construct_cell("result1");
       
       const dispatchers = [dispatcher1, dispatcher2];
       const dispatched_results = [result1];
@@ -240,9 +240,9 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
       
       const inputs = [input1, input2];
       const outputs = [output1];
@@ -270,9 +270,9 @@ describe("Generic Propagator Tests", () => {
 
     test("should support multiple handlers with different critics", async () => {
       // Create dispatcher and result cells - need 2 dispatchers for 2 inputs
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const dispatcher2 = primitive_construct_cell("dispatcher2");
-      const result1 = primitive_construct_cell("result1");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const dispatcher2 = construct_cell("dispatcher2");
+      const result1 = construct_cell("result1");
       
       const dispatchers = [dispatcher1, dispatcher2];
       const dispatched_results = [result1];
@@ -286,9 +286,9 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
       
       const inputs = [input1, input2];
       const outputs = [output1];
@@ -334,8 +334,8 @@ describe("Generic Propagator Tests", () => {
       const match_propagator = match_cells(ce_is_boolean, ce_is_boolean);
       
       // Create input cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
       
       const inputs = [input1, input2];
       
@@ -364,8 +364,8 @@ describe("Generic Propagator Tests", () => {
 
   describe("String Predicates", () => {
     test("p_is_string should correctly identify strings", async () => {
-      const input = primitive_construct_cell("input");
-      const output = primitive_construct_cell("output") as Cell<boolean>;
+      const input = construct_cell("input");
+      const output = construct_cell("output") as Cell<boolean>;
       
       p_is_string(input, output);
       
@@ -386,7 +386,7 @@ describe("Generic Propagator Tests", () => {
     });
 
     test("ce_is_string should work as cell expression", async () => {
-      const input = primitive_construct_cell("input");
+      const input = construct_cell("input");
       
       const result = ce_is_string(input);
       
@@ -415,9 +415,9 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output = primitive_construct_cell("output");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output = construct_cell("output");
       
       const inputs = [input1, input2];
       const outputs = [output];
@@ -445,10 +445,10 @@ describe("Generic Propagator Tests", () => {
   describe("Complex Generic Propagator Scenarios", () => {
     test("should handle conditional routing based on input types", async () => {
       // Create a generic propagator that routes based on input type
-      const dispatcher1 = primitive_construct_cell("dispatcher1");
-      const dispatcher2 = primitive_construct_cell("dispatcher2");
-      const result1 = primitive_construct_cell("result1");
-      const result2 = primitive_construct_cell("result2");
+      const dispatcher1 = construct_cell("dispatcher1");
+      const dispatcher2 = construct_cell("dispatcher2");
+      const result1 = construct_cell("result1");
+      const result2 = construct_cell("result2");
       
       const dispatchers = [dispatcher1, dispatcher2];
       const dispatched_results = [result1, result2];
@@ -461,10 +461,10 @@ describe("Generic Propagator Tests", () => {
       );
       
       // Create input and output cells
-      const input1 = primitive_construct_cell("input1");
-      const input2 = primitive_construct_cell("input2");
-      const output1 = primitive_construct_cell("output1");
-      const output2 = primitive_construct_cell("output2");
+      const input1 = construct_cell("input1");
+      const input2 = construct_cell("input2");
+      const output1 = construct_cell("output1");
+      const output2 = construct_cell("output2");
       
       const inputs = [input1, input2];
       const outputs = [output1, output2];
@@ -527,9 +527,9 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(add_propagator_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<number>("input1");
-      const input2 = primitive_construct_cell<number>("input2");
-      const output = primitive_construct_cell<number>("output");
+      const input1 = construct_cell<number>("input1");
+      const input2 = construct_cell<number>("input2");
+      const output = construct_cell<number>("output");
 
       const inputs = [input1, input2];
       const outputs = [output];
@@ -565,10 +565,10 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(multi_propagator_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<number>("input1");
-      const input2 = primitive_construct_cell<number>("input2");
-      const output1 = primitive_construct_cell<number>("output1");
-      const output2 = primitive_construct_cell<number>("output2");
+      const input1 = construct_cell<number>("input1");
+      const input2 = construct_cell<number>("input2");
+      const output1 = construct_cell<number>("output1");
+      const output2 = construct_cell<number>("output2");
 
       const inputs = [input1, input2];
       const outputs = [output1, output2];
@@ -598,9 +598,9 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(concat_propagator_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<string>("input1");
-      const input2 = primitive_construct_cell<string>("input2");
-      const output = primitive_construct_cell<string>("output");
+      const input1 = construct_cell<string>("input1");
+      const input2 = construct_cell<string>("input2");
+      const output = construct_cell<string>("output");
 
       const inputs = [input1, input2];
       const outputs = [output];
@@ -628,9 +628,9 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(and_propagator_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<boolean>("input1");
-      const input2 = primitive_construct_cell<boolean>("input2");
-      const output = primitive_construct_cell<boolean>("output");
+      const input1 = construct_cell<boolean>("input1");
+      const input2 = construct_cell<boolean>("input2");
+      const output = construct_cell<boolean>("output");
 
       const inputs = [input1, input2];
       const outputs = [output];
@@ -671,9 +671,9 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(compound_propagator_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<number>("input1");
-      const input2 = primitive_construct_cell<number>("input2");
-      const output = primitive_construct_cell<number>("output");
+      const input1 = construct_cell<number>("input1");
+      const input2 = construct_cell<number>("input2");
+      const output = construct_cell<number>("output");
 
       const inputs = [input1, input2];
       const outputs = [output];
@@ -722,8 +722,8 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(double_propagator_constructor);
 
       // Create test cells
-      const input = primitive_construct_cell<number>("input");
-      const output = primitive_construct_cell<number>("output");
+      const input = construct_cell<number>("input");
+      const output = construct_cell<number>("output");
 
       const inputs = [input];
       const outputs = [output];
@@ -760,8 +760,8 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(number_to_string_constructor);
 
       // Create test cells
-      const input = primitive_construct_cell<number>("input");
-      const output = primitive_construct_cell<string>("output");
+      const input = construct_cell<number>("input");
+      const output = construct_cell<string>("output");
 
       const inputs = [input];
       const outputs = [output];
@@ -792,10 +792,10 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(add_three_constructor);
 
       // Create test cells
-      const input1 = primitive_construct_cell<number>("input1");
-      const input2 = primitive_construct_cell<number>("input2");
-      const input3 = primitive_construct_cell<number>("input3");
-      const output = primitive_construct_cell<number>("output");
+      const input1 = construct_cell<number>("input1");
+      const input2 = construct_cell<number>("input2");
+      const input3 = construct_cell<number>("input3");
+      const output = construct_cell<number>("output");
 
       const inputs = [input1, input2, input3];
       const outputs = [output];
@@ -827,9 +827,9 @@ describe("Generic Propagator Tests", () => {
       const handler_network = propagator_to_handler_network(conditional_constructor);
 
       // Create test cells
-      const condition = primitive_construct_cell<boolean>("condition");
-      const input = primitive_construct_cell<number>("input");
-      const output = primitive_construct_cell<number>("output");
+      const condition = construct_cell<boolean>("condition");
+      const input = construct_cell<number>("input");
+      const output = construct_cell<number>("output");
 
       const inputs = [condition, input];
       const outputs = [output];
@@ -877,24 +877,24 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("validate_dispatchers_and_results should accept valid arrays", () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
-        const results = [primitive_construct_cell("r1"), primitive_construct_cell("r2")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
+        const results = [construct_cell("r1"), construct_cell("r2")];
         expect(() => validate_dispatchers_and_results(dispatchers, results)).not.toThrow();
       });
 
       test("validate_dispatchers_and_results should throw error for invalid dispatchers", () => {
-        const results = [primitive_construct_cell("r1")];
+        const results = [construct_cell("r1")];
         expect(() => validate_dispatchers_and_results("not array" as any, results)).toThrow("Dispatchers must be an array");
       });
 
       test("validate_dispatchers_and_results should throw error for invalid results", () => {
-        const dispatchers = [primitive_construct_cell("d1")];
+        const dispatchers = [construct_cell("d1")];
         expect(() => validate_dispatchers_and_results(dispatchers, "not array" as any)).toThrow("Dispatched results must be an array");
       });
 
       test("validate_dispatchers_and_results should throw error for mismatched lengths", () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
-        const results = [primitive_construct_cell("r1")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
+        const results = [construct_cell("r1")];
         expect(() => validate_dispatchers_and_results(dispatchers, results)).toThrow("Dispatchers and dispatched results must have the same length");
       });
 
@@ -914,13 +914,13 @@ describe("Generic Propagator Tests", () => {
 
       test("validate_inputs_match_predicates should accept matching lengths", () => {
         const predicates = [ce_is_number, ce_is_string];
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
         expect(() => validate_inputs_match_predicates(predicates, inputs)).not.toThrow();
       });
 
       test("validate_inputs_match_predicates should throw error for mismatched lengths", () => {
         const predicates = [ce_is_number, ce_is_string];
-        const inputs = [primitive_construct_cell("i1")];
+        const inputs = [construct_cell("i1")];
         expect(() => validate_inputs_match_predicates(predicates, inputs)).toThrow("Predicates and inputs must have the same length");
       });
     });
@@ -934,13 +934,13 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("create_interface_propagator should create working propagator", async () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
-        const results = [primitive_construct_cell("r1"), primitive_construct_cell("r2")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
+        const results = [construct_cell("r1"), construct_cell("r2")];
         
         const interface_propagator = create_interface_propagator("test", uuidv4(), dispatchers, results);
         
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const outputs = [primitive_construct_cell("o1"), primitive_construct_cell("o2")];
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const outputs = [construct_cell("o1"), construct_cell("o2")];
         
         const propagator = interface_propagator(inputs, outputs);
         
@@ -954,8 +954,8 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("store_interface_metadata should store metadata correctly", () => {
-        const dispatchers = [primitive_construct_cell("d1")];
-        const results = [primitive_construct_cell("r1")];
+        const dispatchers = [construct_cell("d1")];
+        const results = [construct_cell("r1")];
         const interface_propagator = (inputs: Cell<any>[], outputs: Cell<any>[]) => compound_propagator(inputs, outputs, () => {}, "test");
         
         store_interface_metadata(uuidv4(), dispatchers, results);
@@ -965,7 +965,7 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("create_succeeded_cells should create cells with switch logic", async () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
         const critics = (...cells: Cell<any>[]) => ce_is_number(cells[0]);
         
         const succeeded = create_succeeded_cells(dispatchers, critics);
@@ -983,8 +983,8 @@ describe("Generic Propagator Tests", () => {
 
       test("create_match_cells_propagator should create working propagator", async () => {
         const predicates = [ce_is_number, ce_is_string];
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const output = primitive_construct_cell("output") as Cell<boolean>;
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const output = construct_cell("output") as Cell<boolean>;
         
         const propagator = create_match_cells_propagator(predicates, inputs, output);
         
@@ -998,8 +998,8 @@ describe("Generic Propagator Tests", () => {
 
       test("match_predicates_recursive should handle single predicate", async () => {
         const predicates = [ce_is_number];
-        const inputs = [primitive_construct_cell("i1")];
-        const output = primitive_construct_cell("output") as Cell<boolean>;
+        const inputs = [construct_cell("i1")];
+        const output = construct_cell("output") as Cell<boolean>;
         
         update(inputs[0], 42);
         
@@ -1012,8 +1012,8 @@ describe("Generic Propagator Tests", () => {
 
       test("match_predicates_recursive should handle multiple predicates", async () => {
         const predicates = [ce_is_number, ce_is_string];
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const output = primitive_construct_cell("output") as Cell<boolean>;
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const output = construct_cell("output") as Cell<boolean>;
         
         update(inputs[0], 42);
         update(inputs[1], "hello");
@@ -1027,8 +1027,8 @@ describe("Generic Propagator Tests", () => {
 
       test("match_predicates_recursive should handle false predicates", async () => {
         const predicates = [ce_is_number, ce_is_string];
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const output = primitive_construct_cell("output") as Cell<boolean>;
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const output = construct_cell("output") as Cell<boolean>;
         
         update(inputs[0], 42);
         update(inputs[1], 123); // Not a string
@@ -1049,15 +1049,15 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("get_propagator_metadata should throw error for unknown interface", () => {
-        const unknown_propagator = construct_propagator([primitive_construct_cell("d1")], [primitive_construct_cell("r1")], () => {}, uuidv4())
+        const unknown_propagator = construct_propagator([construct_cell("d1")], [construct_cell("r1")], () => {}, uuidv4())
         expect(() => get_propagator_metadata(unknown_propagator)).toThrow("Propagator metadata not found in store");
       });
 
       test("get_propagator_metadata should work with valid interface", () => {
-        const dispatchers = [primitive_construct_cell("d1")];
-        const results = [primitive_construct_cell("r1")];
+        const dispatchers = [construct_cell("d1")];
+        const results = [construct_cell("r1")];
         const interface_propagator = generic_propagator_prototype(uuidv4(), "test", dispatchers, results);
-        const propagator = interface_propagator([primitive_construct_cell("i1"), primitive_construct_cell("i2")], [primitive_construct_cell("o1")])  
+        const propagator = interface_propagator([construct_cell("i1"), construct_cell("i2")], [construct_cell("o1")])  
         const metadata = get_propagator_metadata(propagator);
         
         expect(metadata.dispatchers).toBe(dispatchers);
@@ -1067,13 +1067,13 @@ describe("Generic Propagator Tests", () => {
 
     describe("Refactored Main Functions", () => {
       test("refactored generic_propagator_prototype should work correctly", async () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
-        const results = [primitive_construct_cell("r1"), primitive_construct_cell("r2")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
+        const results = [construct_cell("r1"), construct_cell("r2")];
         
         const interface_propagator = generic_propagator_prototype(uuidv4(), "test", dispatchers, results);
         
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const outputs = [primitive_construct_cell("o1"), primitive_construct_cell("o2")];
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const outputs = [construct_cell("o1"), construct_cell("o2")];
         
         const propagator = interface_propagator(inputs, outputs);
         
@@ -1096,8 +1096,8 @@ describe("Generic Propagator Tests", () => {
 
       test("refactored generic_propagator_prototype should work without validation", () => {
         // Since we removed validation from generic_propagator_prototype, it should work without validation
-        const dispatcher = primitive_construct_cell("dispatcher");
-        const result = primitive_construct_cell("result");
+        const dispatcher = construct_cell("dispatcher");
+        const result = construct_cell("result");
         const interface_propagator = generic_propagator_prototype(uuidv4(), "test", [dispatcher], [result]);
         expect(typeof interface_propagator).toBe("function");
       });
@@ -1105,8 +1105,8 @@ describe("Generic Propagator Tests", () => {
       test("refactored match_cells should work correctly", async () => {
         const match_function = match_cells(ce_is_number, ce_is_string);
         
-        const input1 = primitive_construct_cell("input1");
-        const input2 = primitive_construct_cell("input2");
+        const input1 = construct_cell("input1");
+        const input2 = construct_cell("input2");
         
         const result = match_function(input1, input2);
         
@@ -1124,15 +1124,15 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("refactored define_generic_propagator_handler_network should work correctly", async () => {
-        const dispatchers = [primitive_construct_cell("d1"), primitive_construct_cell("d2")];
-        const results = [primitive_construct_cell("r1")];
+        const dispatchers = [construct_cell("d1"), construct_cell("d2")];
+        const results = [construct_cell("r1")];
         const interface_propagator = generic_propagator_prototype(uuidv4(), "test", dispatchers, results);
         
         const critics = (...cells: Cell<any>[]) => ce_is_number(cells[0]);
         const handler_network = (inputs: Cell<any>[], outputs: Cell<any>[]) => p_add(inputs[0], inputs[1], outputs[0]);
         
-        const inputs = [primitive_construct_cell("i1"), primitive_construct_cell("i2")];
-        const outputs = [primitive_construct_cell("o1")];
+        const inputs = [construct_cell("i1"), construct_cell("i2")];
+        const outputs = [construct_cell("o1")];
         
         const propagator = interface_propagator(inputs, outputs);
         
@@ -1147,8 +1147,8 @@ describe("Generic Propagator Tests", () => {
       });
 
       test("refactored define_generic_propagator_handler_network should validate inputs", () => {
-        const interface_propagator = generic_propagator_prototype(uuidv4(), "test", [primitive_construct_cell("d1")], [primitive_construct_cell("r1")]);
-        const propagator = interface_propagator([primitive_construct_cell("i1"), primitive_construct_cell("i2")], [primitive_construct_cell("o1")])  
+        const interface_propagator = generic_propagator_prototype(uuidv4(), "test", [construct_cell("d1")], [construct_cell("r1")]);
+        const propagator = interface_propagator([construct_cell("i1"), construct_cell("i2")], [construct_cell("o1")])  
         expect(() => define_generic_propagator_handler_network(propagator, "not function" as any, (inputs, outputs) => p_sync(inputs[0], outputs[0]))).toThrow("Critics must be a function");
         expect(() => define_generic_propagator_handler_network(propagator, (...cells) => ce_is_number(cells[0]), "not function" as any)).toThrow("Handler network must be a function");
       });

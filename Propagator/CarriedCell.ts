@@ -1,4 +1,4 @@
-import { cell_id, cell_name, primitive_construct_cell, is_cell } from "@/cell/Cell";
+import { cell_id, cell_name, construct_cell, is_cell } from "@/cell/Cell";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { compound_propagator, construct_propagator, function_to_primitive_propagator,  primitive_propagator,  propagator_id } from "../Propagator/Propagator"
@@ -87,7 +87,7 @@ export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
 // static accessor i havn't figure out how to make dynamic one
 export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
     compound_propagator([accessor, container], [accessor, container], () => {
-        container.addContent(make_map_with_key([[key, accessor]]))
+        container.update(make_map_with_key([[key, accessor]]))
     }, "c_map_accessor")
 
 
@@ -106,7 +106,7 @@ export type PropagatorClosure = {
 export const make_propagator_closure = (cells_info: string[], propagator_constructor: (...args: any[]) => Propagator) => {
     const environment = new Map()
     cells_info.forEach((cell_info) => {
-        environment.set(cell_info, primitive_construct_cell(cell_info))
+        environment.set(cell_info, construct_cell(cell_info))
     })
     return { environment, propagator: propagator_constructor(...cells_info.values()) }
 }
@@ -166,7 +166,7 @@ export const carrier_map = (closure: Cell<(...args: any[]) => Propagator>, input
         const new_map = new Map()
         for (const [key, value] of diffed) {
             const input_cell = value
-            const output = primitive_construct_cell(key)
+            const output = construct_cell(key)
             closure(input_cell, output)
             new_map.set(key, output)
         }

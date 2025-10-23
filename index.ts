@@ -40,7 +40,7 @@
 
 // Cell-related imports
 import { 
-  primitive_construct_cell, 
+  construct_cell, 
   constant_cell,
   cell_dispose,
   cell_strongest,
@@ -48,7 +48,7 @@ import {
   cell_id,
   cell_name,
   cell_content,
-  add_cell_content,
+  update_cell,
   make_temp_cell,
   type Cell,
   general_contradiction,
@@ -217,7 +217,7 @@ import { trace_func } from "./helper";
 /**
  * Shorthand for construct_cell
  */
-export const cell = primitive_construct_cell;
+export const cell = construct_cell;
 
 /**
  * Shorthand for constant_cell
@@ -237,7 +237,7 @@ export const dispose_propagator = propagator_dispose;
 /**
  * Shorthand for add_cell_content
  */
-export const add_content = add_cell_content;
+export const add_content = update_cell;
 
 /**
  * Shorthand for cell_strongest
@@ -461,7 +461,7 @@ export const propagator = {
  * Convenience object for cell operations
  */
 export const cells = {
-  create: primitive_construct_cell,
+  create: construct_cell,
   constant: constant_cell,
   reactive_constant: r_constant,
   temp: make_temp_cell,
@@ -471,8 +471,8 @@ export const cells = {
   id: cell_id,
   name: cell_name,
   content: cell_content,
-  add_content: add_cell_content,
-  tell: add_cell_content
+  add_content: update_cell,
+  tell: update_cell
 };
 
 /**
@@ -565,7 +565,7 @@ export const system = {
  */
 export const cell_ops = {
   // Cell creation
-  create: primitive_construct_cell,
+  create: construct_cell,
   constant: constant_cell,
   reactive_constant: r_constant,
   temp: make_temp_cell,
@@ -578,7 +578,7 @@ export const cell_ops = {
   name: cell_name,
   
   // Cell modification
-  add_content: add_cell_content,
+  add_content: update_cell,
   dispose: cell_dispose,
   
   // Cell update (reactive)
@@ -688,7 +688,7 @@ export const sys_ops = {
 // Core exports
 export {
   // Cell exports
-    primitive_construct_cell as construct_cell,
+    construct_cell as construct_cell,
   constant_cell,
   cell_dispose,
   cell_strongest,
@@ -696,7 +696,7 @@ export {
   cell_id,
   cell_name,
   cell_content,
-  add_cell_content,
+  update_cell as add_cell_content,
   make_temp_cell,
   type Cell,
   general_contradiction,
@@ -874,7 +874,7 @@ export default {
   sys_ops,
   
   // Core functionality
-  construct_cell: primitive_construct_cell,
+  construct_cell: construct_cell,
   construct_propagator,
   p_add,
   p_multiply,
