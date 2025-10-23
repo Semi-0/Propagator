@@ -16,6 +16,7 @@ import { trace_func } from "../helper";
 import { any_unusable_values } from "../Cell/CellValue";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
+import { alert_propagator } from "../Shared/Scheduler/Scheduler";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -34,20 +35,24 @@ export interface Propagator {
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
     return (
         propagator &&
-        typeof propagator === 'object' &&
-        'getName' in propagator &&
-        'getRelation' in propagator &&
-        'getInputs' in propagator &&
-        'getOutputs' in propagator &&
-        'summarize' in propagator &&
-        'dispose' in propagator
+        propagator.getName !== undefined &&
+        propagator.getRelation !== undefined &&
+        propagator.getInputs !== undefined &&
+        propagator.getOutputs !== undefined &&
+        propagator.summarize !== undefined &&
+        propagator.activate !== undefined &&
+        propagator.dispose !== undefined
     );
 });
+// Note: Generic procedure handlers are registered in Propagator/PropagatorGenerics.tso
+// Register get_id handler for Propagator
+define_generic_procedure_handler(get_id, match_args(is_propagator), propagator_id);
 
+// Register get_children handler for Propagator
+define_generic_procedure_handler(get_children, match_args(is_propagator), propagator_children);
 
-define_generic_procedure_handler(get_id, match_args(is_propagator), propagator_id)
-
-
+// Note: Generic procedure handlers for Propagator are registered in Propagator/PropagatorGenerics.ts
+// to avoid circular dependency issues
 
 export const disposing_scan = (cells: Cell<any>[]) => {
     return cells.some((c: any) => c === undefined || c === null || is_disposed(cell_strongest(c)))
@@ -64,7 +69,7 @@ export function construct_propagator(
                                 ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
 
-  activate();
+
 
   const propagator: Propagator = {
     getName: () => name,
@@ -75,15 +80,10 @@ export function construct_propagator(
     activate: () => {
 
       if (disposing_scan([...inputs, ...outputs])) {
-       
         propagator.dispose();
       }
       else {
-  
-          // Normal activation
-          parameterize_parent(relation)(() => {
-              activate();
-          })
+        activate();
       }
     },
     dispose: () => {
@@ -98,11 +98,12 @@ export function construct_propagator(
     }
   };
 
+
+  alert_propagator(propagator)
   inputs.forEach(cell => {
     cell.addNeighbor(propagator, interested_in);
   })
   
-  set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation())
   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
   return propagator;
 }
@@ -154,8 +155,6 @@ export function function_to_primitive_propagator(name: string, f: (...inputs: an
 
 export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], to_build: () => void, name: string, id: string | null = null): Propagator {
     // Create the propagator first without calling to_build
-    const relation = make_relation(name, get_global_parent(), id);
-    const inputs_ids = inputs.map(cell => cell_id(cell));
     
     var built = false
     
@@ -164,18 +163,16 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
         outputs,
         () => {
            if (!built) {
-            parameterize_parent(relation)(() => {
-                to_build();
-            });
-            built = true;
+                console.log("built")
+                parameterize_parent(propagator.getRelation())(() => {
+                    to_build();
+                });
+                built = true;
            }
         },
         name,
         id
     )
-    
-    set_global_state(PublicStateCommand.ADD_CHILD, propagator.getRelation());
-    set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
     
     return propagator;
 }
@@ -217,10 +214,3 @@ export function propagator_activate(propagator: Propagator){
     propagator.activate()
 }
 
-define_generic_procedure_handler(to_string, match_args(is_propagator), (propagator: Propagator) => {
-    return propagator.summarize()
-})
-
-define_generic_procedure_handler(identify_by, match_args(is_propagator), propagator_id)
-
-define_generic_procedure_handler(get_children, match_args(is_propagator), propagator_children)

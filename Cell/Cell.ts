@@ -195,7 +195,7 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
               }
           }
           else{
-            alert_interested_propagators(neighbors, prop)
+            alert_interested_propagators(neighbors, prop as string)
           }      
           
           return result
@@ -290,19 +290,24 @@ export function cell_dispose(cell: Cell<any>){
 
 export const cell_strongest_base_value = compose(cell_strongest, get_base_value)
 
-define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {
-  return cell.summarize()
-})
-
-define_generic_procedure_handler(identify_by, match_args(is_cell), cell_id)
-
-
-define_generic_procedure_handler(get_id, match_args(is_cell), cell_id)
-
-define_generic_procedure_handler(get_children, match_args(is_cell), cell_children)
-
+// Note: Generic procedure handlers for Cell are registered in Cell/CellGenerics.ts
+// to avoid circular dependency issues
 
 export function summarize_cells(cells: Cell<any>[]): string{
     return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
 }
+
+define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {
+  return cell.summarize();
+});
+
+// Register identify_by handler for Cell
+define_generic_procedure_handler(identify_by, match_args(is_cell), cell_id);
+
+// Register get_id handler for Cell
+define_generic_procedure_handler(get_id, match_args(is_cell), cell_id);
+
+// Register get_children handler for Cell
+define_generic_procedure_handler(get_children, match_args(is_cell), cell_children);
+
 

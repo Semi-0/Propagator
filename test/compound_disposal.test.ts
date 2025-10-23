@@ -2,18 +2,140 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import { construct_cell, cell_strongest, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
 import { p_add, p_multiply, p_subtract } from "../Propagator/BuiltInProps";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
-import { PublicStateCommand, set_global_state } from "../Shared/PublicState";
+import { observe_global_commands, PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { the_disposed, is_disposed, the_nothing } from "../Cell/CellValue";
 import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
 import { compound_propagator, propagator_id, propagator_dispose, function_to_primitive_propagator } from "../Propagator/Propagator";
 import { find_cell_by_id, find_propagator_by_id } from "../Shared/GraphTraversal";
 import { update } from "../AdvanceReactivity/interface";
+import { is_child, get_children } from "../Shared/Generics";
 
 describe("Compound Propagator Child Disposal", () => {
     beforeEach(() => {
         set_global_state(PublicStateCommand.CLEAN_UP);
         set_global_state(PublicStateCommand.SET_SCHEDULER, simple_scheduler());
         clear_all_tasks();
+    });
+
+    describe("Parent-Child Relationship Verification", () => {
+        it("should correctly establish parent-child relationship for internal cells", async () => {
+            const input = construct_cell<number>("parent_test_input");
+            const output = construct_cell<number>("parent_test_output");
+            
+            let internalCell1: Cell<number>;
+            let internalCell2: Cell<number>;
+            
+            const compound = compound_propagator([input], [output], () => {
+                internalCell1 = construct_cell<number>("internal_cell_1");
+                internalCell2 = construct_cell<number>("internal_cell_2");
+                
+                const addOne = function_to_primitive_propagator("add_one_parent_test", (x: number) => x + 1);
+                addOne(input, internalCell1);
+                addOne(internalCell1, internalCell2);
+                addOne(internalCell2, output);
+            }, "compound_parent_test");
+            
+            // Trigger building
+            input.update(5);
+            await execute_all_tasks_sequential(() => {});
+            
+            // Verify internal cells are children of the compound propagator
+            expect(is_child(internalCell1, compound)).toBe(true);
+            expect(is_child(internalCell2, compound)).toBe(true);
+            
+            // Verify input/output cells are NOT children of the compound
+            expect(is_child(input, compound)).toBe(false);
+            expect(is_child(output, compound)).toBe(false);
+            
+            // Verify children can be retrieved
+            const children = get_children(compound.getRelation());
+            expect(children.length).toBeGreaterThan(0);
+        });
+
+        it("should correctly establish parent-child relationship for internal propagators", async () => {
+            const input = construct_cell<number>("prop_parent_test_input");
+            const output = construct_cell<number>("prop_parent_test_output");
+            
+            let internalProp1Id: string;
+            let internalProp2Id: string;
+            
+            const compound = compound_propagator([input], [output], () => {
+                const step1 = construct_cell<number>("step_1");
+                const step2 = construct_cell<number>("step_2");
+                
+                const addOne = function_to_primitive_propagator("add_one_prop_parent", (x: number) => x + 1);
+                const double = function_to_primitive_propagator("double_prop_parent", (x: number) => x * 2);
+                
+                const prop1 = addOne(input, step1);
+                const prop2 = double(step1, step2);
+                
+                internalProp1Id = propagator_id(prop1);
+                internalProp2Id = propagator_id(prop2);
+                
+                double(step2, output);
+            }, "compound_prop_parent_test");
+            
+            // Trigger building
+            input.update(3);
+            await execute_all_tasks_sequential(() => {});
+            
+            // Verify internal propagators are children of the compound
+            const prop1 = find_propagator_by_id(internalProp1Id!);
+            const prop2 = find_propagator_by_id(internalProp2Id!);
+            
+            expect(prop1).toBeDefined();
+            expect(prop2).toBeDefined();
+            
+            expect(is_child(prop1!.getRelation(), compound.getRelation())).toBe(true);
+            expect(is_child(prop2!.getRelation(), compound.getRelation())).toBe(true);
+        });
+
+        it("should maintain parent-child hierarchy with nested compounds", async () => {
+            const input = construct_cell<number>("nested_parent_input");
+            const output = construct_cell<number>("nested_parent_output");
+            
+            let innerCompoundId: string;
+            let innerCellId: string;
+            
+            const outerCompound = compound_propagator([input], [output], () => {
+                const middleCell = construct_cell<number>("middle_cell");
+                
+                const innerCompound = compound_propagator([input], [middleCell], () => {
+                    const innerCell = construct_cell<number>("inner_cell");
+                    innerCellId = cell_id(innerCell);
+                    
+                    const double = function_to_primitive_propagator("double_nested", (x: number) => x * 2);
+                    double(input, innerCell);
+                    double(innerCell, middleCell);
+                }, "inner_compound");
+                
+                innerCompoundId = propagator_id(innerCompound);
+                
+                const triple = function_to_primitive_propagator("triple_nested", (x: number) => x * 3);
+                triple(middleCell, output);
+            }, "outer_compound");
+            
+            // Trigger building
+            console.log(input.getNeighbors())
+            input.update(2);
+            await execute_all_tasks_sequential(() => {});
+            
+            // Verify hierarchy: innerCell -> innerCompound -> outerCompound
+            const innerCompound = find_propagator_by_id(innerCompoundId!);
+            const innerCell = find_cell_by_id(innerCellId!);
+            
+            expect(innerCompound).toBeDefined();
+            expect(innerCell).toBeDefined();
+            
+            // Inner compound should be child of outer compound
+            expect(is_child(innerCompound!.getRelation(), outerCompound.getRelation())).toBe(true);
+            
+            // Inner cell should be child of inner compound
+            expect(is_child(innerCell!.getRelation(), innerCompound!.getRelation())).toBe(true);
+            
+            // Inner cell should NOT be direct child of outer compound (it's a grandchild)
+            expect(is_child(innerCell!.getRelation(), outerCompound.getRelation())).toBe(false);
+        });
     });
 
     describe("Basic Child Disposal", () => {
@@ -25,6 +147,8 @@ describe("Compound Propagator Child Disposal", () => {
             let step1Id: string;
             let step2Id: string;
             
+
+
             const compound = compound_propagator([input], [output], () => {
                 const step1 = construct_cell<number>("compound_step1");
                 const step2 = construct_cell<number>("compound_step2");

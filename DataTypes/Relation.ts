@@ -1,8 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+import { match_args, register_predicate } from 'generic-handler/Predicates';
+import { define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
+import { get_children } from '../Shared/Generics';
 
 export type InterestedType = Relation;
 
-interface Relation{
+export interface Relation{
     add_child(child: InterestedType): void
     get_id(): string
     get_name(): string
@@ -11,6 +14,7 @@ interface Relation{
     set_level(level: number): void
     get_level(): number
     dispose(): void
+    parent: WeakRef<Relation> | null
 }
 
 
@@ -21,17 +25,19 @@ export class Primitive_Relation implements Relation {
     name: string;
     uuid: string;
     level: number = 0;
-    parent: Relation | null;
+    parent: WeakRef<Relation> | null;
     children: Relation[] = [];
 
     constructor(name: string, parent: Relation | null, uuid: string | null = null){
         this.name = name;
-        this.parent = parent;
+        this.parent = parent ? new WeakRef(parent) : null;
 
         if (parent === null){
+            
             this.level = 0;
         }
         else{
+            parent.add_child(this);
             this.level = parent.get_level()  + 1;
         }
         
@@ -78,9 +84,12 @@ export class Primitive_Relation implements Relation {
     }
 }
 
-export function is_relation(obj: any): obj is Relation{
-    return obj instanceof Primitive_Relation;
-}
+export const is_relation = register_predicate("is_relation", (obj: any): obj is Relation => {
+    return obj !== undefined && obj !== null && 'get_id' in obj && 'get_name' in obj && 'get_children' in obj && 'dispose' in obj;
+});
+
+
+
 
 export function make_relation(name: string, parent: InterestedType, id: string | null = null){
     // TODO: Proper management of parential relationship for memory leak

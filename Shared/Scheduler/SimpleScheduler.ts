@@ -72,11 +72,17 @@ export const simple_scheduler = (): Scheduler => {
             if (cell) {
                 set_global_state(PublicStateCommand.REMOVE_CELL, cell)
             }
+            else{
+                console.log("cell not found for disposal", id)
+            }
             
             // Try to find and dispose propagator
             const propagator = find_propagator_by_id(id)
             if (propagator) {
                 set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
+            }
+            else{
+                console.log("propagator not found for disposal", id)
             }
         })
         disposalQueue.clear()

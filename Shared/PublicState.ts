@@ -266,5 +266,6 @@ export const propagator_snapshot = () => all_propagators.get_value()
 export const amb_propagator_snapshot = () => all_amb_propagators.get_value()
 export const observe_amb_propagator_array = (f: (propagators: any[]) => void) => subscribe(f)(all_amb_propagators.node)
 export const observe_failed_count = (f: (failed_count: number) => void) => subscribe(f)(failed_count.node)
+export const observe_global_commands = (f: (command: PublicStateCommand) => void) => subscribe(f)(receiver)
 
 
