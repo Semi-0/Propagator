@@ -8,7 +8,10 @@ maybe its better to keep the propagation graph extend only on startup
 edit is only possible in runtime
 so its reflexive inspectability but also avoid unnecessary footgun
 
+
+// next focusing on implement 
 carrying cells
+and higher order propagators that recursion over carrying cells
 
 recursion
 
