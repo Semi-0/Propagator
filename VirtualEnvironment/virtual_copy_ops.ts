@@ -30,6 +30,9 @@ export const parents_not_acceptable = (copy_sets: HashSet<VirtualCopySet>, frame
     )
 }
 
+// why we only accept good frames
+// because when parent frame is not acceptable(have wholes)
+// means we are in a recursive environment
 export const is_good_frame = (copy_sets: HashSet<VirtualCopySet>, frame: Frame) => {
     return is_accepetable_frame(copy_sets, frame) && parents_not_acceptable(copy_sets, frame)
 }

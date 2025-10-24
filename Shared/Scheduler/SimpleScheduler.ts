@@ -36,7 +36,7 @@ export const simple_scheduler = (): Scheduler => {
         catch(e: any){
 
      
-            error_handler(new PropagatorError("Error executing propagator", to_string(propagator), e))
+            error_handler(new PropagatorError("Error executing propagator", propagator.summarize(), e))
     
         }
     }

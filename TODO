@@ -1,20 +1,28 @@
 1. virtual environment for handling  propagator(can it be compose with reactivity?)
 generalize is unusable value to any unusable value
-DELAYED blueprint
-
-victor clock for reactivity 
-
-disposing 
+DELAYED blueprint done
+i thought about building dynamic propagator 
+which can build and unbuild on runtime
+but then i think it introduce too much complexity
+maybe its better to keep the propagation graph extend only on startup
+edit is only possible in runtime
+so its reflexive inspectability but also avoid unnecessary footgun
 
 carrying cells
 
+recursion
+
+victor clock for reactivity done 
+
+disposing done
+
 scheduler determinsitic replay
 
-2. unify reactivity and supported value with generic merge  
+2. unify reactivity and supported value with generic merge  done 
 
 
-MEMORY LEAKKKKKK
+MEMORY LEAKKKKKK solved 
 
-revert memory testing to the last one 
+revert memory testing to the last one  done 
 
-it should only dispose the propagator
+it should only dispose the propagator done 

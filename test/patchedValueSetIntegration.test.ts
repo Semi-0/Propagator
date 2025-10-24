@@ -27,7 +27,7 @@ import { support_by, support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out } from "../Helper/UI";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
-
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     set_merge(merge_patched_set);
@@ -172,9 +172,9 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
         });
     });
 
-    describe("VICTOR CLOCK + PATCHED SET PROPAGATOR TESTS", () => {
+    describe("VECTOR CLOCK + PATCHED SET PROPAGATOR TESTS", () => {
         
-        test("[VICTOR_CLOCK] Basic addition with victor clock values in propagator", async () => {
+        test("[VECTOR_CLOCK] Basic addition with victor clock values in propagator", async () => {
             const cellA = construct_cell("vc_addA");
             const cellB = construct_cell("vc_addB");
             const output = construct_cell("vc_addOutput");
@@ -183,17 +183,17 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             // Import needed for Victor Clock
             const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             const { construct_better_set } = await import("generic-handler/built_in_generics/generic_better_set");
             
             const valueA = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["procA", 1]])
+                vector_clock_layer, new Map([["procA", 1]])
             );
             
             const valueB = construct_layered_datum(
                 20,
-                victor_clock_layer, new Map([["procB", 1]])
+                vector_clock_layer, new Map([["procB", 1]])
             );
             
             cellA.update(valueA);
@@ -217,7 +217,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             p_add(cellA, cellB, output);
             
             const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Initial values: victor_clock v1 with strong support
             //@ts-ignore
@@ -253,7 +253,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_add(cellA, cellB, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Two concurrent values from different sources with different supports
             //@ts-ignore
@@ -290,7 +290,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_add(cellA, cellB, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // First: Support-only values
             //@ts-ignore
@@ -324,7 +324,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_multiply(cellA, cellB, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Build up multiple stale values - v1
             //@ts-ignore
@@ -426,7 +426,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_multiply(cellA, cellB, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Add initial values with Victor Clock v1 and support
             //@ts-ignore
@@ -470,7 +470,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             p_add(cellA, cellB, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Add initial values v1
             //@ts-ignore
@@ -517,7 +517,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             p_add(cellA, cellB, temp);
             p_multiply(temp, cellC, output);
             
-            const { victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
+            const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/victor_clock");
             
             // Add initial values v1
             //@ts-ignore

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { support_layer, construct_defualt_support_set } from "sando-layer/Specified/SupportLayer";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { layered_deep_equal, layers_base_equal, all_layers_value_equal, layers_length_equal } from "sando-layer/Equality";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -21,17 +21,17 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
     test("should compare identical victor clock layers - propagator context", () => {
       const obj1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       const obj2 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       console.log("\n=== Victor Clock Only ===");
-      const clock1 = victor_clock_layer.get_value(obj1);
-      const clock2 = victor_clock_layer.get_value(obj2);
+      const clock1 = vector_clock_layer.get_value(obj1);
+      const clock2 = vector_clock_layer.get_value(obj2);
       
       console.log("Clock1:", clock1);
       console.log("Clock2:", clock2);
@@ -46,17 +46,17 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
     test("should compare different victor clock layers", () => {
       const obj1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       const obj2 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 3]])
+        vector_clock_layer, new Map([["source1", 3]])
       );
       
       console.log("\n=== Different Victor Clocks ===");
-      const clock1 = victor_clock_layer.get_value(obj1);
-      const clock2 = victor_clock_layer.get_value(obj2);
+      const clock1 = vector_clock_layer.get_value(obj1);
+      const clock2 = vector_clock_layer.get_value(obj2);
       
       console.log("Clock1:", clock1);
       console.log("Clock2:", clock2);
@@ -99,13 +99,13 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
     test("should compare identical combined layers - stale value scenario", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const staleCopy = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -121,13 +121,13 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
     test("should show what logs showed - stale vs fresh comparison", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const freshValue = construct_layered_datum(
         10,  // SAME base value - this is the key!
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -147,13 +147,13 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
       
       const obj1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const obj2 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -175,13 +175,13 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
     test("should verify all equality components work in propagator context", () => {
       const obj1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const obj2 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -199,8 +199,8 @@ describe("Layer Equality in Propagator Context (Victor Clock + Support)", () => 
       console.log("4. layered_deep_equal:", deepEqual);
       
       // Check layer values directly
-      const clock1 = victor_clock_layer.get_value(obj1);
-      const clock2 = victor_clock_layer.get_value(obj2);
+      const clock1 = vector_clock_layer.get_value(obj1);
+      const clock2 = vector_clock_layer.get_value(obj2);
       const support1 = support_layer.get_value(obj1);
       const support2 = support_layer.get_value(obj2);
       

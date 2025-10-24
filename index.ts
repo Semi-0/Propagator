@@ -39,7 +39,6 @@
 // ============================================================================
 
 // Initialize all generic procedure handlers (must be imported early to avoid circular dependencies)
-import "./initGenerics";
 
 // Cell-related imports
 import { 

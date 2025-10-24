@@ -31,6 +31,14 @@ define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector
     });
 })
 
+export type vector_clock_constructor = {
+    source: SourceID;
+    value: number;
+}
+
+export const construct_vector_clock = (constructors: vector_clock_constructor[]) => {
+    return new Map(constructors.map((constructor) => [constructor.source, constructor.value]));
+}
 
 
 const version_vector_forward = (version_vector: VersionVector, source: SourceID) => {
@@ -127,7 +135,7 @@ export const clock_channels_subsume = (b: VersionVector, a: VersionVector): bool
 
 
 
-export const victor_clock_layer = make_annotation_layer<VersionVector, any>("victor_clock", 
+export const vector_clock_layer = make_annotation_layer<VersionVector, any>("victor_clock", 
     (get_name: () => string,
     has_value: (object: any) => boolean,
     get_value: (object: any) => any,
@@ -153,22 +161,22 @@ export const victor_clock_layer = make_annotation_layer<VersionVector, any>("vic
     }
 )
 
-export const _has_victor_clock_layer = (a: any) => {
-    return a && victor_clock_layer.has_value(a);
+export const _has_vector_clock_layer = (a: any) => {
+    return a && vector_clock_layer.has_value(a);
 }
 
-export const has_victor_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => is_layered_object(a) && _has_victor_clock_layer(a));
+export const has_vector_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => is_layered_object(a) && _has_vector_clock_layer(a));
 
 export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) => {
     return pipe(
         as,
-        A.filter(has_victor_clock_layer),
-        A.map(victor_clock_layer.get_value),
+        A.filter(has_vector_clock_layer),
+        A.map(vector_clock_layer.get_value),
         A.reduce(0, generic_version_vector_clock_compare)
     ) !== 0
 }
 
-define_generic_procedure_handler(any_unusable_values, match_args(has_victor_clock_layer, has_victor_clock_layer), (as: LayeredObject<any>[] | any[]) => {
+define_generic_procedure_handler(any_unusable_values, match_args(has_vector_clock_layer, has_vector_clock_layer), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
 
@@ -181,19 +189,19 @@ define_generic_procedure_handler(any_unusable_values, match_args(has_victor_cloc
 
 define_consolidator_per_layer_dispatcher(
     find_related_elements,
-    victor_clock_layer,
+    vector_clock_layer,
     (base_args: any[], contentClock: VersionVector, elt_clock: VersionVector) => {
        const [set, elt] = base_args;
        // finding all the victor clock that is staled
        // victor clock guarantee only same source clock stale
-       return filter(set, (a: LayeredObject<any>) => generic_version_clock_less_than(victor_clock_layer.get_value(a), elt_clock))
+       return filter(set, (a: LayeredObject<any>) => generic_version_clock_less_than(vector_clock_layer.get_value(a), elt_clock))
     }
 )
 
 define_consolidator_per_layer_dispatcher(
     // @ts-ignore
     subsumes,
-    victor_clock_layer,
+    vector_clock_layer,
     // we have already guaranteed that the new element is more precise
     (...args: any[]) => false
 )
@@ -220,14 +228,14 @@ export const proved_staled_with = curryArgument(
     generic_wrapper(
         prove_staled, 
         (a: boolean) => a,
-        victor_clock_layer.get_value,
+        vector_clock_layer.get_value,
         (a: VersionVector) => a
     )
 )
 
 define_consolidator_per_layer_dispatcher(
     scan_for_patches,
-    victor_clock_layer,
+    vector_clock_layer,
     (base_args: any[], set_victor_clock: VersionVector, elt_victor_clock: VersionVector) => {
         const [set, elt] = base_args;
 

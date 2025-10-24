@@ -7,7 +7,7 @@ import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
 import { is_nothing, the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
-import { for_each } from "generic-handler/built_in_generics/generic_collection";
+import { add_item, for_each } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { less_than, equal } from "../AdvanceReactivity/Generics/GenericArith";
 import { base_equal } from "../Shared/base_equal";
@@ -24,6 +24,8 @@ import { match_args } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import type { PropagatorClosure } from "./CarriedCell";
+import { ce_eq } from "../ObjectSystem/comprehensive_object";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
     if (base_equal(condition, true)){
@@ -33,6 +35,55 @@ export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cel
         return no_compute
     }
 })(condition, value, output)
+
+
+
+// unfortunately i think maybe it is much easier to express filter with linked list
+
+const referece_map = (f: (input: any) => any, array: any[]) => {
+    const m = (index: number, acc: any[]) => {
+        if (index === array.length){
+            return acc;
+        }
+        else{
+            return m(index + 1, add_item(acc, f(array[index])));
+        }
+    }
+    return m(0, []);
+}
+
+// export const map_propagator = (fp: Cell<PropagatorClosure>, input: Cell<any>, output: Cell<any>) => 
+//     compound_propagator([fp, input], [output], () => {
+        
+//         const internal = (index: Cell<number>) => compound_propagator([fp, input], [output],
+//             () => {
+//                 bi_array_link(
+//                     index, 
+//                     input, 
+//                     output, 
+//                     fp, 
+//                     construct_cell("output -> input")
+//                 )
+
+              
+//                 internal(
+//                     ce_switch(
+//                         ce_not(ce_equal(index, ce_length(input))),
+//                         ce_add(index, ce_constant(1)(index)) // const can directly be the nothing
+//                     )
+//                 )
+//             }
+//         , "map_propagator_internal")
+
+//         internal(ce_constant(0)(input))
+//     }, "map_propagator")
+
+// but filter would be more complicated 
+// because filter needs to ignore the index that are not valid
+// or the easy way filter is just a special case of map that emits nothing if condition not met
+// the result would be a map with holes in certain numbers
+// and we can skip wholes or reduce that map to form a decent array
+
 
 
 export const p_identity = function_to_primitive_propagator("identity", (input: any) => {
@@ -72,7 +123,7 @@ export const p_constant = (value: any) => primitive_propagator(() => {
     return value;
 }, "constant")
 
-export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant")
+export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant") as (value: any) => Cell<any>
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [b], () => {
     p_sync(a, b)

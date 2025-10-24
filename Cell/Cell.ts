@@ -153,6 +153,7 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
         interested_in: interested_in,
         propagator: propagator
       });
+      cell.update()
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(get_id(propagator));
@@ -297,7 +298,7 @@ export const cell_strongest_base_value = compose(cell_strongest, get_base_value)
 // to avoid circular dependency issues
 
 export function summarize_cells(cells: Cell<any>[]): string{
-    return cells.reduce((acc, cell) => acc + "/n" + to_string(cell), "")
+    return cells.reduce((acc, cell) => acc + "/n" +  cell && cell.summarize != undefined ? cell.summarize() : "not a cell", "")
 }
 
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {

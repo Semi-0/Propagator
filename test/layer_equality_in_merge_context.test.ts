@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { support_layer, construct_defualt_support_set } from "sando-layer/Specified/SupportLayer";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { layered_deep_equal, layers_base_equal, all_layers_value_equal } from "sando-layer/Equality";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { merge_generic_value_sets, to_generic_value_set, find_related_elements } from "../DataTypes/GenericValueSet";
@@ -21,13 +21,13 @@ describe("Layer Equality in Merge Context", () => {
     test("should find identical stale values as related elements", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const staleCopy = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -47,13 +47,13 @@ describe("Layer Equality in Merge Context", () => {
     test("should compare stale and fresh values from the test scenario", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const freshValue = construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["source1", 3]]),
+        vector_clock_layer, new Map([["source1", 3]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -68,13 +68,13 @@ describe("Layer Equality in Merge Context", () => {
     test("should verify layer values directly from GenericValueSet merge", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const freshValue = construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["source1", 3]]),
+        vector_clock_layer, new Map([["source1", 3]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
@@ -83,9 +83,9 @@ describe("Layer Equality in Merge Context", () => {
       console.log("\n=== Test 3: Direct layer value comparison ===");
       
       // Extract layer values
-      const staleClk = victor_clock_layer.get_value(staleValue);
+      const staleClk = vector_clock_layer.get_value(staleValue);
       const staleSupp = support_layer.get_value(staleValue);
-      const freshClk = victor_clock_layer.get_value(freshValue);
+      const freshClk = vector_clock_layer.get_value(freshValue);
       const freshSupp = support_layer.get_value(freshValue);
       
       console.log("Stale clock:", staleClk);

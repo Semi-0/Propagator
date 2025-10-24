@@ -10,7 +10,7 @@ import { update } from "../AdvanceReactivity/interface";
 import { set_merge, generic_merge } from "@/cell/Merge";
 import { reactive_merge, trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { merge_generic_value_sets, to_generic_value_set, is_generic_value_set } from "../DataTypes/GenericValueSet";
-import { victor_clock_layer, generic_version_clock_less_than, generic_version_clock_equal } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer, generic_version_clock_less_than, generic_version_clock_equal } from "../AdvanceReactivity/victor_clock";
 import { support_by, support_layer } from "sando-layer/Specified/SupportLayer";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -79,11 +79,11 @@ describe("Generic Value Set Tests", () => {
       const versionVector = new Map([["source1", 1]]);
       const value = construct_layered_datum(
         100,
-        victor_clock_layer, versionVector
+        vector_clock_layer, versionVector
       );
       
-      expect(victor_clock_layer.has_value(value)).toBe(true);
-      const clockValue = victor_clock_layer.get_value(value);
+      expect(vector_clock_layer.has_value(value)).toBe(true);
+      const clockValue = vector_clock_layer.get_value(value);
       expect(clockValue.get("source1")).toBe(1);
     });
 
@@ -106,14 +106,14 @@ describe("Generic Value Set Tests", () => {
       // Create stale value (older clock)
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1"])
       );
       
       // Create fresh value (newer clock from same source)
       const freshValue = construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["source1", 3]]),
+        vector_clock_layer, new Map([["source1", 3]]),
         support_layer, construct_better_set(["premise1"])
       );
       
@@ -129,14 +129,14 @@ describe("Generic Value Set Tests", () => {
       // Value from source1
       const value1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 2]]),
+        vector_clock_layer, new Map([["source1", 2]]),
         support_layer, construct_better_set(["premise1"])
       );
       
       // Value from source2
       const value2 = construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["source2", 2]]),
+        vector_clock_layer, new Map([["source2", 2]]),
         support_layer, construct_better_set(["premise1"])
       );
       
@@ -166,11 +166,11 @@ describe("Generic Value Set Tests", () => {
     test("should handle values with both victor clock and support layers", () => {
       const compoundValue = construct_layered_datum(
         100,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1", "premise2"])
       );
       
-      expect(victor_clock_layer.has_value(compoundValue)).toBe(true);
+      expect(vector_clock_layer.has_value(compoundValue)).toBe(true);
       expect(support_layer.has_value(compoundValue)).toBe(true);
       expect(get_base_value(compoundValue)).toBe(100);
     });
@@ -179,14 +179,14 @@ describe("Generic Value Set Tests", () => {
       // Old value: clock=1, support=2 premises
       const oldValue = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1", "premise2"])
       );
       
       // New value: clock=3, support=1 premise (stronger)
       const newValue = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 3]]),
+        vector_clock_layer, new Map([["source1", 3]]),
         support_layer, construct_better_set(["premise1"])
       );
       
@@ -197,7 +197,7 @@ describe("Generic Value Set Tests", () => {
       expect(merged.length).toBe(1);
       expect(get_base_value(merged[0])).toBe(42);
       
-      const resultClock = victor_clock_layer.get_value(merged[0]);
+      const resultClock = vector_clock_layer.get_value(merged[0]);
       expect(resultClock.get("source1")).toBe(3);
     });
 
@@ -205,14 +205,14 @@ describe("Generic Value Set Tests", () => {
       // Old value: clock=1, support=1 premise (strong)
       const oldValue = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1"])
       );
       
       // New value: clock=3, support=3 premises (weak)
       const newValue = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 3]]),
+        vector_clock_layer, new Map([["source1", 3]]),
         support_layer, construct_better_set(["premise1", "premise2", "premise3"])
       );
       
@@ -221,26 +221,26 @@ describe("Generic Value Set Tests", () => {
       
       // Should replace old with new because clock is more recent
       expect(merged.length).toBe(1);
-      const resultClock = victor_clock_layer.get_value(merged[0]);
+      const resultClock = vector_clock_layer.get_value(merged[0]);
       expect(resultClock.get("source1")).toBe(3);
     });
 
     test("should handle multiple compound values from different sources", () => {
       const value1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 2]]),
+        vector_clock_layer, new Map([["source1", 2]]),
         support_layer, construct_better_set(["premise1"])
       );
       
       const value2 = construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["source2", 1]]),
+        vector_clock_layer, new Map([["source2", 1]]),
         support_layer, construct_better_set(["premise2"])
       );
       
       const value3 = construct_layered_datum(
         30,
-        victor_clock_layer, new Map([["source3", 5]]),
+        vector_clock_layer, new Map([["source3", 5]]),
         support_layer, construct_better_set(["premise3"])
       );
       
@@ -261,13 +261,13 @@ describe("Generic Value Set Tests", () => {
       // Create values with victor clocks
       const valueA1 = construct_layered_datum(
         5,
-        victor_clock_layer, new Map([["cellA", 1]]),
+        vector_clock_layer, new Map([["cellA", 1]]),
         support_layer, construct_better_set(["inputA"])
       );
       
       const valueB1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["cellB", 1]]),
+        vector_clock_layer, new Map([["cellB", 1]]),
         support_layer, construct_better_set(["inputB"])
       );
       
@@ -293,13 +293,13 @@ describe("Generic Value Set Tests", () => {
       // Initial values
       const valueA1 = construct_layered_datum(
         5,
-        victor_clock_layer, new Map([["cellA", 1]]),
+        vector_clock_layer, new Map([["cellA", 1]]),
         support_layer, construct_better_set(["inputA"])
       );
       
       const valueB1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["cellB", 1]]),
+        vector_clock_layer, new Map([["cellB", 1]]),
         support_layer, construct_better_set(["inputB"])
       );
       
@@ -312,7 +312,7 @@ describe("Generic Value Set Tests", () => {
       // Update cellA with newer clock
       const valueA2 = construct_layered_datum(
         8,
-        victor_clock_layer, new Map([["cellA", 2]]),
+        vector_clock_layer, new Map([["cellA", 2]]),
         support_layer, construct_better_set(["inputA"])
       );
       
@@ -333,7 +333,7 @@ describe("Generic Value Set Tests", () => {
         computeCount++;
         return construct_layered_datum(
           get_base_value(a) + get_base_value(b),
-          victor_clock_layer, new Map([["output", computeCount]]),
+          vector_clock_layer, new Map([["output", computeCount]]),
           support_layer, construct_better_set(["computed"])
         );
       }, "tracked_add");
@@ -343,13 +343,13 @@ describe("Generic Value Set Tests", () => {
       // Set initial synchronized values
       const valueA1 = construct_layered_datum(
         5,
-        victor_clock_layer, new Map([["source", 1]]),
+        vector_clock_layer, new Map([["source", 1]]),
         support_layer, construct_better_set(["inputA"])
       );
       
       const valueB1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source", 1]]),
+        vector_clock_layer, new Map([["source", 1]]),
         support_layer, construct_better_set(["inputB"])
       );
       
@@ -363,7 +363,7 @@ describe("Generic Value Set Tests", () => {
       // Now update A with a much newer clock (creating desync)
       const valueA2 = construct_layered_datum(
         8,
-        victor_clock_layer, new Map([["source", 10]]),
+        vector_clock_layer, new Map([["source", 10]]),
         support_layer, construct_better_set(["inputA"])
       );
       
@@ -377,7 +377,7 @@ describe("Generic Value Set Tests", () => {
       // Now sync B to same clock level
       const valueB2 = construct_layered_datum(
         12,
-        victor_clock_layer, new Map([["source", 10]]),
+        vector_clock_layer, new Map([["source", 10]]),
         support_layer, construct_better_set(["inputB"])
       );
       
@@ -394,7 +394,7 @@ describe("Generic Value Set Tests", () => {
       // Add value with premise1
       const value1 = construct_layered_datum(
         100,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1"])
       );
       
@@ -405,7 +405,7 @@ describe("Generic Value Set Tests", () => {
       // Add value with premise2
       const value2 = construct_layered_datum(
         200,
-        victor_clock_layer, new Map([["source1", 2]]),
+        vector_clock_layer, new Map([["source1", 2]]),
         support_layer, construct_better_set(["premise2"])
       );
       
@@ -431,7 +431,7 @@ describe("Generic Value Set Tests", () => {
       const addThree = primitive_propagator((a: any, b: any, c: any) => {
         return construct_layered_datum(
           get_base_value(a) + get_base_value(b) + get_base_value(c),
-          victor_clock_layer, new Map([["output", 1]]),
+          vector_clock_layer, new Map([["output", 1]]),
           support_layer, construct_better_set(["computed"])
         );
       }, "add_three");
@@ -441,19 +441,19 @@ describe("Generic Value Set Tests", () => {
       // Different clocks for each input
       cellA.update(construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["sourceA", 5]]),
+        vector_clock_layer, new Map([["sourceA", 5]]),
         support_layer, construct_better_set(["a"])
       ));
       
       cellB.update(construct_layered_datum(
         20,
-        victor_clock_layer, new Map([["sourceB", 3]]),
+        vector_clock_layer, new Map([["sourceB", 3]]),
         support_layer, construct_better_set(["b"])
       ));
       
       cellC.update(construct_layered_datum(
         30,
-        victor_clock_layer, new Map([["sourceC", 7]]),
+        vector_clock_layer, new Map([["sourceC", 7]]),
         support_layer, construct_better_set(["c"])
       ));
       
@@ -477,13 +477,13 @@ describe("Generic Value Set Tests", () => {
     test("should handle value set with same base value but different metadata", () => {
       const value1 = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_better_set(["premise1"])
       );
       
       const value2 = construct_layered_datum(
         42,
-        victor_clock_layer, new Map([["source1", 2]]),
+        vector_clock_layer, new Map([["source1", 2]]),
         support_layer, construct_better_set(["premise2"])
       );
       
@@ -500,17 +500,17 @@ describe("Generic Value Set Tests", () => {
       const updates = [
         construct_layered_datum(
           10,
-          victor_clock_layer, new Map([["source1", 1]]),
+          vector_clock_layer, new Map([["source1", 1]]),
           support_layer, construct_better_set(["p1"])
         ),
         construct_layered_datum(
           20,
-          victor_clock_layer, new Map([["source2", 1]]),
+          vector_clock_layer, new Map([["source2", 1]]),
           support_layer, construct_better_set(["p2"])
         ),
         construct_layered_datum(
           30,
-          victor_clock_layer, new Map([["source3", 1]]),
+          vector_clock_layer, new Map([["source3", 1]]),
           support_layer, construct_better_set(["p3"])
         )
       ];
@@ -527,14 +527,14 @@ describe("Generic Value Set Tests", () => {
     test("should handle vector clock with mixed source updates", () => {
       const value1 = construct_layered_datum(
         100,
-        victor_clock_layer, new Map([["source1", 5], ["source2", 3]]),
+        vector_clock_layer, new Map([["source1", 5], ["source2", 3]]),
         support_layer, construct_better_set(["p1"])
       );
       
       // Update that's newer in source1 but same in source2
       const value2 = construct_layered_datum(
         200,
-        victor_clock_layer, new Map([["source1", 7], ["source2", 3]]),
+        vector_clock_layer, new Map([["source1", 7], ["source2", 3]]),
         support_layer, construct_better_set(["p1"])
       );
       

@@ -10,7 +10,6 @@
 
 import { describe, test, expect, beforeEach } from "bun:test";
 // Initialize all generic procedure handlers before importing modules
-import "../initGenerics";
 
 import {
     construct_cell,
@@ -49,7 +48,7 @@ import { propagator_id } from "../Propagator/Propagator";
 import { get_children } from "../Shared/Generics";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { compound_tell } from "../Helper/UI";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 
 beforeEach(() => {
@@ -174,10 +173,10 @@ describe("Cell Disposal Tests", () => {
         const prop2Id = propagator_id(prop2);
         
         // Test both work
-        compound_tell(a, 10, victor_clock_layer, new Map([["source", 1]]));
-        compound_tell(b, 5, victor_clock_layer, new Map([["source", 1]]));
-        compound_tell(c, 20, victor_clock_layer, new Map([["source", 1]]));
-        compound_tell(d, 8, victor_clock_layer, new Map([["source", 1]]));
+        compound_tell(a, 10, vector_clock_layer, new Map([["source", 1]]));
+        compound_tell(b, 5, vector_clock_layer, new Map([["source", 1]]));
+        compound_tell(c, 20, vector_clock_layer, new Map([["source", 1]]));
+        compound_tell(d, 8, vector_clock_layer, new Map([["source", 1]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(result1)).toBe(15);
         expect(cell_strongest_base_value(result2)).toBe(28);
@@ -193,7 +192,7 @@ describe("Cell Disposal Tests", () => {
         expect(find_propagator_by_id(prop2Id)).toBeDefined();
         
         // Second network should still work
-        compound_tell(d, 10, victor_clock_layer, new Map([["source", 2]]));
+        compound_tell(d, 10, vector_clock_layer, new Map([["source", 2]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(result2)).toBe(30);
     });
@@ -646,7 +645,7 @@ describe("Complex Disposal Scenarios", () => {
         );
         
         // Trigger building
-        compound_tell(input, 10, victor_clock_layer, new Map([["source", 1]]));
+        compound_tell(input, 10, vector_clock_layer, new Map([["source", 1]]));
         await execute_all_tasks_sequential(() => {});
         
         // Dispose only first compound
@@ -663,7 +662,7 @@ describe("Complex Disposal Scenarios", () => {
         
         // Second compound should still propagate
         const oldOutput2 = cell_strongest_base_value(output2);
-        compound_tell(input, 20, victor_clock_layer, new Map([["source", 2]]));
+        compound_tell(input, 20, vector_clock_layer, new Map([["source", 2]]));
         await execute_all_tasks_sequential(() => {});
         expect(cell_strongest_base_value(output2)).not.toBe(oldOutput2);
     });

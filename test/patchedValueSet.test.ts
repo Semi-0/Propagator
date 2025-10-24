@@ -40,7 +40,7 @@ import { set_handle_contradiction } from "@/cell/Cell";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { set_merge } from "@/cell/Merge";
 import { the_nothing } from "@/cell/CellValue";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 beforeEach(() => {
@@ -250,14 +250,14 @@ describe("scan_for_patches Tests", () => {
             // Old value with older version vector
             const staleValue = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source1", 1]]),
+                vector_clock_layer, new Map([["source1", 1]]),
                 support_layer, construct_better_set(["premise1"])
             );
 
             // Fresh value with newer version vector from same source
             const freshValue = construct_layered_datum(
                 20,
-                victor_clock_layer, new Map([["source1", 3]]),
+                vector_clock_layer, new Map([["source1", 3]]),
                 support_layer, construct_better_set(["premise1"])
             );
 
@@ -279,13 +279,13 @@ describe("scan_for_patches Tests", () => {
         test("should generate both remove and join patches for stale replacement", () => {
             const staleValue = construct_layered_datum(
                 100,
-                victor_clock_layer, new Map([["source1", 1]]),
+                vector_clock_layer, new Map([["source1", 1]]),
                 support_layer, construct_better_set(["p1"])
             );
 
             const freshValue = construct_layered_datum(
                 200,
-                victor_clock_layer, new Map([["source1", 5]]),
+                vector_clock_layer, new Map([["source1", 5]]),
                 support_layer, construct_better_set(["p1"])
             );
 
@@ -310,14 +310,14 @@ describe("scan_for_patches Tests", () => {
             // Value from source1 at version 2
             const value1 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source1", 2]]),
+                vector_clock_layer, new Map([["source1", 2]]),
                 support_layer, construct_better_set(["p1"])
             );
 
             // Value from source2 at version 2
             const value2 = construct_layered_datum(
                 20,
-                victor_clock_layer, new Map([["source2", 2]]),
+                vector_clock_layer, new Map([["source2", 2]]),
                 support_layer, construct_better_set(["p2"])
             );
 
@@ -340,13 +340,13 @@ describe("scan_for_patches Tests", () => {
         test("should replace stale value with fresher version from same source isolated", () => {
             const v1 = construct_layered_datum(
                 50,
-                victor_clock_layer, new Map([["proc1", 1]]),
+                vector_clock_layer, new Map([["proc1", 1]]),
                 support_layer, construct_better_set(["input1"])
             );
 
             const v2 = construct_layered_datum(
                 60,
-                victor_clock_layer, new Map([["proc1", 2]]),
+                vector_clock_layer, new Map([["proc1", 2]]),
                 support_layer, construct_better_set(["input1"])
             );
 
@@ -361,7 +361,7 @@ describe("scan_for_patches Tests", () => {
             expect(resultValue).toBe(60);
             
             // Verify the version is v2
-            const resultClock = victor_clock_layer.get_value(to_array(set)[0]);
+            const resultClock = vector_clock_layer.get_value(to_array(set)[0]);
             expect(resultClock.get("proc1")).toBe(2);
         });
 
@@ -369,17 +369,17 @@ describe("scan_for_patches Tests", () => {
             // Three values with increasing versions
             const v1 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 1]]),
+                vector_clock_layer, new Map([["source", 1]]),
             );
 
             const v2 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 2]]),
+                vector_clock_layer, new Map([["source", 2]]),
             );
 
             const v3 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 5]]),
+                vector_clock_layer, new Map([["source", 5]]),
             );
 
             let set = construct_better_set([v1, v2]);
@@ -391,7 +391,7 @@ describe("scan_for_patches Tests", () => {
             expect(length(set)).toBe(1);
             
             const array = to_array(set);
-            const victor_clock_value = victor_clock_layer.get_value(array[0]);
+            const victor_clock_value = vector_clock_layer.get_value(array[0]);
 
             // The remaining value should have version 5
             expect(victor_clock_value.get("source")).toBe(5);
@@ -401,19 +401,19 @@ describe("scan_for_patches Tests", () => {
             // Three values with increasing versions
             const v1 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 1]]),
+                vector_clock_layer, new Map([["source", 1]]),
                 support_layer, construct_better_set(["p1"])
             );
 
             const v2 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 2]]),
+                vector_clock_layer, new Map([["source", 2]]),
                 support_layer, construct_better_set(["p1"])
             );
 
             const v3 = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["source", 5]]),
+                vector_clock_layer, new Map([["source", 5]]),
                 support_layer, construct_better_set(["p1"])
             );
 
@@ -426,7 +426,7 @@ describe("scan_for_patches Tests", () => {
             expect(length(set)).toBe(1);
             
             const array = to_array(set);
-            const victor_clock_value = victor_clock_layer.get_value(array[0]);
+            const victor_clock_value = vector_clock_layer.get_value(array[0]);
 
             // The remaining value should have version 5
             expect(victor_clock_value.get("source")).toBe(5);
@@ -436,13 +436,13 @@ describe("scan_for_patches Tests", () => {
             // Two values with same base but different vector clocks
             const olderClock = construct_layered_datum(
                 42,
-                victor_clock_layer, new Map([["A", 1], ["B", 1]]),
+                vector_clock_layer, new Map([["A", 1], ["B", 1]]),
                 support_layer, construct_better_set(["support1"])
             );
 
             const newerClock = construct_layered_datum(
                 42,
-                victor_clock_layer, new Map([["A", 2], ["B", 1]]),
+                vector_clock_layer, new Map([["A", 2], ["B", 1]]),
                 support_layer, construct_better_set(["support1"])
             );
 
@@ -452,7 +452,7 @@ describe("scan_for_patches Tests", () => {
             // Should have only the newer value
             expect(length(set)).toBe(1);
             
-            const resultClock = victor_clock_layer.get_value(to_array(set)[0]);
+            const resultClock = vector_clock_layer.get_value(to_array(set)[0]);
             expect(resultClock.get("A")).toBe(2);
             expect(resultClock.get("B")).toBe(1);
         });
@@ -461,13 +461,13 @@ describe("scan_for_patches Tests", () => {
             // Two values with incomparable version vectors
             const clockA = construct_layered_datum(
                 10,
-                victor_clock_layer, new Map([["sourceA", 2]]),
+                vector_clock_layer, new Map([["sourceA", 2]]),
                 support_layer, construct_better_set(["pA"])
             );
 
             const clockB = construct_layered_datum(
                 20,
-                victor_clock_layer, new Map([["sourceB", 3]]),
+                vector_clock_layer, new Map([["sourceB", 3]]),
                 support_layer, construct_better_set(["pB"])
             );
 
@@ -490,7 +490,7 @@ describe("scan_for_patches Tests", () => {
             // Initial value from processor at version 1
             const initial = construct_layered_datum(
                 "result_v1",
-                victor_clock_layer, new Map([["processor", 1]]),
+                vector_clock_layer, new Map([["processor", 1]]),
                 support_layer, construct_better_set(["input_feed"])
             );
 
@@ -499,7 +499,7 @@ describe("scan_for_patches Tests", () => {
             // Processor receives new input, produces result_v2
             const updated = construct_layered_datum(
                 "result_v2",
-                victor_clock_layer, new Map([["processor", 2]]),
+                vector_clock_layer, new Map([["processor", 2]]),
                 support_layer, construct_better_set(["input_feed"])
             );
 
@@ -516,7 +516,7 @@ describe("scan_for_patches Tests", () => {
             // Another processor adds concurrent value
             const concurrent = construct_layered_datum(
                 "other_result",
-                victor_clock_layer, new Map([["other_processor", 1]]),
+                vector_clock_layer, new Map([["other_processor", 1]]),
                 support_layer, construct_better_set(["other_input"])
             );
 

@@ -52,6 +52,20 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
 })
 
 
+export const is_true = register_predicate("is_true", (value: any) => {
+    if (is_layered_object(value)) {
+        return get_base_value(value) === true
+    }
+    return value === true
+})
+
+export const is_false = register_predicate("is_false", (value: any) => {
+    if (is_layered_object(value)) {
+        return get_base_value(value) === false
+    }
+    return value === false
+})
+
 define_generic_procedure_handler(is_unusable_value, one_of_args_match(is_contradiction), (a:any) => true)
 define_generic_procedure_handler(is_unusable_value, match_args(is_layered_object), (a: LayeredObject<any>) => is_unusable_value(get_base_value(a)))
 define_generic_procedure_handler(is_unusable_value, one_of_args_match(is_nothing), (a:any) => true)

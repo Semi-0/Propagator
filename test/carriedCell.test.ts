@@ -21,11 +21,9 @@ import {
   function_to_cell_carrier_constructor,
   make_map_carrier,
   make_propagator_closure,
-  is_propagator_closure,
-  apply_propagator,
   type PropagatorClosure,
   p_map_carrier_default
-} from "../Propagator/carriedCell";
+} from "../../Propogator/Propagator/CarriedCell";
 import { p_add, p_subtract, p_multiply } from "../Propagator/BuiltInProps";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 

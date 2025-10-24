@@ -327,7 +327,7 @@ describe("timestamp value merge tests", () => {
     })
 
     // Test or operator
-    test("or operator should select the fresher cell value", async () => {
+    test("composite operator should select the fresher cell value", async () => {
       const cellA = construct_cell("A");
       const cellB = construct_cell("B");
       const output = construct_cell("output");
@@ -335,6 +335,7 @@ describe("timestamp value merge tests", () => {
 
 
       // await new Promise((resolve) => setTimeout(resolve, 2));
+      update(cellB, "zero")
       update(cellA, "first");
       await execute_all_tasks_sequential((error: Error) => {
         if (error) throw error;
@@ -543,7 +544,7 @@ describe("timestamp value merge tests", () => {
       // Create bi-directional conversion using compound_propagator
       // @ts-ignore
       com_celsius_to_fahrenheit(celsius, fahrenheit)
-
+      update(fahrenheit, 0)
    
       // Test Celsius to Fahrenheit conversion
       update(celsius, 0);

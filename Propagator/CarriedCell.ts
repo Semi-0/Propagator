@@ -8,8 +8,6 @@ import { bi_sync, p_constant } from "./BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import { p_switch } from "./BuiltInProps";
 import type { Propagator } from "../Propagator/Propagator";
-import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import { trace_func } from "../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
@@ -91,7 +89,8 @@ export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>
     }, "c_map_accessor")
 
 
-
+// how to hot reload propagators?
+// maybe we can have a propagator that can be built and unbuilt dynamically
 
 // we can also have early access hack
 

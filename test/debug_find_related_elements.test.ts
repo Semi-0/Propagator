@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { support_layer, construct_defualt_support_set } from "sando-layer/Specified/SupportLayer";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { layered_deep_equal } from "sando-layer/Equality";
 import { to_generic_value_set, find_related_elements } from "../DataTypes/GenericValueSet";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -20,13 +20,13 @@ describe("Debug: What is find_related_elements Passing to layered_deep_equal?", 
   test("trace the exact values passed to layered_deep_equal from find_related_elements", () => {
     const staleValue = construct_layered_datum(
       10,
-      victor_clock_layer, new Map([["source1", 1]]),
+      vector_clock_layer, new Map([["source1", 1]]),
       support_layer, construct_defualt_support_set(["premise1"])
     );
     
     const freshValue = construct_layered_datum(
       20,
-      victor_clock_layer, new Map([["source1", 3]]),
+      vector_clock_layer, new Map([["source1", 3]]),
       support_layer, construct_defualt_support_set(["premise1"])
     );
     

@@ -1,7 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { support_layer, construct_defualt_support_set } from "sando-layer/Specified/SupportLayer";
-import { victor_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { layered_deep_equal, layers_base_equal, all_layers_value_equal, layers_length_equal } from "sando-layer/Equality";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 
@@ -57,16 +57,16 @@ describe("Layer Equality Isolation Tests", () => {
     test("should compare objects with identical victor clock layers", () => {
       const obj1 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       const obj2 = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
-      const clock1 = victor_clock_layer.get_value(obj1);
-      const clock2 = victor_clock_layer.get_value(obj2);
+      const clock1 = vector_clock_layer.get_value(obj1);
+      const clock2 = vector_clock_layer.get_value(obj2);
       
       console.log("Clock value 1:", clock1);
       console.log("Clock value 2:", clock2);
@@ -83,13 +83,13 @@ describe("Layer Equality Isolation Tests", () => {
       const obj1 = construct_layered_datum(
         10,
         support_layer, construct_defualt_support_set(["premise1"]),
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       const obj2 = construct_layered_datum(
         10,
         support_layer, construct_defualt_support_set(["premise1"]),
-        victor_clock_layer, new Map([["source1", 1]])
+        vector_clock_layer, new Map([["source1", 1]])
       );
       
       console.log("\n=== Combined Layers ===");
@@ -104,13 +104,13 @@ describe("Layer Equality Isolation Tests", () => {
     test("should match the test scenario exactly - stale vs stale copy", () => {
       const staleValue = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
       const staleCopy = construct_layered_datum(
         10,
-        victor_clock_layer, new Map([["source1", 1]]),
+        vector_clock_layer, new Map([["source1", 1]]),
         support_layer, construct_defualt_support_set(["premise1"])
       );
       
