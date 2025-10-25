@@ -119,11 +119,11 @@ export const p_and = primitive_propagator(and, "and")
 
 export const p_or = primitive_propagator(or, "or")
 
-export const p_constant = (value: any) => primitive_propagator(() => {
+export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => primitive_propagator(() => {
     return value;
-}, "constant")
+}, "constant")(input, output)
 
-export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant") as (value: any) => Cell<any>
+export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant")
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [b], () => {
     p_sync(a, b)
@@ -556,9 +556,19 @@ export const p_pulse = (pulse: Cell<any>, input: Cell<any>, output: Cell<any>) =
 }
 
 
+export const p_increment = function_to_primitive_propagator("increment", (input: number) => {
+    return input + 1
+})
 
+export const ce_increment = make_ce_arithmetical(p_increment, "increment")
 
-export const p_increment = (pulse: Cell<any>, output: Cell<number>, increment: Cell<number> ) => {
+export const p_decrement = function_to_primitive_propagator("decrement", (input: number) => {
+    return input - 1
+})
+
+export const ce_decrement = make_ce_arithmetical(p_decrement, "decrement")
+
+export const p_increment_pulse = (pulse: Cell<any>, output: Cell<number>, increment: Cell<number> ) => {
     return compound_propagator([pulse, output], [output], () => {
         const temp = construct_cell("temp")
 
@@ -725,3 +735,5 @@ export const p_array = function_to_primitive_propagator("array", (...x: any[]) =
 })
 
 export const ce_array = make_ce_arithmetical(p_array) as (...inputs: Cell<any>[]) => Cell<any[]>
+
+

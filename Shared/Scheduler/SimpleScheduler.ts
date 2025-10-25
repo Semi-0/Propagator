@@ -15,6 +15,7 @@ import { make_easy_set } from "../../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
+import { is_propagator } from "ppropogator/Propagator/Propagator";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
@@ -34,10 +35,7 @@ export const simple_scheduler = (): Scheduler => {
             propagators_to_alert.remove(propagator)
         }
         catch(e: any){
-
-     
-            error_handler(new PropagatorError("Error executing propagator", propagator.summarize(), e))
-    
+            error_handler(new PropagatorError("Error executing propagator", is_propagator(propagator) ? propagator.summarize() : "unknown propagator", e))
         }
     }
     

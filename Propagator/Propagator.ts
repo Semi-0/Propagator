@@ -38,6 +38,9 @@ export interface Propagator {
   dispose: () => void;
 }
 
+
+export type PropagatorConstructor = (...inputs: Cell<any>[]) => Propagator
+
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
     return (
         propagator &&

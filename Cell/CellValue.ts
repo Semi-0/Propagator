@@ -5,6 +5,11 @@ import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 
+
+export type the_nothing_type = typeof the_nothing
+export type the_contradiction_type = typeof the_contradiction
+export type the_disposed_type = typeof the_disposed
+
 export const is_unusable_value = construct_simple_generic_procedure("is_unusable_value", 1,
     (value: any) => {
         return false;
