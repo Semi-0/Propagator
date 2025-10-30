@@ -665,7 +665,7 @@ test('Binary AMB operator: and', async () => {
 })
 
 
-test('AMB operator: simple adder', async () => {
+test.only('AMB operator: simple adder', async () => {
 
     set_handle_contradiction(handle_cell_contradiction)
     configure_log_amb_choose(true)
@@ -703,9 +703,9 @@ test('AMB operator: simple adder', async () => {
 test('AMB operator: simple multiply', async () => {
 
 
-    // configure_log_amb_choose(true)
-    // configure_log_process_contradictions(true)
-    // configure_log_nogoods(true)
+    configure_log_amb_choose(true)
+    configure_log_process_contradictions(true)
+    configure_log_nogoods(true)
     //
 
     const x = construct_cell("x");
@@ -740,7 +740,6 @@ test('AMB operator: triangle', async () => {
     // configure_log_process_contradictions(true)
     configure_log_nogoods(true)
     track_premise()
-    set_trace_merge(true)
     set_merge(log_tracer("merge_value_sets", merge_value_sets))
     
     //

@@ -54,7 +54,7 @@ export const function_to_cell_carrier_constructor = (f: (...args: Cell<any>[]) =
     const inputs = cells.slice(0, -1)
     const output = cells[cells.length - 1]
 
-    return p_constant(f(...inputs))(...inputs, output)
+    return p_constant(f(...inputs))(construct_cell("function_to_cell_carrier_constructor"), output)
 }
 
 

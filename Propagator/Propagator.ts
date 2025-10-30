@@ -10,7 +10,7 @@ import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
-import { the_disposed, is_disposed, is_unusable_value, is_true } from "../Cell/CellValue";
+import { the_disposed, is_disposed, is_unusable_value, is_true, type the_nothing_type } from "../Cell/CellValue";
 
 import { trace_func } from "../helper";
 import { any_unusable_values } from "../Cell/CellValue";
@@ -23,6 +23,10 @@ import * as HS from "effect/HashSet"
 import { length } from "generic-handler/built_in_generics/generic_collection";
 import { cell_strongest_base_value } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { the_nothing } from "ppropogator";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+import { is_nothing } from "ppropogator";
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
@@ -116,6 +120,11 @@ export function construct_propagator(
   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
   return propagator;
 }
+
+
+
+export { forward, apply_propagator, l_apply_propagator, apply_subnet } from "./HelperProps";
+
 
 export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: string[] = ["update"]) {
     return (...cells: Cell<any>[]): Propagator => {

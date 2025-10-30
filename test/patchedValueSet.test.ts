@@ -42,11 +42,14 @@ import { set_merge } from "@/cell/Merge";
 import { the_nothing } from "@/cell/CellValue";
 import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { set_scheduler } from "../Shared/Scheduler/Scheduler";
+import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     set_handle_contradiction(trace_earliest_emerged_value);
     set_merge(merge_patched_set);
+    set_scheduler(simple_scheduler());
 });
 
 describe("ContentPatch Tests", () => {

@@ -1,6 +1,6 @@
 import { primitive_propagator, constraint_propagator,type Propagator, compound_propagator, function_to_primitive_propagator, construct_propagator } from "./Propagator"; 
 import { multiply, divide, greater_than, and, or, install_propagator_arith_pack, feedback } from "../AdvanceReactivity/Generics/GenericArith";
-import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value, is_cell } from "../Cell/Cell";
+import { make_temp_cell, type Cell, cell_strongest, cell_name, cell_content, construct_cell, cell_strongest_base_value, is_cell, update_cell } from "../Cell/Cell";
 import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
@@ -15,7 +15,7 @@ import { no_compute } from "../Helper/noCompute";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { bi_pipe, ce_pipe, link } from "./Sugar";
 import { make_ce_arithmetical } from "./Sugar";
-import { r_constant } from "../AdvanceReactivity/interface";
+import { r_constant, update } from "../AdvanceReactivity/interface";
 import { reduce } from "fp-ts/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Subject, throttleTime, distinctUntilChanged, distinct } from "rxjs";
@@ -119,11 +119,17 @@ export const p_and = primitive_propagator(and, "and")
 
 export const p_or = primitive_propagator(or, "or")
 
-export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => primitive_propagator(() => {
-    return value;
-}, "constant")(input, output)
+export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
 
-export const ce_constant = (value: any) => make_ce_arithmetical(p_constant(value), "constant")
+    const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
+        return inject
+    })
+    return construct_propagator([input], [output], () => {
+        update_cell(output, pass_dependencies(cell_strongest(input), value))
+    }, "constant")
+}
+
+export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), name)(construct_cell(name + "_input"))
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [b], () => {
     p_sync(a, b)
@@ -194,7 +200,7 @@ export const ce_map_expr = (expr: (cell: Cell<any>) => Cell<any>, array: Cell<Ce
                 return current_value[index]
             }
             else {
-                return ce_array_index(array, ce_constant(index)(array))
+                return ce_array_index(array, ce_constant(index))
             }
        } 
 
@@ -214,12 +220,12 @@ export const ce_map_expr = (expr: (cell: Cell<any>) => Cell<any>, array: Cell<Ce
 
             const next_index = construct_cell("next_index")
             // @ts-ignore
-            p_switch(not_exhausted, ce_add(current_index, ce_constant(1)(current_index)), next_index)
+            p_switch(not_exhausted, ce_add(current_index, ce_constant(1)), next_index)
             // @ts-ignore
             map_item_network(next_index, array)
        }
 
-       map_item_network(ce_constant(0)(array), array)
+       map_item_network(ce_constant(0), array)
 
 
        
