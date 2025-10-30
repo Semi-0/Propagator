@@ -22,6 +22,7 @@ import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { construct_vector_clock, get_vector_clock_layer, vector_clock_get_source, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { strongest_value } from "../Cell/StrongestValue";
 import { Option } from "effect";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 
 function range(start: number, end: number): BetterSet<number>{
@@ -45,11 +46,11 @@ export async function compound_tell<A>(cell: Cell<any>, information: A, ...layer
 
 export async function reactive_tell(cell: Cell<any>, value: any, ...layered_alist: any[]){
     const maybe_last_clock = pipe(cell, 
-        strongest_value, 
-        get_vector_clock_layer, 
-        vector_clock_get_source(cell_id(cell))
+        cell_strongest, 
+        log_tracer("get_vector_clock_layer", get_vector_clock_layer), 
+        vector_clock_get_source(to_string(cell_id(cell)))
     )
-
+    // console.log("maybe_last_clock", maybe_last_clock)
     // in current patched value set
     // this would lose the vector clock from other sources
     // this need to be handle at patched value set merge level
@@ -59,15 +60,16 @@ export async function reactive_tell(cell: Cell<any>, value: any, ...layered_alis
     const new_clock = Option.match(
         maybe_last_clock, {
             onNone: () => construct_vector_clock([{
-                source: cell_id(cell),
+                source: to_string(cell_id(cell)),
                 value: 0
             }]),
             onSome: (last_clock) => construct_vector_clock([{
-                source: cell_id(cell),
+                source: to_string(cell_id(cell)),
                 value: last_clock + 1
             }])
         }
     )
+
     
     compound_tell(
         cell,
@@ -76,6 +78,10 @@ export async function reactive_tell(cell: Cell<any>, value: any, ...layered_alis
         ...layered_alist
     )
 
+}
+
+export async function reactive_update(cell: Cell<any>, value: any){
+    return reactive_tell(cell, value)
 }
 
 

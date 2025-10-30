@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
 
-import { r_constant, update } from "../AdvanceReactivity/interface";
+import { r_constant } from "../AdvanceReactivity/interface";
 import {
   construct_cell,
   cell_strongest_base_value,
@@ -22,6 +22,9 @@ import { construct_better_set } from "generic-handler/built_in_generics/generic_
 import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 
 import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
+import { merge_patched_set } from "../DataTypes/PatchedValueSet";
+import "../DataTypes/register_vector_clock_patchedValueSet";
+import { reactive_update as update } from "../Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
 import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
@@ -43,7 +46,7 @@ import { to_array } from "generic-handler/built_in_generics/generic_collection.t
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
   set_handle_contradiction(trace_earliest_emerged_value)
-  set_merge(reactive_merge)
+  set_merge(merge_patched_set)
 });
 describe("Advance Reactive Tests", () => {
   // -------------------------
