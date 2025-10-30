@@ -1,22 +1,14 @@
 import { cell_id, cell_name, construct_cell, is_cell } from "@/cell/Cell";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
-import { compound_propagator, construct_propagator, function_to_primitive_propagator,  primitive_propagator,  propagator_id } from "../Propagator/Propagator"
+import { compound_propagator,   primitive_propagator,  propagator_id } from "../Propagator/Propagator"
 import { generic_merge } from "@/cell/Merge";
-import { the_contradiction } from "@/cell/CellValue";
-import { bi_sync, p_constant } from "./BuiltInProps";
+import { bi_sync, p_constant } from "../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
-import { p_switch } from "./BuiltInProps";
+import { p_switch } from "../Propagator/BuiltInProps";
 import type { Propagator } from "../Propagator/Propagator";
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { is_map } from "../Helper/Helper";
 
-
-
-export const is_map = register_predicate("is_map", (c: any) => c instanceof Map) 
-
-define_generic_procedure_handler(to_string, match_args(is_map), (map: Map<any, any>) => {
-    return "Map(" + Array.from(map.entries()).map(([key, value]) => key + ": " + to_string(value)).join(", ") + ")"
-})
 
 export const merge_carried_map = (a: Map<any, any>, b: Map<any, any>) => {
     for (const [key, value] of b) {
@@ -83,10 +75,28 @@ export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
 
 
 // static accessor i havn't figure out how to make dynamic one
+// if this becomes a lexcical environment 
+// and accessor was sent to multiple environment to look up simutaneously
+// we would have no way to know that where the value comes from
+// maybe its better that the accessor should have a contextual information of the environment?
 export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
     compound_propagator([accessor, container], [accessor, container], () => {
         container.update(make_map_with_key([[key, accessor]]))
     }, "c_map_accessor")
+
+
+export const ce_map_accessor = (key: string) => (container: Cell<Map<string, any>>) =>{
+    const accessor = construct_cell("map_accessor_" + key)
+
+    compound_propagator([accessor, container], [accessor, container], () => {
+        container.update(make_map_with_key([[key, accessor]]))
+    }, "ce_map_accessor")
+    return accessor 
+
+}
+
+
+// maybe it should be a lookup cell that supports dynamic key?
 
 
 // how to hot reload propagators?

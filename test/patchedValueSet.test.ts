@@ -40,10 +40,11 @@ import { set_handle_contradiction } from "@/cell/Cell";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { set_merge } from "@/cell/Merge";
 import { the_nothing } from "@/cell/CellValue";
-import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_scheduler } from "../Shared/Scheduler/Scheduler";
 import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
+import "../DataTypes/register_vector_clock_patchedValueSet";
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);

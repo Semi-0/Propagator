@@ -1,5 +1,5 @@
-import { Primitive_Relation, make_relation, type Relation } from "../DataTypes/Relation";
-import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, summarize_cells } from "../Cell/Cell";
+import { Primitive_Relation, make_relation, type Relation, is_relation } from "../DataTypes/Relation";
+import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -10,7 +10,7 @@ import { is_not_no_compute, no_compute } from "../Helper/noCompute";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
-import { the_disposed, is_disposed, is_unusable_value, is_true, type the_nothing_type } from "../Cell/CellValue";
+import { the_disposed, is_disposed, is_unusable_value, is_true, type the_nothing_type, the_nothing, is_nothing } from "../Cell/CellValue";
 
 import { trace_func } from "../helper";
 import { any_unusable_values } from "../Cell/CellValue";
@@ -18,14 +18,10 @@ import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
 import { alert_propagator } from "../Shared/Scheduler/Scheduler";
 import { HashSet } from "effect";
-import { is_relation } from "ppropogator/DataTypes/Relation";
 import * as HS from "effect/HashSet"
 import { length } from "generic-handler/built_in_generics/generic_collection";
-import { cell_strongest_base_value } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { the_nothing } from "ppropogator";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import { is_nothing } from "ppropogator";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 //TODO: a minimalistic revision which merge based info provided by data?

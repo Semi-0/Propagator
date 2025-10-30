@@ -5,7 +5,7 @@
 // if the propagators is already in the queue, then it should move to the end
 
 
-import { propagator_id as _propagator_id, propagator_id, type Propagator } from "../../Propagator/Propagator";
+import { propagator_id as _propagator_id, propagator_id, type Propagator, is_propagator } from "../../Propagator/Propagator";
 
 import type { Scheduler } from "./SchedulerType";
 import { PropagatorError } from "../../Error/PropagatorError";
@@ -15,7 +15,6 @@ import { make_easy_set } from "../../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
-import { is_propagator } from "ppropogator/Propagator/Propagator";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {

@@ -1,4 +1,4 @@
-import { update_cell, type Cell, cell_strongest_base_value, cell_strongest, construct_cell } from "../Cell/Cell"; 
+import { update_cell, type Cell, cell_strongest_base_value, cell_strongest, construct_cell, cell_id } from "../Cell/Cell"; 
 import { get_support_layer_value, support_by, support_layer } from "sando-layer/Specified/SupportLayer";
 import { mark_premise_in, mark_premise_out, register_premise } from "../DataTypes/Premises";
 import { failed_count } from "../Shared/PublicState";
@@ -19,6 +19,10 @@ import { is_contradiction, is_nothing } from "../Cell/CellValue";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
+import { construct_vector_clock, get_vector_clock_layer, vector_clock_get_source, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
+import { strongest_value } from "../Cell/StrongestValue";
+import { Option } from "effect";
+
 
 function range(start: number, end: number): BetterSet<number>{
     return  construct_better_set(Array.from({ length: end - start + 1 }, (_, i) => start + i))
@@ -36,6 +40,42 @@ export async function compound_tell<A>(cell: Cell<any>, information: A, ...layer
 
     await steppable_run_task((e) => {
     });
+}
+
+
+export async function reactive_tell(cell: Cell<any>, value: any, ...layered_alist: any[]){
+    const maybe_last_clock = pipe(cell, 
+        strongest_value, 
+        get_vector_clock_layer, 
+        vector_clock_get_source(cell_id(cell))
+    )
+
+    // in current patched value set
+    // this would lose the vector clock from other sources
+    // this need to be handle at patched value set merge level
+    // or it is fine because this injection means this cell 
+    // is the source cell
+    // so it is not related to previous sources
+    const new_clock = Option.match(
+        maybe_last_clock, {
+            onNone: () => construct_vector_clock([{
+                source: cell_id(cell),
+                value: 0
+            }]),
+            onSome: (last_clock) => construct_vector_clock([{
+                source: cell_id(cell),
+                value: last_clock + 1
+            }])
+        }
+    )
+    
+    compound_tell(
+        cell,
+        value,
+        vector_clock_layer, new_clock,
+        ...layered_alist
+    )
+
 }
 
 

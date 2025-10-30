@@ -7,7 +7,14 @@ import { match_args } from "generic-handler/Predicates"
 import { to_string } from "generic-handler/built_in_generics/generic_conversation"
 import { curryArgument } from "generic-handler/built_in_generics/generic_combinator"
 import { filter, map } from "generic-handler/built_in_generics/generic_collection"
-import { is_map } from "../Propagator/CarriedCell"
+import { register_predicate } from "generic-handler/Predicates"
+
+export const is_map = register_predicate("is_map", (c: any) => c instanceof Map) 
+
+define_generic_procedure_handler(to_string, match_args(is_map), (map: Map<any, any>) => {
+    return "Map(" + Array.from(map.entries()).map(([key, value]) => key + ": " + to_string(value)).join(", ") + ")"
+})
+
 
 
 define_generic_procedure_handler(to_string, match_args(is_number), (number: number) => {

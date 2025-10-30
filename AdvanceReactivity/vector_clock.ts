@@ -4,25 +4,25 @@ import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapp
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
-import { get_base_value, make_annotation_layer, type Layer } from "sando-layer/Basic/Layer";
+import { get_base_value, layer_accessor, make_annotation_layer, type Layer } from "sando-layer/Basic/Layer";
 import { define_consolidator_per_layer_dispatcher } from "sando-layer/Basic/LayeredCombinators";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { find_related_elements, patch_join, patch_remove, scan_for_patches, subsumes } from "../DataTypes/GenericValueSet";
+import { find_related_elements, subsumes } from "../DataTypes/GenericValueSet";
 import { add_item, filter, to_array } from "generic-handler/built_in_generics/generic_collection";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { curryArgument } from "generic-handler/built_in_generics/generic_combinator";
 import { curried_filter, curried_map } from "../Helper/Helper";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-
+import { Option } from "effect";
 //TODO: reactive frame
 
 type SourceID = string;
 
-type VersionVector = Map<SourceID, number>;
+type VectorClock = Map<SourceID, number>;
 
 export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map )
 
-define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), (a: VersionVector, b: VersionVector) => {
+define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), (a: VectorClock, b: VectorClock) => {
     return a.entries().every(([source, value]) => {
         if (!b.has(source)) {
             return false;
@@ -41,13 +41,24 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 }
 
 
-const version_vector_forward = (version_vector: VersionVector, source: SourceID) => {
+export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock) => {
+    const maybe_value = vector_clock.get(source);
+    if (maybe_value === undefined) {
+        return Option.none();
+    }
+    else {
+        return Option.some(maybe_value);
+    }
+}
+
+
+const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
     new_version_vector.set(source, (new_version_vector.get(source) || 0) + 1);
     return new_version_vector;
 }
 
-const version_vector_merge = (version_vector1: VersionVector, version_vector2: VersionVector) => {
+const version_vector_merge = (version_vector1: VectorClock, version_vector2: VectorClock) => {
     const new_version_vector = new Map(version_vector1);
     version_vector2.forEach((value, source) => {
         new_version_vector.set(source, Math.max(new_version_vector.get(source) || 0, value));
@@ -55,7 +66,7 @@ const version_vector_merge = (version_vector1: VersionVector, version_vector2: V
     return new_version_vector;
 }
 
-const version_vector_compare = (version_vector1: VersionVector , version_vector2: VersionVector) => {
+const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
     const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
     for (const key of keys) {
         const value1 = version_vector1.get(key) || version_vector2.get(key) || 0;
@@ -117,7 +128,7 @@ export const result_is_equal = (a: number) => a === 0;
 // vector clock it also proves old vector clock is staled 
 
 
-export const clock_channels_subsume = (b: VersionVector, a: VersionVector): boolean => {
+export const clock_channels_subsume = (b: VectorClock, a: VectorClock): boolean => {
     // Return true if b "covers" all channels in a and their counters are >= a's
     if (b.size <= a.size) {
         return false;
@@ -135,18 +146,18 @@ export const clock_channels_subsume = (b: VersionVector, a: VersionVector): bool
 
 
 
-export const vector_clock_layer = make_annotation_layer<VersionVector, any>("victor_clock", 
+export const vector_clock_layer = make_annotation_layer<VectorClock, any>("victor_clock", 
     (get_name: () => string,
     has_value: (object: any) => boolean,
     get_value: (object: any) => any,
-    summarize_self: () => string[]): Layer<VersionVector> => {
+    summarize_self: () => string[]): Layer<VectorClock> => {
 
-        function get_default_value(): VersionVector {
+        function get_default_value(): VectorClock {
             return new Map();
         }
 
         function get_procedure(name: string, arity: number): any | undefined {
-            return (base: VersionVector, ...values: VersionVector[]) => {
+            return (base: VectorClock, ...values: VectorClock[]) => {
                 return values.reduce((acc, value) => version_vector_merge(acc, value), new Map());
             }
         }
@@ -160,6 +171,9 @@ export const vector_clock_layer = make_annotation_layer<VersionVector, any>("vic
         }
     }
 )
+
+export const get_vector_clock_layer = layer_accessor(vector_clock_layer)
+
 
 export const _has_vector_clock_layer = (a: any) => {
     return a && vector_clock_layer.has_value(a);
@@ -190,7 +204,7 @@ define_generic_procedure_handler(any_unusable_values, match_args(has_vector_cloc
 define_consolidator_per_layer_dispatcher(
     find_related_elements,
     vector_clock_layer,
-    (base_args: any[], contentClock: VersionVector, elt_clock: VersionVector) => {
+    (base_args: any[], contentClock: VectorClock, elt_clock: VectorClock) => {
        const [set, elt] = base_args;
        // finding all the victor clock that is staled
        // victor clock guarantee only same source clock stale
@@ -229,27 +243,34 @@ export const proved_staled_with = curryArgument(
         prove_staled, 
         (a: boolean) => a,
         vector_clock_layer.get_value,
-        (a: VersionVector) => a
+        (a: VectorClock) => a
     )
 )
 
-define_consolidator_per_layer_dispatcher(
-    scan_for_patches,
-    vector_clock_layer,
-    (base_args: any[], set_victor_clock: VersionVector, elt_victor_clock: VersionVector) => {
-        const [set, elt] = base_args;
+export const register_vector_clock_patched_set = (
+    scan_for_patches_fn: (...args: any[]) => any,
+    patch_join_fn: (value: any) => any,
+    patch_remove_fn: (value: any) => any
+) => {
+    const remove_patch = compose(get_base_value, patch_remove_fn);
 
-        
-        // missed join the new element
-        return add_item(
-            pipe(set, 
-                curried_filter(proved_staled_with(elt_victor_clock)), 
-                // @ts-ignore
-                curried_map(compose(get_base_value, patch_remove))),
-            patch_join(elt)
-        )
-    }
-)
+    define_consolidator_per_layer_dispatcher(
+        scan_for_patches_fn,
+        vector_clock_layer,
+        (base_args: any[], set_victor_clock: VectorClock, elt_victor_clock: VectorClock) => {
+            const [set, elt] = base_args;
+
+            return add_item(
+                pipe(
+                    set,
+                    curried_filter(proved_staled_with(elt_victor_clock)),
+                    curried_map(remove_patch)
+                ),
+                patch_join_fn(elt)
+            );
+        }
+    );
+};
 // TODO: BEHAVIORS
 // TODO: Merge
 // any unusable value? 

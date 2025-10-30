@@ -15,7 +15,6 @@ import { set_merge } from "@/cell/Merge";
 import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import {
-  is_map,
   merge_carried_map,
   bi_switcher,
   function_to_cell_carrier_constructor,
@@ -23,9 +22,10 @@ import {
   make_propagator_closure,
   type PropagatorClosure,
   p_map_carrier_default
-} from "../../Propogator/Propagator/CarriedCell";
+} from "../DataTypes/CarriedCell";
 import { p_add, p_subtract, p_multiply } from "../Propagator/BuiltInProps";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+import { is_map } from "../Helper/Helper";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -99,7 +99,7 @@ describe("Carried Cell Tests", () => {
         ["key1", cellB]
       ]);
 
-      update(cellA, 100);
+       
       await execute_all_tasks_sequential((error: Error) => {});
       
       const result = merge_carried_map(mapA, mapB);

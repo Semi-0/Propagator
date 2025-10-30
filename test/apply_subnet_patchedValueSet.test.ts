@@ -8,9 +8,10 @@ import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
 import { set_merge } from "@/cell/Merge";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { p_add, p_multiply } from "../Propagator/BuiltInProps";
 import { the_nothing } from "@/cell/CellValue";
+import "../DataTypes/register_vector_clock_patchedValueSet";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
