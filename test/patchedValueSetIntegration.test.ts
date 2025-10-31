@@ -215,7 +215,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             expect(cell_strongest_base_value(output)).toBe(30);
         });
 
-        test.only("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
+        test("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
             const cellA = construct_cell("vcSup_staleA") as Cell<LayeredObject<any>>;
             const cellB = construct_cell("vcSup_staleB") as Cell<LayeredObject<any>>;
             const output = construct_cell("vcSup_staleOutput");
@@ -241,8 +241,11 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             //@ts-ignore
 
     
-            compound_tell(cellA, 7, support_layer, construct_better_set(["supportA", "newSupportA"]))
-            compound_tell(cellB, 4, support_layer, construct_better_set(["supportB", "newSupportB"]))
+            compound_tell(cellA, 7, support_layer, construct_better_set(["newSupportA"]))
+            compound_tell(cellB, 4, support_layer, construct_better_set(["newSupportB"]))
+
+            kick_out("supportA")
+            kick_out("supportB")
   
             
             await execute_all_tasks_sequential((error: Error) => {
