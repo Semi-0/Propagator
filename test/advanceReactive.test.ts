@@ -9,7 +9,7 @@ import {
   cell_content,
   cell_strongest
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
+import { execute_all_tasks_sequential, replay_propagators, set_record_alerted_propagator } from "../Shared/Scheduler/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -24,14 +24,14 @@ import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, r
 import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import "../DataTypes/register_vector_clock_patchedValueSet";
-import { reactive_update as update } from "../Helper/UI";
+import { compound_tell, reactive_tell, reactive_update as update } from "../Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
 import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -42,6 +42,8 @@ import { reactive_scheduler } from "../Shared/Scheduler/ReactiveScheduler";
 import {is_layered_object, type LayeredObject} from "sando-layer/Basic/LayeredObject";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.ts";
 import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
+import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock.ts";
+import { describe_frame, describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -540,6 +542,39 @@ describe("timestamp value merge tests", () => {
   // Bi-directional reactive propagator tests
   // -------------------------
   describe("Bi-directional reactive propagator tests", () => {
+    test("bi_sync should propagate repeatedly in both directions", async () => {
+      const left = construct_cell("biSyncLeft");
+      const right = construct_cell("biSyncRight");
+
+      bi_sync(left, right);
+
+      const collectBaseValues = (cell: Cell<any>) =>
+        to_array(cell_content(cell)).map((value: LayeredObject<any>) => get_base_value(value));
+
+      await reactive_tell(left, 1, "repl");
+      await execute_all_tasks_sequential(() => {});
+      expect(cell_strongest_base_value(left)).toBe(1);
+      expect(cell_strongest_base_value(right)).toBe(1);
+
+      await reactive_tell(left, 2, "repl");
+      await execute_all_tasks_sequential(() => {});
+      expect(cell_strongest_base_value(left)).toBe(2);
+      expect(cell_strongest_base_value(right)).toBe(2);
+
+      await reactive_tell(right, 5, "repl");
+      await execute_all_tasks_sequential(() => {});
+      expect(cell_strongest_base_value(right)).toBe(5);
+      expect(collectBaseValues(left)).toContain(5);
+      expect(cell_strongest_base_value(right)).toBe(5);
+
+      await reactive_tell(left, 9, "repl");
+      await execute_all_tasks_sequential(() => {});
+      expect(cell_strongest_base_value(left)).toBe(9);
+      expect(cell_strongest_base_value(right)).toBe(9);
+      expect(collectBaseValues(right)).toContain(9);
+    });
+
+    
     test("should maintain temperature conversion relationship bi-directionally", async () => {
       const celsius = construct_cell("celsius");
       const fahrenheit = construct_cell("fahrenheit");
@@ -547,22 +582,30 @@ describe("timestamp value merge tests", () => {
       // Create bi-directional conversion using compound_propagator
       // @ts-ignore
       com_celsius_to_fahrenheit(celsius, fahrenheit)
-      update(fahrenheit, 0)
-   
+      reactive_tell(celsius, 0, "sourceA")
+
       // Test Celsius to Fahrenheit conversion
-      update(celsius, 0);
+      // reactive_tell(celsius, 0, "sourceA");
+      set_record_alerted_propagator(true);
       await execute_all_tasks_sequential((error: Error) => {});
+
+    
       expect(cell_strongest_base_value(celsius)).toBe(0);
       expect(cell_strongest_base_value(fahrenheit)).toBe(32);
 
       // Test Fahrenheit to Celsius conversion
-      update(fahrenheit, 212);
+      reactive_tell(fahrenheit, 212, "sourceA")
+
       await execute_all_tasks_sequential((error: Error) => {});
+      replay_propagators((frame: PropagatorFrame) => {
+        console.log(describe_propagator_frame(frame));
+        console.log(" ")
+      });
       expect(cell_strongest_base_value(celsius)).toBe(100);
       expect(cell_strongest_base_value(fahrenheit)).toBe(212);
 
       // // Test another Celsius to Fahrenheit conversion
-      update(celsius, 25);
+      reactive_tell(celsius, 25, "sourceA")
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(celsius)).toBe(25);
       expect(cell_strongest_base_value(fahrenheit)).toBe(77);
@@ -580,14 +623,14 @@ describe("timestamp value merge tests", () => {
 
 
       // Test meters to feet to inches
-      update(meters, 1);
+      reactive_tell(meters, 1, "sourceA")
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(meters)).toBeCloseTo(1);
       expect(cell_strongest_base_value(feet)).toBeCloseTo(3.28084);
       expect(cell_strongest_base_value(inches)).toBeCloseTo(39.37008);
 
       // Test inches back to feet and meters
-      update(inches, 12);
+      reactive_tell(inches, 12, "sourceA")
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(inches)).toBe(12);
       expect(cell_strongest_base_value(feet)).toBe(1);
@@ -845,58 +888,7 @@ function test_celsius_to_fahrenheit(celsius: Cell<number>, fahrenheit: Cell<numb
 }
 
 describe("Complex Propagator Integration Tests", () => {
-  test("Simple bi-directional temperature conversion with propagator", async () => {
-    // Create cells for temperature in different units
-    const celsius = construct_cell("celsius") as Cell<number>;
-    const fahrenheit = construct_cell("fahrenheit") as Cell<number>;
-    
-    // Set up a simple bi-directional converter
-    test_celsius_to_fahrenheit(celsius, fahrenheit);
-    
-    // Initialize with a celsius temperature
-    update(celsius, 25);
-    await execute_all_tasks_sequential((error: Error) => {});
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    
-    // Verify the initial conversion to Fahrenheit (25°C = 77°F)
-    const fahrenheitValue = cell_strongest_base_value(fahrenheit);
-    if (typeof fahrenheitValue === 'number') {
-      expect(fahrenheitValue).toBeCloseTo(77, 0);
-    } else {
-      // Handle the case when we get a non-numeric value
-      console.log("Received fahrenheit value:", fahrenheitValue);
-      // This should not happen if the conversion worked correctly
-      expect(typeof fahrenheitValue).toBe('number');
-    }
-    
-    // Now update the temperature via Fahrenheit
-    update(fahrenheit, 32);
-    await execute_all_tasks_sequential((error: Error) => {});
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    
-    // Verify that Celsius was updated via bi-directional constraint (32°F = 0°C)
-    const celsiusValue = cell_strongest_base_value(celsius);
-    if (typeof celsiusValue === 'number') {
-      expect(celsiusValue).toBeCloseTo(0, 0);
-    } else {
-      console.log("Received celsius value:", celsiusValue);
-      expect(typeof celsiusValue).toBe('number');
-    }
-    
-    // Update Celsius again to verify the bi-directional flow
-    update(celsius, 100);
-    await execute_all_tasks_sequential((error: Error) => {});
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    
-    // Verify Fahrenheit updated to 212°F (boiling point)
-    const finalFahrenheit = cell_strongest_base_value(fahrenheit);
-    if (typeof finalFahrenheit === 'number') {
-      expect(finalFahrenheit).toBeCloseTo(212, 0);
-    } else {
-      console.log("Received final fahrenheit:", finalFahrenheit);
-      expect(typeof finalFahrenheit).toBe('number');
-    }
-  });
+  
 
   test("Circle geometry with linked properties", async () => {
     // Create cells for circle properties

@@ -1,6 +1,7 @@
 import { simple_scheduler } from "./SimpleScheduler";
 import type { Propagator } from '../../Propagator/Propagator';
 import type { Scheduler } from './SchedulerType';
+import type { PropagatorFrame } from "./RuntimeFrame";
 
 export var Current_Scheduler = simple_scheduler()
 
@@ -31,6 +32,10 @@ export function execute_all_tasks_sequential(error_handler: (e: Error) => void) 
     return result
 }
 
+export function replay_propagators(logger: (frame: PropagatorFrame) => void) {
+    Current_Scheduler.replay_propagators(logger)
+}
+
 export function steppable_run_task(error_handler: (e: Error) => void) {
       Current_Scheduler.steppable_run(error_handler)
 }
@@ -41,6 +46,7 @@ export function alert_propagator(propagator: Propagator){
 
 export function alert_propagators(propagators: Propagator[]){
     Current_Scheduler.alert_propagators(propagators)
+    return propagators
 } 
 
 export function set_scheduler(scheduler: Scheduler){
@@ -53,4 +59,8 @@ export function mark_for_disposal(id: string) {
 
 export function has_pending_task(){
     return Current_Scheduler.has_pending_tasks()
+}
+
+export function set_record_alerted_propagator(value: boolean){
+    Current_Scheduler.record_alerted_propagator(value)
 }

@@ -110,6 +110,7 @@ export const p_divide = primitive_propagator(divide, "/");
 export const p_greater_than = primitive_propagator(greater_than, ">");
 
 export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
+    // console.log("sync", input)
     return input;
 })
 
@@ -131,7 +132,8 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
 
 export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), name)(construct_cell(name + "_input"))
 
-export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([a, b], [b], () => {
+export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [a, b], () => {
+    //TODO: this is cheating but this works for now 
     p_sync(a, b)
     p_sync(b, a)
 }, "sync")
@@ -361,25 +363,23 @@ export const p_composite = (inputs: Cell<any>[], output: Cell<any>) => {
 
 
 export const com_celsius_to_fahrenheit = (celsius: Cell<number>, fahrenheit: Cell<number>) => { 
-    return compound_propagator([celsius, fahrenheit], [celsius, fahrenheit], () => {
+    return compound_propagator([], [celsius, fahrenheit], () => {
         link(
             celsius,
             fahrenheit,
-            p_filter_a(x => x !== the_nothing),
             p_map_a((c: number) => c * 9/5 + 32)
         );
 
         link(
             fahrenheit,
             celsius,
-            p_filter_a(x => x !== the_nothing),
             p_map_a((f: number) => (f - 32) * 5/9)
         );
     }, "celsius_to_fahrenheit")
 }
 
 export const com_meters_feet_inches = (meters: Cell<number>, feet: Cell<number>, inches: Cell<number>) => {
-    return compound_propagator([meters, feet, inches], [meters, feet, inches], () => {
+    return compound_propagator([], [meters, feet, inches], () => {
         bi_pipe(
             meters, 
             feet,

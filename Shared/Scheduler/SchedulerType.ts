@@ -1,9 +1,11 @@
 import type { Propagator } from "../../Propagator/Propagator";
+import type { PropagatorFrame } from "./RuntimeFrame";
 
 
 export interface Scheduler{
     alert_propagator: (propagator: Propagator) => void;
     alert_propagators: (propagators: Propagator[]) => void;
+    replay_propagators: (logger: (frame: PropagatorFrame) => void) => void;
     execute_sequential: (error_handler: (e: Error) => void) => void;
     steppable_run:  (error_handler: (e: Error) => void) => void;
     summarize: () => string;

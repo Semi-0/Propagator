@@ -1,4 +1,5 @@
-import { cell_id, cell_name, construct_cell, is_cell } from "@/cell/Cell";
+import { cell_id, cell_name, cell_strongest, construct_cell, is_cell, update_cell } from "@/cell/Cell";
+import { is_nothing } from "@/cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { compound_propagator,   primitive_propagator,  propagator_id } from "../Propagator/Propagator"
@@ -10,22 +11,38 @@ import type { Propagator } from "../Propagator/Propagator";
 import { is_map } from "../Helper/Helper";
 
 
-export const merge_carried_map = (a: Map<any, any>, b: Map<any, any>) => {
-    for (const [key, value] of b) {
-        if (a.has(key)) {
-            const elem = a.get(key)
-            if(is_cell(elem)) {
+export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
+    for (const [key, value] of increment) {
+        if (content.has(key)) {
+            const elem = content.get(key)
+            if(is_cell(elem) && is_cell(value)) {
                 bi_sync(elem, value)
+                const elemStrongest = cell_strongest(elem)
+                const valueStrongest = cell_strongest(value)
+
+                if (!is_nothing(elemStrongest) && is_nothing(valueStrongest)) {
+                    update_cell(value, elemStrongest)
+                }
+                else if (is_nothing(elemStrongest) && !is_nothing(valueStrongest)) {
+                    update_cell(elem, valueStrongest)
+                }
+            }
+            else if(is_cell(value) && !is_cell(elem)) {
+                update_cell(elem, value)
+            }
+            else if(!is_cell(elem) && is_cell(value)) {
+                update_cell(value, elem)
+                content.set(key, value)
             }
             else{
-                a.set(key, value)
+                content.set(key, value)
             }
         }
         else{
-            a.set(key, value)
+            content.set(key, value)
         }
     }
-    return a
+    return content
 }
 
 define_generic_procedure_handler(generic_merge, all_match(is_map), merge_carried_map)

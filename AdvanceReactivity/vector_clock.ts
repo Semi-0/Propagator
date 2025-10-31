@@ -14,22 +14,32 @@ import { curryArgument } from "generic-handler/built_in_generics/generic_combina
 import { curried_filter, curried_map } from "../Helper/Helper";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { Option } from "effect";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 //TODO: reactive frame
 
 type SourceID = string;
 
 type VectorClock = Map<SourceID, number>;
 
-export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map )
+export const at_least_one_pair_is_proper_vector_clock = (a: Map<any, any>) => {
+    for (const [key, value] of a) {
+       return is_string(key) && is_number(value);
+    }
+    return false;
+}
 
-define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), (a: VectorClock, b: VectorClock) => {
+export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map && at_least_one_pair_is_proper_vector_clock(a))
+
+export const vector_clock_equal = (a: VectorClock, b: VectorClock) => {
     return a.entries().every(([source, value]) => {
-        if (!b.has(source)) {
-            return false;
-        }
         return value === b.get(source);
+    }) && b.entries().every(([source, value]) => {
+        return value === a.get(source);
     });
-})
+}
+
+define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), log_tracer("vector_clock_equal", vector_clock_equal))
 
 export type vector_clock_constructor = {
     source: SourceID;
@@ -66,11 +76,23 @@ const version_vector_merge = (version_vector1: VectorClock, version_vector2: Vec
     return new_version_vector;
 }
 
+
+const guarantee_get_vector_clock = (key: string, default_value: number) => (...version_clocks: VectorClock[]): number => {
+    for (const version_clock of version_clocks) {
+        if (version_clock.has(key)) {
+            return version_clock.get(key)!;
+        }
+    }
+    return default_value;
+    
+}
+
 const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
     const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
+
     for (const key of keys) {
-        const value1 = version_vector1.get(key) || version_vector2.get(key) || 0;
-        const value2 = version_vector2.get(key) || version_vector1.get(key) || 0;
+        const value1 = guarantee_get_vector_clock(key, 0)(version_vector1, version_vector2);
+        const value2 = guarantee_get_vector_clock(key, 0)(version_vector2, version_vector1);
         if (value1 < value2) {
             return -1;
         }

@@ -24,6 +24,8 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
 import { pipe } from "fp-ts/lib/function";
 import { toArray } from "fp-ts/lib/Map";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { strong } from "fp-ts";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -117,6 +119,7 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
 
   function test_content(): boolean {
     const new_strongest = strongest_value(content)
+
     if (is_equal(new_strongest, strongest)){
       // do nothing
       return false 
@@ -160,9 +163,29 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
     },
     summarize: () => {
       const name = relation.get_name();
-      const strongVal = strongest
-      const contVal = content
-      return `name: ${name}\nstrongest: ${to_string(strongVal)}\ncontent: ${describe(contVal)}`;
+      const strongVal = strongest;
+      const contVal = content;
+
+      const summarizeNeighbor = ([id, info]: [string, interesetedNeighbors], index: number) => {
+        const interested = info?.interested_in ?? [];
+        const propagatorName = info?.propagator?.getName ? info.propagator.getName() : "<unknown propagator>";
+        const interestedDisplay = interested.length ? ` [${interested.join(", ")}]` : "";
+        return `    [${index}] ${propagatorName} (id: ${id})${interestedDisplay}`;
+      };
+
+      const neighborsSummary = neighbors.size === 0
+        ? "    (none)"
+        : Array.from(neighbors.entries()).map(summarizeNeighbor).join("\n");
+
+      return [
+        `CELL ${name}`,
+        `  ID: ${relation.get_id()}`,
+        `  STATUS: ${active ? "active" : "disposed"}`,
+        `  STRONGEST: \n ${describe(strongVal)}`,
+        `  CONTENT: \n ${describe(contVal)}`,
+        `  NEIGHBORS (${neighbors.size}):`,
+        neighborsSummary
+      ].join("\n");
     },
 
     dispose: () => {
@@ -199,6 +222,7 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
               }
           }
           else{
+            // console.log("alerting", prop)
             alert_interested_propagators(neighbors, prop as string)
           }      
           
@@ -297,8 +321,27 @@ export const cell_strongest_base_value = compose(cell_strongest, get_base_value)
 // Note: Generic procedure handlers for Cell are registered in Cell/CellGenerics.ts
 // to avoid circular dependency issues
 
-export function summarize_cells(cells: Cell<any>[]): string{
-    return cells.reduce((acc, cell) => acc + "/n" +  cell && cell.summarize != undefined ? cell.summarize() : "not a cell", "")
+export function summarize_cells(cells: Cell<any>[], indent = "    "): string {
+  if (!cells || cells.length === 0) {
+    return `${indent}(none)`;
+  }
+
+  return cells
+    .map((cell, index) => {
+      if (!cell || typeof cell.summarize !== "function") {
+        return `${indent}[${index}] <not a cell>`;
+      }
+
+      const summaryLines = cell.summarize().split("\n");
+      const header = `${indent}[${index}] ${summaryLines[0] ?? "<empty>"}`;
+      const body = summaryLines
+        .slice(1)
+        .map(line => `${indent}    ${line}`)
+        .join("\n");
+
+      return body ? `${header}\n${body}` : header;
+    })
+    .join("\n");
 }
 
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {

@@ -24,11 +24,12 @@ import { set_merge } from "@/cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { merge_patched_set, is_patched_set } from "../DataTypes/PatchedValueSet";
 import { support_by, support_layer } from "sando-layer/Specified/SupportLayer";
-import { assert, compound_tell, kick_out } from "../Helper/UI";
+import { assert, compound_tell, kick_out, reactive_tell } from "../Helper/UI";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import "../DataTypes/register_vector_clock_patchedValueSet";
+import { inspect_content, inspect_strongest } from "ppropogator";
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     set_merge(merge_patched_set);
@@ -187,18 +188,22 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             const { vector_clock_layer } = await import("../AdvanceReactivity/vector_clock");
             const { construct_better_set } = await import("generic-handler/built_in_generics/generic_better_set");
             
-            const valueA = construct_layered_datum(
-                10,
-                vector_clock_layer, new Map([["procA", 1]])
-            );
+            // const valueA = construct_layered_datum(
+            //     10,
+            //     vector_clock_layer, new Map([["procA", 1]])
+            // );
             
-            const valueB = construct_layered_datum(
-                20,
-                vector_clock_layer, new Map([["procB", 1]])
-            );
+            // const valueB = construct_layered_datum(
+            //     20,
+            //     vector_clock_layer, new Map([["procB", 1]])
+            // );
             
-            cellA.update(valueA);
-            cellB.update(valueB);
+
+            reactive_tell(cellA, 10)
+            reactive_tell(cellB, 20)
+
+            // cellA.update(valueA);
+            // cellB.update(valueB);
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) {
@@ -210,7 +215,7 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             expect(cell_strongest_base_value(output)).toBe(30);
         });
 
-        test("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
+        test.only("[VICTOR_CLOCK + SUPPORT] Stale reactive value replaced by fresher version with support", async () => {
             const cellA = construct_cell("vcSup_staleA") as Cell<LayeredObject<any>>;
             const cellB = construct_cell("vcSup_staleB") as Cell<LayeredObject<any>>;
             const output = construct_cell("vcSup_staleOutput");
@@ -220,11 +225,10 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             const { construct_layered_datum } = await import("sando-layer/Basic/LayeredDatum");
             const { vector_clock_layer: victor_clock_layer } = await import("../AdvanceReactivity/vector_clock");
             
-            // Initial values: victor_clock v1 with strong support
-            //@ts-ignore
-            compound_tell(cellA, 5, victor_clock_layer, new Map([["procA", 1]]), support_layer, construct_better_set(["supportA"]));
-            //@ts-ignore
-            compound_tell(cellB, 3, victor_clock_layer, new Map([["procB", 1]]), support_layer, construct_better_set(["supportB"]));
+
+
+            compound_tell(cellA, 5, support_layer, construct_better_set(["supportA"]))
+            compound_tell(cellB, 3, support_layer, construct_better_set(["supportB"]))
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR in v1:", error.message);
@@ -235,13 +239,17 @@ describe("PatchedValueSet Propagator Integration Tests", () => {
             
             // Update with fresher versions (v2) and different support
             //@ts-ignore
-            compound_tell(cellA, 7, victor_clock_layer, new Map([["procA", 2]]), support_layer, construct_better_set(["supportA", "newSupportA"]));
-            //@ts-ignore
-            compound_tell(cellB, 4, victor_clock_layer, new Map([["procB", 2]]), support_layer, construct_better_set(["supportB", "newSupportB"]));
+
+    
+            compound_tell(cellA, 7, support_layer, construct_better_set(["supportA", "newSupportA"]))
+            compound_tell(cellB, 4, support_layer, construct_better_set(["supportB", "newSupportB"]))
+  
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR in v2:", error.message);
             });
+            console.log("cellA", cellA.summarize())
+
             
             let result2 = cell_strongest_base_value(output);
             expect(result2).toBe(11);

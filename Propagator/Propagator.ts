@@ -85,7 +85,19 @@ export function construct_propagator(
     getRelation: () => relation,
     getInputs: () => inputs,
     getOutputs: () => outputs,
-    summarize: () => `propagator: ${name} inputs: ${summarize_cells(inputs)} outputs: ${summarize_cells(outputs)}`,
+    summarize: () => {
+      const inputSummary = summarize_cells(inputs, "    ");
+      const outputSummary = summarize_cells(outputs, "    ");
+
+      return [
+        `propagator ${name}`,
+        `  id: ${relation.get_id()}`,
+        `  inputs (${inputs.length}):`,
+        inputSummary,
+        `  outputs (${outputs.length}):`,
+        outputSummary
+      ].join("\n");
+    },
     activate: () => {
 
       if (disposing_scan([...inputs, ...outputs])) {

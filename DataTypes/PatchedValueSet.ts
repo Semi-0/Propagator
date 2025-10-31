@@ -26,7 +26,7 @@
  */
 
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { find, reduce, add_item, remove_item } from "generic-handler/built_in_generics/generic_collection";
+import { find, reduce, add_item, remove_item, filter, length, to_array } from "generic-handler/built_in_generics/generic_collection";
 import { BetterSet, construct_better_set, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { layer_pair_value, layer_pair_layer } from "sando-layer/Basic/helper";
 import { support_layer } from "sando-layer/Specified/SupportLayer";
@@ -45,7 +45,7 @@ import { strongest_value } from "@/cell/StrongestValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { filter } from "generic-handler/built_in_generics/generic_collection";
+import { is_map } from "../Helper/Helper";
 
 /**
  * @type {BetterSet} PatchedSet - Type alias for a set of ContentPatches
@@ -153,12 +153,19 @@ export const merge_patch_set = (a: BetterSet<ContentPatch>,  layer_pair: [Layer<
     const value = layer_pair_value(layer_pair);
     const layer = layer_pair_layer(layer_pair);
 
-    if ((value.length === 0) || is_base_layer(layer)) {
+    const patches = is_map(value)
+        ? to_array(value)
+        : value;
+
+    const isEmpty = Array.isArray(patches)
+        ? patches.length === 0
+        : is_better_set(patches) && length(patches) === 0;
+
+    if (isEmpty || is_base_layer(layer)) {
         return a;
     }
-    else {
-        return reduce(value, add_item, a)
-    }
+
+    return reduce(patches, add_item, a)
 }
 
 /**

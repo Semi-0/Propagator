@@ -15,23 +15,29 @@ import { make_easy_set } from "../../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
+import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
 
     const propagators_to_alert: SimpleSet<Propagator> = make_easy_set(propagator_id)
-    const propagators_alerted: SimpleSet<Propagator> = make_easy_set(propagator_id)
+    var propagators_alerted: PropagatorFrame[] = []
     const disposalQueue: Set<string> = new Set() // Track IDs of items to be disposed
     var immediate_execute = false
     var record_alerted_propagator = false
+    var step_number = 0
+
+    
 
     const execute_propagator = (propagator: Propagator, error_handler: (e: Error) => void) => {
         try{
+
+            propagators_to_alert.remove(propagator)
             propagator_activate(propagator)
             if (record_alerted_propagator){
-                propagators_alerted.add(propagator)
+                propagators_alerted.push(make_propagator_frame(step_number, propagator))
+                step_number++
             }
-            propagators_to_alert.remove(propagator)
         }
         catch(e: any){
             error_handler(new PropagatorError("Error executing propagator", is_propagator(propagator) ? propagator.summarize() : "unknown propagator", e))
@@ -115,14 +121,21 @@ export const simple_scheduler = (): Scheduler => {
         },
         clear_all_tasks: () => {
             propagators_to_alert.clear()
-            propagators_alerted.clear()
+            propagators_alerted = []
             disposalQueue.clear()
             immediate_execute = false
             record_alerted_propagator = false
+            step_number = 0
         },
         mark_for_disposal: markForDisposal,
         cleanup_disposed_items: cleanupDisposedItems,
         has_disposal_queue_size: getDisposalQueueSize,
+        replay_propagators: (logger: (frame: PropagatorFrame) => void) => {
+            // it would be great if we might even get the value of cell
+            propagators_alerted.forEach(propagator => {
+                logger(propagator)
+            })
+        },
         has_pending_tasks: () => {
             return propagators_to_alert.get_items().length > 0
         }
