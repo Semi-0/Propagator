@@ -9,7 +9,7 @@ import {
   cell_content,
   cell_strongest
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential, replay_propagators, set_record_alerted_propagator } from "../Shared/Scheduler/Scheduler";
+import { execute_all_tasks_sequential, replay_propagators, run_scheduler_and_replay, set_record_alerted_propagator } from "../Shared/Scheduler/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { no_compute } from "../Helper/noCompute";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -23,7 +23,7 @@ import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, r
 
 import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
-import "../DataTypes/register_vector_clock_patchedValueSet";
+// import "../DataTypes/register_vector_clock_patchedValueSet";
 import { compound_tell, reactive_tell, reactive_update as update } from "../Helper/UI";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { exec } from "child_process";
@@ -43,7 +43,8 @@ import {is_layered_object, type LayeredObject} from "sando-layer/Basic/LayeredOb
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.ts";
 import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock.ts";
-import { describe_frame, describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
+import {  describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
+import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor } from "../TestSuit/propagator_test.ts";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -574,8 +575,62 @@ describe("timestamp value merge tests", () => {
       expect(collectBaseValues(right)).toContain(9);
     });
 
+    test_propagator(
+      "should maintain temperature conversion relationship bi-directionally",
+      com_celsius_to_fahrenheit,
+      ["celsius", "fahrenheit"],
+      [
+        r_i(0, "celsius"),
+        r_o(32, "fahrenheit"),
+      ]
+    )
+
+     test_propagator(
+      "simple adder, should work",
+      p_add,
+      ["a", "b", "sum"],
+      [
+        r_i(1, "a"),
+        r_i(1, "b"),
+        r_o(2, "sum"),
+      ]
+      ,
+      [
+        r_i(2, "a"),
+        r_i(2, "b"),
+        r_o(4, "sum"),
+      ]
+    )
+
+    test_propagator(
+      "bi-sync shoud succesfully sync cells",
+      bi_sync,
+      ["a", "b"],
+      [
+        r_i(1, "a"),
+        r_o(1, "b"),
+      ],
+      [
+        r_i(2, "b"),
+        r_o(2, "a"),
+      ],
+      [
+        r_i(10, "a"),
+        r_o(10, "b"),
+      ],
+      [
+        r_i(20, "b"),
+        r_o(20, "a"),
+      ],
+      [
+        r_i(30, "a"),
+        r_o(30, "b"),
+      ]
+    )
+
     
     test("should maintain temperature conversion relationship bi-directionally", async () => {
+      
       const celsius = construct_cell("celsius");
       const fahrenheit = construct_cell("fahrenheit");
 

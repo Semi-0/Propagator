@@ -1,7 +1,7 @@
 import { simple_scheduler } from "./SimpleScheduler";
 import type { Propagator } from '../../Propagator/Propagator';
 import type { Scheduler } from './SchedulerType';
-import type { PropagatorFrame } from "./RuntimeFrame";
+import { describe_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
 
 export var Current_Scheduler = simple_scheduler()
 
@@ -63,4 +63,14 @@ export function has_pending_task(){
 
 export function set_record_alerted_propagator(value: boolean){
     Current_Scheduler.record_alerted_propagator(value)
+}
+
+
+export const run_scheduler_and_replay = (error_handler: (e: Error) => void) => {
+    set_record_alerted_propagator(true);
+    execute_all_tasks_sequential(error_handler);
+    replay_propagators((frame) => {
+        console.log(describe_propagator_frame(frame));
+    });
+    clear_all_tasks()
 }

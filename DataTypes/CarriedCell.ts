@@ -16,29 +16,31 @@ export const merge_carried_map = (content: Map<any, any>, increment: Map<any, an
         if (content.has(key)) {
             const elem = content.get(key)
             if(is_cell(elem) && is_cell(value)) {
+                console.log(elem.summarize(), value.summarize())
                 bi_sync(elem, value)
-                const elemStrongest = cell_strongest(elem)
-                const valueStrongest = cell_strongest(value)
+                // const elemStrongest = cell_strongest(elem)
+                // const valueStrongest = cell_strongest(value)
 
-                if (!is_nothing(elemStrongest) && is_nothing(valueStrongest)) {
-                    update_cell(value, elemStrongest)
-                }
-                else if (is_nothing(elemStrongest) && !is_nothing(valueStrongest)) {
-                    update_cell(elem, valueStrongest)
-                }
+                // if (!is_nothing(elemStrongest) && is_nothing(valueStrongest)) {
+                //     update_cell(value, elemStrongest)
+                // }
+                // else if (is_nothing(elemStrongest) && !is_nothing(valueStrongest)) {
+                //     update_cell(elem, valueStrongest)
+                // }
             }
-            else if(is_cell(value) && !is_cell(elem)) {
-                update_cell(elem, value)
-            }
-            else if(!is_cell(elem) && is_cell(value)) {
-                update_cell(value, elem)
-                content.set(key, value)
-            }
-            else{
-                content.set(key, value)
-            }
+            // else if(is_cell(value) && !is_cell(elem)) {
+            //     update_cell(elem, value)
+            // }
+            // else if(!is_cell(elem) && is_cell(value)) {
+            //     update_cell(value, elem)
+            //     content.set(key, value)
+            // }
+            // else{
+            //     content.set(key, value)
+            // }
         }
         else{
+            console.log("setted")
             content.set(key, value)
         }
     }

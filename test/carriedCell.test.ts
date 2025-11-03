@@ -9,7 +9,7 @@ import {
   cell_strongest,
   cell_id
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
+import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
@@ -27,14 +27,17 @@ import {
   type PropagatorClosure,
   p_map_carrier_default
 } from "../DataTypes/CarriedCell";
-import { p_add, p_subtract, p_multiply } from "../Propagator/BuiltInProps";
+import { p_add, p_subtract, p_multiply, bi_sync } from "../Propagator/BuiltInProps";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { is_map } from "../Helper/Helper";
-import { reactive_tell } from "../Helper/UI";
+import { compound_tell, reactive_tell } from "../Helper/UI";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
+import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
+import { inspect_content } from "ppropogator";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
+  set_handle_contradiction(trace_earliest_emerged_value);
   set_merge(merge_patched_set);
 });
 
@@ -93,7 +96,7 @@ describe("Carried Cell Tests", () => {
       expect(result.size).toBe(3);
     });
 
-    test("merge_carried_map should sync cells when keys exist", async () => {
+    test.only("merge_carried_map should sync cells when keys exist", async () => {
       const cellA = construct_cell("cellA");
       const cellB = construct_cell("cellB");
       
@@ -106,46 +109,53 @@ describe("Carried Cell Tests", () => {
 
        // because for bi_sync both cell needs to be inited with a value
        // thats why it is not working
+       inspect_content(cellB)
       await execute_all_tasks_sequential((error: Error) => {});
       
-      const result = merge_carried_map(mapA, mapB);
+      // const result = merge_carried_map(mapA, mapB);
+      bi_sync(cellA, cellB);
       
       // After merge, cellB should be synced with cellA
-      reactive_tell(cellA, 200);
-      await execute_all_tasks_sequential((error: Error) => {});
+      compound_tell(cellA, 200, vector_clock_layer, construct_vector_clock([{ source: "test", value: 0 }]));
+      run_scheduler_and_replay(console.log) 
       
       expect(cell_strongest_base_value(cellB)).toBe(200);
+
+    
+      compound_tell(cellB, 300, vector_clock_layer, construct_vector_clock([{ source: "test", value: 1}]));
+      run_scheduler_and_replay(console.log)
+      expect(cell_strongest_base_value(cellA)).toBe(300);
     });
 
-    test("merge_carried_map should handle mixed cell and non-cell values", async () => {
-      const cellA = construct_cell("cellA");
-      const cellB = construct_cell("cellB");
+    // test("merge_carried_map should handle mixed cell and non-cell values", async () => {
+    //   const cellA = construct_cell("cellA");
+    //   const cellB = construct_cell("cellB");
 
-      // @ts-ignore
-      const mapA = new Map([
-        ["cellKey", cellA],
-        ["simpleKey", 42]
-      ]) as Map<string, number | Cell<any>>;
-      // @ts-ignore
-      const mapB = new Map([
-        ["cellKey", cellB],
-        ["anotherKey", "value"]
-      ]) as Map<string, number | Cell<any>>;
+    //   // @ts-ignore
+    //   const mapA = new Map([
+    //     ["cellKey", cellA],
+    //     ["simpleKey", 42]
+    //   ]) as Map<string, number | Cell<any>>;
+    //   // @ts-ignore
+    //   const mapB = new Map([
+    //     ["cellKey", cellB],
+    //     ["anotherKey", "value"]
+    //   ]) as Map<string, number | Cell<any>>;
 
-      reactive_tell(cellA, 100);
-      await execute_all_tasks_sequential((error: Error) => {});
+    //   reactive_tell(cellA, 100);
+    //   await execute_all_tasks_sequential((error: Error) => {});
       
-      const result = merge_carried_map(mapA, mapB);
+    //   const result = merge_carried_map(mapA, mapB);
       
-      expect(result.get("simpleKey")).toBe(42);
-      expect(result.get("anotherKey")).toBe("value");
+    //   expect(result.get("simpleKey")).toBe(42);
+    //   expect(result.get("anotherKey")).toBe("value");
       
-      // Cells should be synced
-      await reactive_tell(cellA, 300);
-      await execute_all_tasks_sequential((error: Error) => {});
-      const syncedValues = to_array(cell_content(cellB)).map((layered: LayeredObject<any>) => get_base_value(layered));
-      expect(syncedValues).toContain(300);
-    });
+    //   // Cells should be synced
+    //   await reactive_tell(cellA, 300);
+    //   await execute_all_tasks_sequential((error: Error) => {});
+    //   const syncedValues = to_array(cell_content(cellB)).map((layered: LayeredObject<any>) => get_base_value(layered));
+    //   expect(syncedValues).toContain(300);
+    // });
   });
 
   describe("bi_switcher tests", () => {

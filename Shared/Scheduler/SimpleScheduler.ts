@@ -31,7 +31,6 @@ export const simple_scheduler = (): Scheduler => {
 
     const execute_propagator = (propagator: Propagator, error_handler: (e: Error) => void) => {
         try{
-
             propagators_to_alert.remove(propagator)
             propagator_activate(propagator)
             if (record_alerted_propagator){

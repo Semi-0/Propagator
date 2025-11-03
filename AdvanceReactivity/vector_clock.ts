@@ -7,7 +7,7 @@ import { match_args, one_of_args_match, register_predicate } from "generic-handl
 import { get_base_value, layer_accessor, make_annotation_layer, type Layer } from "sando-layer/Basic/Layer";
 import { define_consolidator_per_layer_dispatcher } from "sando-layer/Basic/LayeredCombinators";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { find_related_elements, subsumes } from "../DataTypes/GenericValueSet";
+import { find_related_elements, patch_join, patch_remove, scan_for_patches, subsumes } from "../DataTypes/GenericValueSet";
 import { add_item, filter, to_array } from "generic-handler/built_in_generics/generic_collection";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { curryArgument } from "generic-handler/built_in_generics/generic_combinator";
@@ -15,7 +15,7 @@ import { curried_filter, curried_map } from "../Helper/Helper";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { Option } from "effect";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
+import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 //TODO: reactive frame
 
 type SourceID = string;
@@ -201,7 +201,10 @@ export const _has_vector_clock_layer = (a: any) => {
     return a && vector_clock_layer.has_value(a);
 }
 
-export const has_vector_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => is_layered_object(a) && _has_vector_clock_layer(a));
+export const has_vector_clock_layer = register_predicate("has_victor_clock_layer", (a: any) => {
+    const result = is_layered_object(a) && _has_vector_clock_layer(a);
+    return result;
+})
 
 export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) => {
     return pipe(
@@ -212,14 +215,20 @@ export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) =
     ) !== 0
 }
 
-define_generic_procedure_handler(any_unusable_values, match_args(has_vector_clock_layer, has_vector_clock_layer), (as: LayeredObject<any>[] | any[]) => {
+export const is_reactive_values = register_predicate("is_reactive_values", (arr: any[]) => {
+    if (is_array(arr)) {
+        return arr.every(has_vector_clock_layer);
+    }
+    else{
+        return false;
+    }
+});
+
+define_generic_procedure_handler(any_unusable_values, match_args(is_reactive_values), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
-
-
-   
-
-    return any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, any_unusable_values))
+    const result = any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, any_unusable_values))
+    return result;
 })
 
 
@@ -269,17 +278,12 @@ export const proved_staled_with = curryArgument(
     )
 )
 
-export const register_vector_clock_patched_set = (
-    scan_for_patches_fn: (...args: any[]) => any,
-    patch_join_fn: (value: any) => any,
-    patch_remove_fn: (value: any) => any
-) => {
-    const remove_patch = compose(get_base_value, patch_remove_fn);
 
-    define_consolidator_per_layer_dispatcher(
-        scan_for_patches_fn,
-        vector_clock_layer,
-        (base_args: any[], set_victor_clock: VectorClock, elt_victor_clock: VectorClock) => {
+const remove_patch = compose(get_base_value, patch_remove);
+define_consolidator_per_layer_dispatcher(
+    scan_for_patches,
+    vector_clock_layer,
+           (base_args: any[], set_victor_clock: VectorClock, elt_victor_clock: VectorClock) => {
             const [set, elt] = base_args;
 
             return add_item(
@@ -288,11 +292,36 @@ export const register_vector_clock_patched_set = (
                     curried_filter(proved_staled_with(elt_victor_clock)),
                     curried_map(remove_patch)
                 ),
-                patch_join_fn(elt)
+                patch_join(elt)
             );
-        }
-    );
-};
+        } 
+)
+
+
+// export const register_vector_clock_patched_set = (
+//     scan_for_patches_fn: (...args: any[]) => any,
+//     patch_join_fn: (value: any) => any,
+//     patch_remove_fn: (value: any) => any
+// ) => {
+//     const remove_patch = compose(get_base_value, patch_remove_fn);
+
+//     define_consolidator_per_layer_dispatcher(
+//         scan_for_patches_fn,
+//         vector_clock_layer,
+//         (base_args: any[], set_victor_clock: VectorClock, elt_victor_clock: VectorClock) => {
+//             const [set, elt] = base_args;
+
+//             return add_item(
+//                 pipe(
+//                     set,
+//                     curried_filter(proved_staled_with(elt_victor_clock)),
+//                     curried_map(remove_patch)
+//                 ),
+//                 patch_join_fn(elt)
+//             );
+//         }
+//     );
+// };
 // TODO: BEHAVIORS
 // TODO: Merge
 // any unusable value? 

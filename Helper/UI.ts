@@ -39,8 +39,8 @@ export async function compound_tell<A>(cell: Cell<any>, information: A, ...layer
 
     update_cell(cell, layered);
 
-    await steppable_run_task((e) => {
-    });
+    // await steppable_run_task((e) => {
+    // });
 }
 
 
@@ -51,7 +51,7 @@ export async function reactive_tell(cell: Cell<any>, value: any, source: string 
     const source_name = source != undefined  ? source : DEFAULT_VECTOR_CLOCK_SOURCE
     const maybe_last_clock = pipe(cell, 
         cell_strongest, 
-        log_tracer("get_vector_clock_layer", get_vector_clock_layer), 
+        get_vector_clock_layer, 
         vector_clock_get_source(source_name)
     )
     // console.log("maybe_last_clock", maybe_last_clock)
