@@ -37,10 +37,11 @@ import { is_map } from "../Helper/Helper";
 import { compound_tell, reactive_tell } from "../Helper/UI";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
-import { merge_plan, r_i, r_o, run_replay_scheduler, test_propagator, test_propagator_only, test_propagator_only_with_merge_plan } from "../TestSuit/propagator_test";
+import { merge_plan, r_i, r_o, run_replay_scheduler, test_propagator, test_propagator_only, test_propagator_only_with_merge_plan, trace_scheduler_assessor } from "../TestSuit/propagator_test";
 import { generic_merge, inspect_strongest } from "ppropogator";
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -293,27 +294,31 @@ describe("Carried Cell Tests", () => {
          // that's why it failed to merge MAPS!!!
          const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
          const propagator =  p_construct_map_carrier_with_name(A, B, carrier)
+        //  inspect_strongest(carrier)
          c_map_accessor("A")(carrier, accessed_A)
          c_map_accessor("B")(carrier, accessed_B)
       },
       ["A", "B", "accessed_A", "accessed_B"],
       [
-         merge_plan(merge_layered),
+        // trace_scheduler_assessor(console.log),
+        merge_plan(log_tracer("merge_patched_set", merge_patched_set)),
+      ],
+      [
          r_i(100, "A"),
          r_i(200, "B"),
          r_o(100, "accessed_A"),
          r_o(200, "accessed_B"),
       ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(300, "A"),
-      //   r_o(300, the_contradiction),
-      // ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(400, "B"),
-      //   r_o(400, "accessed_B"),
-      // ]
+      [
+        // merge_plan(merge_layered),
+        r_i(300, "A"),
+        r_o(300, "accessed_A"),
+      ],
+      [
+        // merge_plan(merge_layered),
+        r_i(400, "B"),
+        r_o(400, "accessed_B"),
+      ]
     )
   });
 

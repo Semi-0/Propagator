@@ -128,16 +128,14 @@ export const simple_scheduler = (): Scheduler => {
         },
         mark_for_disposal: markForDisposal,
         cleanup_disposed_items: cleanupDisposedItems,
-        has_disposal_queue_size: getDisposalQueueSize,
+        pending_propagators: () => {
+            return propagators_to_alert.get_items()
+        },
         replay_propagators: (logger: (frame: PropagatorFrame) => void) => {
             // it would be great if we might even get the value of cell
             propagators_alerted.forEach(propagator => {
                 logger(propagator)
             })
         },
-        has_pending_tasks: () => {
-            return propagators_to_alert.get_items().length > 0
-        }
-
     }
 }

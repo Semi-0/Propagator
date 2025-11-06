@@ -5,6 +5,7 @@ import type { PropagatorFrame } from "./RuntimeFrame";
 export interface Scheduler{
     alert_propagator: (propagator: Propagator) => void;
     alert_propagators: (propagators: Propagator[]) => void;
+    pending_propagators: () => Propagator[];
     replay_propagators: (logger: (frame: PropagatorFrame) => void) => void;
     execute_sequential: (error_handler: (e: Error) => void) => void;
     steppable_run:  (error_handler: (e: Error) => void) => void;
@@ -14,6 +15,6 @@ export interface Scheduler{
     record_alerted_propagator: (value: boolean) => void; 
     mark_for_disposal: (id: string) => void;
     cleanup_disposed_items: () => void;
-    has_disposal_queue_size: () => number;
-    has_pending_tasks: () => boolean;
+    // has_disposal_queue_size: () => number;
+    // has_pending_tasks: () => boolean;
 }

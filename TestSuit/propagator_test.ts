@@ -14,6 +14,7 @@ import { layered_apply } from "../Helper/Helper";
 import { pipe } from "fp-ts/lib/function";
 import { curried_map } from "../Helper/Helper";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
+import { Current_Scheduler } from "ppropogator";
 export type TestAssessor = {
     category: "input" | "output" | "scheduler" | "replay_scheduler" | "merge_plan" | "trace_scheduler";
     fn: (...args: any[]) => any;
@@ -140,7 +141,7 @@ export const trace_scheduler_assessor: (logger?: (log: string) => void) => TestA
     return {
         category: "trace_scheduler",
         fn: () => {
-            set_traced_scheduler(logger);
+            set_traced_scheduler(logger, Current_Scheduler);
             return true;
         },
         label: "trace_scheduler",
@@ -197,14 +198,7 @@ export const assess = async (
     input_accessors: TestAssessor[],
     output_accessors: TestAssessor[],
     run_scheduler: () => void | Promise<void>,
-    // merge_plan: (content: any, increment: any) => any = merge_patched_set
 ) => {
-    // set_global_state(PublicStateCommand.CLEAN_UP);
-    // set_merge(merge_plan);
-
-    // _construct_propagator();
-    // this has a timing issue!! if clean up is sited in here, propagator is activated before it completes!!!
-
     for (const input_accessor of input_accessors) {
         await inject_input(env, input_accessor);
     }
@@ -262,37 +256,46 @@ export const test_propagator_constructor = (testor: (description: string, test: 
     description: string,
     constructor: (...args: Cell<any>[]) => Propagator | void,
     cell_names: string[],
+    // env_setup: TestAssessor[] = [],
     ...assesors: TestAssessor[][]
 ) => {
     testor(description, async () => {
         set_global_state(PublicStateCommand.CLEAN_UP);
 
-        const env = pop_cell_env(cell_names);
-        const propagator = constructor(...env.values());
-        for (const assessor of assesors) {
-            const assesor_inputs = assessor.filter(is_input_accessor);
-            const assesor_outputs = assessor.filter(is_output_accessor);
-            const scheduler_plan = assessor.filter(is_scheduler_plan);
-            const merge_plan_assessors = assessor.filter(is_merge_plan);
-            const trace_scheduler_assessors = assessor.filter(is_trace_scheduler);
-            const merge_plan_fn = merge_plan_assessors.length > 0 ? merge_plan_assessors[0].fn() : undefined;
+        // const trace_scheduler_assessors = env_setup.filter(is_trace_scheduler);
+        // if (trace_scheduler_assessors.length > 0) {
+        //     trace_scheduler_assessors[0].fn();
+        // }
+        // const merge_plan_assessors = env_setup.filter(is_merge_plan);
+        // if (merge_plan_assessors.length > 0) {
+        //     set_merge(merge_plan_assessors[0].fn());
+        // }
 
-            if (merge_plan_fn) {
-                set_merge(merge_plan_fn);
-            }
-            // Set up traced scheduler if requested
+        const env = pop_cell_env(cell_names);
+        var propagator = constructor(...env.values());
+        for (const assessor of assesors) {
+
+            const trace_scheduler_assessors = assessor.filter(is_trace_scheduler);
             if (trace_scheduler_assessors.length > 0) {
                 trace_scheduler_assessors[0].fn();
             }
+            const merge_plan_assessors = assessor.filter(is_merge_plan);
+            if (merge_plan_assessors.length > 0) {
+                set_merge(merge_plan_assessors[0].fn());
+            }
+
+            const assesor_inputs = assessor.filter(is_input_accessor);
+            const assesor_outputs = assessor.filter(is_output_accessor);
+            const scheduler_plan = assessor.filter(is_scheduler_plan);
 
             await assess(
-                // () => propagator,
                 env,
                 assesor_inputs,
                 assesor_outputs,
                 translate_scheduler_plan(scheduler_plan),
-                // merge_plan_fn
             );
+
+       
         }
     });
 };

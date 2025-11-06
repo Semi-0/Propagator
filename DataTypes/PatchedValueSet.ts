@@ -48,6 +48,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { is_map } from "../Helper/Helper";
 import { generic_merge } from "ppropogator";
 import { is_any } from "generic-handler/built_in_generics/generic_predicates";
+import { merge_layered } from "@/cell/Merge";
 
 /**
  * @type {BetterSet} PatchedSet - Type alias for a set of ContentPatches
@@ -352,16 +353,24 @@ export const to_patched_set = (a: any) => {
 // so this can work with primitive datastructure
 export const merge_patched_set = (content: PatchedSet, increment: LayeredObject<any>) => {
     // Handle nothing values
-    if (is_nothing(increment)) {
-        return content;
-    }
+    // if (is_nothing(increment)) {
+    //     return content;
+    // }
     
-    // Handle initial empty state - content might be the_nothing from cell initialization
-    if (is_nothing(content)) {
-        return construct_better_set([increment]);
+    // // Handle initial empty state - content might be the_nothing from cell initialization
+    // if (is_nothing(content)) {
+    //     return construct_better_set([increment]);
+    // }
+
+    if (is_patched_set(content) && is_layered_object(increment)) {
+        return _patched_set_join(content, increment)
     }
-    
-    return _patched_set_join(content, increment)
+    else if (is_layered_object(content) && is_layered_object(increment)) {
+        return _patched_set_join(to_patched_set(content), increment)
+    }
+    else {
+        return merge_layered(content, increment)
+    }
 }
 
 

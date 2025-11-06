@@ -60,7 +60,7 @@ export function mark_for_disposal(id: string) {
 }
 
 export function has_pending_task(){
-    return Current_Scheduler.has_pending_tasks()
+    return Current_Scheduler.pending_propagators().length > 0
 }
 
 export function set_record_alerted_propagator(value: boolean){
@@ -186,7 +186,14 @@ export function set_traced_scheduler(
     logger: (log: string) => void,
     baseScheduler: Scheduler = simple_scheduler()
 ): Hookable<Scheduler> & Scheduler {
+
+    const pending_propagators = baseScheduler.pending_propagators();
+
     const traced = trace_scheduler(logger, baseScheduler);
     Current_Scheduler = traced;
+
+    // transfer tasks
+    traced.alert_propagators(pending_propagators);
+
     return traced;
 }

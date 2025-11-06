@@ -122,11 +122,11 @@ export const p_or = primitive_propagator(or, "or")
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
 
 
-    const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
-        return inject
-    })
+    // const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
+    //     return inject
+    // })
     return construct_propagator([input], [output], () => {
-        update_cell(output, pass_dependencies(cell_strongest(input), value))
+        update_cell(output, value)
     }, "constant")
 }
 
