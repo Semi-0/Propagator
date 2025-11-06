@@ -193,17 +193,16 @@ const assert_output_with_env = (
 };
 
 export const assess = async (
-    _construct_propagator: () => void ,
     env: Map<string, Cell<any>>,
     input_accessors: TestAssessor[],
     output_accessors: TestAssessor[],
     run_scheduler: () => void | Promise<void>,
-    merge_plan: (content: any, increment: any) => any = merge_patched_set
+    // merge_plan: (content: any, increment: any) => any = merge_patched_set
 ) => {
-    set_global_state(PublicStateCommand.CLEAN_UP);
-    set_merge(merge_plan);
+    // set_global_state(PublicStateCommand.CLEAN_UP);
+    // set_merge(merge_plan);
 
-    _construct_propagator();
+    // _construct_propagator();
     // this has a timing issue!! if clean up is sited in here, propagator is activated before it completes!!!
 
     for (const input_accessor of input_accessors) {
@@ -266,34 +265,33 @@ export const test_propagator_constructor = (testor: (description: string, test: 
     ...assesors: TestAssessor[][]
 ) => {
     testor(description, async () => {
+        set_global_state(PublicStateCommand.CLEAN_UP);
+
+        const env = pop_cell_env(cell_names);
+        const propagator = constructor(...env.values());
         for (const assessor of assesors) {
-            set_global_state(PublicStateCommand.CLEAN_UP);
-
-            const env = pop_cell_env(cell_names);
-  
-            const construct_propagator = () => constructor(...env.values());
-
-            // this should be more generic 
-
             const assesor_inputs = assessor.filter(is_input_accessor);
             const assesor_outputs = assessor.filter(is_output_accessor);
             const scheduler_plan = assessor.filter(is_scheduler_plan);
             const merge_plan_assessors = assessor.filter(is_merge_plan);
             const trace_scheduler_assessors = assessor.filter(is_trace_scheduler);
-            const merge_plan_fn = merge_plan_assessors.length > 0 ? merge_plan_assessors[0].fn() : merge_patched_set;
+            const merge_plan_fn = merge_plan_assessors.length > 0 ? merge_plan_assessors[0].fn() : undefined;
 
+            if (merge_plan_fn) {
+                set_merge(merge_plan_fn);
+            }
             // Set up traced scheduler if requested
             if (trace_scheduler_assessors.length > 0) {
                 trace_scheduler_assessors[0].fn();
             }
 
             await assess(
-                construct_propagator ,
+                // () => propagator,
                 env,
                 assesor_inputs,
                 assesor_outputs,
                 translate_scheduler_plan(scheduler_plan),
-                merge_plan_fn
+                // merge_plan_fn
             );
         }
     });

@@ -1,4 +1,4 @@
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler, traced_generic_procedure } from "generic-handler/GenericProcedure";
 import {  is_nothing, is_contradiction, the_contradiction, is_disposed, the_disposed } from "./CellValue";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import type { Applicability } from "generic-handler/Applicatability";
@@ -32,7 +32,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
     }
 )
  
-export const merge_layered = make_layered_procedure("merge_layered", 2, generic_merge)
+export const merge_layered = make_layered_procedure("merge_layered", 2, traced_generic_procedure(console.log, generic_merge))
 
 export var cell_merge = generic_merge;
 

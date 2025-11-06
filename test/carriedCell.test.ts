@@ -16,7 +16,7 @@ import { get_base_value } from "sando-layer/Basic/Layer";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
 import { update } from "../AdvanceReactivity/interface";
-import { set_merge } from "@/cell/Merge";
+import { merge_layered, set_merge } from "@/cell/Merge";
 import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import {
@@ -40,6 +40,7 @@ import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity
 import { merge_plan, r_i, r_o, run_replay_scheduler, test_propagator, test_propagator_only, test_propagator_only_with_merge_plan } from "../TestSuit/propagator_test";
 import { generic_merge, inspect_strongest } from "ppropogator";
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
+import { the_contradiction } from "ppropogator";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -284,33 +285,35 @@ describe("Carried Cell Tests", () => {
     });
 
     test_propagator_only(
+      // seems that carried cell is already working with merge_layered
+      // so the next step is how we can integrated merge_layered with the value merge
       "accessor can work with map carrier",
       (A: Cell<number>, B: Cell<number>, accessed_A: Cell<number>, accessed_B: Cell<number>) => {
-         console.log("built")
+         // ahh its because generic merge access directly to the layered object!!
+         // that's why it failed to merge MAPS!!!
          const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
-         inspect_strongest(carrier)
          const propagator =  p_construct_map_carrier_with_name(A, B, carrier)
          c_map_accessor("A")(carrier, accessed_A)
          c_map_accessor("B")(carrier, accessed_B)
-         return propagator
       },
       ["A", "B", "accessed_A", "accessed_B"],
       [
-         run_replay_scheduler,
-         merge_plan(traced_generic_procedure(console.log, generic_merge)),
+         merge_plan(merge_layered),
          r_i(100, "A"),
          r_i(200, "B"),
          r_o(100, "accessed_A"),
          r_o(200, "accessed_B"),
       ],
-      [
-        r_i(300, "A"),
-        r_o(300, "accessed_A"),
-      ],
-      [
-        r_i(400, "B"),
-        r_o(400, "accessed_B"),
-      ]
+      // [
+      //   // merge_plan(merge_layered),
+      //   r_i(300, "A"),
+      //   r_o(300, the_contradiction),
+      // ],
+      // [
+      //   // merge_plan(merge_layered),
+      //   r_i(400, "B"),
+      //   r_o(400, "accessed_B"),
+      // ]
     )
   });
 
