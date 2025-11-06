@@ -8,6 +8,8 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { curryArgument } from "generic-handler/built_in_generics/generic_combinator"
 import { filter, map } from "generic-handler/built_in_generics/generic_collection"
 import { register_predicate } from "generic-handler/Predicates"
+import type { LayeredObject } from "sando-layer/Basic/LayeredObject"
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure"
 
 export const is_map = register_predicate("is_map", (c: any) => c instanceof Map) 
 
@@ -16,6 +18,9 @@ define_generic_procedure_handler(to_string, match_args(is_map), (map: Map<any, a
 })
 
 
+export const layered_apply = make_layered_procedure("layered_apply", 2, (procedure: (...args: any[]) => any, value: any) => {
+    return procedure(value)
+})
 
 define_generic_procedure_handler(to_string, match_args(is_number), (number: number) => {
     return number.toString()

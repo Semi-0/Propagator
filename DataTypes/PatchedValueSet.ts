@@ -25,7 +25,7 @@
  *   - Maintains set consistency through order-independent operations
  */
 
-import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { find, reduce, add_item, remove_item, filter, length, to_array } from "generic-handler/built_in_generics/generic_collection";
 import { BetterSet, construct_better_set, is_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { layer_pair_value, layer_pair_layer } from "sando-layer/Basic/helper";
@@ -46,6 +46,8 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_map } from "../Helper/Helper";
+import { generic_merge } from "ppropogator";
+import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 
 /**
  * @type {BetterSet} PatchedSet - Type alias for a set of ContentPatches
@@ -345,6 +347,9 @@ export const to_patched_set = (a: any) => {
  * set = patched_set_merge(set, value1);
  * set = patched_set_merge(set, value2);
  */
+// needs to integrate with generic_merge
+// or other cell_merge
+// so this can work with primitive datastructure
 export const merge_patched_set = (content: PatchedSet, increment: LayeredObject<any>) => {
     // Handle nothing values
     if (is_nothing(increment)) {
@@ -359,6 +364,12 @@ export const merge_patched_set = (content: PatchedSet, increment: LayeredObject<
     return _patched_set_join(content, increment)
 }
 
+
+// define_generic_procedure_handler(
+//     generic_merge,
+//     match_args(is_any, is_layered_object),
+//     merge_patched_set
+// )
 
 define_generic_procedure_handler(
     is_unusable_value,

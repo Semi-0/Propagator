@@ -24,7 +24,6 @@ import { match_args } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import type { PropagatorClosure } from "./CarriedCell";
 import { ce_eq } from "../ObjectSystem/comprehensive_object";
 
 export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("switch", (condition: boolean, value: any) => { 
@@ -121,6 +120,7 @@ export const p_and = primitive_propagator(and, "and")
 export const p_or = primitive_propagator(or, "or")
 
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
+
 
     const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
         return inject

@@ -9,14 +9,16 @@ import type { Cell } from "@/cell/Cell";
 import { p_switch } from "../Propagator/BuiltInProps";
 import type { Propagator } from "../Propagator/Propagator";
 import { is_map } from "../Helper/Helper";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { make_ce_arithmetical } from "../Propagator/Sugar";
 
 
 export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
+    console.log("merge_carried_map")
     for (const [key, value] of increment) {
         if (content.has(key)) {
             const elem = content.get(key)
             if(is_cell(elem) && is_cell(value)) {
-                console.log(elem.summarize(), value.summarize())
                 bi_sync(elem, value)
                 // const elemStrongest = cell_strongest(elem)
                 // const valueStrongest = cell_strongest(value)
@@ -65,7 +67,9 @@ export const function_to_cell_carrier_constructor = (f: (...args: Cell<any>[]) =
     const inputs = cells.slice(0, -1)
     const output = cells[cells.length - 1]
 
-    return p_constant(f(...inputs))(construct_cell("function_to_cell_carrier_constructor"), output)
+    // does p constant needs to seed?
+    // how could accessor recognized the input instantly?
+    return p_constant(f(...inputs))(construct_cell("Nothing"), output)
 }
 
 
@@ -82,7 +86,13 @@ export const make_map_carrier = (identificator: (cell: Cell<any>) => string) => 
     return cell_map
 }
 
-export const p_map_carrier_default = function_to_cell_carrier_constructor(make_map_carrier(cell_name))
+export const p_construct_cell_carrier: (identificator: (cell: Cell<any>) => string) => (...cells: Cell<any>[]) => Propagator = compose(make_map_carrier, function_to_cell_carrier_constructor)
+
+export const ce_construct_cell_carrier = (identificator: (cell: Cell<any>) => string) => make_ce_arithmetical(p_construct_cell_carrier(identificator), "cell_carrier")
+
+export const p_construct_map_carrier_with_name: (...cells: Cell<any>[]) => Propagator = p_construct_cell_carrier(cell_name)
+
+export const ce_construct_map_carrier_with_name = ce_construct_cell_carrier(cell_name)
 
 export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
     const cell_map = new Map()
@@ -98,18 +108,18 @@ export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
 // and accessor was sent to multiple environment to look up simutaneously
 // we would have no way to know that where the value comes from
 // maybe its better that the accessor should have a contextual information of the environment?
+// we can use ce_constant
+// i want to know whether this works with constant
 export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
-    compound_propagator([accessor, container], [accessor, container], () => {
-        container.update(make_map_with_key([[key, accessor]]))
+    compound_propagator([container], [accessor], () => {
+        p_constant(make_map_with_key([[key, accessor]]))(construct_cell("Nothing"), container)
     }, "c_map_accessor")
 
 
 export const ce_map_accessor = (key: string) => (container: Cell<Map<string, any>>) =>{
     const accessor = construct_cell("map_accessor_" + key)
 
-    compound_propagator([accessor, container], [accessor, container], () => {
-        container.update(make_map_with_key([[key, accessor]]))
-    }, "ce_map_accessor")
+    c_map_accessor(key)(container, accessor) 
     return accessor 
 
 }

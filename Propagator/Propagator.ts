@@ -1,5 +1,5 @@
 import { Primitive_Relation, make_relation, type Relation, is_relation } from "../DataTypes/Relation";
-import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
+import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, CellHooks, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -14,7 +14,6 @@ import { alert_propagator } from "../Shared/Scheduler/Scheduler";
 
 //TODO: a minimalistic revision which merge based info provided by data?
 //TODO: analogous to lambda for c_prop?
-// TODO: memory leak?
 
 export interface Propagator {
   getName: () => string;
@@ -55,6 +54,8 @@ export const disposing_scan = (cells: Cell<any>[]) => {
     return cells.some((c: any) => c === undefined || c === null || is_disposed(cell_strongest(c)))
 }
 
+const default_interested_hooks = (): CellHooks[] => ["updated" as CellHooks];
+
 // dispose is too low level, we need to abstract it away!!!
 export function construct_propagator(
                                  inputs: Cell<any>[], 
@@ -62,7 +63,7 @@ export function construct_propagator(
                                  activate: () => void,
                                  name: string,
                                  id: string | null = null,
-                                 interested_in: string[] = ["update"]
+                                 interested_in: CellHooks[] = [CellHooks.updated]
                                 ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
 
@@ -122,7 +123,7 @@ export function construct_propagator(
 export { forward, apply_propagator, l_apply_propagator, apply_subnet } from "./HelperProps";
 
 
-export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: string[] = ["update"]) {
+export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: CellHooks[] = default_interested_hooks()) {
     return (...cells: Cell<any>[]): Propagator => {
         if (cells.length === 0) {
             throw new Error("Primitive propagator must have at least one input");
@@ -159,7 +160,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
 
  
 
-export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any, interested_in: string[] = ["update"]){
+export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any, interested_in: CellHooks[] = default_interested_hooks()){
     // limitation: does not support rest or optional parameters
     const rf = install_propagator_arith_pack(name, f.length, f)
 

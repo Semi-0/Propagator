@@ -6,7 +6,8 @@ import {
     compound_propagator
 } from "./Propagator";
 import { multiply, divide } from "../AdvanceReactivity/Generics/GenericArith";
-import {type Cell, cell_name, constant_cell, make_temp_cell} from "../Cell/Cell";
+import {type Cell, cell_name, make_temp_cell} from "../Cell/Cell";
+import { ce_constant as constant_cell } from "./BuiltInProps";
 import { is_hypothetical, is_premise_in, is_premises_in, make_hypotheticals, mark_premise_in, mark_premise_out, premises_nogoods, set_premises_nogoods } from "../DataTypes/Premises";
 import { get_new_reference_count} from "../Helper/Helper";
 import { construct_better_set,  set_merge, set_remove, set_union, is_better_set} from "generic-handler/built_in_generics/generic_better_set";

@@ -8,7 +8,6 @@ import {
     cell_content,
     cell_strongest,
     cell_strongest_base_value,
-    constant_cell,
     construct_cell,
     handle_cell_contradiction,
     set_handle_contradiction
@@ -23,7 +22,7 @@ import {
     execute_all_tasks_simultaneous,
     set_scheduler
 } from "../Shared/Scheduler/Scheduler";
-
+import { ce_constant as constant_cell } from "../Propagator/BuiltInProps";
 import { simple_scheduler} from "../Shared/Scheduler/SimpleScheduler.ts";
 import { set_global_state } from "../Shared/PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";

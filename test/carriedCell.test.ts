@@ -7,7 +7,8 @@ import {
   cell_strongest_base_value,
   set_handle_contradiction,
   cell_strongest,
-  cell_id
+  cell_id,
+  cell_name
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
@@ -25,7 +26,10 @@ import {
   make_map_carrier,
   make_propagator_closure,
   type PropagatorClosure,
-  p_map_carrier_default
+  p_construct_map_carrier_with_name,
+  ce_construct_cell_carrier,
+  ce_construct_map_carrier_with_name,
+  c_map_accessor
 } from "../DataTypes/CarriedCell";
 import { p_add, p_subtract, p_multiply, bi_sync } from "../Propagator/BuiltInProps";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
@@ -33,7 +37,9 @@ import { is_map } from "../Helper/Helper";
 import { compound_tell, reactive_tell } from "../Helper/UI";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
-import { inspect_content } from "ppropogator";
+import { merge_plan, r_i, r_o, run_replay_scheduler, test_propagator, test_propagator_only, test_propagator_only_with_merge_plan } from "../TestSuit/propagator_test";
+import { generic_merge, inspect_strongest } from "ppropogator";
+import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -96,7 +102,7 @@ describe("Carried Cell Tests", () => {
       expect(result.size).toBe(3);
     });
 
-    test.only("merge_carried_map should sync cells when keys exist", async () => {
+    test("merge_carried_map should sync cells when keys exist", async () => {
       const cellA = construct_cell("cellA");
       const cellB = construct_cell("cellB");
       
@@ -109,11 +115,10 @@ describe("Carried Cell Tests", () => {
 
        // because for bi_sync both cell needs to be inited with a value
        // thats why it is not working
-       inspect_content(cellB)
       await execute_all_tasks_sequential((error: Error) => {});
       
-      // const result = merge_carried_map(mapA, mapB);
-      bi_sync(cellA, cellB);
+      const result = merge_carried_map(mapA, mapB);
+      // bi_sync(cellA, cellB);
       
       // After merge, cellB should be synced with cellA
       compound_tell(cellA, 200, vector_clock_layer, construct_vector_clock([{ source: "test", value: 0 }]));
@@ -260,21 +265,53 @@ describe("Carried Cell Tests", () => {
       const cellC = construct_cell("cellC");
       const output = construct_cell("output");
 
-      p_map_carrier_default(cellA, cellB, cellC, output);
+      set_merge(traced_generic_procedure((item: any) => console.dir(item, { depth: 10}), generic_merge))
+
+      p_construct_map_carrier_with_name(cellA, cellB, cellC, output);
  
       await execute_all_tasks_sequential((error: Error) => {});
 
       await reactive_tell(cellA, 100);
       await reactive_tell(cellB, 200);
       await reactive_tell(cellC, 300);
-      await execute_all_tasks_sequential((error: Error) => {});
- 
+       
+      await execute_all_tasks_sequential(console.log)
       const suppose_map = cell_strongest_base_value(output) as Map<string, Cell<any>>;
       expect(is_map(suppose_map)).toBe(true);
-      expect(is_equal(suppose_map.get(cell_id(cellA)), cellA)).toBe(true);
-      expect(is_equal(suppose_map.get(cell_id(cellB)), cellB)).toBe(true);
-      expect(is_equal(suppose_map.get(cell_id(cellC)), cellC)).toBe(true);
+      expect(is_equal(suppose_map.get(cell_name(cellA)), cellA)).toBe(true);
+      expect(is_equal(suppose_map.get(cell_name(cellB)), cellB)).toBe(true);
+      expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
     });
+
+    test_propagator_only(
+      "accessor can work with map carrier",
+      (A: Cell<number>, B: Cell<number>, accessed_A: Cell<number>, accessed_B: Cell<number>) => {
+         console.log("built")
+         const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
+         inspect_strongest(carrier)
+         const propagator =  p_construct_map_carrier_with_name(A, B, carrier)
+         c_map_accessor("A")(carrier, accessed_A)
+         c_map_accessor("B")(carrier, accessed_B)
+         return propagator
+      },
+      ["A", "B", "accessed_A", "accessed_B"],
+      [
+         run_replay_scheduler,
+         merge_plan(traced_generic_procedure(console.log, generic_merge)),
+         r_i(100, "A"),
+         r_i(200, "B"),
+         r_o(100, "accessed_A"),
+         r_o(200, "accessed_B"),
+      ],
+      [
+        r_i(300, "A"),
+        r_o(300, "accessed_A"),
+      ],
+      [
+        r_i(400, "B"),
+        r_o(400, "accessed_B"),
+      ]
+    )
   });
 
   // describe("make_propagator_closure tests", () => {

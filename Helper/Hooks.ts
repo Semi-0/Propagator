@@ -84,7 +84,7 @@ export function make_hookable<T extends Record<string, any>>(
   config?: HookableConfig
 ): T {
   const registry: HookRegistry = {};
-  const debug = config?.debug ?? false;
+  let debug = config?.debug ?? false;
 
   /**
    * Get or create hooks for a method
@@ -168,13 +168,13 @@ export function make_hookable<T extends Record<string, any>>(
 
       if (prop === '__enable_debug') {
         return () => {
-          (debug as any) = true;
+          debug = true;
         };
       }
 
       if (prop === '__disable_debug') {
         return () => {
-          (debug as any) = false;
+          debug = false;
         };
       }
 

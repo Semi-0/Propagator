@@ -1,5 +1,5 @@
 import { compound_propagator, function_to_primitive_propagator, is_propagator, propagator_id, type Propagator } from "../Propagator/Propagator";
-import { constant_cell, construct_cell, make_temp_cell, type Cell } from "../Cell/Cell";
+import {construct_cell, make_temp_cell, type Cell } from "../Cell/Cell";
 import { ce_equal, ce_subtract, ce_switch, p_and, p_switch, p_sync } from "../Propagator/BuiltInProps";
 import { reduce } from "fp-ts/lib/Foldable";
 import { last } from "fp-ts/lib/Array";

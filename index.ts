@@ -43,7 +43,6 @@
 // Cell-related imports
 import { 
   construct_cell, 
-  constant_cell,
   cell_dispose,
   cell_strongest,
   cell_strongest_base_value,
@@ -111,7 +110,8 @@ import {
   ce_switch,
   com_if,
   com_celsius_to_fahrenheit,
-  com_meters_feet_inches
+  com_meters_feet_inches,
+  ce_constant
 } from "./Propagator/BuiltInProps";
 
 // Cell values and predicates
@@ -224,7 +224,7 @@ export const cell = construct_cell;
 /**
  * Shorthand for constant_cell
  */
-export const constant = constant_cell;
+export const constant = ce_constant;
 
 /**
  * Shorthand for cell_dispose
@@ -249,7 +249,7 @@ export const strongest = cell_strongest;
 /**
  * Shorthand for cell_strongest_base_value
  */
-export const strongest_base_value = cell_strongest_base_value;
+// export const strongest_base_value = cell_strongest_base_value;
 
 /**
  * Shorthand for cell_content
@@ -383,154 +383,184 @@ export function cleanup() {
 export const reactive_constant = r_constant;
 
 // ============================================================================
-// CONVENIENCE OBJECTS
+// LAZY OBJECT HELPER
 // ============================================================================
 
 /**
- * Convenience object for creating primitive propagators
+ * Create a lazy object that is only initialized when first accessed
  */
-export const propagator = {
-  // Arithmetic
-  add: p_add,
-  subtract: p_subtract,
-  multiply: p_multiply,
-  divide: p_divide,
-  
-  // Comparison
-  equal: p_equal,
-  less_than: p_less_than,
-  greater_than: p_greater_than,
-  
-  // Logical
-  and: p_and,
-  or: p_or,
-  not: p_not,
-  
-  // Control
-  switch: p_switch,
-  sync: p_sync,
-  
-  // Functional
-  map: p_map_a,
-  filter: p_filter_a,
-  zip: p_zip,
-  range: p_range,
-  composite: p_composite,
-  reduce: p_reduce,
-  index: p_index,
-  
-  // Constraint
-  constraint: {
-    add: c_add,
-    subtract: c_subtract,
-    multiply: c_multiply,
-    divide: c_divide,
-    range: c_range
-  },
-  
-  // Cell expression
-  expr: {
-    add: ce_add,
-    subtract: ce_subtract,
-    multiply: ce_multiply,
-    divide: ce_divide,
-    equal: ce_equal,
-    less_than: ce_less_than,
-    greater_than: ce_greater_than,
-    and: ce_and,
-    or: ce_or,
-    not: ce_not,
-    switch: ce_switch
-  },
-  
-  // Compound
-  compound: {
-    if: com_if,
-    celsius_to_fahrenheit: com_celsius_to_fahrenheit,
-    meters_feet_inches: com_meters_feet_inches
-  },
-  
-  // Construction
-  create: construct_propagator,
-  compound_propagator: compound_propagator,
-  constraint_propagator: constraint_propagator,
-  primitive: primitive_propagator,
-  function: function_to_primitive_propagator,
+function lazyObject<T extends Record<string | number | symbol, any>>(factory: () => T): T {
+  let value: T | undefined = undefined;
+  return new Proxy({} as T, {
+    get(_target, prop) {
+      if (value === undefined) {
+        value = factory();
+      }
+      return (value as any)[prop];
+    },
+    has(_target, prop) {
+      if (value === undefined) {
+        value = factory();
+      }
+      return prop in (value as any);
+    },
+    ownKeys(_target) {
+      if (value === undefined) {
+        value = factory();
+      }
+      return Reflect.ownKeys(value as any);
+    }
+  }) as T;
+}
 
-};
+// ============================================================================
+// CONVENIENCE OBJECTS (LAZY)
+// ============================================================================
 
 /**
- * Convenience object for cell operations
+ * Convenience object for creating primitive propagators (lazy)
  */
-export const cells = {
+export const propagator = lazyObject(() => ({
+        // Arithmetic
+        add: p_add,
+        subtract: p_subtract,
+        multiply: p_multiply,
+        divide: p_divide,
+        
+        // Comparison
+        equal: p_equal,
+        less_than: p_less_than,
+        greater_than: p_greater_than,
+        
+        // Logical
+        and: p_and,
+        or: p_or,
+        not: p_not,
+        
+        // Control
+        switch: p_switch,
+        sync: p_sync,
+        
+        // Functional
+        map: p_map_a,
+        filter: p_filter_a,
+        zip: p_zip,
+        range: p_range,
+        composite: p_composite,
+        reduce: p_reduce,
+        index: p_index,
+        
+        // Constraint
+        constraint: {
+          add: c_add,
+          subtract: c_subtract,
+          multiply: c_multiply,
+          divide: c_divide,
+          range: c_range
+        },
+        
+        // Cell expression
+        expr: {
+          add: ce_add,
+          subtract: ce_subtract,
+          multiply: ce_multiply,
+          divide: ce_divide,
+          equal: ce_equal,
+          less_than: ce_less_than,
+          greater_than: ce_greater_than,
+          and: ce_and,
+          or: ce_or,
+          not: ce_not,
+          switch: ce_switch
+        },
+        
+        // Compound
+        compound: {
+          if: com_if,
+          celsius_to_fahrenheit: com_celsius_to_fahrenheit,
+          meters_feet_inches: com_meters_feet_inches
+        },
+        
+        // Construction
+        create: construct_propagator,
+        compound_propagator: compound_propagator,
+        constraint_propagator: constraint_propagator,
+        primitive: primitive_propagator,
+        function: function_to_primitive_propagator,
+}));
+
+/**
+ * Convenience object for cell operations (lazy)
+ */
+export const cells = lazyObject(() => ({
   create: construct_cell,
-  constant: constant_cell,
+  constant: ce_constant,
   reactive_constant: r_constant,
   temp: make_temp_cell,
   dispose: cell_dispose,
   strongest: cell_strongest,
-  strongest_base_value: cell_strongest_base_value,
+  // strongest_base_value: cell_strongest_base_value,
   id: cell_id,
   name: cell_name,
   content: cell_content,
   add_content: update_cell,
   tell: update_cell
-};
+}));
 
 /**
- * Convenience object for predicates
+ * Convenience object for predicates (lazy)
  */
-export const predicates = {
+export const predicates = lazyObject(() => ({
   nothing: is_nothing,
   contradiction: is_contradiction,
   disposed: is_disposed,
   layered_contradiction: is_layered_contradiction,
   base_value: get_base_value
-};
+}));
 
 /**
- * Convenience object for values
+ * Convenience object for values (lazy)
  */
-export const values = {
+export const values = lazyObject(() => ({
   nothing: the_nothing,
   contradiction: the_contradiction,
   disposed: the_disposed
-};
+}));
 
 /**
- * Convenience object for debugging and inspection
+ * Convenience object for debugging and inspection (lazy)
  */
-export const debug = {
+export const debug = lazyObject(() => ({
   inspect_strongest: inspect_strongest,
   inspect_content: inspect_content,
   observe_cell: observe_cell
-};
+}));
 
 /**
- * Convenience object for composition and piping
+ * Convenience object for composition and piping (lazy)
  */
-export const compose = {
+export const compose = lazyObject(() => ({
   pipe: ce_pipe,
   link: link,
   bi_pipe: bi_pipe
-};
+}));
 
 /**
- * Convenience object for search and AMB
+ * Convenience object for search and AMB (lazy)
  */
-export const search = {
+export const search = lazyObject(() => ({
   amb: p_amb,
   amb_a: p_amb_a,
   binary_amb: binary_amb,
   configure_log_amb_choose: configure_log_amb_choose,
   configure_log_nogoods: configure_log_nogoods,
   configure_log_process_contradictions: configure_log_process_contradictions
-};
+}));
 
 /**
- * Convenience object for system state
+ * Convenience object for system state (lazy)
  */
-export const system = {
+export const system = lazyObject(() => ({
   // Mode configuration
   reactive_mode,
   constraint_mode,
@@ -556,19 +586,19 @@ export const system = {
   
   // Global disposal
   dispose
-};
+}));
 
 // ============================================================================
 // FUNCTIONAL INTERFACES
 // ============================================================================
 
 /**
- * Functional interface for cell operations
+ * Functional interface for cell operations (lazy)
  */
-export const cell_ops = {
+export const cell_ops = lazyObject(() => ({
   // Cell creation
   create: construct_cell,
-  constant: constant_cell,
+  constant: ce_constant,
   reactive_constant: r_constant,
   temp: make_temp_cell,
   
@@ -585,12 +615,12 @@ export const cell_ops = {
   
   // Cell update (reactive)
   update: update
-};
+}));
 
 /**
- * Functional interface for propagator operations
+ * Functional interface for propagator operations (lazy)
  */
-export const prop_ops = {
+export const prop_ops = lazyObject(() => ({
   // Primitive propagators
   add: p_add,
   subtract: p_subtract,
@@ -650,12 +680,12 @@ export const prop_ops = {
   name: propagator_name,
   dispose: propagator_dispose,
   activate: propagator_activate
-};
+}));
 
 /**
- * Functional interface for system operations
+ * Functional interface for system operations (lazy)
  */
-export const sys_ops = {
+export const sys_ops = lazyObject(() => ({
   // Mode configuration
   reactive_mode,
   constraint_mode,
@@ -681,7 +711,7 @@ export const sys_ops = {
   
   // Global disposal
   dispose
-};
+}));
 
 // ============================================================================
 // EXPORTS
@@ -691,7 +721,7 @@ export const sys_ops = {
 export {
   // Cell exports
     construct_cell as construct_cell,
-  constant_cell,
+  ce_constant,
   cell_dispose,
   cell_strongest,
   cell_strongest_base_value,
@@ -837,8 +867,8 @@ export {
   enum_num_set
 };
 
-// Default export for convenience
-export default {
+// Default export for convenience (lazy)
+export default lazyObject(() => ({
   // Shorthand functions
   cell,
   constant,
@@ -847,7 +877,7 @@ export default {
   dispose_propagator,
   add_content,
   strongest,
-  strongest_base_value,
+  // strongest_base_value,
   content,
   id,
   name,
@@ -889,4 +919,4 @@ export default {
   execute,
   update,
   r_constant
-};
+}));

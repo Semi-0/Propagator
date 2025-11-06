@@ -1,8 +1,8 @@
 import type { Cell, Propagator } from "..";
 
 import { construct_cell } from "../Cell/Cell";
-import { p_sync } from "../Propagator/BuiltInProps";
-import { constant_cell } from "../Cell/Cell";
+import { ce_constant, p_sync } from "../Propagator/BuiltInProps";
+
 import { p_map_a } from "../Propagator/BuiltInProps";
 import { p_switch } from "../Propagator/BuiltInProps";
 import { function_to_primitive_propagator, compound_propagator } from "../Propagator/Propagator";
@@ -43,7 +43,7 @@ export function object_wrapper<T extends Record<string, any>>(
     if (!c) {
       c = construct_cell<any>(`${name}:${k}`);
       // seed from object once
-      p_sync(constant_cell(obj[k], "constant"), c);
+      p_sync(ce_constant(obj[k], "constant"), c);
       fieldMap.set(k, c);
     }
     return c;
@@ -119,7 +119,7 @@ export function object_wrapper<T extends Record<string, any>>(
 
   // helper: one-shot refresh (obj -> cells) for all known fields
   wrapper.pull = () => {
-    fieldMap.forEach((cell, k) => p_sync(constant_cell(obj[k], "constant"), cell));
+    fieldMap.forEach((cell, k) => p_sync(ce_constant(obj[k], "constant"), cell));
   };
 
   // helper: make cells drive the object (cells -> obj), optionally gated

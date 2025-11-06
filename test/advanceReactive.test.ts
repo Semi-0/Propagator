@@ -31,7 +31,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync } from "../Propagator/BuiltInProps";
+import { p_composite, com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -44,7 +44,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.t
 import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock.ts";
 import {  describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
-import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor } from "../TestSuit/propagator_test.ts";
+import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor, test_propagator_only_with_merge_plan, trace_scheduler_assessor } from "../TestSuit/propagator_test.ts";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -625,6 +625,31 @@ describe("timestamp value merge tests", () => {
       [
         r_i(30, "a"),
         r_o(30, "b"),
+      ]
+    )
+
+    
+
+    test_propagator(
+      "p_constant should work with any input",
+      p_constant(1),
+      ["input", "output"],
+      [
+        r_o(1, "output")
+      ],
+      [
+        r_i(1, "input"),
+        r_o(1, "output"),
+      ]
+      ,
+      [
+        r_i(2, "input"),
+        r_o(1, "output"),
+      ]
+      ,
+      [
+        r_i(3, "input"),
+        r_o(1, "output"),
       ]
     )
 

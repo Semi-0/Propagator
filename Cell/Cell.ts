@@ -63,18 +63,29 @@ export interface Cell<A> {
   summarize: () => string;
   dispose: () => void;  // <-- new dispose method
 }
+
+
+export enum CellHooks{
+  updated = "updated",
+  content_tested = "content_tested",
+  received = "received",
+  disposing = "disposing",
+  neighbor_added = "neighbor_added",
+  neighbor_removed = "neighbor_removed"
+}
+
 // how about hooks
 
 export interface interesetedNeighbors{
-  interested_in: string[];
+  interested_in: CellHooks[];
   propagator: Propagator
 }
 
-export const is_interested_neighbor = (prop: string) => (neighbor: interesetedNeighbors) => {
+export const is_interested_neighbor = (prop: CellHooks) => (neighbor: interesetedNeighbors) => {
   return neighbor.interested_in.includes(prop)
 }
 
-export const fetch_propagators_from_neighbors = (prop: string) => (neighbors: Map<string, interesetedNeighbors>) => {
+export const fetch_propagators_from_neighbors = (prop: CellHooks) => (neighbors: Map<string, interesetedNeighbors>) => {
   return pipe(
     neighbors, 
     to_array, 
@@ -83,7 +94,7 @@ export const fetch_propagators_from_neighbors = (prop: string) => (neighbors: Ma
   )
 }
 
-export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbors>, prop: string) => {
+export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbors>, prop: CellHooks) => {
   return pipe(
     neighbors, 
     fetch_propagators_from_neighbors(prop),
@@ -92,7 +103,9 @@ export const alert_interested_propagators = (neighbors: Map<string, interesetedN
 }
 
 
-export function primitive_construct_cell<A>(initial: CellValue<A>, name: string, id: string | null = null): Cell<A> {
+
+
+export function primitive_construct_cell<A>(name: string, id: string | null = null): Cell<A> {
   const relation = make_relation(name, get_global_parent(), id);
   const neighbors: Map<string, interesetedNeighbors> = new Map();
   // build two stateful streams for content and strongest
@@ -101,37 +114,39 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
   // TODO:
   // a better way foe cell disposal is to let cell remember its dependents
   // so disposing can be isolated totally from propagation 
-  var content: CellValue<A> = initial;
-  var strongest: CellValue<A> = initial;
+  var content: CellValue<A> = the_nothing;
+  var strongest: CellValue<A> = the_nothing;
   var active = true
 
-  const handle_cell_contradiction = () => handle_contradiction(cell);
+  const handle_cell_contradiction = () => handle_contradiction(cell as Cell<A>);
 
   function set_content(new_content: CellValue<A>){
     content = new_content
-
   }
 
   function set_strongest(new_strongest: CellValue<A>){
     strongest = new_strongest
-
+    alert_interested_propagators(neighbors, CellHooks.updated)
   }
 
-  function test_content(): boolean {
+  function test_content(): void {
     const new_strongest = strongest_value(content)
 
     if (is_equal(new_strongest, strongest)){
       // do nothing
-      return false 
+      alert_interested_propagators(neighbors, CellHooks.content_tested)
+      // because new strongest doesn't change
+      // so constant cell would not be updated on first update
     }
     else if (is_contradiction(new_strongest)){
+      alert_interested_propagators(neighbors, CellHooks.content_tested)
       set_strongest(new_strongest)
       handle_cell_contradiction()
-      return true
+
     }
     else{
+      alert_interested_propagators(neighbors, CellHooks.content_tested)
       set_strongest(new_strongest)
-      return true
     }
   }
 
@@ -146,20 +161,22 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
     update: (increment: CellValue<A> = the_nothing) => {
       if (active) {
         set_content(cell_merge(content, increment))
-        return test_content()
+        test_content()
       }
-      return false
     },
 
-    addNeighbor: (propagator: Propagator, interested_in: string[]) => {
+    addNeighbor: (propagator: Propagator, interested_in: CellHooks[]) => {
+  
       neighbors.set(propagator.getRelation().get_id(), {
         interested_in: interested_in,
         propagator: propagator
       });
-      cell.update()
+      alert_interested_propagators(neighbors, CellHooks.neighbor_added)
+      alert_interested_propagators(neighbors, CellHooks.updated)
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(get_id(propagator));
+      alert_interested_propagators(neighbors, CellHooks.neighbor_removed)
     },
     summarize: () => {
       const name = relation.get_name();
@@ -190,6 +207,7 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
 
     dispose: () => {
       // Set the cell to disposed value
+      alert_interested_propagators(neighbors, CellHooks.disposing)
       content = the_disposed
       strongest = the_disposed
       active = false
@@ -204,51 +222,20 @@ export function primitive_construct_cell<A>(initial: CellValue<A>, name: string,
     }
   };
 
-  const hookable_cell = new Proxy(cell, {
-    get(target: Cell<A>, prop: string | symbol, receiver: any){
-      const original_method = target[prop as keyof Cell<A>]
+  
 
-      if (typeof original_method === 'function'){
-        return function(...args: any[]){
-         // timeing might have problems
-          const result =  (original_method as any).apply(cell, args)
-        
-          if ((prop === 'update')){
-              if (result){
-                alert_interested_propagators(neighbors, prop)
-              }
-              else{
-                // do nothing
-              }
-          }
-          else{
-            // console.log("alerting", prop)
-            alert_interested_propagators(neighbors, prop as string)
-          }      
-          
-          return result
-        }
-      }
-      else{
-        return original_method
-      }
-    }
-  })
-
-  set_global_state(PublicStateCommand.ADD_CELL, hookable_cell);
+  set_global_state(PublicStateCommand.ADD_CELL, cell);
   set_global_state(PublicStateCommand.ADD_CHILD, relation);
-  return hookable_cell;
+  return cell as Cell<A>;
 }
 
   // source layer triggers propagator to updates
 
 export function construct_cell<A>(name: string): Cell<A> {
-  return primitive_construct_cell<A>(the_nothing, name)
+  return primitive_construct_cell<A>(name)
 }
 
-export function constant_cell<A>(value: A, name: string, id: string | null = null): Cell<A> {
-  return primitive_construct_cell<A>(value, name, id)
-}
+
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   a !== null && a !== undefined 
