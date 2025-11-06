@@ -39,7 +39,7 @@ export const vector_clock_equal = (a: VectorClock, b: VectorClock) => {
     });
 }
 
-define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock), log_tracer("vector_clock_equal", vector_clock_equal))
+define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock),  vector_clock_equal)
 
 export type vector_clock_constructor = {
     source: SourceID;

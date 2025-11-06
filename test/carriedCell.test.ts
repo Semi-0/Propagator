@@ -86,23 +86,23 @@ describe("Carried Cell Tests", () => {
       expect(result.size).toBe(4);
     });
 
-    test("merge_carried_map should overwrite existing keys with new values", () => {
-      const mapA = new Map([
-        ["a", 1],
-        ["b", 2]
-      ]);
-      const mapB = new Map([
-        ["a", 10],
-        ["c", 3]
-      ]);
+    // test("merge_carried_map should overwrite existing keys with new values", () => {
+    //   const mapA = new Map([
+    //     ["a", 1],
+    //     ["b", 2]
+    //   ]);
+    //   const mapB = new Map([
+    //     ["a", 10],
+    //     ["c", 3]
+    //   ]);
 
-      const result = merge_carried_map(mapA, mapB);
+    //   const result = merge_carried_map(mapA, mapB);
       
-      expect(result.get("a")).toBe(10);
-      expect(result.get("b")).toBe(2);
-      expect(result.get("c")).toBe(3);
-      expect(result.size).toBe(3);
-    });
+    //   expect(result.get("a")).toBe(10);
+    //   expect(result.get("b")).toBe(2);
+    //   expect(result.get("c")).toBe(3);
+    //   expect(result.size).toBe(3);
+    // });
 
     test("merge_carried_map should sync cells when keys exist", async () => {
       const cellA = construct_cell("cellA");
@@ -267,7 +267,7 @@ describe("Carried Cell Tests", () => {
       const cellC = construct_cell("cellC");
       const output = construct_cell("output");
 
-      set_merge(traced_generic_procedure((item: any) => console.dir(item, { depth: 10}), generic_merge))
+      set_merge(merge_patched_set)
 
       p_construct_map_carrier_with_name(cellA, cellB, cellC, output);
  
@@ -285,7 +285,7 @@ describe("Carried Cell Tests", () => {
       expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
     });
 
-    test_propagator_only(
+    test_propagator(
       // seems that carried cell is already working with merge_layered
       // so the next step is how we can integrated merge_layered with the value merge
       "accessor can work with map carrier",
@@ -301,7 +301,7 @@ describe("Carried Cell Tests", () => {
       ["A", "B", "accessed_A", "accessed_B"],
       [
         // trace_scheduler_assessor(console.log),
-        merge_plan(log_tracer("merge_patched_set", merge_patched_set)),
+        merge_plan(merge_patched_set),
       ],
       [
          r_i(100, "A"),

@@ -44,7 +44,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.t
 import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock.ts";
 import {  describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
-import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor, test_propagator_only_with_merge_plan, trace_scheduler_assessor } from "../TestSuit/propagator_test.ts";
+import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor, test_propagator_only_with_merge_plan, trace_scheduler_assessor, merge_plan } from "../TestSuit/propagator_test.ts";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);

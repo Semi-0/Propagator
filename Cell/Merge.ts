@@ -32,7 +32,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
     }
 )
  
-export const merge_layered = make_layered_procedure("merge_layered", 2, traced_generic_procedure(console.log, generic_merge))
+export const merge_layered = make_layered_procedure("merge_layered", 2,  generic_merge)
 
 export var cell_merge = generic_merge;
 

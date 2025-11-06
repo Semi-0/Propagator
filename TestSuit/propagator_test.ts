@@ -283,6 +283,9 @@ export const test_propagator_constructor = (testor: (description: string, test: 
             if (merge_plan_assessors.length > 0) {
                 set_merge(merge_plan_assessors[0].fn());
             }
+            else {
+                set_merge(merge_patched_set) // default merge plan is merge_patched_set
+            }
 
             const assesor_inputs = assessor.filter(is_input_accessor);
             const assesor_outputs = assessor.filter(is_output_accessor);
