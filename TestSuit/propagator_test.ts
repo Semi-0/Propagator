@@ -173,6 +173,7 @@ const accessor_label = (assessor: TestAssessor, index: number): string =>
 
 const assert_output_with_env = (
     envDescription: string,
+    expectation: string,
     assessor: TestAssessor,
     index: number,
     result: boolean
@@ -184,7 +185,8 @@ const assert_output_with_env = (
         if (error instanceof Error) {
             error.message = [
                 error.message,
-                `Accessor: ${accessor_label(assessor, index)}`,
+                `Accessor: ${accessor_label(assessor, index)}` ,
+                `Expectation: ${expectation}`,
                 "Environment Snapshot:",
                 envDescription,
             ].join("\n");
@@ -206,9 +208,10 @@ export const assess = async (
     await Promise.resolve(run_scheduler());
 
     const env_description = describe_env(env);
+    const expectations = output_accessors.map((output_accessor) => output_accessor.label);
     for (const [index, output_accessor] of output_accessors.entries()) {
         const result = await examine_output(env, output_accessor);
-        assert_output_with_env(env_description, output_accessor, index, result);
+        assert_output_with_env(env_description, expectations[index] ?? "", output_accessor, index, result);
     }
 };
 

@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+// Usage: node generator "baseString" 10
+// Generates random variations of the base string by inserting or substituting symbols.
+
+const SYMBOLS = "!@#$%^&*()_+-=[]{}|;:',.<>?/`~";
+
+const baseString = process.argv[2];
+const expectedCountArg = process.argv[3];
+
+if (!baseString) {
+  console.error("Error: Please provide a base string as the first argument.");
+  console.error("Example: node generator \"hello\" 5");
+  process.exit(1);
+}
+
+const expectedCount = expectedCountArg ? Number(expectedCountArg) : 10;
+
+if (!Number.isInteger(expectedCount) || expectedCount <= 0) {
+  console.error("Error: Expected count must be a positive integer.");
+  process.exit(1);
+}
+
+const randomSymbol = () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+
+const mutateString = (input) => {
+  if (input.length === 0) {
+    return randomSymbol();
+  }
+
+  const chars = input.split("");
+  const operation = Math.random() < 0.5 ? "insert" : "substitute";
+  const index = Math.floor(Math.random() * (operation === "insert" ? chars.length + 1 : chars.length));
+
+  if (operation === "insert") {
+    chars.splice(index, 0, randomSymbol());
+  } else {
+    chars[index] = randomSymbol();
+  }
+
+  return chars.join("");
+};
+
+const generated = new Set();
+
+while (generated.size < expectedCount) {
+  generated.add(mutateString(baseString));
+}
+
+console.log(Array.from(generated).join("\n"));

@@ -1,5 +1,6 @@
 1. virtual environment for handling  propagator(can it be compose with reactivity?)
-generalize is unusable value to any unusable value
+generalize is unusable value to any unusable value done 
+
 DELAYED blueprint done
 i thought about building dynamic propagator 
 which can build and unbuild on runtime
@@ -10,7 +11,8 @@ so its reflexive inspectability but also avoid unnecessary footgun
 
 
 // next focusing on implement 
-carrying cells
+carrying cells done
+
 and higher order propagators that recursion over carrying cells
 
 recursion

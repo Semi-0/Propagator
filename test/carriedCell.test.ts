@@ -29,16 +29,19 @@ import {
   p_construct_map_carrier_with_name,
   ce_construct_cell_carrier,
   ce_construct_map_carrier_with_name,
-  c_map_accessor
+  c_map_accessor,
+  ce_struct,
+  recursive_accessor,
+  p_construct_struct_carrier
 } from "../DataTypes/CarriedCell";
-import { p_add, p_subtract, p_multiply, bi_sync } from "../Propagator/BuiltInProps";
+import { p_add, p_subtract, p_multiply, bi_sync, p_constant } from "../Propagator/BuiltInProps";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { is_map } from "../Helper/Helper";
 import { compound_tell, reactive_tell } from "../Helper/UI";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { merge_plan, r_i, r_o, run_replay_scheduler, test_propagator, test_propagator_only, test_propagator_only_with_merge_plan, trace_scheduler_assessor } from "../TestSuit/propagator_test";
-import { generic_merge, inspect_strongest } from "ppropogator";
+import { compound_propagator, generic_merge, inspect_strongest } from "ppropogator";
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
@@ -86,23 +89,7 @@ describe("Carried Cell Tests", () => {
       expect(result.size).toBe(4);
     });
 
-    // test("merge_carried_map should overwrite existing keys with new values", () => {
-    //   const mapA = new Map([
-    //     ["a", 1],
-    //     ["b", 2]
-    //   ]);
-    //   const mapB = new Map([
-    //     ["a", 10],
-    //     ["c", 3]
-    //   ]);
 
-    //   const result = merge_carried_map(mapA, mapB);
-      
-    //   expect(result.get("a")).toBe(10);
-    //   expect(result.get("b")).toBe(2);
-    //   expect(result.get("c")).toBe(3);
-    //   expect(result.size).toBe(3);
-    // });
 
     test("merge_carried_map should sync cells when keys exist", async () => {
       const cellA = construct_cell("cellA");
@@ -322,152 +309,111 @@ describe("Carried Cell Tests", () => {
     )
   });
 
-  // describe("make_propagator_closure tests", () => {
-  //   test("make_propagator_closure should create a propagator closure with environment", () => {
-  //     const propagatorConstructor = (a: Cell<number>, b: Cell<number>) => {
-  //       return p_add(a, b, construct_cell("output"));
-  //     };
 
-  //     const closure = make_propagator_closure(
-  //       ["inputA", "inputB"],
-  //       propagatorConstructor
-  //     );
+  test_propagator_only(
+    // seems that carried cell is already working with merge_layered
+    // so the next step is how we can integrated merge_layered with the value merge
+    "recursive accessor can work with map carrier",
+    (A: Cell<number>, B: Cell<number>, accessed_A: Cell<number>, accessed_B: Cell<number>) => {
+       // ahh its because generic merge access directly to the layered object!!
+       // that's why it failed to merge MAPS!!!
+       const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
+      //  const propagator =  p_construct_map_carrier_with_name(A, B, carrier)
+      p_construct_struct_carrier({
+        A: A,
+        B: B,
+      })(carrier)
+      //  inspect_strongest(carrier)
+       recursive_accessor(["A"])(carrier, accessed_A)
+       recursive_accessor(["B"])(carrier, accessed_B)
+    },
+    ["A", "B", "accessed_A", "accessed_B"],
+    [
+      // trace_scheduler_assessor(console.log),
+      merge_plan(merge_patched_set),
+    ],
+    [
+       r_i(100, "A"),
+       r_i(200, "B"),
+       r_o(100, "accessed_A"),
+       r_o(200, "accessed_B"),
+    ],
+    [
+      // merge_plan(merge_layered),
+      r_i(300, "A"),
+      r_o(300, "accessed_A"),
+    ],
+    [
+      // merge_plan(merge_layered),
+      r_i(400, "B"),
+      r_o(400, "accessed_B"),
+    ]
+  )
+});
 
-  //     expect(is_propagator_closure(closure)).toBe(true);
-  //     expect(closure.environment.size).toBe(2);
-  //     expect(closure.environment.has("inputA")).toBe(true);
-  //     expect(closure.environment.has("inputB")).toBe(true);
-  //   });
 
-  //   test("make_propagator_closure should create cells with correct names", () => {
-  //     const propagatorConstructor = (a: Cell<number>) => {
-  //       return p_multiply(a, construct_cell("constant"), construct_cell("result"));
-  //     };
+    const nested_map_test_network =
+   (
+      A: Cell<number>,
+      B: Cell<number>,
+      inner_A: Cell<number>,
+      inner_B: Cell<number>,
+      inner_inner_A: Cell<number>,
+      accessed_A: Cell<number>,
+      accessed_inner_A: Cell<number>,
+      accessed_inner_inner_A: Cell<number>,
+   ) => compound_propagator(
+      [],
+      [accessed_A, accessed_inner_A, accessed_inner_inner_A],
+      () => {
 
-  //     const closure = make_propagator_closure(
-  //       ["input"],
-  //       propagatorConstructor
-  //     );
+        const most_inner = ce_struct({
+          A: inner_inner_A,
+        })
 
-  //     const inputCell = closure.environment.get("input");
-  //     expect(inputCell).toBeDefined();
-  //     expect(inputCell.id).toBe("input");
-  //   });
-  // });
+        const inner = ce_struct({
+          A: inner_A,
+          B: inner_B,
+          inner: most_inner,
+        })
 
-  // describe("is_propagator_closure tests", () => {
-  //   test("is_propagator_closure should return true for valid closures", () => {
-  //     const closure: PropagatorClosure = {
-  //       environment: new Map(),
-  //       propagator: p_add(construct_cell("a"), construct_cell("b"), construct_cell("c"))
-  //     };
+        const outer = ce_struct(
+          {
+            A: A,
+            B: B,
+            inner: inner,
+          }
+        )
 
-  //     expect(is_propagator_closure(closure)).toBe(true);
-  //   });
+        c_map_accessor("A")(outer, accessed_A)
+        recursive_accessor(["inner", "A"])(outer, accessed_inner_A)
+        recursive_accessor(["inner", "inner", "A"])(outer, accessed_inner_inner_A)
+      }, 
+      "nested_map_test_network"
+  )
 
-  //   test("is_propagator_closure should return false for invalid objects", () => {
-  //     expect(is_propagator_closure({})).toBe(false);
-  //     expect(is_propagator_closure({ environment: new Map() })).toBe(false);
-  //     expect(is_propagator_closure({ propagator: p_add(construct_cell("a"), construct_cell("b"), construct_cell("c")) })).toBe(false);
-  //     expect(is_propagator_closure(null)).toBe(false);
-  //     expect(is_propagator_closure(undefined)).toBe(false);
-  //     expect(is_propagator_closure("string")).toBe(false);
-  //   });
-  // });
+  test_propagator(
+    "nested map test network",
+    nested_map_test_network,
+    ["A", "B", "inner_A", "inner_B", "inner_inner_A", "accessed_A", "accessed_inner_A", "accessed_inner_inner_A"],
+    [
+      merge_plan(merge_patched_set),
+    ],
+    [
+      r_i(100, "A"),
+      r_i(200, "B"),
+      r_o(100, "accessed_A"),
+    ],
+    [
+      r_i(300, "inner_A"),
+      r_o(300, "accessed_inner_A"),
+    ],
+    [
+      r_i(500, "inner_inner_A"),
+      r_o(500, "accessed_inner_inner_A"),
+    ]
+  )
 
-  // describe("propagator closure merge tests", () => {
-  //   test("should merge propagator closures with same propagator ID", async () => {
-  //     const cellA1 = construct_cell("a1");
-  //     const cellB1 = construct_cell("b1");
-  //     const output1 = construct_cell("output1");
-      
-  //     const cellA2 = construct_cell("a2");
-  //     const cellB2 = construct_cell("b2");
-  //     const output2 = construct_cell("output2");
-
-  //     const propagator1 = p_add(cellA1, cellB1, output1);
-  //     const propagator2 = p_add(cellA2, cellB2, output2);
-
-  //     const closure1: PropagatorClosure = {
-  //       environment: new Map([
-  //         ["a", cellA1],
-  //         ["b", cellB1]
-  //       ]),
-  //       propagator: propagator1
-  //     };
-
-  //     const closure2: PropagatorClosure = {
-  //       environment: new Map([
-  //         ["a", cellA2],
-  //         ["b", cellB2]
-  //       ]),
-  //       propagator: propagator2
-  //     };
-
-  //     // Note: This test demonstrates the merge behavior
-  //     // In practice, you'd use the generic merge handler
-  //     expect(is_propagator_closure(closure1)).toBe(true);
-  //     expect(is_propagator_closure(closure2)).toBe(true);
-  //   });
-  // });
-
-  // describe("apply_propagator tests", () => {
-  //   test("apply_propagator should apply a propagator closure with environment", async () => {
-  //     const cellA = construct_cell("a");
-  //     const cellB = construct_cell("b");
-  //     const output = construct_cell("output");
-
-  //     const propagator = p_add(cellA, cellB, output);
-
-  //     const closure: PropagatorClosure = {
-  //       environment: new Map([
-  //         ["x", cellA],
-  //         ["y", cellB]
-  //       ]),
-  //       propagator: propagator
-  //     };
-
-  //     const additionalEnv = new Map([
-  //       ["z", construct_cell("z")]
-  //     ]);
-
-  //     const result = apply_propagator(closure, additionalEnv);
-
-  //     expect(result.environment.size).toBe(3);
-  //     expect(result.environment.has("x")).toBe(true);
-  //     expect(result.environment.has("y")).toBe(true);
-  //     expect(result.environment.has("z")).toBe(true);
-  //     expect(result.propagator).toBe(propagator);
-  //   });
-
-  //   test("apply_propagator should merge environments correctly", async () => {
-  //     const cellA = construct_cell("a");
-  //     const cellB = construct_cell("b");
-  //     const cellC = construct_cell("c");
-  //     const output = construct_cell("output");
-
-  //     const propagator = p_add(cellA, cellB, output);
-
-  //     const closure: PropagatorClosure = {
-  //       environment: new Map([
-  //         ["a", cellA],
-  //         ["b", cellB]
-  //       ]),
-  //       propagator: propagator
-  //     };
-
-  //     const additionalEnv = new Map([
-  //       ["b", cellC], // This should sync with existing "b"
-  //       ["c", cellC]
-  //     ]);
-
-  //     const result = apply_propagator(closure, additionalEnv);
-
-  //     expect(result.environment.size).toBe(3);
-  //     expect(result.environment.get("b")).toBe(cellC);
-  //     expect(result.environment.get("c")).toBe(cellC);
-  //   });
-  // });
 
   describe("Integration tests with reactive behavior", () => {
     test("carried map with reactive cells should update correctly", async () => {
@@ -533,6 +479,6 @@ describe("Carried Cell Tests", () => {
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(a)).toBe(150);
     });
-  });
-});
 
+  
+  })

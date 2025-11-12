@@ -1,4 +1,4 @@
-import { cell_id, cell_name, cell_strongest, construct_cell, is_cell, update_cell } from "@/cell/Cell";
+import { cell_id, cell_name, cell_strongest, construct_cell, is_cell, same_cell, update_cell } from "@/cell/Cell";
 import { is_nothing } from "@/cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
@@ -14,7 +14,6 @@ import { make_ce_arithmetical } from "../Propagator/Sugar";
 
 
 export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
-    console.log("merge_carried_map")
     for (const [key, value] of increment) {
         if (content.has(key)) {
             const elem = content.get(key)
@@ -67,8 +66,7 @@ export const function_to_cell_carrier_constructor = (f: (...args: Cell<any>[]) =
     const inputs = cells.slice(0, -1)
     const output = cells[cells.length - 1]
 
-    // does p constant needs to seed?
-    // how could accessor recognized the input instantly?
+
     return p_constant(f(...inputs))(construct_cell("Nothing"), output)
 }
 
@@ -86,9 +84,46 @@ export const make_map_carrier = (identificator: (cell: Cell<any>) => string) => 
     return cell_map
 }
 
+
+// easy constructor create map carrier from struct 
+
 export const p_construct_cell_carrier: (identificator: (cell: Cell<any>) => string) => (...cells: Cell<any>[]) => Propagator = compose(make_map_carrier, function_to_cell_carrier_constructor)
 
+
+// can we generialize to easily create nested map carrier?
+/**
+ * Creates a propagator that constructs a cell carrier from a struct.
+ * The struct maps string keys to cells, and this creates a carrier that
+ * maintains those key-cell relationships.
+ */
+export const p_construct_struct_carrier = (struct: Record<string, Cell<any>>) => (output: Cell<Map<string, Cell<any>>>) => {
+    // Get all key-cell pairs from the struct
+    const structEntries = Object.entries(struct)
+
+    // Extract just the cells (values) from the entries
+    const cells = structEntries.map(([key, cell]) => cell)
+
+    // Create an identificator function that finds the key for each cell
+    const findKeyForCell = (cell: Cell<any>): string => {
+        const entry = structEntries.find(([key, structCell]) =>
+            same_cell(cell, structCell)
+        )
+        return entry?.[0] || '' // Return the key, or empty string if not found
+    }
+
+    // Create and return the cell carrier propagator
+    return p_construct_cell_carrier(findKeyForCell)(...cells, output)
+}
+
+
 export const ce_construct_cell_carrier = (identificator: (cell: Cell<any>) => string) => make_ce_arithmetical(p_construct_cell_carrier(identificator), "cell_carrier")
+
+export const ce_struct = (struct: Record<string, Cell<any>>) => {
+    const output = construct_cell("struct") as Cell<Map<string, Cell<any>>>
+    p_construct_struct_carrier(struct)(output)
+    return output
+}
+
 
 export const p_construct_map_carrier_with_name: (...cells: Cell<any>[]) => Propagator = p_construct_cell_carrier(cell_name)
 
@@ -103,6 +138,7 @@ export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
 }
 
 
+// can we generialize this to access nested map?
 // static accessor i havn't figure out how to make dynamic one
 // if this becomes a lexcical environment 
 // and accessor was sent to multiple environment to look up simutaneously
@@ -114,6 +150,27 @@ export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>
     compound_propagator([container], [accessor], () => {
         p_constant(make_map_with_key([[key, accessor]]))(construct_cell("Nothing"), container)
     }, "c_map_accessor")
+
+
+    // because map_accessor is static so we don't need to build it in compound propagator level
+// a gotcha for this would be if we make the constructor via compound propagagator
+// and it treats inner cell as input
+// then the whole network would not be built untill all inner cells have value
+export const recursive_accessor = (keys: string[]) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
+    compound_propagator([container], [accessor], () => {
+        if (keys.length === 0) {
+
+        }
+        else if (keys.length === 1) {
+            c_map_accessor(keys[0])(container, accessor)
+        }
+        else {
+            const middle = construct_cell("middle") as Cell<Map<string, any>>
+            c_map_accessor(keys[0])(container, middle)
+            recursive_accessor(keys.slice(1))(middle, accessor)
+        }
+    }, "recursive_accessor")
+    
 
 
 export const ce_map_accessor = (key: string) => (container: Cell<Map<string, any>>) =>{

@@ -331,6 +331,11 @@ export function summarize_cells(cells: Cell<any>[], indent = "    "): string {
     .join("\n");
 }
 
+
+export const same_cell = (cell1: Cell<any>, cell2: Cell<any>) => {
+  return cell1.getRelation().get_id() === cell2.getRelation().get_id()
+}
+
 define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any>) => {
   return cell.summarize();
 });
