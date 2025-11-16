@@ -177,19 +177,10 @@ export const p_list_map = (mapper: (cell: Cell<any>) => Cell<any>, list: Cell<Ma
     [list],
     [output],
     () => {
-
-        const last = construct_cell("last")
-
-        p_cons(mapper(last), construct_cell("end"), output)
-
-        const not_last = construct_cell("not_last") as Cell<Map<string, any>>
-
-        c_if_b(ce_is_atom(list), list, last, not_last)
-
         const next = construct_cell("next") as Cell<Map<string, any>>
 
-        p_list_map(mapper, ce_cdr(not_last), next)
-        p_cons(mapper(ce_car(not_last)), next, output)
+        p_list_map(mapper, ce_cdr(list), next)
+        p_cons(mapper(ce_car(list)), next, output)
          
     },
     "p_list_map"
@@ -199,9 +190,7 @@ export const p_list_filter = (predicate: (cell: Cell<any>) => Cell<boolean>, lis
     [list],
     [output],
     () => {
-
         const internal = (cell: Cell<any>) => ce_switch(predicate(cell), cell)
-
         p_list_map(internal, list, output) 
         
     },
@@ -213,25 +202,9 @@ export const p_list_zip = (list_A: Cell<Map<string, any>>, list_B: Cell<Map<stri
     [list_A, list_B],
     [output],
     () => {
-        const A_is_last = ce_is_atom(list_A)
-        const B_is_last = ce_is_atom(list_B)
-
-        // const is_last = ce_and(A_is_last, B_is_last) 
-
-        const not_last_element_A = construct_cell("not_last_element_A") as Cell<Map<string, any>>
-        const not_last_element_B = construct_cell("not_last_element_B") as Cell<Map<string, any>>
-
-        const last_element_A = construct_cell("last_element_A") as Cell<Map<string, any>>
-        const last_element_B = construct_cell("last_element_B") as Cell<Map<string, any>>
-
-        c_if_b(A_is_last, list_A, last_element_A, not_last_element_A)
-        c_if_b(B_is_last, list_B, last_element_B, not_last_element_B)
-
-        // if not last
-        // current is also alwaye executed regardless the value of listA and listB
         const current = ce_cons(
-            ce_car(not_last_element_A),
-            ce_car(not_last_element_B)
+            ce_car(list_A),
+            ce_car(list_B)
         )
 
         const next = construct_cell("next") as Cell<Map<string, any>>
