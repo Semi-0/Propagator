@@ -2,46 +2,31 @@ import { cell_id, cell_name, cell_strongest, construct_cell, is_cell, same_cell,
 import { is_nothing } from "@/cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
-import { compound_propagator,   primitive_propagator,  propagator_id } from "../Propagator/Propagator"
+import { compound_propagator,   function_to_primitive_propagator,   primitive_propagator,  propagator_id } from "../Propagator/Propagator"
 import { generic_merge } from "@/cell/Merge";
-import { bi_sync, p_constant } from "../Propagator/BuiltInProps";
+import { bi_sync, c_if_b, p_constant } from "../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import { p_switch } from "../Propagator/BuiltInProps";
 import type { Propagator } from "../Propagator/Propagator";
 import { is_map } from "../Helper/Helper";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { make_ce_arithmetical } from "../Propagator/Sugar";
+import { p_map_a } from "ppropogator";
+import { no_compute } from "../Helper/noCompute";
+import { ce_constant } from "ppropogator";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { ce_switch } from "ppropogator";
+import { p_and } from "ppropogator";
+import { ce_and } from "ppropogator";
 
 
 export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
     for (const [key, value] of increment) {
-        if (content.has(key)) {
-            const elem = content.get(key)
-            if(is_cell(elem) && is_cell(value)) {
-                bi_sync(elem, value)
-                // const elemStrongest = cell_strongest(elem)
-                // const valueStrongest = cell_strongest(value)
-
-                // if (!is_nothing(elemStrongest) && is_nothing(valueStrongest)) {
-                //     update_cell(value, elemStrongest)
-                // }
-                // else if (is_nothing(elemStrongest) && !is_nothing(valueStrongest)) {
-                //     update_cell(elem, valueStrongest)
-                // }
-            }
-            // else if(is_cell(value) && !is_cell(elem)) {
-            //     update_cell(elem, value)
-            // }
-            // else if(!is_cell(elem) && is_cell(value)) {
-            //     update_cell(value, elem)
-            //     content.set(key, value)
-            // }
-            // else{
-            //     content.set(key, value)
-            // }
+        const elem = content.get(key)
+        if(is_cell(elem) && is_cell(value)) {
+            bi_sync(elem, value)
         }
         else{
-            console.log("setted")
             content.set(key, value)
         }
     }
@@ -115,6 +100,7 @@ export const p_construct_struct_carrier = (struct: Record<string, Cell<any>>) =>
     return p_construct_cell_carrier(findKeyForCell)(...cells, output)
 }
 
+export const p_struct = p_construct_struct_carrier
 
 export const ce_construct_cell_carrier = (identificator: (cell: Cell<any>) => string) => make_ce_arithmetical(p_construct_cell_carrier(identificator), "cell_carrier")
 
@@ -124,12 +110,152 @@ export const ce_struct = (struct: Record<string, Cell<any>>) => {
     return output
 }
 
+//should p cons delay build until head tail have value?
+export const p_cons = (head: Cell<any>, tail: Cell<any>, output: Cell<Map<string, any>>) => compound_propagator(
+    [],
+    [output],
+    () => {
+        p_struct(
+            {
+                "head": head,
+                "tail": tail
+            }
+        )(output)
+    },
+    "p_cons"
+)
 
-export const p_construct_map_carrier_with_name: (...cells: Cell<any>[]) => Propagator = p_construct_cell_carrier(cell_name)
 
-export const ce_construct_map_carrier_with_name = ce_construct_cell_carrier(cell_name)
+export const p_car = (pair: Cell<Map<string, any>>, accessor: Cell<any>) => compound_propagator(
+    [pair],
+    [accessor],
+    () => {
+       c_dict_accessor("head")(pair, accessor) 
+    },
+    "p_car"
+)
 
-export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
+export const p_cdr = (pair: Cell<Map<string, any>>, accessor: Cell<any>) => compound_propagator(
+    [pair],
+    [accessor],
+    () => {
+        c_dict_accessor("tail")(pair, accessor)
+    },
+    "p_cdr"
+)
+
+
+export const ce_cons = make_ce_arithmetical(p_cons, "cons") as  (head: Cell<any>, tail:Cell<any>) => Cell<Map<string, any>> 
+export const ce_car = make_ce_arithmetical(p_car, "car") as (list: Cell<Map<string, any>>) => Cell<any>
+export const ce_cdr = make_ce_arithmetical(p_cdr, "cdr") as (list: Cell<Map<string, any>>) => Cell<Map<string, any>>
+
+
+export const p_list = (list: Cell<any>[], output: Cell<Map<string, any>>) => compound_propagator(
+    [],
+    [output],
+    () => {
+       if (list.length === 1) {
+          p_cons(list[0], construct_cell("end"), output)
+        }
+        else{
+            const next = construct_cell("next") as Cell<Map<string, any>>
+            
+            p_list(list.slice(1), next)
+            p_cons(list[0], next, output)
+        }
+    },
+    "p_list"
+)
+
+export const is_atom = (x: any) => {return !is_map(x)}
+
+export const p_is_atom = function_to_primitive_propagator("p_is_atom", log_tracer("is_atom", is_atom) ) as (...cells: Cell<any>[]) => Propagator
+
+export const ce_is_atom = make_ce_arithmetical(p_is_atom) as (...cell: Cell<any>[]) =>  Cell<boolean>
+
+export const p_list_map = (mapper: (cell: Cell<any>) => Cell<any>, list: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => compound_propagator(
+    [list],
+    [output],
+    () => {
+
+        const last = construct_cell("last")
+
+        p_cons(mapper(last), construct_cell("end"), output)
+
+        const not_last = construct_cell("not_last") as Cell<Map<string, any>>
+
+        c_if_b(ce_is_atom(list), list, last, not_last)
+
+        const next = construct_cell("next") as Cell<Map<string, any>>
+
+        p_list_map(mapper, ce_cdr(not_last), next)
+        p_cons(mapper(ce_car(not_last)), next, output)
+         
+    },
+    "p_list_map"
+)
+
+export const p_list_filter = (predicate: (cell: Cell<any>) => Cell<boolean>, list: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => compound_propagator(
+    [list],
+    [output],
+    () => {
+
+        const internal = (cell: Cell<any>) => ce_switch(predicate(cell), cell)
+
+        p_list_map(internal, list, output) 
+        
+    },
+    "p_list_filter"
+)
+
+
+export const p_list_zip = (list_A: Cell<Map<string, any>>, list_B: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => compound_propagator(
+    [list_A, list_B],
+    [output],
+    () => {
+        const A_is_last = ce_is_atom(list_A)
+        const B_is_last = ce_is_atom(list_B)
+
+        // const is_last = ce_and(A_is_last, B_is_last) 
+
+        const not_last_element_A = construct_cell("not_last_element_A") as Cell<Map<string, any>>
+        const not_last_element_B = construct_cell("not_last_element_B") as Cell<Map<string, any>>
+
+        const last_element_A = construct_cell("last_element_A") as Cell<Map<string, any>>
+        const last_element_B = construct_cell("last_element_B") as Cell<Map<string, any>>
+
+        c_if_b(A_is_last, list_A, last_element_A, not_last_element_A)
+        c_if_b(B_is_last, list_B, last_element_B, not_last_element_B)
+
+        // if not last
+        // current is also alwaye executed regardless the value of listA and listB
+        const current = ce_cons(
+            ce_car(not_last_element_A),
+            ce_car(not_last_element_B)
+        )
+
+        const next = construct_cell("next") as Cell<Map<string, any>>
+
+        p_list_zip(
+            ce_cdr(list_A) as Cell<Map<string, any>>, 
+            ce_cdr(list_B) as Cell<Map<string, any>>, 
+            next
+        )
+
+        p_cons(current, next, output)
+
+        // if last 
+        // we dont need to consider that because if last is none it already be handled by compound propagator
+    },
+    "p_list_zip"
+)
+
+
+export const p_construct_dict_carrier_with_name: (...cells: Cell<any>[]) => Propagator = p_construct_cell_carrier(cell_name)
+
+export const ce_construct_dict_carrier_with_name = ce_construct_cell_carrier(cell_name)
+
+export const make_dict_with_key = (entities: [[string, Cell<any>]]) => {
     const cell_map = new Map()
     entities.forEach((entity) => {
         cell_map.set(entity[0], entity[1])
@@ -146,9 +272,9 @@ export const make_map_with_key = (entities: [[string, Cell<any>]]) => {
 // maybe its better that the accessor should have a contextual information of the environment?
 // we can use ce_constant
 // i want to know whether this works with constant
-export const c_map_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
+export const c_dict_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
     compound_propagator([container], [accessor], () => {
-        p_constant(make_map_with_key([[key, accessor]]))(construct_cell("Nothing"), container)
+        p_constant(make_dict_with_key([[key, accessor]]))(construct_cell("Nothing"), container)
     }, "c_map_accessor")
 
 
@@ -162,24 +288,26 @@ export const recursive_accessor = (keys: string[]) => (container: Cell<Map<strin
 
         }
         else if (keys.length === 1) {
-            c_map_accessor(keys[0])(container, accessor)
+            c_dict_accessor(keys[0])(container, accessor)
         }
         else {
             const middle = construct_cell("middle") as Cell<Map<string, any>>
-            c_map_accessor(keys[0])(container, middle)
+            c_dict_accessor(keys[0])(container, middle)
             recursive_accessor(keys.slice(1))(middle, accessor)
         }
     }, "recursive_accessor")
     
 
 
-export const ce_map_accessor = (key: string) => (container: Cell<Map<string, any>>) =>{
+export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any>>) => Cell<any> = (key: string) => (container: Cell<Map<string, any>>) =>{
     const accessor = construct_cell("map_accessor_" + key)
 
-    c_map_accessor(key)(container, accessor) 
+    c_dict_accessor(key)(container, accessor) 
     return accessor 
 
 }
+
+ 
 
 
 // maybe it should be a lookup cell that supports dynamic key?
