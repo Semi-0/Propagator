@@ -1,6 +1,6 @@
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { Cell } from "../Cell/Cell";
-import { cell_id, cell_level } from "../Cell/Cell";
+import { cell_id, cell_level, cell_neightbor_set } from "../Cell/Cell";
 import type { Propagator } from "../Propagator/Propagator";
 import { propagator_id, propagator_level } from "../Propagator/Propagator";
 import { cell_snapshot, propagator_snapshot } from "./PublicState";
@@ -31,13 +31,18 @@ export const traverse_downstream_graph = (
   const visited_props = new Map<string, Propagator>();
 
   const trace_cell_recursive = (cell: Cell<any>) => {
-    cell.getNeighbors().forEach((prop, pid) => {
+    const neighbor_set = cell_neightbor_set(cell);
+
+
+    neighbor_set.forEach((prop) => {
+      const pid = propagator_id(prop);
       if (!visited_props.has(pid)) {
         visited_props.set(pid, prop);
         pf(prop);
       }
       // process inputs
-      prop.getInputs().forEach(cid => {
+      prop.getInputs().forEach(cell => {
+        const cid = cell_id(cell);
         const c = find_cell_by_id(cid);
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);
@@ -45,7 +50,8 @@ export const traverse_downstream_graph = (
         }
       });
       // process outputs
-      prop.getOutputs().forEach(cid => {
+      prop.getOutputs().forEach(cell => {
+        const cid = cell_id(cell);
         const c = find_cell_by_id(cid);
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);

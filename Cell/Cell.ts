@@ -55,7 +55,7 @@ export interface Cell<A> {
   getRelation: () => Primitive_Relation;
   getContent: () => CellValue<A>;
   getStrongest: () => CellValue<A>
-  getNeighbors: () => Map<string, interesetedNeighbors>;
+  getNeighbors: () => Map<string, interesetedNeighbor>;
   update: (increment: CellValue<A>) => boolean;
   testContent: () => boolean;
   addNeighbor: (propagator: Propagator, interested_in: string[]) => void;
@@ -76,25 +76,25 @@ export enum CellHooks{
 
 // how about hooks
 
-export interface interesetedNeighbors{
+export interface interesetedNeighbor{
   interested_in: CellHooks[];
   propagator: Propagator
 }
 
-export const is_interested_neighbor = (prop: CellHooks) => (neighbor: interesetedNeighbors) => {
+export const is_interested_neighbor = (prop: CellHooks) => (neighbor: interesetedNeighbor) => {
   return neighbor.interested_in.includes(prop)
 }
 
-export const fetch_propagators_from_neighbors = (prop: CellHooks) => (neighbors: Map<string, interesetedNeighbors>) => {
+export const fetch_propagators_from_neighbors = (prop: CellHooks) => (neighbors: Map<string, interesetedNeighbor>) => {
   return pipe(
     neighbors, 
     to_array, 
     curried_filter(is_interested_neighbor(prop)),
-    curried_map((n: interesetedNeighbors) => n.propagator)
+    curried_map((n: interesetedNeighbor) => n.propagator)
   )
 }
 
-export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbors>, prop: CellHooks) => {
+export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbor>, prop: CellHooks) => {
   return pipe(
     neighbors, 
     fetch_propagators_from_neighbors(prop),
@@ -107,7 +107,7 @@ export const alert_interested_propagators = (neighbors: Map<string, interesetedN
 
 export function primitive_construct_cell<A>(name: string, id: string | null = null): Cell<A> {
   const relation = make_relation(name, get_global_parent(), id);
-  const neighbors: Map<string, interesetedNeighbors> = new Map();
+  const neighbors: Map<string, interesetedNeighbor> = new Map();
   // build two stateful streams for content and strongest
   // can be more performative to fine grain observe method args
   // but how?
@@ -183,7 +183,7 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
       const strongVal = strongest;
       const contVal = content;
 
-      const summarizeNeighbor = ([id, info]: [string, interesetedNeighbors], index: number) => {
+      const summarizeNeighbor = ([id, info]: [string, interesetedNeighbor], index: number) => {
         const interested = info?.interested_in ?? [];
         const propagatorName = info?.propagator?.getName ? info.propagator.getName() : "<unknown propagator>";
         const interestedDisplay = interested.length ? ` [${interested.join(", ")}]` : "";
@@ -255,6 +255,14 @@ export function make_temp_cell(){
     let name = "#temp_cell_" + get_new_reference_count();
     return construct_cell<any>(name);
 }
+
+
+export const cell_neightbor_set = (cell: Cell<any>) => {
+   
+  return new Set(cell.getNeighbors().values().map(n => n.propagator));
+}
+
+
 
 export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: string[]){
   cell.addNeighbor(propagator, interested_in);

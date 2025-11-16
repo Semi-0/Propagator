@@ -192,7 +192,6 @@ export const p_list_filter = (predicate: (cell: Cell<any>) => Cell<boolean>, lis
     () => {
         const internal = (cell: Cell<any>) => ce_switch(predicate(cell), cell)
         p_list_map(internal, list, output) 
-        
     },
     "p_list_filter"
 )

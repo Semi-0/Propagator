@@ -1,7 +1,7 @@
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure"
 import type { Propagator } from "../../Propagator/Propagator"
 import { match_args } from "generic-handler/Predicates"
-import { cell_id, cell_name, is_cell, type Cell, type interesetedNeighbors } from "../../Cell/Cell"
+import { cell_id, cell_name, is_cell, type Cell, type interesetedNeighbor } from "../../Cell/Cell"
 import { is_propagator, propagator_name } from "../../Propagator/Propagator"
 import { describe } from "../../Helper/UI"
 
