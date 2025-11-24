@@ -40,7 +40,7 @@ export function set_merge(merge_func: (a: any, b: any) => any){
    cell_merge = merge_func;
 }
 
-export const set_trace_merge = set_merge(log_tracer("merge", cell_merge))
+export const set_trace_merge = () => set_merge(log_tracer("merge", cell_merge))
 
 export const define_handler = define_generic_procedure_handler;
 

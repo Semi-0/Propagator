@@ -24,8 +24,7 @@ import {
   bi_switcher,
   function_to_cell_carrier_constructor,
   make_map_carrier,
-  make_propagator_closure,
-  type PropagatorClosure,
+
   p_construct_dict_carrier_with_name,
   ce_construct_cell_carrier,
   ce_construct_dict_carrier_with_name,

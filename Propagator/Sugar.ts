@@ -11,7 +11,7 @@ import { get_new_reference_count } from "../Helper/Helper";
 export function make_ce_arithmetical(propagator_constructor: (...args: any[]) => Propagator, name: string | undefined = undefined){
     return (...inputs: Cell<any>[]) => {
         if (name != undefined){
-            let result =  construct_cell(name + "_" +  String(get_new_reference_count()))
+            let result =  construct_cell(name) 
             propagator_constructor(...[...inputs, result]);
             return result;
         }

@@ -120,7 +120,7 @@ export const p_and = primitive_propagator(and, "and")
 export const p_or = primitive_propagator(or, "or")
 
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
-
+    // a big problem is the patched set is not support for join in new value with partial layer
 
     // const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
     //     return inject
@@ -130,7 +130,7 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     }, "constant")
 }
 
-export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), name)(construct_cell(name + "_input"))
+export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), "constant_" + name )(construct_cell(name + "_input"))
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [a, b], () => {
     //TODO: this is cheating but this works for now 
@@ -584,6 +584,8 @@ export const p_increment_pulse = (pulse: Cell<any>, output: Cell<number>, increm
     }, "increment")
 }
 
+
+// dispatch sequencially
 export const p_dispatch = (i: Cell<string>, conds: ((input: Cell<string>) => void)[]) => {
     for (const cond of conds) {
       cond(i)
@@ -685,7 +687,19 @@ export const p_array_index = function_to_primitive_propagator("array_index", (in
 
 export const ce_array_index = make_ce_arithmetical(p_array_index, "array_index")
 
-
+export const p_set_array = (c: Cell<any>) => (index: Cell<number>, output: Cell<any[]>) =>  function_to_primitive_propagator("set_array", (index: number) => {
+    const arr = cell_strongest_base_value(output)
+    console.log("set array called", to_string(arr), index)
+    console.log("c", to_string(c))
+    if (is_array(arr)) {
+        arr[index] = c
+        // console.log("called", to_string(arr))
+        return arr
+    }
+    else {
+        return [c]
+    }
+})(index, output)
 
 
 export const c_merge_queue = (until: number) => (a: Cell<any>, b: Cell<any>, out: Cell<any>) =>  compound_propagator([a, b], [out], () => {

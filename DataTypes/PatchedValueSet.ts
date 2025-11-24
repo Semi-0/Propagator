@@ -140,6 +140,7 @@ export const patch_remove : (existed: LayeredObject<any>) => ContentPatch = (exi
 }
 
 /**
+ * internal method dont call this into global scope!!!!
  * Merges patches from different layers into accumulated result
  *
  * @param {BetterSet<ContentPatch>} a - Accumulated patches
@@ -152,7 +153,7 @@ export const patch_remove : (existed: LayeredObject<any>) => ContentPatch = (exi
  *
  * This ensures only meaningful layer-specific patches are combined.
  */
-export const merge_patch_set = (a: BetterSet<ContentPatch>,  layer_pair: [Layer<any>, BetterSet<ContentPatch>]) => {
+export const internal_merge_patch_set = (a: BetterSet<ContentPatch>,  layer_pair: [Layer<any>, BetterSet<ContentPatch>]) => {
     const value = layer_pair_value(layer_pair);
     const layer = layer_pair_layer(layer_pair);
 
@@ -198,7 +199,7 @@ export const scan_for_patches: (
     "scan_for_patches",
     2,
     // @ts-ignore
-    merge_patch_set,
+    internal_merge_patch_set,
     construct_better_set([])
 );
 

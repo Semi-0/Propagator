@@ -261,5 +261,5 @@ export {
     type_of_content_patch,
     content_patch_elt,
     is_content_patch,
-    merge_patch_set
+    internal_merge_patch_set as merge_patch_set
 } from "./PatchedValueSet";

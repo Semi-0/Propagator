@@ -60,7 +60,7 @@ const default_interested_hooks = (): CellHooks[] => ["updated" as CellHooks];
 export function construct_propagator(
                                  inputs: Cell<any>[], 
                                  outputs: Cell<any>[], 
-                                 activate: () => void,
+                                 activate: (self: Propagator) => void,
                                  name: string,
                                  id: string | null = null,
                                  interested_in: CellHooks[] = [CellHooks.updated]
@@ -93,7 +93,7 @@ export function construct_propagator(
         propagator.dispose();
       }
       else {
-        activate();
+        activate(propagator);
       }
     },
     dispose: () => {
@@ -177,14 +177,15 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
     const propagator: Propagator = construct_propagator(
         inputs,
         outputs,
-        () => {
+        (self) => {
+            // console.log("compound_propagator activate called for:", name);
             // delay blue print gives one gotcha
             // if bi-directional propagation
             // we need to at least init all input and output once
             // other way? feedback or perhaps just give up the idea of tail recursion using propagator
            const should_build = !(built || any_unusable_values(inputs.map(cell_strongest)))
            if (should_build) {
-                parameterize_parent(propagator.getRelation())(() => {
+                parameterize_parent(self.getRelation())(() => {
                     to_build();
                 });
                 built = true;
