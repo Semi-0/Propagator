@@ -229,15 +229,15 @@ export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) =
         }
         last_vector_clock = vector_clock;
      }
+     return false
 }
 
 export const is_reactive_values = register_predicate("is_reactive_values", (arr: any[]) => {
     if (is_array(arr)) {
-        return arr.every(log_tracer("has_vector_clock_layer", has_vector_clock_layer));
+        return arr.every(has_vector_clock_layer);
     }
     else{
-        console.log("is_reactive_values")
-        console.log(to_string(arr))
+
         return false;
     }
 });
@@ -245,7 +245,7 @@ export const is_reactive_values = register_predicate("is_reactive_values", (arr:
 define_generic_procedure_handler(any_unusable_values, match_args(is_reactive_values), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
-    const result = log_tracer("any_victor_clock_out_of_sync", any_victor_clock_out_of_sync)(as) || as.some(compose(get_base_value, is_unusable_value))
+    const result = any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, is_unusable_value))
     return result;
 })
 
