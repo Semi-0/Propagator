@@ -114,7 +114,6 @@ export function is_premise_out(name: string): boolean{
 }
 
 export function is_premises_in(names: BetterSet<string>): boolean{
-    console.log(names)
     return every(names, is_premise_in);
 } 
 
