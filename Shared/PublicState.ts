@@ -12,6 +12,7 @@ import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { set_handle_contradiction } from '@/cell/Cell';
 import { subscribe } from './Reactivity/MiniReactor/MrCombinators';
+import { clean_dependence_cells } from '../DataTypes/Reality';
 //@ts-ignore
 var parent: Stepper<Primitive_Relation> = construct_state(make_relation("root", null));
 // Todo: make this read only
@@ -171,7 +172,7 @@ subscribe((msg: PublicStateMessage) => {
             clean_hypothetical_store()
             Current_Scheduler.clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
-            
+            clean_dependence_cells()
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:

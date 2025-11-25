@@ -69,16 +69,23 @@ export function clear_premises(){
 }
 
 export function register_premise(name: string, root: any): PremiseMetaData{
-    const premise = new PremiseMetaData(name);
-    premise.add_root(root);
+    // we need to ensure premises is unique 
+    if (has_name(name)){
+        return get_metadata(name);
+    }
+    else{
+        const premise = new PremiseMetaData(name);
+        premise.add_root(root);
 
-    set_premises_list((map) => {
-        map.set(name, premise);
-        return map;
-    });
+        set_premises_list((map) => {
+            map.set(name, premise);
+            return map;
+        });
 
-    return premise;
+        return premise;
+    }
 }
+
 
 export function is_premises(name: string): boolean{
     // THIS IS QUITE SLOW 
@@ -107,6 +114,7 @@ export function is_premise_out(name: string): boolean{
 }
 
 export function is_premises_in(names: BetterSet<string>): boolean{
+    console.log(names)
     return every(names, is_premise_in);
 } 
 
@@ -236,6 +244,7 @@ function _make_hypothetical<A>(output: Cell<A>, value: A): string {
     update_cell<LayeredObject>(output, support_by(value, id));
 
     return id;       
-}
+    }
+
 
 

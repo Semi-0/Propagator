@@ -20,6 +20,7 @@ import { less_than } from "generic-handler/built_in_generics/generic_arithmetic"
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
 // ValueSet class definition
+// we can register the source of vector clock as premises
 
 type ValueSet<A> = BetterSet<A>;
 
@@ -67,19 +68,19 @@ function to_value_set<A>(value: any): ValueSet<A> {
 }
 
 // ValueSet handlers
-define_generic_procedure_handler(get_base_value,
-    match_args(is_value_set),
-    (set: ValueSet<any>) => get_base_value(strongest_consequence(set))
-);
+// define_generic_procedure_handler(get_base_value,
+//     match_args(is_value_set),
+//     (set: ValueSet<any>) => get_base_value(strongest_consequence(set))
+// );
 
-define_generic_procedure_handler(is_unusable_value,
-    match_args(is_value_set),
-    (set: ValueSet<any>) => is_unusable_value(strongest_consequence(set))
-);
+// define_generic_procedure_handler(is_unusable_value,
+//     match_args(is_value_set),
+//     (set: ValueSet<any>) => is_unusable_value(strongest_consequence(set))
+// );
 
-define_generic_procedure_handler(strongest_value,
-    match_args(is_value_set),
-    strongest_consequence)
+// define_generic_procedure_handler(strongest_value,
+//     match_args(is_value_set),
+//     strongest_consequence)
 
 // ValueSet operations
 

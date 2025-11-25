@@ -83,11 +83,12 @@ const referece_map = (f: (input: any) => any, array: any[]) => {
 // the result would be a map with holes in certain numbers
 // and we can skip wholes or reduce that map to form a decent array
 
-
-
-export const p_identity = function_to_primitive_propagator("identity", (input: any) => {
-    return input
+export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
+    // console.log("sync", input)
+    return input;
 })
+
+export const p_identity = p_sync 
 
 export const ce_identity = make_ce_arithmetical(p_identity, "identity")
 
@@ -108,10 +109,7 @@ export const p_divide = primitive_propagator(divide, "/");
 
 export const p_greater_than = primitive_propagator(greater_than, ">");
 
-export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
-    // console.log("sync", input)
-    return input;
-})
+
 
 export const p_feedback = primitive_propagator(feedback, "feedback")
 
@@ -130,7 +128,7 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     }, "constant")
 }
 
-export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), "constant_" + name )(construct_cell(name + "_input"))
+export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), "constant | " + name )(construct_cell(name + "_input"))
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [a, b], () => {
     //TODO: this is cheating but this works for now 
@@ -145,7 +143,6 @@ export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
         return acc;
     })(inputs, acc_cell)
 }
-
 
 
 

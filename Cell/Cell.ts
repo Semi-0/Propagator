@@ -18,7 +18,7 @@ import { match_args, register_predicate } from "generic-handler/Predicates";
 import { curried_filter, curried_map, get_new_reference_count } from "../Helper/Helper";
 import type { CellValue } from "./CellValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler, trace_generic_procedure } from "generic-handler/GenericProcedure";
 import { alert_propagators, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
@@ -58,7 +58,7 @@ export interface Cell<A> {
   getNeighbors: () => Map<string, interesetedNeighbor>;
   update: (increment: CellValue<A>) => boolean;
   testContent: () => boolean;
-  addNeighbor: (propagator: Propagator, interested_in: string[]) => void;
+  addNeighbor: (propagator: Propagator, interested_in: CellHooks[]) => void;
   removeNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
   dispose: () => void;  // <-- new dispose method
@@ -130,10 +130,9 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
   }
 
   function test_content(): void {
-    const new_strongest = strongest_value(content)
+    const new_strongest = trace_generic_procedure(console.log, strongest_value, [content])
 
     if (is_equal(new_strongest, strongest)){
-      // do nothing
       alert_interested_propagators(neighbors, CellHooks.content_tested)
       // because new strongest doesn't change
       // so constant cell would not be updated on first update
@@ -223,9 +222,11 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
   };
 
   
+// because i killed cell register in global state
+// now premises cannot find cell anymore
+// but i dont like this 
+// its there a way for premises to locally track cell
 
-  set_global_state(PublicStateCommand.ADD_CELL, cell);
-  set_global_state(PublicStateCommand.ADD_CHILD, relation);
   return cell as Cell<A>;
 }
 
@@ -264,7 +265,7 @@ export const cell_neightbor_set = (cell: Cell<any>) => {
 
 
 
-export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: string[]){
+export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: CellHooks[]){
   cell.addNeighbor(propagator, interested_in);
 }
 

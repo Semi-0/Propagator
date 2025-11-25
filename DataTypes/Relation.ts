@@ -26,7 +26,7 @@ export class Primitive_Relation implements Relation {
     uuid: string;
     level: number = 0;
     parent: WeakRef<Relation> | null;
-    children: Relation[] = [];
+    children: WeakRef<Relation>[] = [];
 
     constructor(name: string, parent: Relation | null, uuid: string | null = null){
         this.name = name;
@@ -51,7 +51,7 @@ export class Primitive_Relation implements Relation {
     }
 
     add_child(child: InterestedType){
-        this.children.push(child);
+        this.children.push(new WeakRef(child));
         return this;
     }
 
@@ -76,7 +76,25 @@ export class Primitive_Relation implements Relation {
     }
 
     get_children(){
-        return this.children;
+        // Filter out garbage collected children and return strong references
+        const validChildren: Relation[] = [];
+        const newChildren: WeakRef<Relation>[] = [];
+        
+        for (const childRef of this.children) {
+            const child = childRef.deref();
+            if (child) {
+                validChildren.push(child);
+                newChildren.push(childRef);
+            }
+        }
+        
+        // Clean up the children array by removing dead references
+        // This is a lazy cleanup strategy
+        if (newChildren.length < this.children.length) {
+            this.children = newChildren;
+        }
+        
+        return validChildren;
     }
 
     dispose(){

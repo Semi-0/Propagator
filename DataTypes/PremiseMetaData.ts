@@ -12,6 +12,7 @@ export enum BeliefState {
     NotBelieved,
 }
 
+// can premises track which cell is using it?
 export class PremiseMetaData {
     name : string;
     belief_state: BeliefState = BeliefState.Believed; 
@@ -32,6 +33,7 @@ export class PremiseMetaData {
 
     set_belief_state(state: BeliefState){
         this.belief_state = state;
+        // because i turn off the global state of cell that's why it doesn't update the cell
         this.wake_up_roots();
     } 
 

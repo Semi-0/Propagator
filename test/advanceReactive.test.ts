@@ -49,7 +49,7 @@ import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
   set_handle_contradiction(trace_earliest_emerged_value)
-  set_merge(merge_patched_set)
+  set_merge(merge_temporary_value_sets)
 });
 describe("Advance Reactive Tests", () => {
   // -------------------------
@@ -1575,4 +1575,492 @@ describe("p_pull timestamp dependency tests", () => {
     expect(secondCount).toBeGreaterThan(firstCount)
     console.log(`Update count: ${firstCount} -> ${secondCount}`)
   })
+})
+
+
+// =============================================================================
+// REALITY SOURCE CELL ADAPTED TESTS
+// These tests adapt the key reactive patterns to use the new Reality source cell approach
+// =============================================================================
+
+import { 
+  dependent_update, 
+  kick_out_cell, 
+  bring_in_cell, 
+  construct_dependent_cell,
+  get_dependence_cell,
+  clean_dependence_cells 
+} from "../DataTypes/Reality";
+import { merge_temporary_value_sets } from "../DataTypes/TemporaryValueSet.ts";
+
+describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
+  
+  beforeEach(() => {
+    set_global_state(PublicStateCommand.CLEAN_UP);
+    clean_dependence_cells();
+    set_handle_contradiction(trace_earliest_emerged_value);
+    set_merge(merge_patched_set);
+  });
+
+  describe("Basic Source Cell Update Tests", () => {
+    
+    test("source_update should update a cell with annotated value", async () => {
+      const cell = construct_cell("srcUpdateTest");
+      dependent_update("testSrc")(cell, 42);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(cell)).toBe(42);
+    });
+
+    test("source_update multiple times should reflect latest value", async () => {
+      const cell = construct_cell("srcMultiUpdate");
+      
+      dependent_update("multiSrc")(cell, 1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(cell)).toBe(1);
+      
+      dependent_update("multiSrc")(cell, 2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(cell)).toBe(2);
+      
+      dependent_update("multiSrc")(cell, 3);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(cell)).toBe(3);
+    });
+  });
+
+  describe("Source Cell Propagator Tests", () => {
+    
+    test("p_sync should update output when source cell input changes", async () => {
+      const input = construct_cell("srcSyncInput");
+      const output = construct_cell("srcSyncOutput");
+      p_sync(input, output);
+      
+      dependent_update("syncSrc")(input, 1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(1);
+      
+      dependent_update("syncSrc")(input, 2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(2);
+    });
+
+    test("p_add with source cells should correctly add values", async () => {
+      const cell1 = construct_cell("srcAddA");
+      const cell2 = construct_cell("srcAddB");
+      const output = construct_cell("srcAddOut");
+      p_add(cell1, cell2, output);
+
+      dependent_update("addSrcA")(cell1, 10);
+      dependent_update("addSrcB")(cell2, 15);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(25);
+    });
+
+    test("p_subtract with source cells should correctly subtract", async () => {
+      const cell1 = construct_cell("srcSubA");
+      const cell2 = construct_cell("srcSubB");
+      const output = construct_cell("srcSubOut");
+      p_subtract(cell1, cell2, output);
+
+      dependent_update("subSrcA")(cell1, 20);
+      dependent_update("subSrcB")(cell2, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(15);
+    });
+
+    test("p_multiply with source cells should correctly multiply", async () => {
+      const cell1 = construct_cell("srcMulA");
+      const cell2 = construct_cell("srcMulB");
+      const output = construct_cell("srcMulOut");
+      p_multiply(cell1, cell2, output);
+
+      dependent_update("mulSrcA")(cell1, 3);
+      dependent_update("mulSrcB")(cell2, 7);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(21);
+    });
+
+    test("p_divide with source cells should correctly divide", async () => {
+      const cell1 = construct_cell("srcDivA");
+      const cell2 = construct_cell("srcDivB");
+      const output = construct_cell("srcDivOut");
+      p_divide(cell1, cell2, output);
+
+      dependent_update("divSrcA")(cell1, 100);
+      dependent_update("divSrcB")(cell2, 4);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(25);
+    });
+  });
+
+  describe("Source Cell Switch/Conditional Tests", () => {
+    
+    test("p_switch with source cells should route based on condition", async () => {
+      const condition = construct_cell("srcSwitchCond") as Cell<boolean>;
+      const thenCell = construct_cell("srcSwitchThen");
+      const output = construct_cell("srcSwitchOut");
+      p_switch(condition, thenCell, output);
+
+      dependent_update("switchCondSrc")(condition, false);
+      dependent_update("switchThenSrc")(thenCell, "initial");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(the_nothing);
+
+      dependent_update("switchCondSrc")(condition, true);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("initial");
+    });
+  });
+
+  describe("Source Cell Chainable Operators Tests", () => {
+    
+    test("ce_pipe with p_map_a using source cells", async () => {
+      const input = construct_cell("srcPipeMapInput");
+      const output = ce_pipe(input, p_map_a((x: number) => x + 10));
+
+      dependent_update("pipeMapSrc")(input, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(15);
+    });
+
+    test("ce_pipe chaining multiple operators with source cells", async () => {
+      const input = construct_cell("srcChainInput");
+      const composed = ce_pipe(
+        input, 
+        p_map_a((x: number) => x * 2), 
+        p_map_a((x: number) => x + 1)
+      );
+
+      dependent_update("chainSrc")(input, 3);
+      await execute_all_tasks_sequential((error: Error) => {});
+      // Expected: (3 * 2) + 1 = 7
+      expect(cell_strongest_base_value(composed)).toBe(7);
+    });
+
+    test("ce_pipe with p_filter_a using source cells", async () => {
+      const input = construct_cell("srcFilterInput");
+      const filtered = ce_pipe(input, p_filter_a((x: number) => x > 10));
+
+      dependent_update("filterSrc")(input, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(filtered)).toBe(the_nothing);
+
+      dependent_update("filterSrc")(input, 15);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(filtered)).toBe(15);
+    });
+
+    test("ce_pipe with p_reduce using source cells", async () => {
+      const input = construct_cell("srcReduceInput");
+      const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
+
+      dependent_update("reduceSrc")(input, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(reduced)).toBe(5);
+
+      dependent_update("reduceSrc")(input, 3);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(reduced)).toBe(8);
+
+      dependent_update("reduceSrc")(input, 10);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(reduced)).toBe(18);
+    });
+  });
+
+  describe("Source Cell Bi-Directional Tests", () => {
+    
+    test("bi_sync with source cells should propagate in both directions", async () => {
+      const left = construct_cell("srcBiLeft");
+      const right = construct_cell("srcBiRight");
+      bi_sync(left, right);
+
+      dependent_update("biLeftSrc")(left, 1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(left)).toBe(1);
+      expect(cell_strongest_base_value(right)).toBe(1);
+
+      dependent_update("biRightSrc")(right, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(right)).toBe(5);
+      // Left should also have 5 via bi-sync
+    });
+
+    test("temperature conversion with source cells", async () => {
+      const celsius = construct_cell("srcCelsius");
+      const fahrenheit = construct_cell("srcFahrenheit");
+      
+      com_celsius_to_fahrenheit(celsius, fahrenheit);
+      
+      dependent_update("celsiusSrc")(celsius, 0);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(celsius)).toBe(0);
+      expect(cell_strongest_base_value(fahrenheit)).toBe(32);
+
+      dependent_update("fahrenheitSrc")(fahrenheit, 212);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(celsius)).toBe(100);
+      expect(cell_strongest_base_value(fahrenheit)).toBe(212);
+    });
+  });
+
+  describe("Source Cell kick_out/bring_in Tests", () => {
+    
+    test("kick_out should stop source contribution to downstream", async () => {
+      const cellA = construct_cell("kickTestA");
+      const cellB = construct_cell("kickTestB");
+      const output = construct_cell("kickTestOut");
+      p_add(cellA, cellB, output);
+
+      dependent_update("kickSrcA")(cellA, 10);
+      dependent_update("kickSrcB")(cellB, 20);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(30);
+
+      // Kick out source A
+      const srcA = get_dependence_cell("kickSrcA")!;
+      kick_out_cell(srcA);
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      console.log("After kick_out kickSrcA:");
+      console.log("cellA:", cellA.summarize());
+      console.log("output:", output.summarize());
+    });
+
+    test("bring_in should restore source contribution", async () => {
+      const cellA = construct_cell("bringTestA");
+      const cellB = construct_cell("bringTestB");
+      const output = construct_cell("bringTestOut");
+      p_multiply(cellA, cellB, output);
+
+      dependent_update("bringSrcA")(cellA, 5);
+      dependent_update("bringSrcB")(cellB, 4);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(20);
+
+      // Kick out and bring back
+      const srcA = get_dependence_cell("bringSrcA")!;
+      kick_out_cell(srcA);
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      bring_in_cell(srcA);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(20);
+    });
+
+    test("switch between sources using kick_out/bring_in", async () => {
+      const cell = construct_cell("switchSrcCell");
+      const output = construct_cell("switchSrcOut");
+      p_sync(cell, output);
+
+      // Source 1
+      dependent_update("switchSrc1")(cell, 100);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+
+      // Source 2 (alternative)
+      dependent_update("switchSrc2")(cell, 200);
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      // Kick out source 1, keep source 2
+      const src1 = get_dependence_cell("switchSrc1")!;
+      kick_out_cell(src1);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(200);
+
+      // Switch back to source 1
+      bring_in_cell(src1);
+      const src2 = get_dependence_cell("switchSrc2")!;
+      kick_out_cell(src2);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+    });
+  });
+
+  describe("Source Cell Complex Propagator Chain Tests", () => {
+    
+    test("cascade through chain with source cells and kick_out", async () => {
+      const radius = construct_cell("srcRadius") as Cell<number>;
+      const diameter = construct_cell("srcDiameter") as Cell<number>;
+      const circumference = construct_cell("srcCircumference") as Cell<number>;
+      const area = construct_cell("srcArea") as Cell<number>;
+      
+      // Radius to diameter
+      compound_propagator([radius], [diameter], () => {
+        const r_to_d = ce_pipe(radius, p_map_a((r: number) => r * 2));
+        p_sync(r_to_d, diameter);
+      }, "src_radius_to_diameter");
+      
+      // Radius to circumference and area
+      compound_propagator([radius], [circumference, area], () => {
+        const r_to_c = ce_pipe(radius, p_map_a((r: number) => 2 * Math.PI * r));
+        const r_to_a = ce_pipe(radius, p_map_a((r: number) => Math.PI * r * r));
+        p_sync(r_to_c, circumference);
+        p_sync(r_to_a, area);
+      }, "src_radius_to_circle");
+
+      // Set radius via source cell
+      dependent_update("radiusSrc")(radius, 5);
+      await execute_all_tasks_sequential((error: Error) => {});
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      
+      expect(cell_strongest_base_value(radius)).toBeCloseTo(5, 5);
+      expect(cell_strongest_base_value(diameter)).toBeCloseTo(10, 5);
+      expect(cell_strongest_base_value(circumference)).toBeCloseTo(2 * Math.PI * 5, 5);
+      expect(cell_strongest_base_value(area)).toBeCloseTo(Math.PI * 25, 5);
+
+      // Update radius
+      dependent_update("radiusSrc")(radius, 10);
+      await execute_all_tasks_sequential((error: Error) => {});
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      
+      expect(cell_strongest_base_value(radius)).toBeCloseTo(10, 5);
+      expect(cell_strongest_base_value(diameter)).toBeCloseTo(20, 5);
+      expect(cell_strongest_base_value(circumference)).toBeCloseTo(2 * Math.PI * 10, 5);
+      expect(cell_strongest_base_value(area)).toBeCloseTo(Math.PI * 100, 5);
+
+      // Kick out and verify cascade stops
+      const radiusSrc = get_dependence_cell("radiusSrc")!;
+      kick_out_cell(radiusSrc);
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      console.log("After kick_out radius source:");
+      console.log("radius:", radius.summarize());
+
+      // Bring back
+      bring_in_cell(radiusSrc);
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      expect(cell_strongest_base_value(radius)).toBeCloseTo(10, 5);
+    });
+  });
+
+  describe("Source Cell c_if Conditional Tests", () => {
+    
+    test("c_if_a with source cells should route based on condition", async () => {
+      const condition = construct_cell("srcIfCond") as Cell<boolean>;
+      const thenValue = construct_cell("srcIfThen") as Cell<number>;
+      const elseValue = construct_cell("srcIfElse") as Cell<number>;
+      const output = construct_cell("srcIfOut") as Cell<number>;
+      
+      c_if_a(condition, thenValue, elseValue, output);
+      
+      dependent_update("ifThenSrc")(thenValue, 100);
+      dependent_update("ifElseSrc")(elseValue, 200);
+      dependent_update("ifCondSrc")(condition, true);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+      
+      dependent_update("ifCondSrc")(condition, false);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(200);
+      
+      // Change then value while false
+      dependent_update("ifThenSrc")(thenValue, 150);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(200);
+      
+      // Switch back to true
+      dependent_update("ifCondSrc")(condition, true);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(150);
+    });
+  });
+
+  describe("Source Cell p_drop/p_take Tests", () => {
+    
+    test("p_drop with source cells should skip first N values", async () => {
+      const input = construct_cell("srcDropInput");
+      const output = construct_cell("srcDropOutput");
+      p_drop(2)(input, output);
+
+      dependent_update("dropSrc")(input, "a");
+      dependent_update("dropSrc")(input, "b");
+      dependent_update("dropSrc")(input, "c");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("c");
+
+      dependent_update("dropSrc")(input, "d");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("d");
+    });
+
+    test("p_take with source cells should only take first N values", async () => {
+      const input = construct_cell("srcTakeInput");
+      const output = construct_cell("srcTakeOutput");
+      p_take(2)(input, output);
+
+      dependent_update("takeSrc")(input, "x");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("x");
+
+      dependent_update("takeSrc")(input, "y");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("y");
+
+      // Further updates should be ignored
+      dependent_update("takeSrc")(input, "z");
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe("y");
+    });
+
+    test("p_index with source cells should only take nth value", async () => {
+      const input = construct_cell("srcIndexInput");
+      const output = construct_cell("srcIndexOutput");
+      p_index(1)(input, output);
+
+      dependent_update("indexSrc")(input, 100);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+
+      dependent_update("indexSrc")(input, 200);
+      await execute_all_tasks_sequential((error: Error) => {});
+      expect(cell_strongest_base_value(output)).toBe(100);
+    });
+  });
+
+  describe("Source Cell p_zip Tests", () => {
+    
+    test("p_zip with source cells should combine values", async () => {
+      const cell1 = construct_cell("srcZip1");
+      const cell2 = construct_cell("srcZip2");
+      const zipFunc = construct_cell("srcZipFunc");
+      const output = construct_cell("srcZipOut");
+      
+      p_zip([cell1, cell2], zipFunc, output);
+
+      dependent_update("zipFuncSrc")(zipFunc, (a: string, b: string) => [a, b]);
+      dependent_update("zip1Src")(cell1, "x");
+      dependent_update("zip2Src")(cell2, "y");
+      await execute_all_tasks_sequential((error: Error) => {});
+      
+      expect(cell_strongest_base_value(output)).toEqual(["x", "y"]);
+    });
+  });
+
+  describe("Source Cell Composite Tests", () => {
+    
+    test("p_composite with source cells should select fresher value", async () => {
+      const cellA = construct_cell("srcCompA");
+      const cellB = construct_cell("srcCompB");
+      const output = construct_cell("srcCompOut");
+      p_composite([cellA, cellB], output);
+
+      dependent_update("compASrc")(cellA, "first");
+      dependent_update("compBSrc")(cellB, "zero");
+      await execute_all_tasks_sequential((error: Error) => {});
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(cell_strongest_base_value(output)).toBe("first");
+
+      dependent_update("compBSrc")(cellB, "second");
+      await execute_all_tasks_sequential((error: Error) => {});
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(cell_strongest_base_value(output)).toBe("second");
+
+      dependent_update("compASrc")(cellA, "third");
+      await execute_all_tasks_sequential((error: Error) => {});
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(cell_strongest_base_value(output)).toBe("third");
+    });
+  });
 })

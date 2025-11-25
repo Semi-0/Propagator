@@ -16,7 +16,14 @@ import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { Option } from "effect";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
-//TODO: reactive frame
+import { ArrayFormatter } from "effect/ParseResult";
+
+
+
+// because vector clock already mark the source id
+// maybe we can see vector clock as a more general form of supported value?
+// then we don't need to worry about how to merge them together 
+
 
 type SourceID = string;
 
@@ -268,6 +275,8 @@ export const prove_staled = (a: any, b: any) => {
     }
 }
 
+
+
 export const proved_staled_with = curryArgument(
     1, 
     generic_wrapper(
@@ -277,6 +286,11 @@ export const proved_staled_with = curryArgument(
         (a: VectorClock) => a
     )
 )
+
+
+export const get_clock_channels = (vector_clock: VectorClock) => {
+    return Array.from(vector_clock.keys());
+}
 
 
 const remove_patch = compose(get_base_value, patch_remove);
@@ -297,35 +311,3 @@ define_consolidator_per_layer_dispatcher(
         } 
 )
 
-
-// export const register_vector_clock_patched_set = (
-//     scan_for_patches_fn: (...args: any[]) => any,
-//     patch_join_fn: (value: any) => any,
-//     patch_remove_fn: (value: any) => any
-// ) => {
-//     const remove_patch = compose(get_base_value, patch_remove_fn);
-
-//     define_consolidator_per_layer_dispatcher(
-//         scan_for_patches_fn,
-//         vector_clock_layer,
-//         (base_args: any[], set_victor_clock: VectorClock, elt_victor_clock: VectorClock) => {
-//             const [set, elt] = base_args;
-
-//             return add_item(
-//                 pipe(
-//                     set,
-//                     curried_filter(proved_staled_with(elt_victor_clock)),
-//                     curried_map(remove_patch)
-//                 ),
-//                 patch_join_fn(elt)
-//             );
-//         }
-//     );
-// };
-// TODO: BEHAVIORS
-// TODO: Merge
-// any unusable value? 
-// strongest?
-// merge can just merge with value set
-// strongest we can see whether uses 
-// contradiction handler with multiple inputs

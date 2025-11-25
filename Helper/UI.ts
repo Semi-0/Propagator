@@ -19,7 +19,7 @@ import { is_contradiction, is_nothing } from "../Cell/CellValue";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { construct_vector_clock, get_vector_clock_layer, vector_clock_get_source, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
+import { construct_vector_clock, get_clock_channels, get_vector_clock_layer, vector_clock_get_source, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { strongest_value } from "../Cell/StrongestValue";
 import { Option } from "effect";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
@@ -32,17 +32,12 @@ function range(start: number, end: number): BetterSet<number>{
 
 export async function compound_tell<A>(cell: Cell<any>, information: A, ...layered_alist: any[]) {
     const layered : LayeredObject<A>= construct_layered_datum(information, ...layered_alist);
-
-    for_each(support_layer.get_value(layered), (support: string) => {
+    for_each(compose(get_vector_clock_layer, get_clock_channels)(layered), (support: string) => {
         register_premise(support, information);
     });
-
     update_cell(cell, layered);
 
-    // await steppable_run_task((e) => {
-    // });
 }
-
 
 const DEFAULT_VECTOR_CLOCK_SOURCE = "repl";
 
