@@ -130,7 +130,7 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
   }
 
   function test_content(): void {
-    const new_strongest = trace_generic_procedure(console.log, strongest_value, [content])
+    const new_strongest = strongest_value(content)
 
     if (is_equal(new_strongest, strongest)){
       alert_interested_propagators(neighbors, CellHooks.content_tested)

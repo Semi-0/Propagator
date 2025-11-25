@@ -5,7 +5,7 @@ import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { is_not_no_compute, no_compute } from "../Helper/noCompute";
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { define_generic_procedure_handler, trace_generic_procedure } from "generic-handler/GenericProcedure";
 import { is_disposed } from "../Cell/CellValue";
 import { any_unusable_values } from "../Cell/CellValue";
 import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
@@ -140,7 +140,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
             () => {
                 const inputs_values = inputs.map(cell => cell_strongest(cell));
 
-                if (any_unusable_values(inputs_values)){
+                if (trace_generic_procedure(console.error, any_unusable_values, [inputs_values])){
                     // do nothing
                 }
                 else{

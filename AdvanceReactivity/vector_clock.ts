@@ -1,4 +1,4 @@
-import { any_unusable_values } from "@/cell/CellValue";
+import { any_unusable_values, is_unusable_value } from "@/cell/CellValue";
 import { Array as A, pipe } from "effect";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
 
@@ -17,6 +17,7 @@ import { Option } from "effect";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { ArrayFormatter } from "effect/ParseResult";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 
@@ -214,19 +215,29 @@ export const has_vector_clock_layer = register_predicate("has_victor_clock_layer
 })
 
 export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) => {
-    return pipe(
+  
+     const vector_clocks =  pipe(
         as,
-        A.filter(has_vector_clock_layer),
-        A.map(vector_clock_layer.get_value),
-        A.reduce(0, generic_version_vector_clock_compare)
-    ) !== 0
+        A.map(vector_clock_layer.get_value), 
+     )
+
+     var last_vector_clock = vector_clocks[0];
+
+     for (const vector_clock of vector_clocks.slice(1)) {
+        if (generic_version_vector_clock_compare(last_vector_clock, vector_clock) !== 0) {
+            return true;
+        }
+        last_vector_clock = vector_clock;
+     }
 }
 
 export const is_reactive_values = register_predicate("is_reactive_values", (arr: any[]) => {
     if (is_array(arr)) {
-        return arr.every(has_vector_clock_layer);
+        return arr.every(log_tracer("has_vector_clock_layer", has_vector_clock_layer));
     }
     else{
+        console.log("is_reactive_values")
+        console.log(to_string(arr))
         return false;
     }
 });
@@ -234,7 +245,7 @@ export const is_reactive_values = register_predicate("is_reactive_values", (arr:
 define_generic_procedure_handler(any_unusable_values, match_args(is_reactive_values), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
-    const result = any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, any_unusable_values))
+    const result = log_tracer("any_victor_clock_out_of_sync", any_victor_clock_out_of_sync)(as) || as.some(compose(get_base_value, is_unusable_value))
     return result;
 })
 

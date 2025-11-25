@@ -178,15 +178,14 @@ export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<
 
 export const is_premises_in_vector_clock = compose(
     get_vector_clock_layer, 
-    log_tracer("get_clock_channels", get_clock_channels), 
-    log_tracer("is_premises_in", is_premises_in)
+    get_clock_channels, 
+     is_premises_in
 )
 
 export function strongest_consequence<A>(set: any): A {
-    console.log(set)
     return pipe(
         set,
-        (elements) => filter(elements, log_tracer("is_premises_in_vector_clock", is_premises_in_vector_clock)),
+        (elements) => filter(elements, is_premises_in_vector_clock),
         (filtered) => reduce(
             filtered,
             merge_layered,
