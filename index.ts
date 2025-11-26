@@ -380,7 +380,7 @@ export function cleanup() {
  * Create a reactive constant cell
  * - Use this instead of constant() in reactive mode
  */
-export const reactive_constant = r_constant;
+export const reactive_constant = ce_constant;
 
 // ============================================================================
 // LAZY OBJECT HELPER

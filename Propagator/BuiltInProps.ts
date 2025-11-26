@@ -350,13 +350,13 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
 
 
 
-export const p_composite = (inputs: Cell<any>[], output: Cell<any>) => {
-    return compound_propagator(inputs, [output], () => {
-        for_each(inputs, (i: Cell<any>) => {
-            return p_sync(i, output)
-        })
-    }, "or")
-}
+// export const p_composite = (inputs: Cell<any>[], output: Cell<any>) => {
+//     return compound_propagator(inputs, [output], () => {
+//         for_each(inputs, (i: Cell<any>) => {
+//             return p_sync(i, output)
+//         })
+//     }, "or")
+// }
 
 
 export const com_celsius_to_fahrenheit = (celsius: Cell<number>, fahrenheit: Cell<number>) => { 

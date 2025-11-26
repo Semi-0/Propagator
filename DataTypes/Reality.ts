@@ -282,7 +282,8 @@ export const p_dispatch = (dependent: Cell<Map<Cell<any>, any>>, output: Cell<an
     (source: Map<Cell<any>, any>) => {
         if (is_map(source)){
             const update = source.get(output)
-            if (update){
+
+            if ((update !== undefined) && (update !== null)){
                 return update
             }
             else {
