@@ -89,7 +89,7 @@ import {
   p_filter_a,
   p_zip,
   p_range,
-  p_composite,
+ 
   p_reduce,
   p_index,
   c_add,
@@ -446,7 +446,7 @@ export const propagator = lazyObject(() => ({
         filter: p_filter_a,
         zip: p_zip,
         range: p_range,
-        composite: p_composite,
+
         reduce: p_reduce,
         index: p_index,
         
@@ -638,7 +638,7 @@ export const prop_ops = lazyObject(() => ({
   filter: p_filter_a,
   zip: p_zip,
   range: p_range,
-  composite: p_composite,
+
   reduce: p_reduce,
   index: p_index,
   
@@ -765,7 +765,7 @@ export {
   p_filter_a,
   p_zip,
   p_range,
-  p_composite,
+
   p_reduce,
   p_index,
   c_add,

@@ -3,7 +3,7 @@ import { is_nothing } from "@/cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { compound_propagator,   function_to_primitive_propagator,   primitive_propagator,  propagator_id } from "../Propagator/Propagator"
-import { generic_merge } from "@/cell/Merge";
+import { generic_merge, merge_layered } from "@/cell/Merge";
 import { bi_sync, c_if_b, ce_add, ce_constant, p_constant, p_set_array } from "../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import { p_switch } from "../Propagator/BuiltInProps";
@@ -41,6 +41,26 @@ export const merge_carried_map = (content: Map<any, any>, increment: Map<any, an
 }
 
 define_generic_procedure_handler(generic_merge, all_match(is_map), merge_carried_map)
+
+export const is_layered_map = register_predicate("is_layered_map", (value: any) => is_layered_object(value) && get_base_value(value) instanceof Map)
+
+define_generic_procedure_handler(merge_layered, match_args(is_nothing, is_layered_map), (content: LayeredObject<any>, increment: Map<any, any>) => {
+    return increment
+})
+
+
+
+// define_generic_procedure_handler(generic_merge, match_args(is_layered_object, is_any), (content: LayeredObject<any>, increment: Map<any, any>) => {
+//     return generic_merge(get_base_value(content), get_base_value(increment))
+// })
+
+// define_generic_procedure_handler(generic_merge, match_args(is_any, is_layered_object), (content: any, increment: LayeredObject<any>) => {
+//     return generic_merge(content, get_base_value(increment))
+// })
+
+// define_generic_procedure_handler(generic_merge, match_args(is_map, is_layered_map), (content: Map<any, any>, increment: LayeredObject<any>) => {
+//     return generic_merge(content, get_base_value(increment))
+// })
 
 // of course its better with bi_switcher but i havn't an idea how
 export const bi_switcher = (condition: Cell<boolean>, a: Cell<any>, b: Cell<any>) => compound_propagator(
@@ -91,6 +111,9 @@ import { construct_advice, install_advice } from "generic-handler/built_in_gener
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { cell_strongest_base_value } from "ppropogator";
 import { p_sync } from "ppropogator";
+import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { get_base_value } from "ppropogator";
+import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 
 
 // we need another constructor which can directly transform dict into struct

@@ -7,6 +7,7 @@ import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { layer_pair_layer, layer_pair_value, layers_reduce, type LayerPair } from "sando-layer/Basic/helper";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 export const generic_merge = construct_simple_generic_procedure("merge", 2,
@@ -27,13 +28,16 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
             return content
         }
         else {
+            console.error("error merge" + " + \n content: \n " + to_string(content) + " increment:  \n" + to_string(increment))
             return the_contradiction
         }
     }
 )
- 
-export const merge_layered = make_layered_procedure("merge_layered", 2,  generic_merge)
 
+
+export const _merge_layered = make_layered_procedure("merge_layered", 2, generic_merge);
+ 
+export const merge_layered =  construct_simple_generic_procedure("merge_layered", 2, _merge_layered)
 export var cell_merge = generic_merge;
 
 export function set_merge(merge_func: (a: any, b: any) => any){

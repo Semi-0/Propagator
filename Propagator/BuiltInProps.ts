@@ -19,7 +19,7 @@ import { r_constant, update } from "../AdvanceReactivity/interface";
 import { reduce } from "fp-ts/Array";
 import { pipe } from "fp-ts/lib/function";
 import { Subject, throttleTime, distinctUntilChanged, distinct } from "rxjs";
-import { generic_merge } from "../Cell/Merge";
+import { cell_merge, generic_merge, merge_layered } from "../Cell/Merge";
 import { match_args } from "generic-handler/Predicates";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
@@ -120,13 +120,19 @@ export const p_or = primitive_propagator(or, "or")
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
     // a big problem is the patched set is not support for join in new value with partial layer
 
-    // const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
-    //     return inject
-    // })
+    const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
+        return inject
+    })
     return construct_propagator([input], [output], () => {
-        update_cell(output, value)
+         const merged = cell_merge(the_nothing, value)
+        console.log("merged", to_string(merged))
+        update_cell(output, merged)
     }, "constant")
 }
+
+// export const p_constant = (value: any) => function_to_primitive_propagator("constant", (input: any) => {
+//     return value
+// })
 
 export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), "constant | " + name )(construct_cell(name + "_input"))
 

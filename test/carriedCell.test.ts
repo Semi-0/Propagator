@@ -59,7 +59,7 @@ import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
   set_handle_contradiction(trace_earliest_emerged_value);
-  set_merge(merge_patched_set);
+  set_merge(merge_layered);
 });
 
 describe("Carried Cell Tests", () => {
@@ -555,7 +555,7 @@ describe("Carried Cell Tests", () => {
     ]
   );
 
-  test_propagator_only(
+  test_propagator(
     "p_list builds the same structure as manual cons",
     (
       list: Cell<Map<string, any>>,
@@ -594,7 +594,7 @@ describe("Carried Cell Tests", () => {
     ]
   );
 
-  test_propagator_only(
+  test_propagator(
     "p_list_map applies mapper to each element",
     (
       value1: Cell<number>,
@@ -628,7 +628,7 @@ describe("Carried Cell Tests", () => {
     ]
   );
 
-  test_propagator_only(
+  test_propagator(
     "p_list_filter keeps elements that satisfy predicate",
     (
       value1: Cell<number>,
@@ -656,7 +656,7 @@ describe("Carried Cell Tests", () => {
     ]
     );
 
-  test_propagator_only(
+  test_propagator(
     "p_list_zip pairs elements from two lists",
     (
       list1Value1: Cell<number>,
