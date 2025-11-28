@@ -125,7 +125,6 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     })
     return construct_propagator([input], [output], () => {
          const merged = cell_merge(the_nothing, value)
-        console.log("merged", to_string(merged))
         update_cell(output, merged)
     }, "constant")
 }
