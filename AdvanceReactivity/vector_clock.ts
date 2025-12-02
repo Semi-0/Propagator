@@ -21,6 +21,8 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { BetterSet, construct_better_set, identify_by } from "generic-handler/built_in_generics/generic_better_set";
 import { reduce } from "generic-handler/built_in_generics/generic_collection";
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { every } from "fp-ts/lib/ReadonlyRecord";
+import { equal } from "./Generics/GenericArith";
 
 
 // because vector clock already mark the source id
@@ -117,7 +119,7 @@ const is_version_clock_staled = (result: number) => {
     return result === 1;
 }
 
-const is_version_clock_equal = (result: number) => {
+const is_version_clock_concurrent = (result: number) => {
     return result === 0;
 }
 
@@ -126,49 +128,41 @@ const version_clock_result_contrary = (a: number, b: number) => {
 
 }
 
-const update_comparison_result = (old_result: number, new_result: number) => {
-    if (old_result == new_result) {
-        return new_result
-    }
-    else if (is_version_clock_equal(old_result)) {
-        return new_result;
-    }
-    else {
-        if (version_clock_result_contrary(old_result, new_result)){
+
+const version_vector_strict_compare = (version_vector1: VectorClock, version_vector2: VectorClock) => {
+    // Collect all unique keys from both vectors
+    const all_keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
+    
+    let v1_has_greater = false;
+    let v2_has_greater = false;
+
+    for (const key of all_keys) {
+        // Get values, defaulting to 0 if missing
+        const val1 = version_vector1.get(key) ?? 0;
+        const val2 = version_vector2.get(key) ?? 0;
+
+        if (val1 > val2) {
+            v1_has_greater = true;
+        } else if (val2 > val1) {
+            v2_has_greater = true;
+        }
+
+        // If we find evidence that v1 > v2 AND v2 > v1 in different channels,
+        // they are concurrent. Return equal (as per your comment).
+        if (v1_has_greater && v2_has_greater) {
             return version_clock_equal;
         }
-        else {
-            return new_result
-        }
     }
+
+    // If v1 strictly dominates v2
+    if (v1_has_greater) return version_clock_staled;
+    
+    // If v2 strictly dominates v1
+    if (v2_has_greater) return version_clock_fresher;
+    
+    // They are identical
+    return version_clock_equal;
 }
-
-const version_vector_strict_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
-    return pipe(
-        construct_better_set([...version_vector1.keys(), ...version_vector2.keys()]),
-        (collection: BetterSet<string>) => reduce(
-            collection,
-            (acc: number, key: string) => {
-                const argA = guarantee_missed_channel_synchronized(key, 0)(version_vector1, version_vector2);
-                const argB = guarantee_missed_channel_synchronized(key, 0)(version_vector2, version_vector1);
-
-                var comparison_result = acc;
-
-                if (argA < argB) {
-                    comparison_result = update_comparison_result(comparison_result, version_clock_fresher);
-                }
-                else if (argA > argB) {
-                    comparison_result = update_comparison_result(comparison_result, version_clock_staled);
-                }
-                else {
-                    comparison_result = update_comparison_result(comparison_result, version_clock_equal);
-                }
-                return comparison_result;
-            }
-        )
-)  
-}
-
 
 const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
     const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
@@ -210,9 +204,9 @@ export const generic_version_clock_less_than = generic_wrapper(
     to_victor_clock
 )
 
-export const generic_version_clock_equal = generic_wrapper(
+export const generic_version_clock_concurrent = generic_wrapper(
     version_vector_strict_compare,
-    is_version_clock_equal,
+    is_version_clock_concurrent,
     to_victor_clock,
     to_victor_clock
 )
@@ -226,7 +220,7 @@ export const generic_version_clock_greater_than = generic_wrapper(
 
 export const result_is_less_than = is_version_clock_fresher
 export const result_is_greater_than = is_version_clock_staled;
-export const result_is_equal = is_version_clock_equal;
+export const result_is_equal = is_version_clock_concurrent;
 
 
 // also we might need to consider an edge case of if new value subsume the existing 
@@ -374,11 +368,11 @@ define_consolidator_per_layer_dispatcher(
     (...args: any[]) => false
 )
 
-export const prove_staled = (a: any, b: any) => {
+export const prove_staled_by = (a: any, b: any) => {
     const va = to_victor_clock(a);
     const vb = to_victor_clock(b);
 
-    const compared = generic_version_vector_clock_compare(va, vb);
+    const compared = version_vector_strict_compare(va, vb);
 
     if (result_is_less_than(compared)) {
         return true;
@@ -396,7 +390,7 @@ export const prove_staled = (a: any, b: any) => {
 export const proved_staled_with = curryArgument(
     1, 
     generic_wrapper(
-        prove_staled, 
+        prove_staled_by, 
         (a: boolean) => a,
         vector_clock_layer.get_value,
         (a: VectorClock) => a

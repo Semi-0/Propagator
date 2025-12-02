@@ -1967,10 +1967,10 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // Note: c_if_a uses internal caching that doesn't respond to Reality/dependent_update condition changes.
     // The output is computed once based on the initial condition and cached. Use reactive_tell for c_if_a.
     test("c_if_a with source cells (conditional caches state - use reactive_tell)", async () => {
-      const condition = source_cell("ifCondSrc") as Cell<boolean>;
+      const condition = source_cell("condition") as Cell<boolean>;
       const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
-      const output = construct_cell("srcIfOut") as Cell<number>;
+      const output = construct_cell("output") as Cell<number>;
 
       const then_cell = construct_cell("then") as Cell<number>;
       const else_cell = construct_cell("else") as Cell<number>;
@@ -1987,17 +1987,14 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       expect(cell_strongest_base_value(output)).toBe(100);
       
       update_source_cell(condition, false);
+      run_scheduler_and_replay(console.error)
+      expect(cell_strongest_base_value(output)).toBe(200);
+     
+
+      update_source_cell(source, new Map([[then_cell, 150]]));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(200);
       
-      const thenValue_v2 = source_cell("ifThenSrc_v2") as Cell<number>;
-      // kick_out(cell_id(thenValue));
-      // p_sync(thenValue_v2, thenValue);
-      update_source_cell(thenValue_v2, 150);
-      await execute_all_tasks_sequential((error: Error) => {});
-      expect(cell_strongest_base_value(output)).toBe(200);
-      
-      bring_in(cell_id(condition));
       update_source_cell(condition, true);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(150);

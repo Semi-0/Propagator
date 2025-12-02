@@ -23,7 +23,7 @@ import { less_than } from "generic-handler/built_in_generics/generic_arithmetic"
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
 import { subsumes } from "ppropogator/DataTypes/GenericValueSet";
-import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, has_vector_clock_layer, prove_staled } from "../AdvanceReactivity/vector_clock";
+import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, has_vector_clock_layer, prove_staled_by } from "../AdvanceReactivity/vector_clock";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 // ValueSet class definition
@@ -76,7 +76,7 @@ const is_temporary_value_set = register_predicate("is_temporary_value_set", (val
 const update = (current_set: BetterSet<LayeredObject<any>>, new_element: LayeredObject<any>) => {
     // 1. Filter out any existing elements that are now "obsolete" (subsumed) by the new one
     //    (This handles your cases 1.1, 1.2.1, 2.1)
-    const filtered_set = filter(current_set, (existing: LayeredObject<any>) => !element_subsumes(new_element, existing));
+    const filtered_set = filter(current_set, (existing: LayeredObject<any>) => !vector_clock_prove_staled_by(existing, new_element));
 
     // 2. Check if the new element is already "known/obsolete" (subsumed) by anything remaining
     //    (This handles your case 2.1.2)
@@ -192,8 +192,15 @@ export const base_value_implies = generic_wrapper(
 // ironically this might be best solve by propagators
 
 
+export const vector_clock_prove_staled_by = generic_wrapper(
+    prove_staled_by,
+    (x) => x,
+    get_vector_clock_layer,
+    get_vector_clock_layer
+)
+
 export const vector_clock_subsumes = generic_wrapper(
-    (a, b) => prove_staled(b, a),
+    (a, b) => prove_staled_by(b, a),
     (x) => x,
     get_vector_clock_layer,
     get_vector_clock_layer
