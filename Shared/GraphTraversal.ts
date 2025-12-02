@@ -43,7 +43,7 @@ export const traverse_downstream_graph = (
       // process inputs
       prop.getInputs().forEach(cell => {
         const cid = cell_id(cell);
-        const c = find_cell_by_id(cid);
+        const c = cell;
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);
           cf(c);
@@ -52,7 +52,7 @@ export const traverse_downstream_graph = (
       // process outputs
       prop.getOutputs().forEach(cell => {
         const cid = cell_id(cell);
-        const c = find_cell_by_id(cid);
+        const c = cell;
         if (c && !visited_cells.has(cid)) {
           visited_cells.set(cid, c);
           cf(c);
@@ -62,7 +62,13 @@ export const traverse_downstream_graph = (
     });
   };
 
-  trace_cell_recursive(root);
+  const rootId = cell_id(root);
+  if (!visited_cells.has(rootId)) {
+    visited_cells.set(rootId, root);
+    cf(root);
+    trace_cell_recursive(root);
+  }
+  
   return { cells: visited_cells, propagators: visited_props };
 };
 
@@ -107,4 +113,4 @@ export function disposeSubtree(root: Cell<any>) {
   result.propagators.forEach(p => p.dispose());
   // Then dispose all downstream cells
   result.cells.forEach(c => c.dispose());
-} 
+}

@@ -1593,7 +1593,6 @@ import {
 } from "../DataTypes/Reality";
 import { merge_temporary_value_sets } from "../DataTypes/TemporaryValueSet.ts";
 import "../DataTypes/register_vector_clock_patchedValueSet";
-import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   
@@ -1817,7 +1816,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       const celsius = construct_cell("srcCelsius");
       const fahrenheit = construct_cell("srcFahrenheit");
       
-      com_celsius_to_fahrenheit(celsius, fahrenheit);
+      com_celsius_to_fahrenheit(celsius as Cell<number>, fahrenheit as Cell<number>);
       const update_celsiusSrc = dependent_update("celsiusSrc");
       const update_fahrenheitSrc = dependent_update("fahrenheitSrc");
       

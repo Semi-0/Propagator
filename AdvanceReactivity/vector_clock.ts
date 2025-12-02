@@ -18,7 +18,8 @@ import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 import { ArrayFormatter } from "effect/ParseResult";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-
+import { BetterSet, construct_better_set, identify_by } from "generic-handler/built_in_generics/generic_better_set";
+import { reduce } from "generic-handler/built_in_generics/generic_collection";
 
 
 // because vector clock already mark the source id
@@ -85,30 +86,100 @@ const version_vector_merge = (version_vector1: VectorClock, version_vector2: Vec
 }
 
 
-const guarantee_get_vector_clock = (key: string, default_value: number) => (...version_clocks: VectorClock[]): number => {
+const guarantee_missed_channel_synchronized = (key: string, default_value: number) => (...version_clocks: VectorClock[]): number => {
+    // if one vector clock has the channel other vector clock doesn't have
+    // that means none of them have fresher casual information than the other one
+    // and vice versa
     for (const version_clock of version_clocks) {
         if (version_clock.has(key)) {
             return version_clock.get(key)!;
         }
     }
     return default_value;
-    
 }
+
+
+const version_clock_fresher = -1 
+
+const version_clock_staled = 1;
+
+const version_clock_equal = 0;
+
+const is_version_clock_fresher = (result: number) => {
+    return result === -1;
+} 
+
+const is_version_clock_staled = (result: number) => {
+    return result === 1;
+}
+
+const is_version_clock_equal = (result: number) => {
+    return result === 0;
+}
+
+const version_clock_result_contrary = (a: number, b: number) => {
+    return (a == -1 && b == 1) || (a == 1 && b == -1);
+
+}
+
+const update_comparison_result = (old_result: number, new_result: number) => {
+    if (old_result == new_result) {
+        return new_result
+    }
+    else if (is_version_clock_equal(old_result)) {
+        return new_result;
+    }
+    else {
+        if (version_clock_result_contrary(old_result, new_result)){
+            return version_clock_equal;
+        }
+        else {
+            return new_result
+        }
+    }
+}
+
+const version_vector_strict_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
+    return pipe(
+        construct_better_set([...version_vector1.keys(), ...version_vector2.keys()]),
+        (collection: BetterSet<string>) => reduce(
+            collection,
+            (acc: number, key: string) => {
+                const argA = guarantee_missed_channel_synchronized(key, 0)(version_vector1, version_vector2);
+                const argB = guarantee_missed_channel_synchronized(key, 0)(version_vector2, version_vector1);
+
+                var comparison_result = acc;
+
+                if (argA < argB) {
+                    comparison_result = update_comparison_result(comparison_result, version_clock_fresher);
+                }
+                else if (argA > argB) {
+                    comparison_result = update_comparison_result(comparison_result, version_clock_staled);
+                }
+                else {
+                    comparison_result = update_comparison_result(comparison_result, version_clock_equal);
+                }
+                return comparison_result;
+            }
+        )
+)  
+}
+
 
 const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
     const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
 
     for (const key of keys) {
-        const value1 = guarantee_get_vector_clock(key, 0)(version_vector1, version_vector2);
-        const value2 = guarantee_get_vector_clock(key, 0)(version_vector2, version_vector1);
+        const value1 = guarantee_missed_channel_synchronized(key, 0)(version_vector1, version_vector2);
+        const value2 = guarantee_missed_channel_synchronized(key, 0)(version_vector2, version_vector1);
         if (value1 < value2) {
-            return -1;
+            return version_clock_fresher;
         }
         else if (value1 > value2) {
-            return 1;
+            return version_clock_staled;
         }
     }
-    return 0;
+    return version_clock_equal;
 }
 
 const to_victor_clock  = (a: any) => {
@@ -121,7 +192,7 @@ const to_victor_clock  = (a: any) => {
 }
 
 export const generic_version_vector_clock_compare = generic_wrapper(
-    version_vector_compare,
+    version_vector_strict_compare,
     (a: any) => a,
     to_victor_clock,
     to_victor_clock
@@ -129,29 +200,29 @@ export const generic_version_vector_clock_compare = generic_wrapper(
 
 
 export const generic_version_clock_less_than = generic_wrapper(
-    version_vector_compare,
-    (a: number) => a === -1,
+    version_vector_strict_compare,
+    is_version_clock_fresher,
     to_victor_clock,
     to_victor_clock
 )
 
 export const generic_version_clock_equal = generic_wrapper(
-    version_vector_compare,
-    (a: number) => a === 0,
+    version_vector_strict_compare,
+    is_version_clock_equal,
     to_victor_clock,
     to_victor_clock
 )
 
 export const generic_version_clock_greater_than = generic_wrapper(
-    version_vector_compare,
-    (a: number) => a === 1,
+    version_vector_strict_compare,
+    is_version_clock_staled,
     to_victor_clock,
     to_victor_clock
 )
 
-export const result_is_less_than = (a: number) => a === -1;
-export const result_is_greater_than = (a: number) => a === 1;
-export const result_is_equal = (a: number) => a === 0;
+export const result_is_less_than = is_version_clock_fresher
+export const result_is_greater_than = is_version_clock_staled;
+export const result_is_equal = is_version_clock_equal;
 
 
 // also we might need to consider an edge case of if new value subsume the existing 
