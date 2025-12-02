@@ -12,7 +12,7 @@ import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { set_handle_contradiction } from '@/cell/Cell';
 import { subscribe } from './Reactivity/MiniReactor/MrCombinators';
-import { clean_dependence_cells } from '../DataTypes/Reality';
+import { clean_dependence_cells } from '../DataTypes/Premises_Source';
 //@ts-ignore
 var parent: Stepper<Primitive_Relation> = construct_state(make_relation("root", null));
 // Todo: make this read only

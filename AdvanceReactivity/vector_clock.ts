@@ -20,6 +20,7 @@ import { ArrayFormatter } from "effect/ParseResult";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { BetterSet, construct_better_set, identify_by } from "generic-handler/built_in_generics/generic_better_set";
 import { reduce } from "generic-handler/built_in_generics/generic_collection";
+import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 
 // because vector clock already mark the source id
@@ -71,11 +72,14 @@ export const vector_clock_get_source = (source: SourceID) => (vector_clock: Vect
 }
 
 
-const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
+export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
     new_version_vector.set(source, (new_version_vector.get(source) || 0) + 1);
     return new_version_vector;
 }
+
+
+
 
 const version_vector_merge = (version_vector1: VectorClock, version_vector2: VectorClock) => {
     const new_version_vector = new Map(version_vector1);
@@ -274,6 +278,36 @@ export const vector_clock_layer = make_annotation_layer<VectorClock, any>("victo
 )
 
 export const get_vector_clock_layer = layer_accessor(vector_clock_layer)
+
+
+export const layered_vector_clock_forward = (channel: string, obj: LayeredObject<any>) => {
+    const proc = make_layered_procedure("layered_vector_clock_forward", 1, (base: any) => {
+        return base
+    })
+
+    define_layered_procedure_handler(proc, vector_clock_layer, (o: any, ...values: VectorClock[]) => {
+        return version_vector_forward(
+            values.reduce((acc, value) => version_vector_merge(acc, value), new Map()), 
+            channel
+        );
+    })
+
+    return proc(obj);
+}
+
+export const inject_value = (value: any) => make_layered_procedure("inject_value", 1, (base: any) => {
+    return value;
+})
+
+
+export const vector_clocked_value_update = (obj: LayeredObject<any>, value: any, channel: string) => {
+   return pipe(obj,
+        inject_value(value),
+        (obj: LayeredObject<any>) => {
+            return layered_vector_clock_forward(channel, obj);
+        }
+    )
+}
 
 
 export const _has_vector_clock_layer = (a: any) => {

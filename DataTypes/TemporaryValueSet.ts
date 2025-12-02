@@ -12,19 +12,20 @@ import {  is_equal, less_than_or_equal } from "generic-handler/built_in_generics
 import {  is_array, } from "generic-handler/built_in_generics/generic_predicates";
 
 import { get_support_layer_value, support_layer } from "sando-layer/Specified/SupportLayer";
-import { is_premises_in } from "./Premises";
-import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imples } from "../Cell/CellValue";
+import { is_premises_in, is_premises_out } from "./Premises";
+import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imples, is_contradiction } from "../Cell/CellValue";
 import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length, every, some } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
-import { merge_layered } from "../Cell/Merge";
+import { merge_layered, partial_merge } from "../Cell/Merge";
 
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
 import { subsumes } from "ppropogator/DataTypes/GenericValueSet";
-import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, prove_staled } from "../AdvanceReactivity/vector_clock";
+import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, has_vector_clock_layer, prove_staled } from "../AdvanceReactivity/vector_clock";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+
 // ValueSet class definition
 // we can register the source of vector clock as premises
 
@@ -107,6 +108,43 @@ export const construct_temporary_value_set  = (elements: any) => {
 function to_temporary_value_set<A>(value: any): TemporaryValueSet<A> {
     return is_temporary_value_set(value) ? value : construct_temporary_value_set(value);
 }
+export const tvs_is_premises_in = compose(
+    get_vector_clock_layer, 
+    get_clock_channels, 
+    is_premises_in
+)
+
+export const tvs_is_premises_out = compose(
+    get_vector_clock_layer,
+    get_clock_channels,
+    is_premises_out
+)
+
+// when value is retracted they do not disappear
+// but they went weaker
+export const tvs_strongest_consequence = (content: TemporaryValueSet<any>) => reduce(
+    content,
+    (a: LayeredObject<any>, b: LayeredObject<any>) => {
+        if (is_nothing(a)) {
+            return b;
+        }
+        else if (is_nothing(b)) {
+            return a;
+        }
+        else if (tvs_is_premises_in(a) && tvs_is_premises_out(b)) {
+            return a;
+        }
+        else if (tvs_is_premises_in(b) && tvs_is_premises_out(a)) {
+            return b;
+        }
+        else {
+            // this gets very redundent
+            // it can get better if we use pattern matching
+            return partial_merge(a, b);
+        }
+    },
+    the_nothing
+)
 
 // ValueSet handlers
 define_generic_procedure_handler(get_base_value,
@@ -121,14 +159,20 @@ define_generic_procedure_handler(is_unusable_value,
 
 define_generic_procedure_handler(strongest_value,
     match_args(is_temporary_value_set),
-    strongest_consequence)
+    tvs_strongest_consequence
+)
 
 // ValueSet operations
 
 // define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 
 export function merge_temporary_value_sets(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
-    return is_nothing(increment) ? to_temporary_value_set(content) : value_set_adjoin(to_temporary_value_set(content), increment);
+    if (has_vector_clock_layer(increment)){
+        return is_nothing(increment) ? to_temporary_value_set(content) : value_set_adjoin(to_temporary_value_set(content), increment);
+    }
+    else{
+        return merge_layered(content, increment);
+    }
 }
 
 
@@ -176,16 +220,12 @@ export function element_subsumes<A>(elt1: LayeredObject<A>, elt2: LayeredObject<
     }
 }
 
-export const is_premises_in_vector_clock = compose(
-    get_vector_clock_layer, 
-    get_clock_channels, 
-     is_premises_in
-)
+
 
 export function strongest_consequence<A>(set: any): A {
     return pipe(
         set,
-        (elements) => filter(elements, is_premises_in_vector_clock),
+        (elements) => filter(elements, tvs_is_premises_in),
         (filtered) => reduce(
             filtered,
             merge_layered,

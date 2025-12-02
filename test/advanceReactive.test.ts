@@ -7,7 +7,8 @@ import {
   cell_strongest_base_value,
   set_handle_contradiction,
   cell_content,
-  cell_strongest
+  cell_strongest,
+  cell_id
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential, replay_propagators, run_scheduler_and_replay, set_record_alerted_propagator } from "../Shared/Scheduler/Scheduler";
 import { get_base_value } from "sando-layer/Basic/Layer";
@@ -31,7 +32,7 @@ import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestam
 import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
 import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
 import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import {  com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant } from "../Propagator/BuiltInProps";
+import {  com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant, p_dispatch } from "../Propagator/BuiltInProps";
 import { inspect_content, inspect_strongest } from "../Helper/Debug";
 import { link, ce_pipe } from "../Propagator/Sugar";
 import { bi_pipe } from "../Propagator/Sugar";
@@ -1584,13 +1585,14 @@ import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, 
 // =============================================================================
 
 import { 
-  dependent_update, 
   kick_out, 
   bring_in, 
-  construct_dependent_cell,
-  get_dependence_cell,
-  clean_dependence_cells 
-} from "../DataTypes/Reality";
+  clean_dependence_cells, 
+  source_cell,
+  update_source_cell,
+  dependent_update,
+  p_reactive_dispatch
+} from "../DataTypes/Premises_Source";
 import { merge_temporary_value_sets } from "../DataTypes/TemporaryValueSet.ts";
 import "../DataTypes/register_vector_clock_patchedValueSet";
 
@@ -1606,26 +1608,24 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Basic Source Cell Update Tests", () => {
     
     test("source_update should update a cell with annotated value", async () => {
-      const cell = construct_cell("srcUpdateTest");
-      const update_testSrc = dependent_update("testSrc");
-      update_testSrc(new Map([[cell, 42]]));
+      const cell = source_cell("srcUpdateTest", 0);
+      update_source_cell(cell, 42);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(42);
     });
 
     test("source_update multiple times should reflect latest value", async () => {
-      const cell = construct_cell("srcMultiUpdate");
-      const update_multiSrc = dependent_update("multiSrc");
+      const cell = source_cell("multiSrc");
       
-      update_multiSrc(new Map([[cell, 1]]));
+      update_source_cell(cell, 1);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(1);
       
-      update_multiSrc(new Map([[cell, 2]]));
+      update_source_cell(cell, 2);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(2);
       
-      update_multiSrc(new Map([[cell, 3]]));
+      update_source_cell(cell, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(3);
     });
@@ -1634,72 +1634,63 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Propagator Tests", () => {
     
     test("p_sync should update output when source cell input changes", async () => {
-      const input = construct_cell("srcSyncInput");
+      const input = source_cell("syncSrc");
       const output = construct_cell("srcSyncOutput");
       p_sync(input, output);
-      const update_syncSrc = dependent_update("syncSrc");
       
-      update_syncSrc(new Map([[input, 1]]));
+      update_source_cell(input, 1);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(1);
       
-      update_syncSrc(new Map([[input, 2]]));
+      update_source_cell(input, 2);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(2);
     });
 
     test("p_add with source cells should correctly add values", async () => {
-      const cell1 = construct_cell("srcAddA");
-      const cell2 = construct_cell("srcAddB");
+      const cell1 = source_cell("addSrcA");
+      const cell2 = source_cell("addSrcB");
       const output = construct_cell("srcAddOut");
       p_add(cell1, cell2, output);
-      const update_addSrcA = dependent_update("addSrcA");
-      const update_addSrcB = dependent_update("addSrcB");
 
-      update_addSrcA(new Map([[cell1, 10]]));
-      update_addSrcB(new Map([[cell2, 15]]));
+      update_source_cell(cell1, 10);
+      update_source_cell(cell2, 15);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(25);
     });
 
     test("p_subtract with source cells should correctly subtract", async () => {
-      const cell1 = construct_cell("srcSubA");
-      const cell2 = construct_cell("srcSubB");
+      const cell1 = source_cell("subSrcA");
+      const cell2 = source_cell("subSrcB");
       const output = construct_cell("srcSubOut");
       p_subtract(cell1, cell2, output);
-      const update_subSrcA = dependent_update("subSrcA");
-      const update_subSrcB = dependent_update("subSrcB");
 
-      update_subSrcA(new Map([[cell1, 20]]));
-      update_subSrcB(new Map([[cell2, 5]]));
+      update_source_cell(cell1, 20);
+      update_source_cell(cell2, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(15);
     });
 
     test("p_multiply with source cells should correctly multiply", async () => {
-      const cell1 = construct_cell("srcMulA");
-      const cell2 = construct_cell("srcMulB");
+      const cell1 = source_cell("mulSrcA");
+      const cell2 = source_cell("mulSrcB");
       const output = construct_cell("srcMulOut");
       p_multiply(cell1, cell2, output);
-      const update_mulSrcA = dependent_update("mulSrcA");
-      const update_mulSrcB = dependent_update("mulSrcB");
 
-      update_mulSrcA(new Map([[cell1, 3]]));
-      update_mulSrcB(new Map([[cell2, 7]]));
+      update_source_cell(cell1, 3);
+      update_source_cell(cell2, 7);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(21);
     });
 
     test("p_divide with source cells should correctly divide", async () => {
-      const cell1 = construct_cell("srcDivA");
-      const cell2 = construct_cell("srcDivB");
+      const cell1 = source_cell("divSrcA");
+      const cell2 = source_cell("divSrcB");
       const output = construct_cell("srcDivOut");
       p_divide(cell1, cell2, output);
-      const update_divSrcA = dependent_update("divSrcA");
-      const update_divSrcB = dependent_update("divSrcB");
 
-      update_divSrcA(new Map([[cell1, 100]]));
-      update_divSrcB(new Map([[cell2, 4]]));
+      update_source_cell(cell1, 100);
+      update_source_cell(cell2, 4);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(25);
     });
@@ -1708,19 +1699,17 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Switch/Conditional Tests", () => {
     
     test("p_switch with source cells should route based on condition", async () => {
-      const condition = construct_cell("srcSwitchCond") as Cell<boolean>;
-      const thenCell = construct_cell("srcSwitchThen");
+      const condition = source_cell("switchCondSrc") as Cell<boolean>;
+      const thenCell = source_cell("switchThenSrc");
       const output = construct_cell("srcSwitchOut");
       p_switch(condition, thenCell, output);
-      const update_switchCondSrc = dependent_update("switchCondSrc");
-      const update_switchThenSrc = dependent_update("switchThenSrc");
 
-      update_switchCondSrc(new Map([[condition, false]]));
-      update_switchThenSrc(new Map([[thenCell, "initial"]]));
+      update_source_cell(condition, false);
+      update_source_cell(thenCell, "initial");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(the_nothing);
 
-      update_switchCondSrc(new Map([[condition, true]]));
+      update_source_cell(condition, true);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("initial");
     });
@@ -1729,58 +1718,54 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Chainable Operators Tests", () => {
     
     test("ce_pipe with p_map_a using source cells", async () => {
-      const input = construct_cell("srcPipeMapInput");
+      const input = source_cell("pipeMapSrc");
       const output = ce_pipe(input, p_map_a((x: number) => x + 10));
-      const update_pipeMapSrc = dependent_update("pipeMapSrc");
 
-      update_pipeMapSrc(new Map([[input, 5]]));
+      update_source_cell(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(15);
     });
 
     test("ce_pipe chaining multiple operators with source cells", async () => {
-      const input = construct_cell("srcChainInput");
+      const input = source_cell("chainSrc");
       const composed = ce_pipe(
         input, 
         p_map_a((x: number) => x * 2), 
         p_map_a((x: number) => x + 1)
       );
-      const update_chainSrc = dependent_update("chainSrc");
 
-      update_chainSrc(new Map([[input, 3]]));
+      update_source_cell(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       // Expected: (3 * 2) + 1 = 7
       expect(cell_strongest_base_value(composed)).toBe(7);
     });
 
     test("ce_pipe with p_filter_a using source cells", async () => {
-      const input = construct_cell("srcFilterInput");
+      const input = source_cell("filterSrc");
       const filtered = ce_pipe(input, p_filter_a((x: number) => x > 10));
-      const update_filterSrc = dependent_update("filterSrc");
 
-      update_filterSrc(new Map([[input, 5]]));
+      update_source_cell(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(filtered)).toBe(the_nothing);
 
-      update_filterSrc(new Map([[input, 15]]));
+      update_source_cell(input, 15);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(filtered)).toBe(15);
     });
 
     test("ce_pipe with p_reduce using source cells", async () => {
-      const input = construct_cell("srcReduceInput");
+      const input = source_cell("reduceSrc");
       const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
-      const update_reduceSrc = dependent_update("reduceSrc");
 
-      update_reduceSrc(new Map([[input, 5]]));
+      update_source_cell(input, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(reduced)).toBe(5);
 
-      update_reduceSrc(new Map([[input, 3]]));
+      update_source_cell(input, 3);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(reduced)).toBe(8);
 
-      update_reduceSrc(new Map([[input, 10]]));
+      update_source_cell(input, 10);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(reduced)).toBe(18);
     });
@@ -1789,22 +1774,24 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Bi-Directional Tests", () => {
     
     test("bi_sync with source cells should propagate in both directions", async () => {
-      const left = construct_cell("srcBiLeft");
-      const right = construct_cell("srcBiRight");
-      bi_sync(left, right);
-      
-      // Use single source for bi-directional updates (kick_out/bring_in pattern)
-      const update_biLeftSrc = dependent_update("biLeftSrc");
-      const update_biRightSrc = dependent_update("biRightSrc");
+      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
-      update_biLeftSrc(new Map([[left, 1]]));
+
+      const left = construct_cell("left") as Cell<number>;
+      const right = construct_cell("right") as Cell<number>;
+      p_reactive_dispatch(source, left)
+      p_reactive_dispatch(source, right)
+
+      bi_sync(left, right);
+
+      update_source_cell(source, new Map([[left, 1]]));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(left)).toBe(1);
       expect(cell_strongest_base_value(right)).toBe(1);
 
       // Kick out old source before updating from different source
-      kick_out("biLeftSrc");
-      update_biRightSrc(new Map([[right, 5]]));
+  
+      update_source_cell(source, new Map([[right, 5]]));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(right)).toBe(5);
       expect(cell_strongest_base_value(left)).toBe(5);
@@ -1813,20 +1800,22 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // Note: com_celsius_to_fahrenheit is a compound propagator that creates internal cells/propagators
     // which don't integrate with the Reality/dependent_update pattern. Use reactive_tell instead.
     test("temperature conversion with source cells (compound propagator - use reactive_tell)", async () => {
-      const celsius = construct_cell("srcCelsius");
-      const fahrenheit = construct_cell("srcFahrenheit");
+
+      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const celsius = construct_cell("celsius") as Cell<number>;
+      const fahrenheit = construct_cell("fahrenheit") as Cell<number>;
       
-      com_celsius_to_fahrenheit(celsius as Cell<number>, fahrenheit as Cell<number>);
-      const update_celsiusSrc = dependent_update("celsiusSrc");
-      const update_fahrenheitSrc = dependent_update("fahrenheitSrc");
+      p_reactive_dispatch(source, celsius)
+      p_reactive_dispatch(source, fahrenheit)
+
+      com_celsius_to_fahrenheit(celsius, fahrenheit);
       
-      update_celsiusSrc(new Map([[celsius, 0]]));
+      update_source_cell(source, new Map([[celsius, 0]]));
       run_scheduler_and_replay((e) => {})
       expect(cell_strongest_base_value(celsius)).toBe(0);
       expect(cell_strongest_base_value(fahrenheit)).toBe(32);
 
-      kick_out("celsiusSrc");
-      update_fahrenheitSrc(new Map([[fahrenheit, 212]]));
+      update_source_cell(source, new Map([[fahrenheit, 212]]));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(celsius)).toBe(100);
       expect(cell_strongest_base_value(fahrenheit)).toBe(212);
@@ -1836,20 +1825,18 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell kick_out/bring_in Tests", () => {
     
     test("kick_out should stop source contribution to downstream", async () => {
-      const cellA = construct_cell("kickTestA");
-      const cellB = construct_cell("kickTestB");
+      const cellA = source_cell("kickSrcA");
+      const cellB = source_cell("kickSrcB");
       const output = construct_cell("kickTestOut");
       p_add(cellA, cellB, output);
-      const update_kickSrcA = dependent_update("kickSrcA");
-      const update_kickSrcB = dependent_update("kickSrcB");
 
-      update_kickSrcA(new Map([[cellA, 10]]));
-      update_kickSrcB(new Map([[cellB, 20]]));
+      update_source_cell(cellA, 10);
+      update_source_cell(cellB, 20);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(30);
 
       // Kick out source A
-      kick_out("kickSrcA");
+      kick_out(cell_id(cellA));
       await execute_all_tasks_sequential((error: Error) => {});
       
       console.log("After kick_out kickSrcA:");
@@ -1858,51 +1845,56 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("bring_in should restore source contribution", async () => {
-      const cellA = construct_cell("bringTestA");
-      const cellB = construct_cell("bringTestB");
+      const cellA = source_cell("bringSrcA");
+      const cellB = source_cell("bringSrcB");
       const output = construct_cell("bringTestOut");
       p_multiply(cellA, cellB, output);
-      const update_bringSrcA = dependent_update("bringSrcA");
-      const update_bringSrcB = dependent_update("bringSrcB");
 
-      update_bringSrcA(new Map([[cellA, 5]]));
-      update_bringSrcB(new Map([[cellB, 4]]));
+      update_source_cell(cellA, 5);
+      update_source_cell(cellB, 4);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(20);
 
       // Kick out and bring back
-      kick_out("bringSrcA");
+      kick_out(cell_id(cellA));
       await execute_all_tasks_sequential((error: Error) => {});
       
-      bring_in("bringSrcA");
+      bring_in(cell_id(cellA));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(20);
     });
 
     test("switch between sources using kick_out/bring_in", async () => {
+      // Note: This test needs two source cells that both update the same target cell
+      // Since we can't have two source cells updating the same cell directly,
+      // we'll create a regular cell and use p_sync from source cells
+      const source1 = source_cell("switchSrc1");
+      const source2 = source_cell("switchSrc2");
       const cell = construct_cell("switchSrcCell");
       const output = construct_cell("switchSrcOut");
+      p_sync(source1, cell);
+      p_sync(source2, cell);
       p_sync(cell, output);
-      const update_switchSrc1 = dependent_update("switchSrc1");
-      const update_switchSrc2 = dependent_update("switchSrc2");
 
       // Source 1
-      update_switchSrc1(new Map([[cell, 100]]));
+      update_source_cell(source1, 100);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(100);
 
       // Source 2 (alternative)
-      update_switchSrc2(new Map([[cell, 200]]));
+      update_source_cell(source2, 200);
       await execute_all_tasks_sequential((error: Error) => {});
       
       // Kick out source 1, keep source 2
-      kick_out("switchSrc1");
-      await execute_all_tasks_sequential((error: Error) => {});
+      kick_out(cell_id(source1));
+      // it kicked out source 1 but because source 1 was nothing
+      // so the update failed to propagated into output...
+      run_scheduler_and_replay(console.error)
       expect(cell_strongest_base_value(output)).toBe(200);
 
       // Switch back to source 1
-      bring_in("switchSrc1");
-      kick_out("switchSrc2");
+      bring_in(cell_id(source1));
+      kick_out(cell_id(source2));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(100);
     });
@@ -1931,8 +1923,10 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       }, "src_radius_to_circle");
 
       // Set radius via source cell
-      const update_radiusSrc = dependent_update("radiusSrc");
-      update_radiusSrc(new Map([[radius, 5]]));
+      const radiusSrc = source_cell("radiusSrc") as Cell<number>;
+      p_sync(radiusSrc, radius);
+      
+      update_source_cell(radiusSrc, 5);
       await execute_all_tasks_sequential((error: Error) => {});
       await new Promise((resolve) => setTimeout(resolve, 50));
       
@@ -1942,7 +1936,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       expect(cell_strongest_base_value(area)).toBeCloseTo(Math.PI * 25, 5);
 
       // Update radius
-      update_radiusSrc(new Map([[radius, 10]]));
+      update_source_cell(radiusSrc, 10);
       await execute_all_tasks_sequential((error: Error) => {});
       await new Promise((resolve) => setTimeout(resolve, 50));
       
@@ -1952,14 +1946,14 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       expect(cell_strongest_base_value(area)).toBeCloseTo(Math.PI * 100, 5);
 
       // Kick out and verify cascade stops
-      kick_out("radiusSrc");
+      kick_out(cell_id(radiusSrc));
       await execute_all_tasks_sequential((error: Error) => {});
       
       console.log("After kick_out radius source:");
       console.log("radius:", radius.summarize());
 
       // Bring back
-      bring_in("radiusSrc");
+      bring_in(cell_id(radiusSrc));
       await execute_all_tasks_sequential((error: Error) => {});
       
       expect(cell_strongest_base_value(radius)).toBeCloseTo(10, 5);
@@ -1967,41 +1961,44 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   });
 
   describe("Source Cell c_if Conditional Tests", () => {
-    
+    // there is some problem with conditional specially working with temporary value sets
+    // condition needs to emit its own vector clock 
+    // otherwise it doesn't make sense in the context
     // Note: c_if_a uses internal caching that doesn't respond to Reality/dependent_update condition changes.
     // The output is computed once based on the initial condition and cached. Use reactive_tell for c_if_a.
     test("c_if_a with source cells (conditional caches state - use reactive_tell)", async () => {
-      const condition = construct_cell("srcIfCond") as Cell<boolean>;
-      const thenValue = construct_cell("srcIfThen") as Cell<number>;
-      const elseValue = construct_cell("srcIfElse") as Cell<number>;
+      const condition = source_cell("ifCondSrc") as Cell<boolean>;
+      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+
       const output = construct_cell("srcIfOut") as Cell<number>;
+
+      const then_cell = construct_cell("then") as Cell<number>;
+      const else_cell = construct_cell("else") as Cell<number>;
+
+      p_reactive_dispatch(source, then_cell)
+      p_reactive_dispatch(source, else_cell)
       
-      c_if_a(condition, thenValue, elseValue, output);
-      const update_ifThenSrc = dependent_update("ifThenSrc");
-      const update_ifElseSrc = dependent_update("ifElseSrc");
-      const update_ifCondSrc_true = dependent_update("ifCondSrc_true");
-      const update_ifCondSrc_false = dependent_update("ifCondSrc_false");
+      c_if_a(condition, then_cell, else_cell, output);
       
-      update_ifThenSrc(new Map([[thenValue, 100]]));
-      update_ifElseSrc(new Map([[elseValue, 200]]));
-      update_ifCondSrc_true(new Map([[condition, true]]));
+      update_source_cell(source, new Map([[then_cell, 100], [else_cell, 200]]));
+     
+      update_source_cell(condition, true);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(100);
       
-      kick_out("ifCondSrc_true");
-      update_ifCondSrc_false(new Map([[condition, false]]));
+      update_source_cell(condition, false);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(200);
       
-      const update_ifThenSrc_v2 = dependent_update("ifThenSrc_v2");
-      kick_out("ifThenSrc");
-      update_ifThenSrc_v2(new Map([[thenValue, 150]]));
+      const thenValue_v2 = source_cell("ifThenSrc_v2") as Cell<number>;
+      // kick_out(cell_id(thenValue));
+      // p_sync(thenValue_v2, thenValue);
+      update_source_cell(thenValue_v2, 150);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(200);
       
-      kick_out("ifCondSrc_false");
-      bring_in("ifCondSrc_true");
-      update_ifCondSrc_true(new Map([[condition, true]]));
+      bring_in(cell_id(condition));
+      update_source_cell(condition, true);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(150);
     });
@@ -2010,60 +2007,57 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell p_drop/p_take Tests", () => {
     
     test("p_drop with source cells should skip first N values", async () => {
-      const input = construct_cell("srcDropInput");
+      const input = source_cell("dropSrc");
       const output = construct_cell("srcDropOutput");
       p_drop(2)(input, output);
-      const update_dropSrc = dependent_update("dropSrc");
 
       // Execute each update separately so p_drop counter increments properly
-      update_dropSrc(new Map([[input, "a"]]));
+      update_source_cell(input, "a");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(the_nothing);
 
-      update_dropSrc(new Map([[input, "b"]]));
+      update_source_cell(input, "b");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(the_nothing);
 
-      update_dropSrc(new Map([[input, "c"]]));
+      update_source_cell(input, "c");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("c");
 
-      update_dropSrc(new Map([[input, "d"]]));
+      update_source_cell(input, "d");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("d");
     });
 
     test("p_take with source cells should only take first N values", async () => {
-      const input = construct_cell("srcTakeInput");
+      const input = source_cell("takeSrc");
       const output = construct_cell("srcTakeOutput");
       p_take(2)(input, output);
-      const update_takeSrc = dependent_update("takeSrc");
 
-      update_takeSrc(new Map([[input, "x"]]));
+      update_source_cell(input, "x");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("x");
 
-      update_takeSrc(new Map([[input, "y"]]));
+      update_source_cell(input, "y");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("y");
 
       // Further updates should be ignored
-      update_takeSrc(new Map([[input, "z"]]));
+      update_source_cell(input, "z");
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe("y");
     });
 
     test("p_index with source cells should only take nth value", async () => {
-      const input = construct_cell("srcIndexInput");
+      const input = source_cell("indexSrc");
       const output = construct_cell("srcIndexOutput");
       p_index(1)(input, output);
-      const update_indexSrc = dependent_update("indexSrc");
 
-      update_indexSrc(new Map([[input, 100]]));
+      update_source_cell(input, 100);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(100);
 
-      update_indexSrc(new Map([[input, 200]]));
+      update_source_cell(input, 200);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(100);
     });
@@ -2072,19 +2066,16 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell p_zip Tests", () => {
     
     test("p_zip with source cells should combine values", async () => {
-      const cell1 = construct_cell("srcZip1");
-      const cell2 = construct_cell("srcZip2");
-      const zipFunc = construct_cell("srcZipFunc");
+      const cell1 = source_cell("zip1Src");
+      const cell2 = source_cell("zip2Src");
+      const zipFunc = source_cell("zipFuncSrc");
       const output = construct_cell("srcZipOut");
       
       p_zip([cell1, cell2], zipFunc, output);
-      const update_zipFuncSrc = dependent_update("zipFuncSrc");
-      const update_zip1Src = dependent_update("zip1Src");
-      const update_zip2Src = dependent_update("zip2Src");
 
-      update_zipFuncSrc(new Map([[zipFunc, (a: string, b: string) => [a, b]]]));
-      update_zip1Src(new Map([[cell1, "x"]]));
-      update_zip2Src(new Map([[cell2, "y"]]));
+      update_source_cell(zipFunc, (a: string, b: string) => [a, b]);
+      update_source_cell(cell1, "x");
+      update_source_cell(cell2, "y");
       await execute_all_tasks_sequential((error: Error) => {});
       
       expect(cell_strongest_base_value(output)).toEqual(["x", "y"]);

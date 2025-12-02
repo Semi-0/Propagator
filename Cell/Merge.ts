@@ -34,6 +34,21 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
     }
 )
 
+export const partial_merge = make_layered_procedure("partly_merge", 2, (content: any, increment: any) => {
+    if (is_contradiction(content)) {
+        return content
+    }
+    else if (is_contradiction(increment)) {
+        return increment
+    }
+    else if (is_equal(content, increment)) {
+        return content
+    }
+    else {
+        console.error("error merge" + " + \n content: \n " + to_string(content) + " increment:  \n" + to_string(increment))
+        return the_contradiction
+    }
+})
 
 export const _merge_layered = make_layered_procedure("merge_layered", 2, generic_merge);
  

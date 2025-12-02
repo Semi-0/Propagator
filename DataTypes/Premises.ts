@@ -105,12 +105,21 @@ export function _premises_metadata(name: string): PremiseMetaData{
 
 export function is_premise_in(name: string): boolean{
 
-    return _premises_metadata(name).is_believed();
+     try {
+        return _premises_metadata(name).is_believed();
+     }
+     catch (error) {
+        return false;
+     }
 }
 
 export function is_premise_out(name: string): boolean{
-
-    return !_premises_metadata(name).is_believed();
+    try {
+        return !_premises_metadata(name).is_believed();
+    }
+    catch (error) {
+        return false;
+    }
 }
 
 export function is_premises_in(names: BetterSet<string>): boolean{
