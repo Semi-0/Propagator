@@ -29,6 +29,18 @@ export const get_downstream = (x: any) => {
     }
 }
 
+export const get_neighbors = (x: any) => {
+    if (is_cell(x)) {
+        return [...cell_downstream(x), ...cell_upstream(x)]
+    }
+    else if (is_propagator(x)) {
+        return [...propagator_downstream(x), ...propagator_upstream(x)]
+    }
+    else {
+        return []
+    }
+}
+
 export const get_upstream = (x: any) => {
     if (is_cell(x)) {
         return cell_upstream(x)
@@ -88,6 +100,7 @@ export const traverse_chain = (direction: (node: any) => any[]) => (final: (trav
 
 export const traverse_chain_downstream = traverse_chain(get_downstream)
 export const traverse_chain_upstream = traverse_chain(get_upstream)
+export const traverse_chain_neighbors = traverse_chain(get_neighbors)
 
 export const traverse_downstream = (final: (traversed: any[]) => any) => traverse(
     (node: any, go: (x: any) => any[]) => {
@@ -144,6 +157,62 @@ export const traverse_value_path_upstream = traverse_chain_upstream(
     (traversed: any[]) => traversed.map((path: any[]) => path.map(display_value).join(" <- "))
 )
 
+// maybe give these combinator a vector?
+// but how?
+export const traverse_value_path_neighbors = traverse_chain_neighbors(
+    (traversed: any[]) => traversed.map((path: any[]) => path.map(display_value).join(" -- "))
+)
+
+
+// interface spider 
+
+// spider was something like turtle?
+// it keep doing the same thing until a condition is met?
+
+
+export const is_location = (x: any) => is_cell(x) || 
+                                       is_propagator(x) || 
+                                       (is_downstream(x) && is_upstream(x) && is_neighbors(x))
+
+export const is_downstream = (x: any) => x === "downstream"
+export const is_upstream = (x: any) => x === "upstream"
+export const is_neighbors = (x: any) => x === "neighbors"
+
+
+// go to or go downstream?
+interface Spider {
+    get_location(): any 
+    goto(location: any): void 
+    get_web(): any[] 
+}
+
+
+export const create_spider = (current_location: any): Spider => {
+    var web: any[] = []
+
+    return {
+        get_location: () => current_location,
+        goto: (location: any) => {
+            if (is_downstream(location)) {
+                current_location = [current_location, ...get_downstream(current_location)]
+            }
+            else if (is_upstream(location)) {
+                current_location = [current_location, ...get_upstream(current_location)]
+            }
+            else if (is_neighbors(location)) {
+                current_location = [current_location, ...get_neighbors(current_location)]
+            }
+            else {
+                const traversed = traverse_chain_neighbors(
+                    traversed => traversed
+                )(current_location, location)
+                web = [...web, ...traversed]
+                current_location = location
+            }
+        },
+        get_web: () => web
+    }
+}
 // higer order function on spider?
 // like map, filter, reduce? 
 // search (both upstream and downstream?)
