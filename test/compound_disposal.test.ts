@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from "bun:test";
-import { construct_cell, cell_strongest, cell_dispose, cell_strongest_base_value, cell_id, type Cell } from "../Cell/Cell";
+import { construct_cell, cell_strongest, cell_strongest_base_value, cell_id, type Cell, dispose_cell } from "../Cell/Cell";
 import { p_add, p_multiply, p_subtract } from "../Propagator/BuiltInProps";
 import { clear_all_tasks, execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { observe_global_commands, PublicStateCommand, set_global_state } from "../Shared/PublicState";
 import { the_disposed, is_disposed, the_nothing } from "../Cell/CellValue";
 import { simple_scheduler } from "../Shared/Scheduler/SimpleScheduler";
-import { compound_propagator, propagator_id, propagator_dispose, function_to_primitive_propagator } from "../Propagator/Propagator";
+import { compound_propagator, propagator_id, function_to_primitive_propagator, dispose_propagator } from "../Propagator/Propagator";
 import { find_cell_by_id, find_propagator_by_id } from "../Shared/GraphTraversal";
 import { update } from "../AdvanceReactivity/interface";
 import { is_child, get_children } from "../Shared/Generics";
@@ -178,7 +178,7 @@ describe("Compound Propagator Child Disposal", () => {
             expect(cell_strongest_base_value(output)).toBe(24); // 12 * 2
             
             // Dispose the compound propagator
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify internal cells are disposed
@@ -221,7 +221,7 @@ describe("Compound Propagator Child Disposal", () => {
             expect(find_propagator_by_id(multiplyTwoPropId!)).toBeDefined();
             
             // Dispose the compound propagator
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify internal propagators are removed
@@ -284,7 +284,7 @@ describe("Compound Propagator Child Disposal", () => {
             disposalOrder.length = 0;
             
             // Dispose the compound propagator
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify propagators were disposed before cells
@@ -346,7 +346,7 @@ describe("Compound Propagator Child Disposal", () => {
             expect(find_propagator_by_id(innerPropId!)).toBeDefined();
             
             // Dispose outer compound
-            outerCompound.dispose();
+            dispose_propagator(outerCompound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify all nested children are disposed
@@ -398,7 +398,7 @@ describe("Compound Propagator Child Disposal", () => {
             });
             
             // Dispose level1 (should cascade to all nested levels)
-            level1.dispose();
+            dispose_propagator(level1);
             await execute_all_tasks_sequential(() => {});
             
             // Verify all cells are disposed
@@ -431,7 +431,7 @@ describe("Compound Propagator Child Disposal", () => {
             await execute_all_tasks_sequential(() => {});
             
             // Dispose compound
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Input and output should still exist
@@ -478,7 +478,7 @@ describe("Compound Propagator Child Disposal", () => {
             expect(cell_strongest_base_value(output2)).toBe(45); // 5 * 3 * 3
             
             // Dispose compound
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify internal cells are disposed
@@ -513,7 +513,7 @@ describe("Compound Propagator Child Disposal", () => {
             await execute_all_tasks_sequential(() => {});
             
             // Dispose compound
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Verify shared cell is disposed
@@ -531,7 +531,7 @@ describe("Compound Propagator Child Disposal", () => {
             }, "empty_compound");
             
             // Should not throw
-            expect(() => compound.dispose()).not.toThrow();
+            expect(() => dispose_propagator(compound)).not.toThrow();
             await execute_all_tasks_sequential(() => {});
         });
 
@@ -555,7 +555,7 @@ describe("Compound Propagator Child Disposal", () => {
             expect(find_cell_by_id(internalCellId!)).toBeDefined();
             
             // Dispose
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Internal cell should be disposed
@@ -579,7 +579,7 @@ describe("Compound Propagator Child Disposal", () => {
             await execute_all_tasks_sequential(() => {});
             
             // Dispose
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Propagator should be disposed
@@ -598,11 +598,11 @@ describe("Compound Propagator Child Disposal", () => {
             }, "double_disposal_compound");
             
             // First disposal
-            compound.dispose();
+            dispose_propagator(compound);
             await execute_all_tasks_sequential(() => {});
             
             // Second disposal should not throw
-            expect(() => compound.dispose()).not.toThrow();
+            expect(() => dispose_propagator(compound)).not.toThrow();
             await execute_all_tasks_sequential(() => {});
         });
     });

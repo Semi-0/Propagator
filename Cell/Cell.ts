@@ -1,5 +1,5 @@
 import { set_global_state, get_global_parent } from "../Shared/PublicState";
-import {type Propagator, propagator_dispose} from "../Propagator/Propagator";
+import {type Propagator, internal_propagator_dispose} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
@@ -55,19 +55,20 @@ export interface Cell<A> {
   getRelation: () => Primitive_Relation;
   getContent: () => CellValue<A>;
   getStrongest: () => CellValue<A>
-  getNeighbors: () => Map<string, interesetedNeighbor>;
+  getNeighbors: () => Map<string, interesetedNeighbor>; 
   update: (increment: CellValue<A>) => boolean;
   testContent: () => boolean;
-  addNeighbor: (propagator: Propagator, interested_in: CellHooks[]) => void;
+  addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => void;
   removeNeighbor: (propagator: Propagator) => void;
   summarize: () => string;
   dispose: () => void;  // <-- new dispose method
 }
 
 
-export enum CellHooks{
+export enum NeighborType{
   updated = "updated",
   content_tested = "content_tested",
+  dependents = "dependents",
   received = "received",
   disposing = "disposing",
   neighbor_added = "neighbor_added",
@@ -77,15 +78,15 @@ export enum CellHooks{
 // how about hooks
 
 export interface interesetedNeighbor{
-  interested_in: CellHooks[];
+  type: NeighborType[];
   propagator: Propagator
 }
 
-export const is_interested_neighbor = (prop: CellHooks) => (neighbor: interesetedNeighbor) => {
-  return neighbor.interested_in.includes(prop)
+export const is_interested_neighbor = (prop: NeighborType) => (neighbor: interesetedNeighbor) => {
+  return neighbor.type.includes(prop)
 }
 
-export const fetch_propagators_from_neighbors = (prop: CellHooks) => (neighbors: Map<string, interesetedNeighbor>) => {
+export const fetch_propagators_from_neighbors = (prop: NeighborType) => (neighbors: Map<string, interesetedNeighbor>) => {
   return pipe(
     neighbors, 
     to_array, 
@@ -94,7 +95,7 @@ export const fetch_propagators_from_neighbors = (prop: CellHooks) => (neighbors:
   )
 }
 
-export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbor>, prop: CellHooks) => {
+export const alert_interested_propagators = (neighbors: Map<string, interesetedNeighbor>, prop: NeighborType) => {
   return pipe(
     neighbors, 
     fetch_propagators_from_neighbors(prop),
@@ -126,25 +127,25 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
 
   function set_strongest(new_strongest: CellValue<A>){
     strongest = new_strongest
-    alert_interested_propagators(neighbors, CellHooks.updated)
+    alert_interested_propagators(neighbors, NeighborType.updated)
   }
 
   function test_content(): void {
     const new_strongest = strongest_value(content)
 
     if (is_equal(new_strongest, strongest)){
-      alert_interested_propagators(neighbors, CellHooks.content_tested)
+      alert_interested_propagators(neighbors, NeighborType.content_tested)
       // because new strongest doesn't change
       // so constant cell would not be updated on first update
     }
     else if (is_contradiction(new_strongest)){
-      alert_interested_propagators(neighbors, CellHooks.content_tested)
+      alert_interested_propagators(neighbors, NeighborType.content_tested)
       set_strongest(new_strongest)
       handle_cell_contradiction()
 
     }
     else{
-      alert_interested_propagators(neighbors, CellHooks.content_tested)
+      alert_interested_propagators(neighbors, NeighborType.content_tested)
       set_strongest(new_strongest)
     }
   }
@@ -164,18 +165,18 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
       }
     },
 
-    addNeighbor: (propagator: Propagator, interested_in: CellHooks[]) => {
+    addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
   
       neighbors.set(propagator.getRelation().get_id(), {
-        interested_in: interested_in,
+        type: interested_in,
         propagator: propagator
       });
-      alert_interested_propagators(neighbors, CellHooks.neighbor_added)
-      alert_interested_propagators(neighbors, CellHooks.updated)
+      alert_interested_propagators(neighbors, NeighborType.neighbor_added)
+      alert_interested_propagators(neighbors, NeighborType.updated)
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(get_id(propagator));
-      alert_interested_propagators(neighbors, CellHooks.neighbor_removed)
+      alert_interested_propagators(neighbors, NeighborType.neighbor_removed)
     },
     summarize: () => {
       const name = relation.get_name();
@@ -183,7 +184,7 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
       const contVal = content;
 
       const summarizeNeighbor = ([id, info]: [string, interesetedNeighbor], index: number) => {
-        const interested = info?.interested_in ?? [];
+        const interested = info?.type ?? [];
         const propagatorName = info?.propagator?.getName ? info.propagator.getName() : "<unknown propagator>";
         const interestedDisplay = interested.length ? ` [${interested.join(", ")}]` : "";
         return `    [${index}] ${propagatorName} (id: ${id})${interestedDisplay}`;
@@ -206,21 +207,22 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
 
     dispose: () => {
       // Set the cell to disposed value
-      alert_interested_propagators(neighbors, CellHooks.disposing)
+      alert_interested_propagators(neighbors, NeighborType.disposing)
       content = the_disposed
       strongest = the_disposed
       active = false
       // Mark for cleanup
-      mark_for_disposal(cell.getRelation())
+      // mark_for_disposal(cell.getRelation())
       // Trigger propagation to connected cells
-
-      // but what about dependents?
-      neighbors.forEach(n => {
-        n.propagator.activate()
-      })
+      // mark_for_disposal(cell)
+      // // but what about dependents?
+      // neighbors.forEach(n => {
+      //   mark_for_disposal(n.propagator)
+      // })
     }
   };
 
+  set_global_state(PublicStateCommand.ADD_CELL, cell)
   
 // because i killed cell register in global state
 // now premises cannot find cell anymore
@@ -232,8 +234,8 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
 
   // source layer triggers propagator to updates
 
-export function construct_cell<A>(name: string): Cell<A> {
-  return primitive_construct_cell<A>(name)
+export function construct_cell<A>(name: string, id: string | null = null): Cell<A> {
+  return primitive_construct_cell<A>(name, id)
 }
 
 
@@ -265,7 +267,7 @@ export const cell_neightbor_set = (cell: Cell<any>) => {
 
 
 
-export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: CellHooks[]){
+export function add_cell_neighbour<A>(cell: Cell<A>, propagator: Propagator, interested_in: NeighborType[]){
   cell.addNeighbor(propagator, interested_in);
 }
 
@@ -308,8 +310,12 @@ export function cell_name<A>(cell: Cell<A>){
   return cell.getRelation().get_name()
 }
 
-export function cell_dispose(cell: Cell<any>){
-  cell.dispose();
+export function internal_cell_dispose(cell: Cell<any>){
+  cell.dispose()
+}
+
+export function dispose_cell(cell: Cell<any>){
+  mark_for_disposal(cell)
 }
 
 export const cell_strongest_base_value = compose(cell_strongest, get_base_value)

@@ -68,6 +68,10 @@ export function set_record_alerted_propagator(value: boolean){
 }
 
 
+export function disposal_queue_size(){
+    return Current_Scheduler.disposal_queue().length
+}
+
 export const run_scheduler_and_replay = (error_handler: (e: Error) => void) => {
     set_record_alerted_propagator(true);
     execute_all_tasks_sequential(error_handler);

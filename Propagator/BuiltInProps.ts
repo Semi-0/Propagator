@@ -133,7 +133,7 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
 //     return value
 // })
 
-export const ce_constant = (value: any, name: string = "constant") => make_ce_arithmetical(p_constant(value), "constant | " + name )(construct_cell(name + "_input"))
+export const ce_constant = (value: any, name: string = "constant", id: string | null = null) => make_ce_arithmetical(p_constant(value), "constant | " + name )(construct_cell(name + "_input", id))
 
 export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [a, b], () => {
     //TODO: this is cheating but this works for now 

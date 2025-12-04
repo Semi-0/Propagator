@@ -5,7 +5,7 @@
 // if the propagators is already in the queue, then it should move to the end
 
 
-import { propagator_id as _propagator_id, propagator_id, type Propagator, is_propagator } from "../../Propagator/Propagator";
+import { propagator_id as _propagator_id, propagator_id, type Propagator, is_propagator, internal_propagator_dispose } from "../../Propagator/Propagator";
 
 import type { Scheduler } from "./SchedulerType";
 import { PropagatorError } from "../../Error/PropagatorError";
@@ -16,6 +16,8 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
+import { cell_neightbor_set, internal_cell_dispose } from "@/cell/Cell";
+import { cell_dispose, propagator_dispose } from "ppropogator";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
@@ -72,6 +74,14 @@ export const simple_scheduler = (): Scheduler => {
             // Try to find and dispose cell
             const cell = find_cell_by_id(id)
             if (cell) {
+                // dispose all neighbors
+                cell.getNeighbors().forEach(n => {
+                    internal_propagator_dispose(n.propagator)
+                    set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, n.propagator)
+                })
+
+                
+                internal_cell_dispose(cell)
                 set_global_state(PublicStateCommand.REMOVE_CELL, cell)
             }
             else{
@@ -81,7 +91,9 @@ export const simple_scheduler = (): Scheduler => {
             // Try to find and dispose propagator
             const propagator = find_propagator_by_id(id)
             if (propagator) {
+                internal_propagator_dispose(propagator)
                 set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
+     
             }
             else{
                 console.log("propagator not found for disposal", id)
@@ -137,5 +149,9 @@ export const simple_scheduler = (): Scheduler => {
                 logger(propagator)
             })
         },
+
+        disposal_queue: () => {
+            return Array.from(disposalQueue)
+        }
     }
 }

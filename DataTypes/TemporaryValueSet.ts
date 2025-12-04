@@ -166,7 +166,7 @@ define_generic_procedure_handler(strongest_value,
 
 // define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 
-export function merge_temporary_value_sets(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
+export function merge_temporary_value_set(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
     if (has_vector_clock_layer(increment)){
         return is_nothing(increment) ? to_temporary_value_set(content) : value_set_adjoin(to_temporary_value_set(content), increment);
     }

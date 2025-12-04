@@ -19,7 +19,7 @@ import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
 import { p_add, p_subtract, p_multiply, p_divide } from "../Propagator/BuiltInProps";
 import { set_merge } from "@/cell/Merge";
-import { merge_temporary_value_sets } from "../DataTypes/TemporaryValueSet";
+import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
 import { support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out as kick_out_premise, reactive_tell } from "../Helper/UI";
 import { 
@@ -42,7 +42,7 @@ import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
 
-    set_merge(merge_temporary_value_sets);
+    set_merge(merge_temporary_value_set);
 });
 
 describe("TemporaryValueSet Propagator Integration Tests", () => {

@@ -15,6 +15,8 @@ import { pipe } from "fp-ts/lib/function";
 import { curried_map } from "../Helper/Helper";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
 import { Current_Scheduler } from "ppropogator";
+import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
+import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/Premises_Source";
 export type TestAssessor = {
     category: "input" | "output" | "scheduler" | "replay_scheduler" | "merge_plan" | "trace_scheduler";
     fn: (...args: any[]) => any;
@@ -255,7 +257,9 @@ export const pop_cell_env = (cell_names: string[]) => {
     return cells;
 }
 
-export const test_propagator_constructor = (testor: (description: string, test: (...args: any[]) => void | Promise<void>) => void, merge_plan: (content: any, increment: any) => any = merge_patched_set) => (
+var source = source_cell("test_source")
+
+export const test_propagator_constructor = (testor: (description: string, test: (...args: any[]) => void | Promise<void>) => void, merge_plan: (content: any, increment: any) => any = merge_temporary_value_set) => (
     description: string,
     constructor: (...args: Cell<any>[]) => Propagator | void,
     cell_names: string[],
@@ -275,6 +279,9 @@ export const test_propagator_constructor = (testor: (description: string, test: 
         // }
 
         const env = pop_cell_env(cell_names);
+        source.dispose()
+        source = source_cell("test_source")
+        
         var propagator = constructor(...env.values());
         for (const assessor of assesors) {
 
@@ -314,7 +321,8 @@ export const test_propagator_only_with_merge_plan = (merge_plan: (content: any, 
 
 export const reactive_input = (value: any, name: string) =>
     input_accessor(name, async (cell: Cell<any>) => {
-        await reactive_tell(cell, value);
+        p_reactive_dispatch(source, cell)
+        update_source_cell(source, new Map([[cell, value]]))
         return true;
     });
 

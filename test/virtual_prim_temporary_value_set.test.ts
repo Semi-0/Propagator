@@ -28,7 +28,7 @@ import {
 
 // TemporaryValueSet and Vector Clock imports
 import {
-  merge_temporary_value_sets,
+  merge_temporary_value_set,
   vector_clock_subsumes,
 } from "../DataTypes/TemporaryValueSet";
 import {
@@ -59,7 +59,7 @@ import { compound_tell } from "../Helper/UI";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
-  set_merge(merge_temporary_value_sets);
+  set_merge(merge_temporary_value_set);
 });
 
 /**

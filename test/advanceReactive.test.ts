@@ -1593,7 +1593,7 @@ import {
   dependent_update,
   p_reactive_dispatch
 } from "../DataTypes/Premises_Source";
-import { merge_temporary_value_sets } from "../DataTypes/TemporaryValueSet.ts";
+import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet.ts";
 import "../DataTypes/register_vector_clock_patchedValueSet";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
@@ -1602,7 +1602,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     clean_dependence_cells();
     set_handle_contradiction(trace_earliest_emerged_value);
-    set_merge(merge_temporary_value_sets);
+    set_merge(merge_temporary_value_set);
   });
 
   describe("Basic Source Cell Update Tests", () => {

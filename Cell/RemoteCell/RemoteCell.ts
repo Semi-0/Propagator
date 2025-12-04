@@ -2,7 +2,7 @@ import { make_relation } from "../../DataTypes/Relation";
 import {  get_global_parent, PublicStateCommand, set_global_state } from "../../Shared/PublicState";
 import { the_contradiction, the_nothing, is_nothing, type CellValue } from "../CellValue";
 import { pipe } from "fp-ts/lib/function";
-import { general_contradiction, type Cell, type interesetedNeighbor, CellHooks, alert_interested_propagators, handle_contradiction } from "../Cell";
+import { general_contradiction, type Cell, type interesetedNeighbor, NeighborType, alert_interested_propagators, handle_contradiction } from "../Cell";
 import { cell_merge } from "../Merge";
 import type { Propagator } from "../../Propagator/Propagator";
 import { describe } from "../../Helper/UI";
@@ -63,7 +63,7 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
 
     const set_strongest = (new_strongest: CellValue<any>) => {
         strongest = new_strongest;
-        alert_interested_propagators(neighbors, CellHooks.updated);
+        alert_interested_propagators(neighbors, NeighborType.updated);
         
         if (general_contradiction(strongest)){
             handle_contradiction(cell);
@@ -100,21 +100,21 @@ export async function remote_cell(name: string, remote_server: RemoteConnector){
         getStrongest: () => strongest,
         getNeighbors: () => neighbors,
         
-        addNeighbor: (propagator: Propagator, interested_in: CellHooks[]) => {
+        addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
             neighbors.set(propagator.getRelation().get_id(), {
-                interested_in: interested_in,
+                type: interested_in,
                 propagator: propagator
             });
-            alert_interested_propagators(neighbors, CellHooks.neighbor_added);
+            alert_interested_propagators(neighbors, NeighborType.neighbor_added);
             // If we have a value, notify the new neighbor (and others)
             if (!is_nothing(strongest)) {
-                alert_interested_propagators(neighbors, CellHooks.updated);
+                alert_interested_propagators(neighbors, NeighborType.updated);
             }
         }, 
         
         removeNeighbor: (propagator: Propagator) => {
             neighbors.delete(get_id(propagator));
-            alert_interested_propagators(neighbors, CellHooks.neighbor_removed);
+            alert_interested_propagators(neighbors, NeighborType.neighbor_removed);
         },
  
         summarize: () => {

@@ -1,5 +1,5 @@
 import { Primitive_Relation, make_relation, type Relation, is_relation } from "../DataTypes/Relation";
-import { type Cell, update_cell, cell_id, cell_strongest, cell_dispose, CellHooks, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
+import { type Cell, update_cell, cell_id, cell_strongest, internal_cell_dispose, NeighborType, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -54,7 +54,7 @@ export const disposing_scan = (cells: Cell<any>[]) => {
     return cells.some((c: any) => c === undefined || c === null || is_disposed(cell_strongest(c)))
 }
 
-const default_interested_hooks = (): CellHooks[] => ["updated" as CellHooks];
+const default_interested_hooks = (): NeighborType[] => ["updated" as NeighborType];
 
 // dispose is too low level, we need to abstract it away!!!
 export function construct_propagator(
@@ -63,7 +63,7 @@ export function construct_propagator(
                                  activate: () => void,
                                  name: string,
                                  id: string | null = null,
-                                 interested_in: CellHooks[] = [CellHooks.updated]
+                                 interested_in: NeighborType[] = [NeighborType.updated]
                                 ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
 
@@ -88,22 +88,27 @@ export function construct_propagator(
       ].join("\n");
     },
     activate: () => {
-      if (disposing_scan([...inputs, ...outputs])) {
-        propagator.dispose();
-      }
-      else {
+      // if (disposing_scan([...inputs, ...outputs])) {
+      //   mark_for_disposal(propagator)
+      // }
+      // else {
         activate();
-      }
+      // }
     },
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
+        if (cell === undefined || cell === null) {
+          return;
+        }
+
         const neighbors = cell.getNeighbors();
         if (neighbors.has(relation.get_id())) {
           cell.removeNeighbor(propagator);
         }
       });
       // Mark for cleanup
-      mark_for_disposal(propagator);
+      // mark_for_disposal(propagator);
+      // this has not ensure the children are disposed wtf
     }
   };
 
@@ -112,8 +117,11 @@ export function construct_propagator(
   inputs.forEach(cell => {
     cell.addNeighbor(propagator, interested_in);
   })
+  outputs.forEach(cell => {
+    cell.addNeighbor(propagator, [NeighborType.dependents]);
+  })
   
-//   set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
+  set_global_state(PublicStateCommand.ADD_PROPAGATOR, propagator);
   return propagator;
 }
 
@@ -124,7 +132,7 @@ export function construct_propagator(
 export { forward, apply_propagator, l_apply_propagator, apply_subnet } from "./HelperProps";
 
 
-export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: CellHooks[] = default_interested_hooks()) {
+export function primitive_propagator(f: (...inputs: any[]) => any, name: string, interested_in: NeighborType[] = default_interested_hooks()) {
     return (...cells: Cell<any>[]): Propagator => {
         if (cells.length === 0) {
             throw new Error("Primitive propagator must have at least one input");
@@ -161,7 +169,7 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
 
  
 
-export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any, interested_in: CellHooks[] = default_interested_hooks()){
+export function function_to_primitive_propagator(name: string, f: (...inputs: any[]) => any, interested_in: NeighborType[] = default_interested_hooks()){
     // limitation: does not support rest or optional parameters
     const rf = install_propagator_arith_pack(name, f.length, f)
 
@@ -257,8 +265,12 @@ export function propagator_name(propagator: Propagator): string{
     return propagator.getName();
 }
 
-export function propagator_dispose(propagator: Propagator){
-    propagator.dispose();
+export function internal_propagator_dispose(propagator: Propagator){
+    propagator.dispose()
+}
+
+export function dispose_propagator(propagator: Propagator){
+    mark_for_disposal(propagator)
 }
 
 export function propagator_level(propagator: Propagator): number{

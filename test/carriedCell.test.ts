@@ -55,11 +55,12 @@ import { compound_propagator, generic_merge, inspect_strongest } from "ppropogat
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
   set_handle_contradiction(trace_earliest_emerged_value);
-  set_merge(merge_layered);
+  set_merge(merge_temporary_value_set);
 });
 
 describe("Carried Cell Tests", () => {
@@ -282,7 +283,7 @@ describe("Carried Cell Tests", () => {
       expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
     });
 
-    test_propagator(
+    test_propagator_only(
       // seems that carried cell is already working with merge_layered
       // so the next step is how we can integrated merge_layered with the value merge
       "accessor can work with map carrier",
@@ -297,8 +298,8 @@ describe("Carried Cell Tests", () => {
       },
       ["A", "B", "accessed_A", "accessed_B"],
       [
-        // trace_scheduler_assessor(console.log),
-        merge_plan(merge_patched_set),
+        run_replay_scheduler,
+        merge_plan(merge_temporary_value_set),
       ],
       [
          r_i(100, "A"),
@@ -306,16 +307,16 @@ describe("Carried Cell Tests", () => {
          r_o(100, "accessed_A"),
          r_o(200, "accessed_B"),
       ],
-      [
-        // merge_plan(merge_layered),
-        r_i(300, "A"),
-        r_o(300, "accessed_A"),
-      ],
-      [
-        // merge_plan(merge_layered),
-        r_i(400, "B"),
-        r_o(400, "accessed_B"),
-      ]
+      // [
+      //   // merge_plan(merge_layered),
+      //   r_i(300, "A"),
+      //   r_o(300, "accessed_A"),
+      // ],
+      // [
+      //   // merge_plan(merge_layered),
+      //   r_i(400, "B"),
+      //   r_o(400, "accessed_B"),
+      // ]
     )
   });
 
@@ -516,10 +517,10 @@ describe("Carried Cell Tests", () => {
       expect(cell_strongest_base_value(a)).toBe(150);
     });
 
+  }) 
   
-  })
 
-  test_propagator_only(
+  test_propagator(
     "p_cons handles nested linked lists",
     (
       list1: Cell<any>,

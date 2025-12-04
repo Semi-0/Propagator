@@ -21,9 +21,6 @@ const all_propagators: Stepper<Propagator[]> = construct_state<Propagator[]>([])
 const all_amb_propagators: Stepper<Propagator[]> = construct_state<Propagator[]>([])
 export const failed_count : Stepper<number> = construct_state<number>(0)
 
-
-
-
 export enum PublicStateCommand{
     ADD_CELL = "add_cell",
     ADD_PROPAGATOR = "add_propagator",

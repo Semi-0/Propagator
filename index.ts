@@ -43,7 +43,7 @@
 // Cell-related imports
 import { 
   construct_cell, 
-  cell_dispose,
+  internal_cell_dispose,
   cell_strongest,
   cell_strongest_base_value,
   cell_id,
@@ -66,7 +66,7 @@ import {
   function_to_primitive_propagator,
   propagator_id,
   propagator_name,
-  propagator_dispose,
+  dispose_propagator,
   propagator_activate,
   type Propagator
 } from "./Propagator/Propagator";
@@ -143,7 +143,8 @@ import {
   execute_all_tasks_sequential,
   steppable_run_task,
   set_immediate_execute,
-  mark_for_disposal
+  mark_for_disposal,
+  disposal_queue_size
 } from "./Shared/Scheduler/Scheduler";
 import { simple_scheduler } from "./Shared/Scheduler/SimpleScheduler";
 import { reactive_scheduler } from "./Shared/Scheduler/ReactiveScheduler";
@@ -226,15 +227,6 @@ export const cell = construct_cell;
  */
 export const constant = ce_constant;
 
-/**
- * Shorthand for cell_dispose
- */
-export const dispose_cell = cell_dispose;
-
-/**
- * Shorthand for propagator_dispose
- */
-export const dispose_propagator = propagator_dispose;
 
 /**
  * Shorthand for add_cell_content
@@ -362,7 +354,7 @@ export function clear_tasks() {
  * Get the current disposal queue size
  */
 export function get_disposal_queue_size() {
-  return Current_Scheduler.has_disposal_queue_size();
+  return disposal_queue_size();
 }
 
 /**
@@ -497,7 +489,7 @@ export const cells = lazyObject(() => ({
   constant: ce_constant,
   reactive_constant: r_constant,
   temp: make_temp_cell,
-  dispose: cell_dispose,
+  dispose: internal_cell_dispose,
   strongest: cell_strongest,
   // strongest_base_value: cell_strongest_base_value,
   id: cell_id,
@@ -611,7 +603,7 @@ export const cell_ops = lazyObject(() => ({
   
   // Cell modification
   add_content: update_cell,
-  dispose: cell_dispose,
+  dispose: internal_cell_dispose,
   
   // Cell update (reactive)
   update: update
@@ -678,7 +670,7 @@ export const prop_ops = lazyObject(() => ({
   // Management
   id: propagator_id,
   name: propagator_name,
-  dispose: propagator_dispose,
+  dispose: dispose_propagator,
   activate: propagator_activate
 }));
 
@@ -722,7 +714,7 @@ export {
   // Cell exports
     construct_cell as construct_cell,
   ce_constant,
-  cell_dispose,
+  internal_cell_dispose as cell_dispose,
   cell_strongest,
   cell_strongest_base_value,
   cell_id,
@@ -744,7 +736,7 @@ export {
 
   propagator_id,
   propagator_name,
-  propagator_dispose,
+  dispose_propagator as propagator_dispose,
   propagator_activate,
   type Propagator,
   
@@ -873,7 +865,7 @@ export default lazyObject(() => ({
   cell,
   constant,
   reactive_constant,
-  dispose_cell,
+  
   dispose_propagator,
   add_content,
   strongest,

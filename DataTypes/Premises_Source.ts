@@ -2,7 +2,7 @@ import { cell, execute_all_tasks_sequential, p_sync, register_predicate, the_dis
 import { construct_propagator, function_to_primitive_propagator } from "../Propagator/Propagator";
 import { make_relation } from "ppropogator/DataTypes/Relation";
 import { get_global_parent } from "ppropogator/Shared/PublicState";
-import { alert_interested_propagators, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, CellHooks, construct_cell, update_cell, type interesetedNeighbor } from "ppropogator/Cell/Cell";
+import { alert_interested_propagators, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, NeighborType, construct_cell, update_cell, type interesetedNeighbor } from "ppropogator/Cell/Cell";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
 import type { CellValue } from "ppropogator";
