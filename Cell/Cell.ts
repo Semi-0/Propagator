@@ -64,6 +64,20 @@ export interface Cell<A> {
   dispose: () => void;  // <-- new dispose method
 }
 
+export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
+  a !== null && a !== undefined 
+  && a.getRelation !== undefined 
+  && a.getContent !== undefined 
+  && a.getStrongest !== undefined 
+  && a.getNeighbors !== undefined 
+  && a.update !== undefined 
+  && a.testContent !== undefined 
+  && a.addNeighbor !== undefined 
+  && a.removeNeighbor !== undefined 
+  && a.summarize !== undefined 
+  && a.dispose !== undefined
+);
+    
 
 export enum NeighborType{
   updated = "updated",
@@ -240,20 +254,7 @@ export function construct_cell<A>(name: string, id: string | null = null): Cell<
 
 
 
-export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
-  a !== null && a !== undefined 
-  && a.getRelation !== undefined 
-  && a.getContent !== undefined 
-  && a.getStrongest !== undefined 
-  && a.getNeighbors !== undefined 
-  && a.update !== undefined 
-  && a.testContent !== undefined 
-  && a.addNeighbor !== undefined 
-  && a.removeNeighbor !== undefined 
-  && a.summarize !== undefined 
-  && a.dispose !== undefined
-);
-    
+
 export function make_temp_cell(){
     let name = "#temp_cell_" + get_new_reference_count();
     return construct_cell<any>(name);
@@ -316,6 +317,24 @@ export function internal_cell_dispose(cell: Cell<any>){
 
 export function dispose_cell(cell: Cell<any>){
   mark_for_disposal(cell)
+}
+
+export const cell_downstream = (cell: Cell<any>) => {
+  return Array.from(cell
+    .getNeighbors()
+    .entries()
+    .filter(([_, neighbor]) => !neighbor.type.includes(NeighborType.dependents))
+    .map(([_, neighbor]) => neighbor.propagator)
+  )
+}
+
+export const cell_upstream = (cell: Cell<any>) => {
+  return Array.from(cell
+    .getNeighbors()
+    .entries()
+    .filter(([_, neighbor]) => neighbor.type.includes(NeighborType.dependents))
+    .map(([_, neighbor]) => neighbor.propagator)
+  )
 }
 
 export const cell_strongest_base_value = compose(cell_strongest, get_base_value)

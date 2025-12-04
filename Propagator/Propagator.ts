@@ -269,6 +269,14 @@ export function internal_propagator_dispose(propagator: Propagator){
     propagator.dispose()
 }
 
+export function propagator_downstream(propagator: Propagator): Cell<any>[] {
+    return propagator.getOutputs()
+}
+
+export function propagator_upstream(propagator: Propagator): Cell<any>[] {
+    return propagator.getInputs()
+}
+
 export function dispose_propagator(propagator: Propagator){
     mark_for_disposal(propagator)
 }

@@ -1,9 +1,10 @@
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { Cell } from "../Cell/Cell";
-import { cell_id, cell_level, cell_neightbor_set } from "../Cell/Cell";
+import { cell_id, cell_level, is_cell } from "../Cell/Cell";
 import type { Propagator } from "../Propagator/Propagator";
-import { propagator_id, propagator_level } from "../Propagator/Propagator";
+import { is_propagator, propagator_id, propagator_level } from "../Propagator/Propagator";
 import { cell_snapshot, propagator_snapshot } from "./PublicState";
+import { traverse, get_downstream, get_id, traverse_downstream } from "./Spider";
 
 /**
  * Find a cell object by its internal ID from the global snapshot.
@@ -19,86 +20,65 @@ export const find_propagator_by_id = (id: string): Propagator | undefined => {
   return propagator_snapshot().find(p => propagator_id(p) === id);
 };
 
-/**
- * Traverse all downstream propagators and cells from a given root cell.
- * Calls cf on each discovered cell, and pf on each discovered propagator.
- */
-export const traverse_downstream_graph = (
-  cf: (cell: Cell<any>) => void,
-  pf: (prop: Propagator) => void
-) => (root: Cell<any>) => {
-  const visited_cells = new Map<string, Cell<any>>();
-  const visited_props = new Map<string, Propagator>();
-
-  const trace_cell_recursive = (cell: Cell<any>) => {
-    const neighbor_set = cell_neightbor_set(cell);
-
-
-    neighbor_set.forEach((prop) => {
-      const pid = propagator_id(prop);
-      if (!visited_props.has(pid)) {
-        visited_props.set(pid, prop);
-        pf(prop);
-      }
-      // process inputs
-      prop.getInputs().forEach(cell => {
-        const cid = cell_id(cell);
-        const c = cell;
-        if (c && !visited_cells.has(cid)) {
-          visited_cells.set(cid, c);
-          cf(c);
-        }
-      });
-      // process outputs
-      prop.getOutputs().forEach(cell => {
-        const cid = cell_id(cell);
-        const c = cell;
-        if (c && !visited_cells.has(cid)) {
-          visited_cells.set(cid, c);
-          cf(c);
-          trace_cell_recursive(c);
-        }
-      });
-    });
-  };
-
-  const rootId = cell_id(root);
-  if (!visited_cells.has(rootId)) {
-    visited_cells.set(rootId, root);
-    cf(root);
-    trace_cell_recursive(root);
-  }
-  
-  return { cells: visited_cells, propagators: visited_props };
-};
-
-export const traverse_with_level = (level: number) => {
-  const t = traverse_downstream_graph(
-    (c: Cell<any>) => is_equal(cell_level(c), level),
-    (propagator: Propagator) => is_equal(propagator_level(propagator), level)
-  )
-  return t;
-}
-
-
-export const traverse_primitive_level = traverse_with_level(0);
-
 export interface TraceResult {
   cells: Map<string, Cell<any>>;
   propagators: Map<string, Propagator>;
 }
 
 /**
+ * Traverse all downstream propagators and cells from a given root cell.
+ * Uses the generic traverse function from Spider.ts with get_downstream.
+ */
+export const traverse_downstream_graph = (root: Cell<any>): TraceResult => {
+   return traverse_downstream(
+    (traversed: any[]) => {
+      const cells = new Map<string, Cell<any>>();
+      const propagators = new Map<string, Propagator>();
+      traversed.forEach((node: any) => {
+        if (is_cell(node)) {
+          cells.set(get_id(node), node);
+        }
+        else if (is_propagator(node)) {
+          propagators.set(get_id(node), node);
+        }
+      });
+      return { cells, propagators };
+    }
+   )(root)
+}
+
+/**
+ * Traverse downstream graph and filter by level.
+ */
+export const traverse_with_level = (level: number) => (root: Cell<any>): TraceResult => {
+  const result = traverse_downstream_graph(root);
+  
+  // Filter cells by level
+  const filteredCells = new Map<string, Cell<any>>();
+  result.cells.forEach((cell, id) => {
+    if (is_equal(cell_level(cell), level)) {
+      filteredCells.set(id, cell);
+    }
+  });
+  
+  // Filter propagators by level
+  const filteredProps = new Map<string, Propagator>();
+  result.propagators.forEach((prop, id) => {
+    if (is_equal(propagator_level(prop), level)) {
+      filteredProps.set(id, prop);
+    }
+  });
+  
+  return { cells: filteredCells, propagators: filteredProps };
+};
+
+export const traverse_primitive_level = traverse_with_level(0);
+
+/**
  * Build a TraceResult containing all downstream cells & propagators.
  */
 export const trace_cell = (cell: Cell<any>): TraceResult => {
-  const cells = new Map<string, Cell<any>>();
-  const props = new Map<string, Propagator>();
-  traverse_downstream_graph(
-    c => cells.set(cell_id(c), c),
-    p => props.set(propagator_id(p), p)
-  )(cell);
-  return { cells, propagators: props };
+  return traverse_downstream_graph(cell);
 };
 
 /**
