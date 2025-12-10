@@ -366,7 +366,6 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
 
 export const com_celsius_to_fahrenheit = (celsius: Cell<number>, fahrenheit: Cell<number>) => { 
     return compound_propagator([], [celsius, fahrenheit], () => {
-        console.log("built")
         link(
             celsius,
             fahrenheit,

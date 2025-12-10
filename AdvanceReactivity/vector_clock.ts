@@ -24,6 +24,8 @@ import { define_layered_procedure_handler, make_layered_procedure } from "sando-
 import { every } from "fp-ts/lib/ReadonlyRecord";
 import { equal } from "./Generics/GenericArith";
 
+import { v4 as uuidv4 } from 'uuid';
+
 
 // because vector clock already mark the source id
 // maybe we can see vector clock as a more general form of supported value?

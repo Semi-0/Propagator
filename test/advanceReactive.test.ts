@@ -1595,13 +1595,14 @@ import {
 } from "../DataTypes/Premises_Source";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet.ts";
 import "../DataTypes/register_vector_clock_patchedValueSet";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   
   beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     clean_dependence_cells();
-    set_handle_contradiction(trace_earliest_emerged_value);
+    // set_handle_contradiction(trace_earliest_emerged_value);
     set_merge(merge_temporary_value_set);
   });
 
@@ -1845,6 +1846,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("bring_in should restore source contribution", async () => {
+      set_merge(log_tracer("merge_temporary_value_set", merge_temporary_value_set));
       const cellA = source_cell("bringSrcA");
       const cellB = source_cell("bringSrcB");
       const output = construct_cell("bringTestOut");
