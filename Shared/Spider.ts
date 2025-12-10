@@ -100,7 +100,7 @@ export const traverse_chain = (direction: (node: any) => any[]) => (final: (trav
 
 export const traverse_chain_downstream = traverse_chain(get_downstream)
 export const traverse_chain_upstream = traverse_chain(get_upstream)
-export const traverse_chain_neighbors = traverse_chain(get_neighbors)
+// export const traverse_chain_neighbors = traverse_chain(get_neighbors)
 
 export const traverse_downstream = (final: (traversed: any[]) => any) => traverse(
     (node: any, go: (x: any) => any[]) => {
@@ -159,9 +159,9 @@ export const traverse_value_path_upstream = traverse_chain_upstream(
 
 // maybe give these combinator a vector?
 // but how?
-export const traverse_value_path_neighbors = traverse_chain_neighbors(
-    (traversed: any[]) => traversed.map((path: any[]) => path.map(display_value).join(" -- "))
-)
+// export const traverse_value_path_neighbors = traverse_chain_neighbors(
+//     (traversed: any[]) => traversed.map((path: any[]) => path.map(display_value).join(" -- "))
+// )
 
 
 // interface spider 
@@ -180,35 +180,41 @@ export const is_neighbors = (x: any) => x === "neighbors"
 
 
 // go to or go downstream?
+// how can we make this api more flexible?
+// this api is used as a interface to be easier to understand
+// because it provides a metaphor which grounds user's understanding in the real world
 interface Spider {
     get_location(): any 
     goto(location: any): void 
     get_web(): any[] 
 }
 
-
 export const create_spider = (current_location: any): Spider => {
-    var web: any[] = []
+    var web: Set<any> = new Set()
+    // is it better if we keep the web as a graph?
+    // but it becomes very difficult to transform graph
 
     return {
         get_location: () => current_location,
         goto: (location: any) => {
-            if (is_downstream(location)) {
-                current_location = [current_location, ...get_downstream(current_location)]
+            const perhaps_upstream = traverse_chain_upstream(
+                traversed => traversed
+            )(current_location, location).flatMap((path: any[]) => path)
+            const perhaps_downstream = traverse_chain_downstream(
+                traversed => traversed
+            )(current_location, location).flatMap((path: any[]) => path)
+
+            if (perhaps_upstream.length > 0) {
+                perhaps_upstream.forEach(path => web.add(path))
             }
-            else if (is_upstream(location)) {
-                current_location = [current_location, ...get_upstream(current_location)]
-            }
-            else if (is_neighbors(location)) {
-                current_location = [current_location, ...get_neighbors(current_location)]
+            else if (perhaps_downstream.length > 0) {
+                perhaps_downstream.forEach(path => web.add(path))
             }
             else {
-                const traversed = traverse_chain_neighbors(
-                    traversed => traversed
-                )(current_location, location)
-                web = [...web, ...traversed]
-                current_location = location
+                perhaps_upstream.forEach(path => web.add(path))
+                perhaps_downstream.forEach(path => web.add(path))
             }
+            current_location = location
         },
         get_web: () => web
     }
