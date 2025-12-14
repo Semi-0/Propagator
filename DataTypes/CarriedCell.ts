@@ -22,11 +22,6 @@ import { ce_equal } from "ppropogator";
 // there is a more elegant way to do this
 // maybe imbedded a env inside primtive propagatot?
 
-
-
-
-
-
 export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
     for (const [key, value] of increment) {
         const elem = content.get(key)
@@ -49,18 +44,6 @@ define_generic_procedure_handler(merge_layered, match_args(is_nothing, is_layere
 })
 
 
-
-// define_generic_procedure_handler(generic_merge, match_args(is_layered_object, is_any), (content: LayeredObject<any>, increment: Map<any, any>) => {
-//     return generic_merge(get_base_value(content), get_base_value(increment))
-// })
-
-// define_generic_procedure_handler(generic_merge, match_args(is_any, is_layered_object), (content: any, increment: LayeredObject<any>) => {
-//     return generic_merge(content, get_base_value(increment))
-// })
-
-// define_generic_procedure_handler(generic_merge, match_args(is_map, is_layered_map), (content: Map<any, any>, increment: LayeredObject<any>) => {
-//     return generic_merge(content, get_base_value(increment))
-// })
 
 // of course its better with bi_switcher but i havn't an idea how
 export const bi_switcher = (condition: Cell<boolean>, a: Cell<any>, b: Cell<any>) => compound_propagator(
@@ -106,16 +89,8 @@ export const p_construct_dict_carrier = (dict: Map<string, Cell<any>>, output: C
      return p_constant(new Map(dict))(construct_cell("Nothing"), output)
 }
 
-
-import { construct_advice, install_advice } from "generic-handler/built_in_generics/generic_advice"
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { cell_strongest_base_value } from "ppropogator";
-import { p_sync } from "ppropogator";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { get_base_value } from "ppropogator";
-import { is_any } from "generic-handler/built_in_generics/generic_predicates";
-
-
 // we need another constructor which can directly transform dict into struct
 // i think maybe we dont need to do that?
 
@@ -462,24 +437,6 @@ export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any
 
 }
 
-// helper which gathers array from linked list
-
-// export const p_linked_list_to_array = (linked_list: Cell<Map<string, any>>, output: Cell<Cell<any>[]>) => compound_propagator(
-//     [linked_list],
-//     [output],
-//     () => {
-//         const internal = (index: Cell<number>, lst: Cell<Map<string, any>>) => compound_propagator(
-//             [lst],
-//             [output],
-//             () => {
-//                 p_set_array(output, index, ce_car(lst),)
-//             },
-//             "p_linked_list_to_array_internal"
-//         )
-//         internal(ce_constant(0), linked_list)
-//     },
-//     "p_linked_list_to_array"
-// )
 
 
 export const p_linked_list_to_array = (linked_list: Cell<Map<string, Cell<string>>>, array: Cell<any[]>) => 
@@ -507,105 +464,8 @@ export const p_linked_list_to_array = (linked_list: Cell<Map<string, Cell<string
     )
 
 
-// export const p_linked_list_to_array = function_to_primitive_propagator(
-//     "linked_list_to_array",
-//     (linked_list: Cell<Map<string, any>>) => {
-//         var arr: Cell<any>[] = []         
-
-//         const internal = (linked_list: Map<string, Cell<any>> | any) => {
-//             if ((is_cell(linked_list)) && (is_atom(cell_strongest_base_value(linked_list)))) {
-//                 arr.push(linked_list)
-//             }
-//             else {
-//                 if (is_cell(linked_list)) {
-//                     const m = cell_strongest_base_value(linked_list)
-//                     const curr = m.get("head")
-//                     if (is_cell(curr)) {
-//                         arr.push(curr)
-//                     }
-//                     else {
-//                         console.log("linked_list_to_array: curr is not a cell", curr)
-//                     }
-
-//                     internal(m.get("tail"))
-//                 }
-//                 else if (is_map(linked_list)) {
-//                     const curr = linked_list.get("head")
-//                     if (is_cell(curr)) {
-//                         arr.push(curr)
-//                     }
-//                     else {
-//                         console.log("linked_list_to_array: curr is not a cell", curr)
-//                     }
-//                     internal(linked_list.get("tail"))
-//                 }
-//             }
-//         }
-
-//         internal(linked_list)
-
-//         return arr
-//     }
-// )
-
 export const ce_linked_list_to_array = make_ce_arithmetical(p_linked_list_to_array, "linked_list_to_array") as (linked_list: Cell<Map<string, any>>) => Cell<Cell<any>[]>
 
-
-// a helper which gather arrays from linked list
-// but it has a timing issue because we dont need to know when linked list is constructed
-// export const gather_arrays_from_linked_list = (linked_list: Cell<Map<string, any>>) => 
- 
-
-
-// maybe it should be a lookup cell that supports dynamic key?
-
-
-// how to hot reload propagators?
-// maybe we can have a propagator that can be built and unbuilt dynamically
-
-// we can also have early access hack
-
-// if propagator can knows the name of the cell then we can directly apply propagator to cells in the map
-// or maybe we stored that through an environment?
-// its better if this goes lexical but lets stay simple for now
-// export type PropagatorClosure = {
-//     environment: Map<string, any>
-//     propagator: Propagator
-// }
-
-// export const make_propagator_closure = (cells_info: string[], propagator_constructor: (...args: any[]) => Propagator) => {
-//     const environment = new Map()
-//     cells_info.forEach((cell_info) => {
-//         environment.set(cell_info, construct_cell(cell_info))
-//     })
-//     return { environment, propagator: propagator_constructor(...cells_info.values()) }
-// }
-
-// to be complete this might needs virtual propagator
-
-// export const is_propagator_closure = register_predicate("is_propagator_closure", (c: any) => c !== null && c !== undefined 
-//                                                                     && c.environment !== undefined && c.propagator !== undefined)
-// map itself could be generalize to virtual propagator
-
-// define_generic_procedure_handler(generic_merge, all_match(is_propagator_closure),
-// (content: PropagatorClosure, increment: PropagatorClosure) => {
-//     if (is_equal(propagator_id(content.propagator), propagator_id(increment.propagator))) {
-//         return {
-//             environment: merge_carried_map(content.environment, increment.environment),
-//             propagator: content.propagator
-//         }
-//     }
-//     else{
-//         return the_contradiction
-//     }
-// })
-
-// export const apply_propagator = function_to_primitive_propagator("apply_propagator", (f: PropagatorClosure, environment: Map<string, any>) => {
-//     return {
-//         environment: merge_carried_map(f.environment, environment),
-//         propagator: f.propagator
-//     }
-// })
 
 export const diff_map = (a: Map<string, any>, b: Map<string, any>) => {
     const diff = new Map()
@@ -617,33 +477,6 @@ export const diff_map = (a: Map<string, any>, b: Map<string, any>) => {
     return diff
 }
 
-// is everything has the same collection?
-// maybe lets do with the specific then the generic?
-
-
-
-
-// i know this is not generic but lets stay simple for now
-// maybe its better with virtual propagator
-// also this might not be the most efficient way 
-// assume primitive propagator
-// export const carrier_map = (closure: Cell<(...args: any[]) => Propagator>, input: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => {
-//     const built = new Map() 
-
-//     primitive_propagator((closure: (...args: any[]) => Propagator, input: Map<string, any>) => {
-//         const diffed = diff_map(built, input)
-
-//         const new_map = new Map()
-//         for (const [key, value] of diffed) {
-//             const input_cell = value
-//             const output = construct_cell(key)
-//             closure(input_cell, output)
-//             new_map.set(key, output)
-//         }
-//         return new_map
-//     }, "carrier_map")(closure, input, output)
-   
-// }
 
 export const carrier_map = (closureCell: Cell<(...args: any[]) => Propagator>, input: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => {
     const built = new Map<string, Cell<any>>()

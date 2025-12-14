@@ -3,21 +3,15 @@ import type { Cell } from "@/cell/Cell";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import {
   construct_cell,
-  cell_content,
   cell_strongest_base_value,
   set_handle_contradiction,
-  cell_strongest,
   cell_id,
   cell_name
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
-import { to_array } from "generic-handler/built_in_generics/generic_collection";
-import { get_base_value } from "sando-layer/Basic/Layer";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
-import { update } from "../AdvanceReactivity/interface";
-import { merge_layered, set_merge } from "@/cell/Merge";
-import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import { set_merge } from "@/cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import {
   merge_carried_map,
@@ -283,9 +277,7 @@ describe("Carried Cell Tests", () => {
       expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
     });
 
-    test_propagator_only(
-      // seems that carried cell is already working with merge_layered
-      // so the next step is how we can integrated merge_layered with the value merge
+    test_propagator(
       "accessor can work with map carrier",
       (A: Cell<number>, B: Cell<number>, accessed_A: Cell<number>, accessed_B: Cell<number>) => {
          // ahh its because generic merge access directly to the layered object!!
@@ -307,16 +299,7 @@ describe("Carried Cell Tests", () => {
          r_o(100, "accessed_A"),
          r_o(200, "accessed_B"),
       ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(300, "A"),
-      //   r_o(300, "accessed_A"),
-      // ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(400, "B"),
-      //   r_o(400, "accessed_B"),
-      // ]
+
     )
   });
 
@@ -341,7 +324,7 @@ describe("Carried Cell Tests", () => {
     ["A", "B", "accessed_A", "accessed_B"],
     [
       // trace_scheduler_assessor(console.log),
-      merge_plan(merge_patched_set),
+      merge_plan(merge_temporary_value_set),
     ],
     [
        r_i(100, "A"),
@@ -408,7 +391,7 @@ describe("Carried Cell Tests", () => {
     nested_map_test_network,
     ["A", "B", "inner_A", "inner_B", "inner_inner_A", "accessed_A", "accessed_inner_A", "accessed_inner_inner_A"],
     [
-      merge_plan(merge_patched_set),
+      merge_plan(merge_temporary_value_set),
     ],
     [
       r_i(100, "A"),
@@ -436,7 +419,7 @@ describe("Carried Cell Tests", () => {
 
     },
     ["head", "tail", "car", "cdr"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(100, "head"),
       r_o(100, "car")
@@ -543,7 +526,7 @@ describe("Carried Cell Tests", () => {
         p_car(cdr2, car3)      
     },
     ["list", "list2", "head1", "head2", "head3", "car1", "cdr1", "car2", "cdr2", "car3"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       
       run_replay_scheduler,
@@ -584,7 +567,7 @@ describe("Carried Cell Tests", () => {
       "listCar3",
 
     ],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(1, "item1"),
       r_i(2, "item2"),
@@ -620,7 +603,7 @@ describe("Carried Cell Tests", () => {
       
     },
     ["value1", "value2", "list", "mapped_list", "mapped1", "mapped2"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(5, "value1"),
       r_i(15, "value2"),
@@ -648,7 +631,7 @@ describe("Carried Cell Tests", () => {
       p_car(filteredList, filteredHead);
     },
     ["value1", "value2", "value3", "filteredHead"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(4, "value1"),
       r_i(7, "value2"),
@@ -695,7 +678,7 @@ describe("Carried Cell Tests", () => {
       "zippedFirstA",
       "zippedFirstB"
     ],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       run_replay_scheduler,
       r_i(1, "list1Value1"),
