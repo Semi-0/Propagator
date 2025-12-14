@@ -74,9 +74,9 @@ export const p_combine_list = (
     "p_combine_list"
 )
 
-export const ce_combine_list = make_ce_arithmetical(p_combine_list, "combine_list") as (list_A: Cell<Map<string, any>>, list_B: Cell<Map<string, any>>) => Cell<Map<string, any>>
+export const ce_combine_list = make_ce_arithmetical(p_combine_list, "combine_list") as (list_A: Cell<Map<string, any>>, list_B: Cell<any>) => Cell<any>
 
-export const carrier_map = (closureCell: Cell<(...args: any[]) => Propagator>, input: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => {
+export const carrier_map = (closureCell: Cell<(...args: any[]) => Propagator>, input: Cell<Map<string, any>>, output: Cell<any>) => {
     const built = new Map<string, Cell<any>>()
   
     primitive_propagator((closureFn, inputMap) => {

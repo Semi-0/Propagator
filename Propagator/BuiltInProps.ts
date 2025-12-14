@@ -88,6 +88,12 @@ export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
     return input;
 })
 
+// communicate the change to outside world
+export const p_out = (f: (input: Cell<any>) => void) =>  (input: Cell<any>) => 
+    construct_propagator([input], [], () => {
+        f(input)
+    }, "p_out")
+
 export const p_identity = p_sync 
 
 export const ce_identity = make_ce_arithmetical(p_identity, "identity")

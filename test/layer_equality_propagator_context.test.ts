@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
 import { support_layer, construct_defualt_support_set } from "sando-layer/Specified/SupportLayer";
-import { vector_clock_layer } from "../AdvanceReactivity/victor_clock";
+import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { layered_deep_equal, layers_base_equal, all_layers_value_equal, layers_length_equal } from "sando-layer/Equality";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";

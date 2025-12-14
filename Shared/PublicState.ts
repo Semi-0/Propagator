@@ -11,8 +11,10 @@ import { construct_node } from './Reactivity/MiniReactor/MrPrimitive';
 import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { set_handle_contradiction } from '@/cell/Cell';
-import { subscribe } from './Reactivity/MiniReactor/MrCombinators';
+import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators';
 import { clean_dependence_cells } from '../DataTypes/PremisesSource';
+import { pipe } from 'fp-ts/lib/function';
+import { map } from './Reactivity/MiniReactor/MrCombinators';
 //@ts-ignore
 var parent: Stepper<Primitive_Relation> = construct_state(make_relation("root", null));
 // Todo: make this read only
@@ -259,6 +261,27 @@ export const observe_all_propagators_update = (observePropagator: (propagator: a
 
 export const observe_cell_array = (f: (cells: any[]) => void) => subscribe(f)(all_cells.node)
 export const observe_propagator_array = (f: (propagators: any[]) => void) => subscribe(f)(all_propagators.node)
+
+
+export const diagram_node = combine_latest(all_cells.node, all_propagators.node) 
+
+export const cell_from_diagram = (diagram: any[]) => {
+    if (diagram.length === 2) {
+        return diagram[0]
+    } else {
+        throw_error('cell_from_diagram', 'diagram must have 2 elements', diagram.toString())
+    }
+}
+
+export const propagator_from_diagram = (diagram: any[]) => {
+    if (diagram.length === 2) {
+        return diagram[1]
+    } else {
+        throw_error('propagator_from_diagram', 'diagram must have 2 elements', diagram.toString())
+    }
+}
+
+
 export const cell_snapshot = () => all_cells.get_value()
 export const propagator_snapshot = () => all_propagators.get_value()
 export const amb_propagator_snapshot = () => all_amb_propagators.get_value()

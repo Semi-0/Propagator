@@ -106,18 +106,29 @@ export const alert_interested_propagators = (neighbors: Map<string, interesetedN
 
 
 
-export function primitive_construct_cell<A>(name: string, id: string | null = null): Cell<A> {
+export interface CellInitialData<A> {
+  content?: CellValue<A>;
+  strongest?: CellValue<A>;
+  neighbors?: Map<string, interesetedNeighbor>;
+  active?: boolean;
+}
+
+export function primitive_construct_cell<A>(
+  name: string, 
+  id: string | null = null,
+  initialData: CellInitialData<A> = {}
+): Cell<A> {
   const relation = make_relation(name, get_global_parent(), id);
-  const neighbors: Map<string, interesetedNeighbor> = new Map();
+  const neighbors: Map<string, interesetedNeighbor> = initialData.neighbors ?? new Map();
   // build two stateful streams for content and strongest
   // can be more performative to fine grain observe method args
   // but how?
   // TODO:
   // a better way foe cell disposal is to let cell remember its dependents
   // so disposing can be isolated totally from propagation 
-  var content: CellValue<A> = the_nothing;
-  var strongest: CellValue<A> = the_nothing;
-  var active = true
+  var content: CellValue<A> = initialData.content ?? the_nothing;
+  var strongest: CellValue<A> = initialData.strongest ?? the_nothing;
+  var active = initialData.active ?? true
 
   const handle_cell_contradiction = () => handle_contradiction(cell as Cell<A>);
 
@@ -235,7 +246,13 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
   // source layer triggers propagator to updates
 
 export function construct_cell<A>(name: string, id: string | null = null): Cell<A> {
-  return primitive_construct_cell<A>(name, id)
+  // Pass current defaults as initial data
+  return primitive_construct_cell<A>(name, id, {
+    content: the_nothing,
+    strongest: the_nothing,
+    neighbors: new Map(),
+    active: true
+  })
 }
 
 
