@@ -5,7 +5,7 @@ import { register_predicate } from "generic-handler/Predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, all_match } from "generic-handler/Predicates";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { is_layered_object } from "../../Helper/Predicate";
+import { is_layered_object } from "sando-layer/Basic/LayeredObject";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { generic_merge } from "../../Cell/Merge";
 import { strongest_value } from "../../Cell/StrongestValue";

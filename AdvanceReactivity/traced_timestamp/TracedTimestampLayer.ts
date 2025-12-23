@@ -1,6 +1,6 @@
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { get_base_value, layer_accessor, make_annotation_layer } from "sando-layer/Basic/Layer";
-import {  is_layered_object} from "../../Helper/Predicate";
+import {  is_layered_object } from "sando-layer/Basic/LayeredObject";
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { construct_better_set, identify_by, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import {  define_generic_procedure_handler } from "generic-handler/GenericProcedure";

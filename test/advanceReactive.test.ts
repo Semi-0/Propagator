@@ -1,52 +1,24 @@
 import { describe, test, expect, beforeEach } from "bun:test";
 import type { Cell } from "@/cell/Cell";
 
-import { r_constant } from "../AdvanceReactivity/interface";
 import {
   construct_cell,
   cell_strongest_base_value,
-  set_handle_contradiction,
-  cell_content,
-  cell_strongest,
+
   cell_id
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential, replay_propagators, run_scheduler_and_replay, set_record_alerted_propagator } from "../Shared/Scheduler/Scheduler";
-import { get_base_value } from "sando-layer/Basic/Layer";
-import { no_compute } from "../Helper/noCompute";
+import { execute_all_tasks_sequential,  run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
+
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { is_contradiction, the_nothing } from "@/cell/CellValue";
-import { compound_propagator, primitive_propagator, construct_propagator } from "../Propagator/Propagator";
-import { construct_reactor } from "../Shared/Reactivity/Reactor";
-import {   get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer.ts";
-import { stale } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import { the_nothing } from "@/cell/CellValue";
+import { compound_propagator} from "../Propagator/Propagator";
+import {  set_merge } from "@/cell/Merge";
 
-import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
-import { merge_patched_set } from "../DataTypes/PatchedValueSet";
-// import "../DataTypes/register_vector_clock_patchedValueSet";
-import { compound_tell, reactive_tell, reactive_update as update } from "../Helper/UI";
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { exec } from "child_process";
-import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
-import type { traced_timestamp } from "../AdvanceReactivity/traced_timestamp/type";
-import { time_stamp_set_merge, timestamp_set_union } from "../AdvanceReactivity/traced_timestamp/TimeStampSetMerge";
-import { annotate_now_with_id } from "../AdvanceReactivity/traced_timestamp/Annotater";
-import {  com_celsius_to_fahrenheit, com_meters_feet_inches, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant, p_dispatch } from "../Propagator/BuiltInProps";
-import { inspect_content, inspect_strongest } from "../Helper/Debug";
-import { link, ce_pipe } from "../Propagator/Sugar";
-import { bi_pipe } from "../Propagator/Sugar";
-import { com_if } from "../Propagator/BuiltInProps";
-import { trace } from "console";
-import { construct_traced_timestamp_set, empty_traced_timestamp_set } from "../AdvanceReactivity/traced_timestamp/TracedTimeStampSet";
-import { reactive_scheduler } from "../Shared/Scheduler/ReactiveScheduler";
-import {is_layered_object, type LayeredObject} from "sando-layer/Basic/LayeredObject";
-import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic.ts";
-import { to_array } from "generic-handler/built_in_generics/generic_collection.ts";
-import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock.ts";
-import {  describe_propagator_frame, type PropagatorFrame } from "../Shared/Scheduler/RuntimeFrame.ts";
-import { r_i, r_o, run_replay_scheduler, test_propagator_only, test_propagator, test_propagator_constructor, test_propagator_only_with_merge_plan, trace_scheduler_assessor, merge_plan } from "../TestSuit/propagator_test.ts";
+import {  com_celsius_to_fahrenheit, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant, p_dispatch } from "../Propagator/BuiltInProps";
 
+import {  ce_pipe } from "../Propagator/Sugar";
+
+import { type LayeredObject} from "sando-layer/Basic/LayeredObject";
 // beforeEach(() => {
 //   set_global_state(PublicStateCommand.CLEAN_UP);
 //   set_handle_contradiction(trace_earliest_emerged_value)
@@ -1594,7 +1566,6 @@ import {
   p_reactive_dispatch
 } from "../DataTypes/PremisesSource";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet.ts";
-import "../DataTypes/register_vector_clock_patchedValueSet";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {

@@ -82,6 +82,15 @@ export interface interesetedNeighbor{
   propagator: Propagator
 }
 
+export const construct_neighbor = (type: NeighborType[], propagator: Propagator): interesetedNeighbor => {
+  return {
+    type,
+    propagator
+  }
+}
+
+
+
 export const is_interested_neighbor = (prop: NeighborType) => (neighbor: interesetedNeighbor) => {
   return neighbor.type.includes(prop)
 }

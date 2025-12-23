@@ -2,7 +2,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import {  is_any } from "generic-handler/built_in_generics/generic_predicates";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { match_args, all_match } from "generic-handler/Predicates";
-import { is_layered_object } from "../Helper/Predicate";
+import { is_layered_object } from "sando-layer/Basic/LayeredObject";
 export const base_equal = construct_simple_generic_procedure("shallow_equal", 2,
     (a: any, b: any) => {
         return a === b;
