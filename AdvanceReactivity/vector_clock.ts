@@ -247,7 +247,7 @@ export const clock_channels_subsume = (b: VectorClock, a: VectorClock): boolean 
 
 
 
-export const vector_clock_layer = make_annotation_layer<VectorClock, any>("victor_clock", 
+export const vector_clock_layer = make_annotation_layer<VectorClock, any>("vector_clock", 
     (get_name: () => string,
     has_value: (object: any) => boolean,
     get_value: (object: any) => any,
