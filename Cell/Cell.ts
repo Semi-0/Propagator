@@ -1,5 +1,5 @@
 import { set_global_state, get_global_parent } from "../Shared/PublicState";
-import {type Propagator, internal_propagator_dispose} from "../Propagator/Propagator";
+import {type Propagator, internal_propagator_dispose, propagator_id} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
@@ -72,7 +72,8 @@ export enum NeighborType{
   received = "received",
   disposing = "disposing",
   neighbor_added = "neighbor_added",
-  neighbor_removed = "neighbor_removed"
+  neighbor_removed = "neighbor_removed",
+  remote = "remote"
 }
 
 // how about hooks
@@ -186,13 +187,24 @@ export function primitive_construct_cell<A>(
     },
 
     addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
-  
-      neighbors.set(propagator.getRelation().get_id(), {
-        type: interested_in,
-        propagator: propagator
-      });
-      alert_interested_propagators(neighbors, NeighborType.neighbor_added)
-      alert_interested_propagators(neighbors, NeighborType.updated)
+      // if (neighbors.has(propagator_id(propagator))) {
+      //   // console.error("Neighbor already exists", propagator.getRelation().get_id())
+      // }
+      // else{
+      
+        neighbors.set(propagator.getRelation().get_id(), {
+          type: interested_in,
+          propagator: propagator
+        });
+
+        if (interested_in.includes(NeighborType.dependents)){
+          return
+        }
+        else{
+          alert_interested_propagators(neighbors, NeighborType.neighbor_added)
+          alert_interested_propagators(neighbors, NeighborType.updated)
+        }
+    //  }
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(get_id(propagator));

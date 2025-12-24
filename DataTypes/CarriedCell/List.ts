@@ -5,7 +5,7 @@ import type { Cell } from "@/cell/Cell";
 import { is_map } from "../../Helper/Helper";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { ce_switch } from "ppropogator";
+import { ce_switch } from "../../Propagator/BuiltInProps";
 import { p_struct } from "./Carrier";
 import { c_dict_accessor } from "./Dict";
 

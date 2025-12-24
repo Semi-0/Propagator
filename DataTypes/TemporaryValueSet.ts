@@ -22,10 +22,10 @@ import { get_base_value as layered_get_base_value } from "sando-layer/Basic/Laye
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
-import { subsumes } from "ppropogator/DataTypes/GenericValueSet";
+import { subsumes } from "./GenericValueSet";
 import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, has_vector_clock_layer, prove_staled_by } from "../AdvanceReactivity/vector_clock";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { generic_merge } from "ppropogator";
+import { generic_merge } from "../Cell/Merge";
 
 // ValueSet class definition
 // we can register the source of vector clock as premises

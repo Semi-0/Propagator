@@ -47,6 +47,7 @@ export const make_dict_with_key = (entities: [[string, Cell<any>]]) => {
 // i want to know whether this works with constant
 export const c_dict_accessor = (key: string) => (container: Cell<Map<string, any>>, accessor: Cell<any>) => 
     compound_propagator([container], [accessor], () => {
+        // i am suspect p_constant filed more than one time somehow
         p_constant(make_dict_with_key([[key, accessor]]))(construct_cell("Nothing"), container)
     }, "c_map_accessor")
 
@@ -75,5 +76,11 @@ export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any
     c_dict_accessor(key)(container, accessor) 
     return accessor 
 }
+
+
+
+
+
+
 
 

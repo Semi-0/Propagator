@@ -8,7 +8,7 @@ import {
   cell_id,
   cell_name
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
+import { execute_all_tasks_sequential, run_scheduler_and_replay, set_immediate_execute } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
 import { set_merge } from "@/cell/Merge";
@@ -50,6 +50,7 @@ import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
+import { dependent_update, p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -275,6 +276,38 @@ describe("Carried Cell Tests", () => {
       expect(is_equal(suppose_map.get(cell_name(cellA)), cellA)).toBe(true);
       expect(is_equal(suppose_map.get(cell_name(cellB)), cellB)).toBe(true);
       expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
+    });
+
+  
+    test.only("c_dict_accessor should not cause infinite loop if used in immediate execute mode", async () => {
+
+      
+      set_immediate_execute(true)
+      set_merge(merge_temporary_value_set)
+      
+      const cellA = construct_cell("A");
+      const cellB = construct_cell("B");
+      const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
+      p_construct_dict_carrier_with_name(cellA, cellB, carrier)
+      const accessed_A = construct_cell("accessed_A") as Cell<number>;
+      const accessed_B = construct_cell("accessed_B") as Cell<number>;
+
+      c_dict_accessor("A")(carrier, accessed_A)
+      c_dict_accessor("B")(carrier, accessed_B)
+
+
+      const source = source_cell("source")
+
+      p_reactive_dispatch(source, cellA)
+      p_reactive_dispatch(source, cellB)
+
+      update_source_cell(source, new Map([[cellA, 100], [cellB, 200]]))
+      
+
+  
+
+      expect(cell_strongest_base_value(accessed_A)).toBe(100);
+      expect(cell_strongest_base_value(accessed_B)).toBe(200);
     });
 
     test_propagator(

@@ -46,7 +46,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_map } from "../Helper/Helper";
-import { generic_merge } from "ppropogator";
+import { generic_merge } from "../Cell/Merge";
 import { is_any } from "generic-handler/built_in_generics/generic_predicates";
 import { merge_layered } from "@/cell/Merge";
 

@@ -17,7 +17,6 @@ import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
 import { cell_neightbor_set, internal_cell_dispose } from "@/cell/Cell";
-import { cell_dispose, propagator_dispose } from "ppropogator";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
@@ -53,8 +52,10 @@ export const simple_scheduler = (): Scheduler => {
         propagators_to_alert.add(p)
 
         if (immediate_execute){
+            console.log("executing propagator immediately", p.summarize())
+            // problem is with c_map_acessor?
             execute_propagator(p, (e) => {
-                throw e
+                console.error("Error executing propagator", e)
             })
         }
     }

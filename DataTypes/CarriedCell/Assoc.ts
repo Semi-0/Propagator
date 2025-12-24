@@ -1,8 +1,7 @@
 import type { Cell } from "@/cell/Cell";
 import { compound_propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
-import { ce_switch } from "ppropogator";
-import { ce_equal } from "ppropogator";
+import { ce_switch, ce_equal } from "../../Propagator/BuiltInProps";
 import { ce_cons, ce_car, ce_cdr, p_cons, p_list_map } from "./List";
 
 export const p_pair_lookup = (key: Cell<string>, paired_list: Cell<Map<string, any>>, output: Cell<any>) => compound_propagator(

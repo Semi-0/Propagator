@@ -1,5 +1,5 @@
 import * as HS from "effect/HashSet"
-import { register_predicate } from ".."
+import { register_predicate } from "generic-handler/Predicates"
 import { is_object } from "generic-handler/built_in_generics/generic_predicates"
 import { pipe } from "fp-ts/lib/function"
 import type { HashSet } from "effect/HashSet"

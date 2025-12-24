@@ -182,8 +182,9 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
     // Create the propagator first without calling to_build
     
     var built = false
+    var propagator: Propagator;
     
-    const propagator: Propagator = construct_propagator(
+    propagator = construct_propagator(
         inputs,
         outputs,
         () => {
@@ -193,16 +194,26 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
             // other way? feedback or perhaps just give up the idea of tail recursion using propagator
            const should_build = !(built || any_unusable_values(inputs.map(cell_strongest)))
            if (should_build) {
-                parameterize_parent(propagator.getRelation())(() => {
-                    to_build();
-                });
-                built = true;
+                if (propagator) {
+                    parameterize_parent(propagator.getRelation())(() => {
+                        to_build();
+                    });
+                    built = true;
+                }
            }
         },
         name,
         id
     )
     
+    // Force build if it didn't run during construct_propagator (e.g. immediate_execute was true but propagator was undefined)
+    if (!built && !(any_unusable_values(inputs.map(cell_strongest)))) {
+        parameterize_parent(propagator.getRelation())(() => {
+            to_build();
+        });
+        built = true;
+    }
+
     return propagator;
 }
 
@@ -214,17 +225,23 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
 //     // the result would totally be lost
 //     // but isn't thw switch act exactly the same?
 //     var built_childrens: Relation[] = []
-//     const propagator: Propagator = construct_propagator(
+//     var propagator: Propagator;
+    
+//     propagator = construct_propagator(
 //         [controller, ...inputs],
 //         outputs,
 //         () => {
 //             if ((is_true(cell_strongest(controller)))) {
 //                 if (length(built_childrens) == 0) {
-//                     parameterize_parent(propagator.getRelation())(() => {
-//                         to_build();
-//                     });
+//                     if (propagator) {
+//                         parameterize_parent(propagator.getRelation())(() => {
+//                             to_build();
+//                         });
+//                     }
 //                 }
-//                 built_childrens.push(...propagator.getRelation().get_children());
+//                 if (propagator) {
+//                     built_childrens.push(...propagator.getRelation().get_children());
+//                 }
  
 //             }
 //             else  {

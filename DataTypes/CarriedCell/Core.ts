@@ -8,7 +8,7 @@ import { bi_sync, p_switch } from "../../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import { is_map } from "../../Helper/Helper";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { get_base_value } from "ppropogator";
+import { get_base_value } from "@/cell/CellValue";
 
 // todo: this design is meant for carried cell to be retractable 
 // but its not yet implemented

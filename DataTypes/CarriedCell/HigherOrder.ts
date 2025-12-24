@@ -4,7 +4,7 @@ import { ce_constant, p_constant } from "../../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
-import { ce_switch } from "ppropogator";
+import { ce_switch } from "../../Propagator/BuiltInProps";
 import { ce_cons, ce_car, ce_cdr, p_cons, ce_is_atom, ce_copy_list } from "./List";
 import { p_dict_pair } from "./Dict";
 import { diff_map } from "./Core";

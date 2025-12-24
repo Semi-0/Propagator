@@ -69,8 +69,8 @@ export const ce_struct = (struct: Record<string, Cell<any>>) => {
     return output
 }
 
-export const ce_dict = (dict: Map<string, Cell<any>>) => {
-    const output = construct_cell("dict") as Cell<Map<string, Cell<any>>>
+export const ce_dict = (dict: Map<string, Cell<any>>, id: string | null = null) => {
+    const output = construct_cell("dict", id) as Cell<Map<string, Cell<any>>>
     p_construct_dict_carrier(dict, output)
     return output
 }

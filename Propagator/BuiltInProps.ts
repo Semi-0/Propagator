@@ -105,7 +105,7 @@ export const p_not = primitive_propagator(not, "not");
 
 export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator( log_tracer("add", add), "+");
+export const p_add = primitive_propagator(add, "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 
@@ -126,10 +126,13 @@ export const p_or = primitive_propagator(or, "or")
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
     // a big problem is the patched set is not support for join in new value with partial layer
 
-    const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
-        return inject
-    })
+    // const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
+    //     return inject
+    // })
     return construct_propagator([input], [output], () => {
+        console.log("fired")
+        console.log(cell_strongest(input))
+        console.log(cell_strongest_base_value(output))
          const merged = cell_merge(the_nothing, value)
         update_cell(output, merged)
     }, "constant")
