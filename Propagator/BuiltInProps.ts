@@ -130,9 +130,7 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     //     return inject
     // })
     return construct_propagator([input], [output], () => {
-        console.log("fired")
-        console.log(cell_strongest(input))
-        console.log(cell_strongest_base_value(output))
+
          const merged = cell_merge(the_nothing, value)
         update_cell(output, merged)
     }, "constant")

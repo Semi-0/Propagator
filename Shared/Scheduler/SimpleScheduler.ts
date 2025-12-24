@@ -48,15 +48,33 @@ export const simple_scheduler = (): Scheduler => {
         immediate_execute = value
     }
 
+    var is_executing = false
+    var flush_scheduled = false
+
+    const flush_queue = (error_handler: (e: Error) => void) => {
+        if (is_executing) return;
+        is_executing = true;
+        try {
+            while (propagators_to_alert.get_items().length > 0) {
+                const next = propagators_to_alert.get_items()[0] as Propagator;
+                execute_propagator(next, error_handler);
+            }
+        } finally {
+            is_executing = false;
+        }
+    }
+
     const alert_propagator = (p: Propagator) => {
         propagators_to_alert.add(p)
 
-        if (immediate_execute){
-            console.log("executing propagator immediately", p.summarize())
-            // problem is with c_map_acessor?
-            execute_propagator(p, (e) => {
-                console.error("Error executing propagator", e)
-            })
+        if (immediate_execute && !is_executing && !flush_scheduled){
+            flush_scheduled = true;
+            queueMicrotask(() => {
+                flush_scheduled = false;
+                flush_queue((e) => {
+                    console.error("Error executing propagator in immediate loop", e);
+                });
+            });
         }
     }
 

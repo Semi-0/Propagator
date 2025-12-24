@@ -303,6 +303,8 @@ describe("Carried Cell Tests", () => {
 
       update_source_cell(source, new Map([[cellA, 100], [cellB, 200]]))
       
+      await new Promise(resolve => queueMicrotask(resolve));
+      
 
   
 
