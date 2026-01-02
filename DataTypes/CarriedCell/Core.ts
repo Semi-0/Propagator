@@ -1,4 +1,4 @@
-import { is_cell } from "@/cell/Cell";
+import { cell_id, construct_cell, is_cell, update_cell } from "@/cell/Cell";
 import { is_nothing } from "@/cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
@@ -9,6 +9,7 @@ import type { Cell } from "@/cell/Cell";
 import { is_map } from "../../Helper/Helper";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { get_base_value } from "@/cell/CellValue";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 // todo: this design is meant for carried cell to be retractable 
 // but its not yet implemented
@@ -19,16 +20,29 @@ export const merge_carried_map = (content: Map<any, any>, increment: Map<any, an
     for (const [key, value] of increment) {
         const elem = content.get(key)
         if(is_cell(elem) && is_cell(value)) {
-            bi_sync(elem, value)
+            if (cell_id(elem) === cell_id(value)) {
+                // if its equal then there is no need to build
+                continue
+            }
+            else{
+                bi_sync(elem, value)
+            }
         }
         else{
-            content.set(key, value)
+            if (is_cell(value)){
+                content.set(key, value)
+            }
+            else {
+                const listener = construct_cell(key)
+                content.set(key, listener)
+                update_cell(listener, value)
+            }
         }
     }
     return content
 }
 
-define_generic_procedure_handler(generic_merge, all_match(is_map), merge_carried_map)
+define_generic_procedure_handler(generic_merge, all_match(is_map),  merge_carried_map)
 
 export const is_layered_map = register_predicate("is_layered_map", (value: any) => is_layered_object(value) && get_base_value(value) instanceof Map)
 

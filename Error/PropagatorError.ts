@@ -8,6 +8,6 @@ export class PropagatorError extends CustomError {
         public readonly error: Error,
         public readonly context?: unknown
     ) {
-        super(message + " " + propagator_description + " " + error.message);
+        super(message  + " " + propagator_description + " " + error.message);
     }
 }

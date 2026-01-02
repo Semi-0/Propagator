@@ -83,10 +83,10 @@ const referece_map = (f: (input: any) => any, array: any[]) => {
 // the result would be a map with holes in certain numbers
 // and we can skip wholes or reduce that map to form a decent array
 
-export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
+export const p_sync = (input: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("sync " + cell_name(input) + " -> " + cell_name(output), (input: any) => {
     // console.log("sync", input)
     return input;
-})
+})(input, output)
 
 // communicate the change to outside world
 export const p_out = (f: (input: Cell<any>) => void) =>  (input: Cell<any>) => 
@@ -131,6 +131,7 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     // })
     return construct_propagator([input], [output], () => {
 
+        console.log("updated")
          const merged = cell_merge(the_nothing, value)
         update_cell(output, merged)
     }, "constant")
@@ -146,7 +147,7 @@ export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [
     //TODO: this is cheating but this works for now 
     p_sync(a, b)
     p_sync(b, a)
-}, "sync")
+}, "bi-sync: " + cell_name(a) + " -> " + cell_name(b))
 
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;

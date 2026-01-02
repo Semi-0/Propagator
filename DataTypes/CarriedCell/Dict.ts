@@ -1,4 +1,4 @@
-import { construct_cell } from "@/cell/Cell";
+import { cell_id, construct_cell } from "@/cell/Cell";
 import { compound_propagator, function_to_primitive_propagator } from "../../Propagator/Propagator";
 import { p_constant } from "../../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
@@ -70,12 +70,26 @@ export const recursive_accessor = (keys: string[]) => (container: Cell<Map<strin
         }
     }, "recursive_accessor")
 
-export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any>>) => Cell<any> = (key: string) => (container: Cell<Map<string, any>>) =>{
-    const accessor = construct_cell("map_accessor_" + key)
 
-    c_dict_accessor(key)(container, accessor) 
-    return accessor 
+const dict_accessor_cache = new Map<String, Cell<any>>()
+
+export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any>>) => Cell<any> = (key: string) => (container: Cell<Map<string, any>>) =>{
+
+    const storage_key = key + cell_id(container)
+    const stored = dict_accessor_cache.get(storage_key)
+    if (stored != undefined){
+        return stored
+    }
+    else{
+        const accessor = construct_cell("map_accessor_" + key)
+
+        c_dict_accessor(key)(container, accessor) 
+        dict_accessor_cache.set(storage_key, accessor)
+        return accessor 
+    }
 }
+
+
 
 
 
