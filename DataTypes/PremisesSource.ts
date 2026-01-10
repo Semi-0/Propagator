@@ -8,7 +8,7 @@ import { construct_propagator, function_to_primitive_propagator, type Propagator
 import { make_relation } from "./Relation";
 import { get_global_parent } from "../Shared/PublicState";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
+import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import { describe } from "../Helper/UI";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -85,12 +85,13 @@ export const source_cell = (name: string, initial_value: any = source_inited) =>
         construct_layered_datum(
             initial_value,
             vector_clock_layer,
-            construct_vector_clock([
-                {
-                    source: premises,
-                    value: 0
-                }
-            ])
+            constant_clock
+            // construct_vector_clock([
+            //     {
+            //         source: premises,
+            //         value: constant_clock 
+            //     }
+            // ])
         )
     )
     return cell;
@@ -119,16 +120,33 @@ export const is_source_cell = (cell: Cell<any>) => {
     )
 }
 
-export const update_source_cell = (source_cell: Cell<any>, value: any) => { 
+export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp: number | undefined = undefined) => { 
     if (is_source_cell(source_cell)) {
-        update_cell(
-            source_cell,
-            vector_clocked_value_update(
-                cell_strongest(source_cell), 
-                value, 
-                cell_id(source_cell)
+
+        if (timestamp == undefined){
+            update_cell(
+                source_cell,
+                vector_clocked_value_update(
+                    cell_strongest(source_cell), 
+                    value, 
+                    cell_id(source_cell)
+                )
             )
-        )
+        }
+        else{
+            update_cell(source_cell, 
+                construct_layered_datum(
+                    value,
+                    vector_clock_layer,
+                    construct_vector_clock([
+                        {
+                            source: cell_id(source_cell),
+                            value: timestamp
+                        }
+                    ])
+                )
+            );
+        }
     }
     else{
         console.error("source cell is not a source cell", describe(source_cell));
@@ -200,7 +218,7 @@ export const bring_in_cell = (cell: Cell<any>) => {
 }
 
 
-export const p_reactive_dispatch = (dependent: Cell<LayeredObject<Map<Cell<any>, any>>>, output: Cell<any>) => function_to_primitive_propagator("dispatch",
+export const p_reactive_dispatch = (dependent: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("dispatch",
     (source: Map<Cell<any>, any>) => {
         if (is_map(source)){
             const update = source.get(output)
@@ -218,7 +236,7 @@ export const p_reactive_dispatch = (dependent: Cell<LayeredObject<Map<Cell<any>,
     })(dependent, output)
 
 
-export const ce_dispatch = make_ce_arithmetical(p_reactive_dispatch)
+export const ce_dependents = make_ce_arithmetical(p_reactive_dispatch)
 
 // Helper function to update a regular cell with a value from a source
 const update_cell_from_source = (cell: Cell<any>, value: any, source_name: string) => {

@@ -166,7 +166,7 @@ describe("Cell Disposal Tests", () => {
         expect(find_cell_by_id(cell_id(celsius))).toBeUndefined();
     });
 
-    test.only("disposing a cell should not affect unrelated propagators", async () => {
+    test("disposing a cell should not affect unrelated propagators", async () => {
         set_merge(merge_temporary_value_set)
 
         const source = source_cell("source");

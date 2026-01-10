@@ -187,10 +187,7 @@ export function primitive_construct_cell<A>(
     },
 
     addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
-      // if (neighbors.has(propagator_id(propagator))) {
-      //   // console.error("Neighbor already exists", propagator.getRelation().get_id())
-      // }
-      // else{
+
       
         neighbors.set(propagator.getRelation().get_id(), {
           type: interested_in,

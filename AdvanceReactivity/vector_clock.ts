@@ -14,16 +14,9 @@ import { curryArgument } from "generic-handler/built_in_generics/generic_combina
 import { curried_filter, curried_map } from "../Helper/Helper";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { Option } from "effect";
-import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
-import { ArrayFormatter } from "effect/ParseResult";
-import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { BetterSet, construct_better_set, identify_by } from "generic-handler/built_in_generics/generic_better_set";
-import { reduce } from "generic-handler/built_in_generics/generic_collection";
-import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-import { every } from "fp-ts/lib/ReadonlyRecord";
-import { equal } from "./Generics/GenericArith";
 
+import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -34,7 +27,16 @@ import { v4 as uuidv4 } from 'uuid';
 
 type SourceID = string;
 
+type Clock = number | string;
+
 type VectorClock = Map<SourceID, number>;
+
+export const constant_clock = "constant"
+
+export const is_constant_clock = (clock: Clock) => {
+    return clock === constant_clock;
+}
+
 
 export const at_least_one_pair_is_proper_vector_clock = (a: Map<any, any>) => {
     for (const [key, value] of a) {
@@ -45,19 +47,18 @@ export const at_least_one_pair_is_proper_vector_clock = (a: Map<any, any>) => {
 
 export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map && at_least_one_pair_is_proper_vector_clock(a))
 
-export const vector_clock_equal = (a: VectorClock, b: VectorClock) => {
-    return a.entries().every(([source, value]) => {
-        return value === b.get(source);
-    }) && b.entries().every(([source, value]) => {
-        return value === a.get(source);
-    });
-}
+// export const vector_clock_equal = (a: VectorClock, b: VectorClock) => {
+//     return a.entries().every(([source, value]) => {
+//         return value === b.get(source);
+//     }) && b.entries().every(([source, value]) => {
+//         return value === a.get(source);
+//     });
+// }
 
-define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock),  vector_clock_equal)
 
 export type vector_clock_constructor = {
     source: SourceID;
-    value: number;
+    value: Clock;
 }
 
 export const construct_vector_clock = (constructors: vector_clock_constructor[]) => {
@@ -65,46 +66,118 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 }
 
 
-export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock) => {
+export const vector_clock_get_source: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
     const maybe_value = vector_clock.get(source);
     if (maybe_value === undefined) {
-        return Option.none();
+        return 0 
     }
     else {
-        return Option.some(maybe_value);
+        return maybe_value;
+    }
+}
+
+export const vector_clock_set_source = (source: SourceID, value: number, vector_clock: VectorClock) => {
+    vector_clock.set(source, value);
+    return vector_clock;
+}
+
+export const clock_increment = (clock: Clock) => {
+    if (is_constant_clock(clock)) {
+        return clock;
+    }
+    else {
+        // @ts-ignore
+        return clock + 1;
     }
 }
 
 
 export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
-    new_version_vector.set(source, (new_version_vector.get(source) || 0) + 1);
+    vector_clock_set_source(
+        source,
+        clock_increment(vector_clock_get_source(source, version_vector)), 
+        new_version_vector
+    )
+  
     return new_version_vector;
 }
 
+export const compare_two_clock = (a: number | string, b: number | string) => {
+    if  (is_constant_clock(a) && is_constant_clock(b)) {
+        return 0;
+    }
+    else if (is_constant_clock(a)) {
+        return -1;
+    }
+    else if (is_constant_clock(b)) {
+        return 1;
+    }
+    else {
+        if (a > b) {
+            return 1;
+        }
+        else if (a < b) {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+}
 
+export const clock_greater_than = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) > 0;
+}
+
+export const clock_less_than = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) < 0;
+}
+
+export const clock_equal = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) === 0;
+}
+
+export const max_clock = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) > 0 ? a : b;
+}
+
+export const clock_for_each = (vector_clock: VectorClock, f: (source: SourceID, clock: Clock) => void) => {
+    vector_clock.forEach((value, source) => {
+        f(source, value as Clock);
+    });
+}
 
 
 const version_vector_merge = (version_vector1: VectorClock, version_vector2: VectorClock) => {
     const new_version_vector = new Map(version_vector1);
+
+    // @ts-ignore
+    if (is_constant_clock(version_vector1)) {
+        return version_vector2;
+    }
+    // @ts-ignore
+    else if (is_constant_clock(version_vector2)) {
+        return version_vector1;
+    }
+   
+
     version_vector2.forEach((value, source) => {
-        new_version_vector.set(source, Math.max(new_version_vector.get(source) || 0, value));
+
+    vector_clock_set_source(
+        source,
+        // @ts-ignore
+        max_clock(
+            vector_clock_get_source(source, new_version_vector) as Clock, value as Clock
+        ),
+        new_version_vector
+    )
+
     });
     return new_version_vector;
 }
 
 
-const guarantee_missed_channel_synchronized = (key: string, default_value: number) => (...version_clocks: VectorClock[]): number => {
-    // if one vector clock has the channel other vector clock doesn't have
-    // that means none of them have fresher casual information than the other one
-    // and vice versa
-    for (const version_clock of version_clocks) {
-        if (version_clock.has(key)) {
-            return version_clock.get(key)!;
-        }
-    }
-    return default_value;
-}
 
 
 const version_clock_fresher = -1 
@@ -131,56 +204,78 @@ const version_clock_result_contrary = (a: number, b: number) => {
 }
 
 
-const version_vector_strict_compare = (version_vector1: VectorClock, version_vector2: VectorClock) => {
-    // Collect all unique keys from both vectors
-    const all_keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
-    
-    let v1_has_greater = false;
-    let v2_has_greater = false;
-
-    for (const key of all_keys) {
-        // Get values, defaulting to 0 if missing
-        const val1 = version_vector1.get(key) ?? 0;
-        const val2 = version_vector2.get(key) ?? 0;
-
-        if (val1 > val2) {
-            v1_has_greater = true;
-        } else if (val2 > val1) {
-            v2_has_greater = true;
-        }
-
-        // If we find evidence that v1 > v2 AND v2 > v1 in different channels,
-        // they are concurrent. Return equal (as per your comment).
-        if (v1_has_greater && v2_has_greater) {
-            return version_clock_equal;
-        }
+const version_vector_strict_compare = (version_vector1: any, version_vector2: any) => {
+   // @ts-ignore
+    if (is_constant_clock(version_vector1) || is_constant_clock(version_vector2)) {
+        return 0;
     }
+    // @ts-ignore
 
-    // If v1 strictly dominates v2
-    if (v1_has_greater) return version_clock_staled;
-    
-    // If v2 strictly dominates v1
-    if (v2_has_greater) return version_clock_fresher;
-    
-    // They are identical
-    return version_clock_equal;
+
+    else {
+        // Collect all unique keys from both vectors
+        const all_keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
+        
+        let v1_has_greater = false;
+        let v2_has_greater = false;
+
+        for (const key of all_keys) {
+            // Get values, defaulting to 0 if missing
+            const val1 = vector_clock_get_source(key, version_vector1) as Clock;
+            const val2 = vector_clock_get_source(key, version_vector2) as Clock;
+
+            if (clock_greater_than(val1, val2)) {
+                v1_has_greater = true;
+            } else if (clock_greater_than(val2, val1)) {
+                v2_has_greater = true;
+            }
+
+            // If we find evidence that v1 > v2 AND v2 > v1 in different channels,
+            // they are concurrent. Return equal (as per your comment).
+            if (v1_has_greater && v2_has_greater) {
+                return version_clock_equal;
+            }
+        }
+
+        // If v1 strictly dominates v2
+        if (v1_has_greater) return version_clock_staled;
+        
+        // If v2 strictly dominates v1
+        if (v2_has_greater) return version_clock_fresher;
+        
+        // They are identical
+        return version_clock_equal;
+    }
 }
 
-const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
-    const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
 
-    for (const key of keys) {
-        const value1 = guarantee_missed_channel_synchronized(key, 0)(version_vector1, version_vector2);
-        const value2 = guarantee_missed_channel_synchronized(key, 0)(version_vector2, version_vector1);
-        if (value1 < value2) {
-            return version_clock_fresher;
-        }
-        else if (value1 > value2) {
-            return version_clock_staled;
-        }
-    }
-    return version_clock_equal;
+export const vector_clock_less_than = (version_vector1: any, version_vector2: any) => {
+    return version_vector_strict_compare(version_vector1, version_vector2) < 0;
 }
+
+export const vector_clock_greater_than = (version_vector1: any, version_vector2: any) => {
+    return version_vector_strict_compare(version_vector1, version_vector2) > 0;
+}
+
+export const vector_clock_equal = (version_vector1: any, version_vector2: any) => {
+    return version_vector_strict_compare(version_vector1, version_vector2) === 0;
+}
+
+// const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
+//     const keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
+
+//     for (const key of keys) {
+//         const value1 = guarantee_missed_channel_synchronized(key, 0)(version_vector1, version_vector2);
+//         const value2 = guarantee_missed_channel_synchronized(key, 0)(version_vector2, version_vector1);
+//         if (value1 < value2) {
+//             return version_clock_fresher;
+//         }
+//         else if (value1 > value2) {
+//             return version_clock_staled;
+//         }
+//     }
+//     return version_clock_equal;
+// }
 
 const to_victor_clock  = (a: any) => {
     if (is_vector_clock(a)) {
@@ -315,6 +410,9 @@ export const has_vector_clock_layer = register_predicate("has_victor_clock_layer
     return result;
 })
 
+
+export const is_reactive_value = has_vector_clock_layer
+
 export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) => {
   
      const vector_clocks =  pipe(
@@ -325,7 +423,7 @@ export const any_victor_clock_out_of_sync = (as: LayeredObject<any>[] | any[]) =
      var last_vector_clock = vector_clocks[0];
 
      for (const vector_clock of vector_clocks.slice(1)) {
-        if (generic_version_vector_clock_compare(last_vector_clock, vector_clock) !== 0) {
+        if (version_vector_strict_compare(last_vector_clock, vector_clock) !== 0) {
             return true;
         }
         last_vector_clock = vector_clock;
@@ -370,7 +468,7 @@ define_consolidator_per_layer_dispatcher(
     (...args: any[]) => false
 )
 
-export const prove_staled_by = (a: any, b: any) => {
+export const prove_staled_by = (a: Map<any, any>, b: Map<any, any>) => {
     const va = to_victor_clock(a);
     const vb = to_victor_clock(b);
 
@@ -387,6 +485,10 @@ export const prove_staled_by = (a: any, b: any) => {
     }
 }
 
+
+export const generic_prove_staled_by = (a: LayeredObject<any>, b: LayeredObject<any>) => {
+    return prove_staled_by(vector_clock_layer.get_value(a), vector_clock_layer.get_value(b))
+}
 
 
 export const proved_staled_with = curryArgument(
@@ -423,3 +525,5 @@ define_consolidator_per_layer_dispatcher(
         } 
 )
 
+
+define_generic_procedure_handler(is_equal, match_args(is_vector_clock, is_vector_clock),  vector_clock_equal)

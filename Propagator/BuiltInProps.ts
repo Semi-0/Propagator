@@ -5,7 +5,7 @@ import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
-import { is_nothing, the_nothing } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value, the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { add_item, for_each } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -105,7 +105,7 @@ export const p_not = primitive_propagator(not, "not");
 
 export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator(add, "+");
+export const p_add = primitive_propagator(log_tracer("add propagation", add), "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 
@@ -130,12 +130,35 @@ export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) 
     //     return inject
     // })
     return construct_propagator([input], [output], () => {
-
-        console.log("updated")
-         const merged = cell_merge(the_nothing, value)
+        const merged = cell_merge(the_nothing, value)
         update_cell(output, merged)
     }, "constant")
 }
+
+export const p_combine_latest = (f: (...inputs: any[]) => any) => (cells: Cell<any>[], output: Cell<any>) => construct_propagator(
+    cells,
+    [output],
+    () => {
+        const value = cells.map(cell_strongest)
+
+        if (value.some(is_unusable_value)) {
+            return;
+        }
+
+        const merged =  f(...cells.map(cell_strongest))
+        console.log("merged", merged)
+        update_cell(output, merged)
+    },
+    "combine_latest"
+)
+
+export const layered_pass_dependences = make_layered_procedure("layered_pass_dependences", 2, (from: any, to: any) => to)
+
+export const p_combine_dependences_with_value_from_right = p_combine_latest(layered_pass_dependences)
+
+export const p_pass_dependences = (from: Cell<any>, to: Cell<any>, out: Cell<any>) => function_to_primitive_propagator("pass_dependences", (f: any, t: any) => t)(from, to, out)
+
+export const ce_pass_dependences = make_ce_arithmetical(p_pass_dependences)
 
 // export const p_constant = (value: any) => function_to_primitive_propagator("constant", (input: any) => {
 //     return value

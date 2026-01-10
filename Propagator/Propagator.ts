@@ -10,6 +10,7 @@ import { is_disposed } from "../Cell/CellValue";
 import { any_unusable_values } from "../Cell/CellValue";
 import { get_children, get_id, mark_for_disposal} from "../Shared/Generics";
 import { alert_propagator } from "../Shared/Scheduler/Scheduler";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 //TODO: a minimalistic revision which merge based info provided by data?
@@ -150,6 +151,13 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
 
                 if (any_unusable_values(inputs_values)){
                     // do nothing
+                    // if (name === "+"){
+                        console.log(name + " propagation unusable")
+                        inputs_values.forEach(value => {
+                            console.log(to_string(value))
+                        })
+
+                    // }
                 }
                 else{
                     
@@ -191,13 +199,35 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
             // if bi-directional propagation
             // we need to at least init all input and output once
             // other way? feedback or perhaps just give up the idea of tail recursion using propagator
-           const should_build = !(built || any_unusable_values(inputs.map(cell_strongest)))
+           if (name === "expand_closures") {
+            console.log("summarizing expand_closures")
+            // console.log(propagator.summarize())
+           }
+
+
+           const inputs_unusable = any_unusable_values(inputs.map(cell_strongest)) 
+           const should_build = !(built || inputs_unusable)
            if (should_build) {
                 parameterize_parent(propagator.getRelation())(() => {
                     to_build();
                 });
                 built = true;
+           } 
+           else{
+            if (inputs_unusable){
+                if (name === "expand_closures") {
+                    console.log("summarizing expand_closures")
+                    console.log("inputs unusable", inputs.map(cell_strongest))
+                    // const any_unusable_values = (arr: Cell<any>[]) => trace_generic_procedure(console.log, any_unusable_values, [arr])
+                    // any_unusable_values(inputs.map(cell_strongest))
+                    // console.log(propagator.summarize())
+                   }
+        
+                
+            }
+
            }
+
         },
         name,
         id
