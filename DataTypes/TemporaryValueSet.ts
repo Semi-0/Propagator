@@ -189,11 +189,11 @@ export function internal_merge_temporary_value_set(content: TemporaryValueSet<an
     }
 }
 
-export const merge_temporary_value_set = construct_simple_generic_procedure(
-    "merge_temporary_value_set",
-    2,
-    internal_merge_temporary_value_set
-)
+// export const merge_temporary_value_set = construct_simple_generic_procedure(
+//     "merge_temporary_value_set",
+//     2,
+//     internal_merge_temporary_value_set
+// )
 
 // define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 

@@ -164,30 +164,30 @@ export const ce_pass_dependences = make_ce_arithmetical(p_pass_dependences)
 //     return value
 // })
 
-export const p_combine_latest = (f: (...inputs: any[]) => any) => (cells: Cell<any>[], output: Cell<any>) => construct_propagator(
-    cells,
-    [output],
-    () => {
-        const value = cells.map(cell_strongest)
+// export const p_combine_latest = (f: (...inputs: any[]) => any) => (cells: Cell<any>[], output: Cell<any>) => construct_propagator(
+//     cells,
+//     [output],
+//     () => {
+//         const value = cells.map(cell_strongest)
 
-        if (value.some(is_unusable_value)) {
-            return;
-        }
+//         if (value.some(is_unusable_value)) {
+//             return;
+//         }
 
-        const merged =  f(...cells.map(cell_strongest))
-        console.log("merged", merged)
-        update_cell(output, merged)
-    },
-    "combine_latest"
-)
+//         const merged =  f(...cells.map(cell_strongest))
+//         console.log("merged", merged)
+//         update_cell(output, merged)
+//     },
+//     "combine_latest"
+// )
 
-export const layered_pass_dependences = make_layered_procedure("layered_pass_dependences", 2, (from: any, to: any) => to)
+// export const layered_pass_dependences = make_layered_procedure("layered_pass_dependences", 2, (from: any, to: any) => to)
 
-export const p_combine_dependences_with_value_from_right = p_combine_latest(layered_pass_dependences)
+// export const p_combine_dependences_with_value_from_right = p_combine_latest(layered_pass_dependences)
 
-export const p_pass_dependences = (from: Cell<any>, to: Cell<any>, out: Cell<any>) => function_to_primitive_propagator("pass_dependences", (f: any, t: any) => t)(from, to, out)
+// export const p_pass_dependences = (from: Cell<any>, to: Cell<any>, out: Cell<any>) => function_to_primitive_propagator("pass_dependences", (f: any, t: any) => t)(from, to, out)
 
-export const ce_pass_dependences = make_ce_arithmetical(p_pass_dependences)
+// export const ce_pass_dependences = make_ce_arithmetical(p_pass_dependences)
 
 export const ce_constant = (value: any, name: string = "constant", id: string | null = null) => make_ce_arithmetical(p_constant(value), "constant | " + name )(construct_cell(name + "_input", id))
 
