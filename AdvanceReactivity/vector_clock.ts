@@ -114,15 +114,16 @@ export const vector_clock_get_source_direct: (source: SourceID, vector_clock: Ve
     }
 }
 
-export const clock_increment = (clock: Clock) => {
-    if (is_constant_clock(clock)) {
-        return clock;
-    }
-    else {
-        // @ts-ignore
-        return clock + 1;
-    }
-}
+// Duplicate - commented out (already declared at line 89)
+// export const clock_increment = (clock: Clock) => {
+//     if (is_constant_clock(clock)) {
+//         return clock;
+//     }
+//     else {
+//         // @ts-ignore
+//         return clock + 1;
+//     }
+// }
 
 export const clock_greater_than = (a: Clock, b: Clock) => {
     return compare_two_clock(a, b) > 0;
@@ -136,11 +137,11 @@ export const clock_equal = (a: Clock, b: Clock) => {
     return compare_two_clock(a, b) === 0;
 }
 
-
-export const vector_clock_set_source = (source: SourceID, value: number, vector_clock: VectorClock) => {
-    vector_clock.set(source, value);
-    return vector_clock;
-}
+// Duplicate - commented out (already declared at line 84)
+// export const vector_clock_set_source = (source: SourceID, value: number, vector_clock: VectorClock) => {
+//     vector_clock.set(source, value);
+//     return vector_clock;
+// }
 
 export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
@@ -153,40 +154,43 @@ export const version_vector_forward = (version_vector: VectorClock, source: Sour
     return new_version_vector;
 }
 
-export const compare_two_clock = (a: number | string, b: number | string) => {
-    if  (is_constant_clock(a) && is_constant_clock(b)) {
-        return 0;
-    }
-    else if (is_constant_clock(a)) {
-        return -1;
-    }
-    else if (is_constant_clock(b)) {
-        return 1;
-    }
-    else {
-        if (a > b) {
-            return 1;
-        }
-        else if (a < b) {
-            return -1;
-        }
-        else {
-            return 0;
-        }
-    }
-}
+// export const compare_two_clock = (a: number | string, b: number | string) => {
+//     if  (is_constant_clock(a) && is_constant_clock(b)) {
+//         return 0;
+//     }
+//     else if (is_constant_clock(a)) {
+//         return -1;
+//     }
+//     else if (is_constant_clock(b)) {
+//         return 1;
+//     }
+//     else {
+//         if (a > b) {
+//             return 1;
+//         }
+//         else if (a < b) {
+//             return -1;
+//         }
+//         else {
+//             return 0;
+//         }
+//     }
+// }
 
-export const clock_greater_than = (a: Clock, b: Clock) => {
-    return compare_two_clock(a, b) > 0;
-}
+// Duplicate - commented out (already declared at line 127)
+// export const clock_greater_than = (a: Clock, b: Clock) => {
+//     return compare_two_clock(a, b) > 0;
+// }
 
-export const clock_less_than = (a: Clock, b: Clock) => {
-    return compare_two_clock(a, b) < 0;
-}
+// Duplicate - commented out (already declared at line 131)
+// export const clock_less_than = (a: Clock, b: Clock) => {
+//     return compare_two_clock(a, b) < 0;
+// }
 
-export const clock_equal = (a: Clock, b: Clock) => {
-    return compare_two_clock(a, b) === 0;
-}
+// Duplicate - commented out (already declared at line 135)
+// export const clock_equal = (a: Clock, b: Clock) => {
+//     return compare_two_clock(a, b) === 0;
+// }
 
 export const max_clock = (a: Clock, b: Clock) => {
     return compare_two_clock(a, b) > 0 ? a : b;
@@ -218,9 +222,9 @@ export const compare_two_clock = (a: number | string, b: number | string) => {
     }
 }
 
-export const max_clock = (a: Clock, b: Clock) => {
-    return compare_two_clock(a, b) > 0 ? a : b;
-}
+// export const max_clock = (a: Clock, b: Clock) => {
+//     return compare_two_clock(a, b) > 0 ? a : b;
+// }
 
 const version_vector_merge = (version_vector1: any, version_vector2: any) => {
     // @ts-ignore
@@ -583,11 +587,11 @@ export const proved_staled_with = curryArgument(
     )
 )
 
-export const is_reactive_value = register_predicate("is_reactive_value", (value: any) => {
-    return is_layered_object(value) && has_vector_clock_layer(value);
-});
+// export const is_reactive_value = register_predicate("is_reactive_value", (value: any) => {
+//     return is_layered_object(value) && has_vector_clock_layer(value);
+// });
 
-export const generic_prove_staled_by = proved_staled_with;
+// export const generic_prove_staled_by = proved_staled_with;
 
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
