@@ -152,10 +152,10 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
                 if (any_unusable_values(inputs_values)){
                     // do nothing
                     // if (name === "+"){
-                        console.log(name + " propagation unusable")
-                        inputs_values.forEach(value => {
-                            console.log(to_string(value))
-                        })
+                        // console.log(name + " propagation unusable")
+                        // inputs_values.forEach(value => {
+                        //     console.log(to_string(value))
+                        // })
 
                     // }
                 }
@@ -214,17 +214,17 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
                 built = true;
            } 
            else{
-            if (inputs_unusable){
-                if (name === "expand_closures") {
-                    console.log("summarizing expand_closures")
-                    console.log("inputs unusable", inputs.map(cell_strongest))
-                    // const any_unusable_values = (arr: Cell<any>[]) => trace_generic_procedure(console.log, any_unusable_values, [arr])
-                    // any_unusable_values(inputs.map(cell_strongest))
-                    // console.log(propagator.summarize())
-                   }
+            // if (inputs_unusable){
+            //     if (name === "expand_closures") {
+            //         console.log("summarizing expand_closures")
+            //         console.log("inputs unusable", inputs.map(cell_strongest))
+            //         // const any_unusable_values = (arr: Cell<any>[]) => trace_generic_procedure(console.log, any_unusable_values, [arr])
+            //         // any_unusable_values(inputs.map(cell_strongest))
+            //         // console.log(propagator.summarize())
+            //        }
         
                 
-            }
+            // }
 
            }
 

@@ -67,7 +67,9 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 
 
 export const vector_clock_get_source: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
+    
     const maybe_value = vector_clock.get(source);
+
     if (maybe_value === undefined) {
         return 0 
     }

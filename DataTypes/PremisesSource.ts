@@ -112,11 +112,14 @@ export const is_source_cell = (cell: Cell<any>) => {
         cell,
         cell_strongest,
         get_vector_clock_layer,
-        vector_clock_get_source(cell_id(cell)),
-        match({
-            onSome: () => true,
-            onNone: () => false
-        })
+        (result) => {
+            if (result === undefined) {
+                return false;
+            }
+            else {
+                return true;
+            }
+        } 
     )
 }
 
