@@ -23,6 +23,7 @@ import { reduce } from "generic-handler/built_in_generics/generic_collection";
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { every } from "fp-ts/lib/ReadonlyRecord";
 import { equal } from "./Generics/GenericArith";
+import { inspect_strongest } from "../Helper/Debug";
 
 
 // because vector clock already mark the source id
@@ -32,7 +33,15 @@ import { equal } from "./Generics/GenericArith";
 
 type SourceID = string;
 
+type Clock = number | string;
+
 type VectorClock = Map<SourceID, number>;
+
+export const constant_clock = "constant"
+
+export const is_constant_clock = (clock: Clock) => {
+    return clock === constant_clock;
+}
 
 export const at_least_one_pair_is_proper_vector_clock = (a: Map<any, any>) => {
     for (const [key, value] of a) {
@@ -398,14 +407,14 @@ export const proved_staled_with = curryArgument(
 )
 
 export const is_reactive_value = register_predicate("is_reactive_value", (value: any) => {
-    return is_layered_object(value) && has_layer(value, vector_clock_layer.key);
+    return is_layered_object(value) && has_vector_clock_layer(value);
 });
 
 export const generic_prove_staled_by = proved_staled_with;
 
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
-    if (!vector_clock || vector_clock.size === 0) {
+    if (is_constant_clock(vector_clock as any)) {
         return [];
     }
     else {
