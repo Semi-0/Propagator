@@ -4,6 +4,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { type LayeredObject } from "sando-layer/Basic/LayeredObject"
 import { get_base_value  as get_base_value_layer} from "sando-layer/Basic/Layer";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
+import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 
 
 export type the_nothing_type = typeof the_nothing
@@ -54,6 +55,10 @@ export const is_contradiction = register_predicate("is_contradiction", (value: a
         return get_base_value(value) === the_contradiction
     }
     return value === the_contradiction
+})
+
+export const merge_into_contradiction = make_layered_procedure("merge_into_contradiction", 2, (content: any, increment: any) => {
+    return the_contradiction
 })
 
 
