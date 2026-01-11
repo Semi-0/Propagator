@@ -3,7 +3,7 @@
 
 // -*- TypeScript -*-
 
-import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
+import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { type BetterSet, construct_better_set, is_better_set,  is_subset_of,  set_remove } from "generic-handler/built_in_generics/generic_better_set";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -17,7 +17,7 @@ import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imple
 import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length, every, some } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
-import { merge_layered, partial_merge } from "../Cell/Merge";
+import { generic_merge, merge_layered, partial_merge } from "../Cell/Merge";
 
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
@@ -164,16 +164,25 @@ define_generic_procedure_handler(strongest_value,
 
 // ValueSet operations
 
-// define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
-
-export function merge_temporary_value_set(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
+export function internal_merge_temporary_value_set(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
     if (has_vector_clock_layer(increment)){
         return is_nothing(increment) ? to_temporary_value_set(content) : value_set_adjoin(to_temporary_value_set(content), increment);
+    }
+    else if (is_temporary_value_set(content)){
+        return generic_merge(content, increment);
     }
     else{
         return merge_layered(content, increment);
     }
 }
+
+export const merge_temporary_value_set = construct_simple_generic_procedure(
+    "merge_temporary_value_set",
+    2,
+    internal_merge_temporary_value_set
+)
+
+// define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 
 
 
