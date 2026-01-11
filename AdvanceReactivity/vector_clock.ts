@@ -72,7 +72,22 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 }
 
 
-export const vector_clock_get_source: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
+// Curried version that returns Option (for backward compatibility)
+export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock) => {
+    const maybe_value = vector_clock.get(source);
+    if (maybe_value === undefined) {
+        return Option.none();
+    }
+    else {
+        return Option.some(maybe_value);
+    }
+}
+
+// Direct version that returns Clock (for constant clock support)
+export const vector_clock_get_source_direct: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
+    if (!vector_clock) {
+        return 0;
+    }
     const maybe_value = vector_clock.get(source);
     if (maybe_value === undefined) {
         return 0 
@@ -101,9 +116,19 @@ export const clock_greater_than = (clock1: Clock, clock2: Clock) => {
 }
 
 
+export const vector_clock_set_source = (source: SourceID, value: number, vector_clock: VectorClock) => {
+    vector_clock.set(source, value);
+    return vector_clock;
+}
+
 export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
-    new_version_vector.set(source, (new_version_vector.get(source) || 0) + 1);
+    vector_clock_set_source(
+        source,
+        clock_increment(vector_clock_get_source_direct(source, version_vector)), 
+        new_version_vector
+    )
+  
     return new_version_vector;
 }
 
@@ -171,8 +196,8 @@ const version_vector_strict_compare = (version_vector1: any, version_vector2: an
 
         for (const key of all_keys) {
             // Get values, defaulting to 0 if missing
-            const val1 = vector_clock_get_source(key, version_vector1) as Clock;
-            const val2 = vector_clock_get_source(key, version_vector2) as Clock;
+            const val1 = vector_clock_get_source_direct(key, version_vector1) as Clock;
+            const val2 = vector_clock_get_source_direct(key, version_vector2) as Clock;
 
             if (clock_greater_than(val1, val2)) {
                 v1_has_greater = true;
