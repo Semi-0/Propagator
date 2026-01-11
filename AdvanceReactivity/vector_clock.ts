@@ -72,14 +72,32 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 }
 
 
-export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock) => {
+export const vector_clock_get_source: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
     const maybe_value = vector_clock.get(source);
     if (maybe_value === undefined) {
-        return Option.none();
+        return 0 
     }
     else {
-        return Option.some(maybe_value);
+        return maybe_value;
     }
+}
+
+export const clock_increment = (clock: Clock) => {
+    if (is_constant_clock(clock)) {
+        return clock;
+    }
+    else {
+        // @ts-ignore
+        return clock + 1;
+    }
+}
+
+export const clock_greater_than = (clock1: Clock, clock2: Clock) => {
+    if (is_constant_clock(clock1) || is_constant_clock(clock2)) {
+        return false;
+    }
+    // @ts-ignore
+    return clock1 > clock2;
 }
 
 
@@ -138,39 +156,46 @@ const version_clock_result_contrary = (a: number, b: number) => {
 }
 
 
-const version_vector_strict_compare = (version_vector1: VectorClock, version_vector2: VectorClock) => {
-    // Collect all unique keys from both vectors
-    const all_keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
-    
-    let v1_has_greater = false;
-    let v2_has_greater = false;
-
-    for (const key of all_keys) {
-        // Get values, defaulting to 0 if missing
-        const val1 = version_vector1.get(key) ?? 0;
-        const val2 = version_vector2.get(key) ?? 0;
-
-        if (val1 > val2) {
-            v1_has_greater = true;
-        } else if (val2 > val1) {
-            v2_has_greater = true;
-        }
-
-        // If we find evidence that v1 > v2 AND v2 > v1 in different channels,
-        // they are concurrent. Return equal (as per your comment).
-        if (v1_has_greater && v2_has_greater) {
-            return version_clock_equal;
-        }
+const version_vector_strict_compare = (version_vector1: any, version_vector2: any) => {
+    // @ts-ignore
+    if (is_constant_clock(version_vector1) || is_constant_clock(version_vector2)) {
+        return 0;
     }
+    // @ts-ignore
+    else {
+        // Collect all unique keys from both vectors
+        const all_keys = new Set([...version_vector1.keys(), ...version_vector2.keys()]);
+        
+        let v1_has_greater = false;
+        let v2_has_greater = false;
 
-    // If v1 strictly dominates v2
-    if (v1_has_greater) return version_clock_staled;
-    
-    // If v2 strictly dominates v1
-    if (v2_has_greater) return version_clock_fresher;
-    
-    // They are identical
-    return version_clock_equal;
+        for (const key of all_keys) {
+            // Get values, defaulting to 0 if missing
+            const val1 = vector_clock_get_source(key, version_vector1) as Clock;
+            const val2 = vector_clock_get_source(key, version_vector2) as Clock;
+
+            if (clock_greater_than(val1, val2)) {
+                v1_has_greater = true;
+            } else if (clock_greater_than(val2, val1)) {
+                v2_has_greater = true;
+            }
+
+            // If we find evidence that v1 > v2 AND v2 > v1 in different channels,
+            // they are concurrent. Return equal (as per your comment).
+            if (v1_has_greater && v2_has_greater) {
+                return version_clock_equal;
+            }
+        }
+
+        // If v1 strictly dominates v2
+        if (v1_has_greater) return version_clock_staled;
+        
+        // If v2 strictly dominates v1
+        if (v2_has_greater) return version_clock_fresher;
+        
+        // They are identical
+        return version_clock_equal;
+    }
 }
 
 const version_vector_compare = (version_vector1: VectorClock , version_vector2: VectorClock) => {
