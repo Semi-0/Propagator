@@ -123,9 +123,11 @@ export const vector_clock_set_source = (source: SourceID, value: number, vector_
 
 export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
+    const current_clock = vector_clock_get_source(source)(version_vector);
+    const clock_value = Option.isSome(current_clock) ? current_clock.value : 0;
     vector_clock_set_source(
         source,
-        clock_increment(vector_clock_get_source_direct(source, version_vector)), 
+        clock_increment(clock_value), 
         new_version_vector
     )
   
