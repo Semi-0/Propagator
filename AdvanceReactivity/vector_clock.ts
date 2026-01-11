@@ -76,7 +76,14 @@ export const construct_vector_clock = (constructors: vector_clock_constructor[])
 
 
 // Curried version that returns Option (for backward compatibility)
-export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock) => {
+export const vector_clock_get_source = (source: SourceID) => (vector_clock: VectorClock | any) => {
+    // @ts-ignore
+    if (is_constant_clock(vector_clock)) {
+        return Option.none();
+    }
+    if (!vector_clock || typeof vector_clock.get !== 'function') {
+        return Option.none();
+    }
     const maybe_value = vector_clock.get(source);
     if (maybe_value === undefined) {
         return Option.none();
@@ -87,8 +94,12 @@ export const vector_clock_get_source = (source: SourceID) => (vector_clock: Vect
 }
 
 // Direct version that returns Clock (for constant clock support)
-export const vector_clock_get_source_direct: (source: SourceID, vector_clock: VectorClock) => Clock = (source: SourceID, vector_clock: VectorClock) => {
-    if (!vector_clock) {
+export const vector_clock_get_source_direct: (source: SourceID, vector_clock: VectorClock | any) => Clock = (source: SourceID, vector_clock: VectorClock | any) => {
+    // @ts-ignore
+    if (is_constant_clock(vector_clock)) {
+        return constant_clock;
+    }
+    if (!vector_clock || typeof vector_clock.get !== 'function') {
         return 0;
     }
     const maybe_value = vector_clock.get(source);
