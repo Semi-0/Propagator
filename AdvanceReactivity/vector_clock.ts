@@ -401,6 +401,8 @@ export const is_reactive_value = register_predicate("is_reactive_value", (value:
     return is_layered_object(value) && has_layer(value, vector_clock_layer.key);
 });
 
+export const generic_prove_staled_by = proved_staled_with;
+
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
     if (!vector_clock || vector_clock.size === 0) {
