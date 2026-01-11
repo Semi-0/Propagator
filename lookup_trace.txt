@@ -1,0 +1,592 @@
+bun test v1.3.4 (5eb2145b)
+
+../eko/test/trace_lookup.test.ts:
+Creating env structure...
+fired
+&&the_nothing&&
+&&the_nothing&&
+fired
+&&the_nothing&&
+Map(2) {
+  "parent": {
+    getRelation: [Function: getRelation],
+    getContent: [Function: getContent],
+    getStrongest: [Function: getStrongest],
+    getNeighbors: [Function: getNeighbors],
+    testContent: [Function: test_content],
+    update: [Function: update],
+    addNeighbor: [Function: addNeighbor],
+    removeNeighbor: [Function: removeNeighbor],
+    summarize: [Function: summarize],
+    dispose: [Function: dispose],
+  },
+  "target": {
+    getRelation: [Function: getRelation],
+    getContent: [Function: getContent],
+    getStrongest: [Function: getStrongest],
+    getNeighbors: [Function: getNeighbors],
+    testContent: [Function: test_content],
+    update: [Function: update],
+    addNeighbor: [Function: addNeighbor],
+    removeNeighbor: [Function: removeNeighbor],
+    summarize: [Function: summarize],
+    dispose: [Function: dispose],
+  },
+}
+fired
+&&the_nothing&&
+&&the_nothing&&
+fired
+&&the_nothing&&
+Map(1) {
+  "parent": {
+    getRelation: [Function: getRelation],
+    getContent: [Function: getContent],
+    getStrongest: [Function: getStrongest],
+    getNeighbors: [Function: getNeighbors],
+    testContent: [Function: test_content],
+    update: [Function: update],
+    addNeighbor: [Function: addNeighbor],
+    removeNeighbor: [Function: removeNeighbor],
+    summarize: [Function: summarize],
+    dispose: [Function: dispose],
+  },
+}
+Starting lookup...
+Error executing propagator in immediate loop 38 |                 propagators_alerted.push(make_propagator_frame(step_number, propagator))
+39 |                 step_number++
+40 |             }
+41 |         }
+42 |         catch(e: any){
+43 |             error_handler(new PropagatorError("Error executing propagator", is_propagator(propagator) ? propagator.summarize() : "unknown propagator", e))
+                               ^
+CustomError: Error executing propagator propagator lexical_lookup
+  id: 691f21fd-c41f-4afc-9584-093c944c3587
+  inputs (1):
+    [0] CELL struct
+          ID: bf8dfa07-8742-4038-b06a-49add2a5b91a
+          STATUS: active
+          STRONGEST: 
+         ===layered object===
+          [0] base
+            Map(parent: CELL struct
+              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126
+              STATUS: active
+              STRONGEST: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              CONTENT: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              NEIGHBORS (4):
+                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]
+                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]
+                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]
+                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])
+          CONTENT: 
+         ===layered object===
+          [0] base
+            Map(parent: CELL struct
+              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126
+              STATUS: active
+              STRONGEST: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              CONTENT: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              NEIGHBORS (4):
+                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]
+                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]
+                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]
+                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])
+          NEIGHBORS (2):
+            [0] constant (id: b2b38ca9-80f3-4eb2-9155-e05dadd6034d) [dependents]
+            [1] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [updated]
+  outputs (1):
+    [0] CELL accessor
+          ID: 34af3b41-83e7-49f2-999e-a2a6802c1769
+          STATUS: active
+          STRONGEST: 
+         &&the_nothing&&
+          CONTENT: 
+         &&the_nothing&&
+          NEIGHBORS (0):
+            (none) Cannot access 'propagator' before initialization.
+ propagator_description: "propagator lexical_lookup\n  id: 691f21fd-c41f-4afc-9584-093c944c3587\n  inputs (1):\n    [0] CELL struct\n          ID: bf8dfa07-8742-4038-b06a-49add2a5b91a\n          STATUS: active\n          STRONGEST: \n         ===layered object===\n          [0] base\n            Map(parent: CELL struct\n              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126\n              STATUS: active\n              STRONGEST: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              CONTENT: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              NEIGHBORS (4):\n                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]\n                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]\n                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]\n                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])\n          CONTENT: \n         ===layered object===\n          [0] base\n            Map(parent: CELL struct\n              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126\n              STATUS: active\n              STRONGEST: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              CONTENT: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              NEIGHBORS (4):\n                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]\n                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]\n                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]\n                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])\n          NEIGHBORS (2):\n            [0] constant (id: b2b38ca9-80f3-4eb2-9155-e05dadd6034d) [dependents]\n            [1] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [updated]\n  outputs (1):\n    [0] CELL accessor\n          ID: 34af3b41-83e7-49f2-999e-a2a6802c1769\n          STATUS: active\n          STRONGEST: \n         &&the_nothing&&\n          CONTENT: \n         &&the_nothing&&\n          NEIGHBORS (0):\n            (none)",
+    context: undefined,
+
+      at execute_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:43:27)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:60:21)
+      at alert_propagators (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:72:13)
+      at alert_propagators (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/Scheduler.ts:50:23)
+      at addNeighbor (/Users/linpandi/Dropbox/Programs/Propogator/Cell/Cell.ts:205:11)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:117:10)
+      at forEach (1:11)
+      at construct_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:116:10)
+      at compound_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:186:36)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:37:9)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:19:31)
+
+191 |             // if bi-directional propagation
+192 |             // we need to at least init all input and output once
+193 |             // other way? feedback or perhaps just give up the idea of tail recursion using propagator
+194 |            const should_build = !(built || any_unusable_values(inputs.map(cell_strongest)))
+195 |            if (should_build) {
+196 |                 parameterize_parent(propagator.getRelation())(() => {
+                                          ^
+ReferenceError: Cannot access 'propagator' before initialization.
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:196:37)
+      at activate (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:95:9)
+      at propagator_activate (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:289:16)
+      at execute_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:36:13)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:60:21)
+      at alert_propagators (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:72:13)
+      at alert_propagators (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/Scheduler.ts:50:23)
+      at addNeighbor (/Users/linpandi/Dropbox/Programs/Propogator/Cell/Cell.ts:205:11)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:117:10)
+      at forEach (1:11)
+      at construct_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:116:10)
+      at compound_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:186:36)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:37:9)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:19:31)
+
+Error executing propagator in immediate loop 38 |                 propagators_alerted.push(make_propagator_frame(step_number, propagator))
+39 |                 step_number++
+40 |             }
+41 |         }
+42 |         catch(e: any){
+43 |             error_handler(new PropagatorError("Error executing propagator", is_propagator(propagator) ? propagator.summarize() : "unknown propagator", e))
+                               ^
+CustomError: Error executing propagator propagator lexical_lookup
+  id: 691f21fd-c41f-4afc-9584-093c944c3587
+  inputs (1):
+    [0] CELL struct
+          ID: bf8dfa07-8742-4038-b06a-49add2a5b91a
+          STATUS: active
+          STRONGEST: 
+         ===layered object===
+          [0] base
+            Map(parent: CELL struct
+              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126
+              STATUS: active
+              STRONGEST: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              CONTENT: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              NEIGHBORS (4):
+                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]
+                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]
+                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]
+                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])
+          CONTENT: 
+         ===layered object===
+          [0] base
+            Map(parent: CELL struct
+              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126
+              STATUS: active
+              STRONGEST: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              CONTENT: 
+             ===layered object===
+              [0] base
+                Map(parent: CELL root
+                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3
+                  STATUS: active
+                  STRONGEST: 
+                 &&the_nothing&&
+                  CONTENT: 
+                 &&the_nothing&&
+                  NEIGHBORS (9):
+                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]
+                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]
+                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]
+                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]
+                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]
+                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]
+                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]
+                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]
+                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100
+                  ID: 2c84029b-acde-4246-972a-5b66e32fc742
+                  STATUS: active
+                  STRONGEST: 
+                 ===layered object===
+                  [0] base
+                    100
+                  [1] vector_clock
+                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  CONTENT: 
+                 [0] ===layered object===
+                      [0] base
+                        100
+                      [1] vector_clock
+                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)
+                  NEIGHBORS (9):
+                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]
+                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]
+                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]
+                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]
+                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]
+                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]
+                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]
+                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]
+                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])
+              NEIGHBORS (4):
+                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]
+                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]
+                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]
+                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])
+          NEIGHBORS (2):
+            [0] constant (id: b2b38ca9-80f3-4eb2-9155-e05dadd6034d) [dependents]
+            [1] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [updated]
+  outputs (1):
+    [0] CELL accessor
+          ID: 34af3b41-83e7-49f2-999e-a2a6802c1769
+          STATUS: active
+          STRONGEST: 
+         &&the_nothing&&
+          CONTENT: 
+         &&the_nothing&&
+          NEIGHBORS (1):
+            [0] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [dependents] Cannot access 'propagator' before initialization.
+ propagator_description: "propagator lexical_lookup\n  id: 691f21fd-c41f-4afc-9584-093c944c3587\n  inputs (1):\n    [0] CELL struct\n          ID: bf8dfa07-8742-4038-b06a-49add2a5b91a\n          STATUS: active\n          STRONGEST: \n         ===layered object===\n          [0] base\n            Map(parent: CELL struct\n              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126\n              STATUS: active\n              STRONGEST: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              CONTENT: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              NEIGHBORS (4):\n                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]\n                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]\n                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]\n                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])\n          CONTENT: \n         ===layered object===\n          [0] base\n            Map(parent: CELL struct\n              ID: e8e100f8-b94c-46f5-8eaf-8efb9270a126\n              STATUS: active\n              STRONGEST: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              CONTENT: \n             ===layered object===\n              [0] base\n                Map(parent: CELL root\n                  ID: 93ac7241-4bcb-4cbe-b29d-b8316d6c85c3\n                  STATUS: active\n                  STRONGEST: \n                 &&the_nothing&&\n                  CONTENT: \n                 &&the_nothing&&\n                  NEIGHBORS (9):\n                    [0] sync (id: 2f7ccb3a-cc00-4033-a556-701628978542) [dependents]\n                    [1] sync (id: 55aadc60-d855-45bf-95db-b787198b4147) [dependents]\n                    [2] sync (id: 8003e864-3744-48f6-96a1-6e705bfee4d9) [dependents]\n                    [3] sync (id: 2c1ca9b1-4b31-4d1d-bd17-a3de36d154f8) [dependents]\n                    [4] sync (id: 08195bf7-73f7-440e-901e-2330cf384b5e) [dependents]\n                    [5] sync (id: 6208e43d-e0b3-47b7-b5af-2f80e34605cb) [dependents]\n                    [6] sync (id: 89990e44-60d4-44a5-b4ed-9fff00e2f56e) [dependents]\n                    [7] sync (id: 72a60a83-3451-4ee9-9740-9cdb5e47652c) [dependents]\n                    [8] sync (id: 7f79ed9a-d272-4f6f-bc5f-8b7283d5cb50) [dependents], target: CELL constant | 100\n                  ID: 2c84029b-acde-4246-972a-5b66e32fc742\n                  STATUS: active\n                  STRONGEST: \n                 ===layered object===\n                  [0] base\n                    100\n                  [1] vector_clock\n                    Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  CONTENT: \n                 [0] ===layered object===\n                      [0] base\n                        100\n                      [1] vector_clock\n                        Map(2c84029b-acde-4246-972a-5b66e32fc742: 0)\n                  NEIGHBORS (9):\n                    [0] sync (id: 7d78c636-4347-435a-a1b6-6b27648ce7fb) [dependents]\n                    [1] sync (id: 369ba383-641c-4d29-aecf-952855537566) [dependents]\n                    [2] sync (id: 3fea66ea-da14-4cf7-9430-206ddc0f4bf2) [dependents]\n                    [3] sync (id: 28c77999-4434-4bae-a9c3-c2a032fb2044) [dependents]\n                    [4] sync (id: de997757-4c10-448e-965e-63a307a43fac) [dependents]\n                    [5] sync (id: 25ca53f7-1cd6-419a-a948-9a797c49d3bb) [dependents]\n                    [6] sync (id: 0ea56d18-5644-4152-b31d-05cbd724d7ad) [dependents]\n                    [7] sync (id: 27b2692b-cbc2-495f-ae62-3adca05254a9) [dependents]\n                    [8] sync (id: 395236d7-8a80-4736-9cbd-dfb8270cddc5) [dependents])\n              NEIGHBORS (4):\n                [0] constant (id: ee1d6e77-e378-4962-8f9b-0588f363873e) [dependents]\n                [1] sync (id: 14c90dfe-c405-4a4e-b7d7-ac5443661a0a) [dependents]\n                [2] sync (id: 312f49ae-1d11-461a-b637-fc7921a91cc0) [dependents]\n                [3] sync (id: 8e0b2ef5-308e-45e0-8363-8f24da64c739) [dependents])\n          NEIGHBORS (2):\n            [0] constant (id: b2b38ca9-80f3-4eb2-9155-e05dadd6034d) [dependents]\n            [1] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [updated]\n  outputs (1):\n    [0] CELL accessor\n          ID: 34af3b41-83e7-49f2-999e-a2a6802c1769\n          STATUS: active\n          STRONGEST: \n         &&the_nothing&&\n          CONTENT: \n         &&the_nothing&&\n          NEIGHBORS (1):\n            [0] lexical_lookup (id: 691f21fd-c41f-4afc-9584-093c944c3587) [dependents]",
+    context: undefined,
+
+      at execute_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:43:27)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:60:21)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/Scheduler.ts:46:23)
+      at construct_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:123:3)
+      at compound_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:186:36)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:37:9)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:19:31)
+
+191 |             // if bi-directional propagation
+192 |             // we need to at least init all input and output once
+193 |             // other way? feedback or perhaps just give up the idea of tail recursion using propagator
+194 |            const should_build = !(built || any_unusable_values(inputs.map(cell_strongest)))
+195 |            if (should_build) {
+196 |                 parameterize_parent(propagator.getRelation())(() => {
+                                          ^
+ReferenceError: Cannot access 'propagator' before initialization.
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:196:37)
+      at activate (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:95:9)
+      at propagator_activate (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:289:16)
+      at execute_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:36:13)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/SimpleScheduler.ts:60:21)
+      at alert_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Shared/Scheduler/Scheduler.ts:46:23)
+      at construct_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:123:3)
+      at compound_propagator (/Users/linpandi/Dropbox/Programs/Propogator/Propagator/Propagator.ts:186:36)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:37:9)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:19:31)
+
+Lookup return value: &&the_nothing&&
+35 |         const accessor = construct_cell("accessor");
+36 |         console.log("Starting lookup...");
+37 |         p_lexical_lookup("target", env2, accessor);
+38 | 
+39 |         console.log("Lookup return value:", cell_strongest_base_value(accessor));
+40 |         expect(cell_strongest_base_value(accessor)).toBe(100);
+                                                         ^
+error: expect(received).toBe(expected)
+
+Expected: 100
+Received: "&&the_nothing&&"
+
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:40:53)
+      at <anonymous> (/Users/linpandi/Dropbox/Programs/eko/test/trace_lookup.test.ts:19:31)
+(fail) Lexical Lookup Trace > Trace deep lookup [19.20ms]
+
+ 0 pass
+ 1 fail
+ 1 expect() calls
+Ran 1 test across 1 file. [347.00ms]

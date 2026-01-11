@@ -1,7 +1,7 @@
 // ========================================
 // Ergonomic critics
 // ========================================
-import { r_constant } from "..";
+import { r_constant } from "../AdvanceReactivity/interface";
 import { make_temp_cell, construct_cell, type Cell } from "../Cell/Cell";
 import { function_to_primitive_propagator, compound_propagator, type Propagator } from "../Propagator/Propagator";
 import { 

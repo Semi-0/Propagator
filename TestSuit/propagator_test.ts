@@ -10,28 +10,28 @@ import { reactive_tell } from "../Helper/UI";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { cell_strongest_base_value } from "ppropogator";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { layered_apply } from "../Helper/Helper";
+import { is_map, layered_apply } from "../Helper/Helper";
 import { pipe } from "fp-ts/lib/function";
 import { curried_map } from "../Helper/Helper";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
 import { Current_Scheduler } from "ppropogator";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/Premises_Source";
+import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 export type TestAssessor = {
     category: "input" | "output" | "scheduler" | "replay_scheduler" | "merge_plan" | "trace_scheduler";
     fn: (...args: any[]) => any;
     label?: string;
 };
 
-export const input_accessor: (name: string, inject: (cell: Cell<any>) => boolean | Promise<boolean>) => TestAssessor = (name: string, inject: (cell: Cell<any>) => boolean | Promise<boolean>) => {
+export const input_accessor: (name: string, inject: (cell: Cell<any>, env: Map<string, Cell<any>>) => Map<Cell<any>, any>) => TestAssessor = 
+(name: string, update: (cell: Cell<any>, env: Map<string, Cell<any>>) => Map<Cell<any>, any>) => {
     return {
         category: "input",
-        fn: async (env: Map<string, Cell<any>>) => {
+        fn: (env: Map<string, Cell<any>>) => {
             const cell = env.get(name);
             if (cell) {
-                await inject(cell);
-
-                return true;
+                return update(cell, env);
             }
             else {
                 throw new Error(`Cell ${name} not found`);
@@ -49,17 +49,16 @@ export const inject_input = (env: Map<string, Cell<any>>, accessor: TestAssessor
     }
     else {
         throw new Error(`Invalid accessor`);
-        return false;
     }
 }
 
-export const output_accessor: (name: string, access: (cell: Cell<any>) => boolean) => TestAssessor = (name: string, access: (cell: Cell<any>) => boolean) => {
+export const output_accessor: (name: string, access: (cell: Cell<any>, env: Map<string, Cell<any>>) => boolean) => TestAssessor = (name: string, access: (cell: Cell<any>, env: Map<string, Cell<any>>) => boolean) => {
     return {
         category: "output",
         fn: async (env: Map<string, Cell<any>>) => {
             const cell = env.get(name);
             if (cell) {
-                return access(cell);
+                return access(cell, env);
             }
             else {
                 throw new Error(`Cell ${name} not found`);
@@ -197,14 +196,42 @@ const assert_output_with_env = (
     }
 };
 
+export const merge_maps = (map1: Map<Cell<any>, any>, map2: Map<Cell<any>, any>) => {
+
+    if (!is_map(map1) || !is_map(map2)) {
+        console.dir(map2, { depth: 20 });
+        throw new Error(`Invalid map`) + " " + to_string(map1) + " " + to_string(map2);
+    }
+
+
+    const merged = new Map<Cell<any>, any>();
+    for (const [key, value] of map1) {
+        merged.set(key, value);
+    }
+    for (const [key, value] of map2) {
+        merged.set(key, value);
+    }
+    return merged;
+}
+
+
 export const assess = async (
     env: Map<string, Cell<any>>,
     input_accessors: TestAssessor[],
     output_accessors: TestAssessor[],
     run_scheduler: () => void | Promise<void>,
 ) => {
-    for (const input_accessor of input_accessors) {
-        await inject_input(env, input_accessor);
+    const update_map = input_accessors.reduce((acc, input_accessor) => {
+        return merge_maps(acc, input_accessor.fn(env));
+    }, new Map<Cell<any>, any>());
+
+    const source = env.get("source");
+
+    if (source) {
+        update_source_cell(source, update_map);
+    }
+    else {
+        throw new Error(`Source cell not found`);
     }
 
     await Promise.resolve(run_scheduler());
@@ -257,7 +284,7 @@ export const pop_cell_env = (cell_names: string[]) => {
     return cells;
 }
 
-var source = source_cell("test_source")
+
 
 export const test_propagator_constructor = (testor: (description: string, test: (...args: any[]) => void | Promise<void>) => void, merge_plan: (content: any, increment: any) => any = merge_temporary_value_set) => (
     description: string,
@@ -266,21 +293,19 @@ export const test_propagator_constructor = (testor: (description: string, test: 
     // env_setup: TestAssessor[] = [],
     ...assesors: TestAssessor[][]
 ) => {
+    // this is better to be done with interpreter pattern
     testor(description, async () => {
         set_global_state(PublicStateCommand.CLEAN_UP);
 
-        // const trace_scheduler_assessors = env_setup.filter(is_trace_scheduler);
-        // if (trace_scheduler_assessors.length > 0) {
-        //     trace_scheduler_assessors[0].fn();
-        // }
-        // const merge_plan_assessors = env_setup.filter(is_merge_plan);
-        // if (merge_plan_assessors.length > 0) {
-        //     set_merge(merge_plan_assessors[0].fn());
-        // }
-
         const env = pop_cell_env(cell_names);
-        source.dispose()
-        source = source_cell("test_source")
+
+        // connect all cells to the source cell
+        const source = source_cell("test_source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+        env.forEach((cell: Cell<any>) => {
+            p_reactive_dispatch(source, cell);
+        })
+
+        env.set("source", source);
         
         var propagator = constructor(...env.values());
         for (const assessor of assesors) {
@@ -294,7 +319,7 @@ export const test_propagator_constructor = (testor: (description: string, test: 
                 set_merge(merge_plan_assessors[0].fn());
             }
             else {
-                set_merge(merge_patched_set) // default merge plan is merge_patched_set
+                set_merge(merge_temporary_value_set) // default merge plan is merge_patched_set
             }
 
             const assesor_inputs = assessor.filter(is_input_accessor);
@@ -320,10 +345,8 @@ export const test_propagator_only = test_propagator_constructor(test.only)
 export const test_propagator_only_with_merge_plan = (merge_plan: (content: any, increment: any) => any) => test_propagator_constructor(test.only, merge_plan)
 
 export const reactive_input = (value: any, name: string) =>
-    input_accessor(name, async (cell: Cell<any>) => {
-        p_reactive_dispatch(source, cell)
-        update_source_cell(source, new Map([[cell, value]]))
-        return true;
+    input_accessor(name, (cell: Cell<any>, env: Map<string, Cell<any>>) => {
+        return new Map([[cell, value]]);
     });
 
 export const r_i =  reactive_input

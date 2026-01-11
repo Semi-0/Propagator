@@ -17,14 +17,15 @@ import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imple
 import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length, every, some } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
-import { generic_merge, merge_layered, partial_merge } from "../Cell/Merge";
-
+import { merge_layered, partial_merge } from "../Cell/Merge";
+import { get_base_value as layered_get_base_value } from "sando-layer/Basic/Layer";
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper.ts";
-import { subsumes } from "ppropogator/DataTypes/GenericValueSet";
+import { subsumes } from "./GenericValueSet";
 import { clock_channels_subsume, get_clock_channels, get_vector_clock_layer, has_vector_clock_layer, prove_staled_by } from "../AdvanceReactivity/vector_clock";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+import { generic_merge } from "../Cell/Merge";
 
 // ValueSet class definition
 // we can register the source of vector clock as premises
@@ -37,7 +38,8 @@ export function substitute<A>(set: TemporaryValueSet<A>, old_elt: A, new_elt: A)
 
 
 // Predicates and handlers
-const is_temporary_value_set = register_predicate("is_temporary_value_set", (value: any) => is_better_set(value));
+const is_temporary_value_set = register_predicate("is_temporary_value_set", (value: any) =>  is_better_set(value));
+
 
 
 
@@ -163,6 +165,17 @@ define_generic_procedure_handler(strongest_value,
 )
 
 // ValueSet operations
+
+
+
+export const merge_temporary_value_set = construct_simple_generic_procedure(
+    "merge_temporary_value_set",
+    2,
+    internal_merge_temporary_value_set
+)
+
+
+// define_generic_procedure_handler(generic_merge, match_args(is_value_set, is_any), merge_value_sets)
 
 export function internal_merge_temporary_value_set(content: TemporaryValueSet<any>, increment: LayeredObject<any>): TemporaryValueSet<any> {
     if (has_vector_clock_layer(increment)){

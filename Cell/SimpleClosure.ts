@@ -4,19 +4,21 @@
 // simple closure is a datastructure that stores a propagator constructor and a map of cells
 
 import type { Cell } from "./Cell";
-import type { Propagator, PropagatorConstructor } from "../Propagator/Propagator";
-import { cell_strongest, compound_propagator, construct_propagator, function_to_primitive_propagator, generic_merge, get_base_value, inspect_strongest, is_nothing, match_args, propagator, propagator_dispose, register_predicate, the_nothing } from "..";
+import { cell_strongest } from "./Cell";
+import { compound_propagator, construct_propagator, function_to_primitive_propagator, propagator_id, propagator_name, internal_propagator_dispose as propagator_dispose, type Propagator, type PropagatorConstructor } from "../Propagator/Propagator";
+import { generic_merge } from "./Merge";
+import { get_base_value, is_nothing, the_nothing, is_contradiction, type CellValue } from "./CellValue";
+import { inspect_strongest } from "../Helper/Debug";
+import { match_args, register_predicate } from "generic-handler/Predicates";
 import { install_propagator_arith_pack } from "../AdvanceReactivity/Generics/GenericArith";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
-import { is_contradiction } from "ppropogator";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { the_contradiction_type, the_nothing_type } from "./CellValue";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
-import type { CellValue } from "ppropogator";
 import { p_constant } from "../Propagator/BuiltInProps";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { make_ce_arithmetical } from "ppropogator/Propagator/Sugar";
+import { make_ce_arithmetical } from "../Propagator/Sugar";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
 
 export type SimpleClosure = {

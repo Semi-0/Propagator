@@ -17,7 +17,6 @@ import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
 import { cell_neightbor_set, internal_cell_dispose } from "@/cell/Cell";
-import { cell_dispose, propagator_dispose } from "ppropogator";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
@@ -49,13 +48,33 @@ export const simple_scheduler = (): Scheduler => {
         immediate_execute = value
     }
 
+    var is_executing = false
+    var flush_scheduled = false
+
+    const flush_queue = (error_handler: (e: Error) => void) => {
+        if (is_executing) return;
+        is_executing = true;
+        try {
+            while (propagators_to_alert.get_items().length > 0) {
+                const next = propagators_to_alert.get_items()[0] as Propagator;
+                execute_propagator(next, error_handler);
+            }
+        } finally {
+            is_executing = false;
+        }
+    }
+
     const alert_propagator = (p: Propagator) => {
         propagators_to_alert.add(p)
 
-        if (immediate_execute){
-            execute_propagator(p, (e) => {
-                throw e
-            })
+        if (immediate_execute && !is_executing && !flush_scheduled){
+            flush_scheduled = true;
+            queueMicrotask(() => {
+                flush_scheduled = false;
+                flush_queue((e) => {
+                    console.error("Error executing propagator in immediate loop", e);
+                });
+            });
         }
     }
 

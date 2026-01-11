@@ -14,7 +14,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import type { RemoteConnector } from "../../RemoteServer/RemoteConnector";
 import * as E from "fp-ts/lib/Either"
 import { match_args } from "generic-handler/Predicates";
-import { is_layered_object } from "../../Helper/Predicate";
+import { is_layered_object } from "sando-layer/Basic/LayeredObject";
 import { is_better_set } from "generic-handler/built_in_generics/generic_better_set";
 import { get_id } from "../../Shared/Generics";
 

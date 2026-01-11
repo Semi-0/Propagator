@@ -16,7 +16,7 @@ define_generic_procedure_handler(to_string, match_args(is_function), (value: Fun
     return value.toString()
 })
 
-define_generic_procedure_handler(is_equal, match_args(is_layered_object), layered_deep_equal)
+define_generic_procedure_handler(is_equal, match_args(is_layered_object, is_layered_object), layered_deep_equal)
 
 
 export interface SimpleSet<T> {

@@ -55,7 +55,7 @@ import { compound_tell } from "../Helper/UI";
 import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/Premises_Source";
+import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 
 // Alias to match the public API names
@@ -166,7 +166,7 @@ describe("Cell Disposal Tests", () => {
         expect(find_cell_by_id(cell_id(celsius))).toBeUndefined();
     });
 
-    test.only("disposing a cell should not affect unrelated propagators", async () => {
+    test("disposing a cell should not affect unrelated propagators", async () => {
         set_merge(merge_temporary_value_set)
 
         const source = source_cell("source");

@@ -5,7 +5,7 @@ import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
-import { is_nothing, the_nothing, is_unusable_value } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value, the_nothing } from "@/cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { add_item, for_each } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
@@ -83,10 +83,16 @@ const referece_map = (f: (input: any) => any, array: any[]) => {
 // the result would be a map with holes in certain numbers
 // and we can skip wholes or reduce that map to form a decent array
 
-export const p_sync = function_to_primitive_propagator("sync", (input: any) => {
+export const p_sync = (input: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("sync " + cell_name(input) + " -> " + cell_name(output), (input: any) => {
     // console.log("sync", input)
     return input;
-})
+})(input, output)
+
+// communicate the change to outside world
+export const p_out = (f: (input: Cell<any>) => void) =>  (input: Cell<any>) => 
+    construct_propagator([input], [], () => {
+        f(input)
+    }, "p_out")
 
 export const p_identity = p_sync 
 
@@ -99,7 +105,7 @@ export const p_not = primitive_propagator(not, "not");
 
 export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator( log_tracer("add", add), "+");
+export const p_add = primitive_propagator(log_tracer("add propagation", add), "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 
@@ -120,14 +126,39 @@ export const p_or = primitive_propagator(or, "or")
 export const p_constant = (value: any) => (input: Cell<any>, output: Cell<any>) => {
     // a big problem is the patched set is not support for join in new value with partial layer
 
-    const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
-        return inject
-    })
+    // const pass_dependencies = install_propagator_arith_pack("pass_dependencies", 1, (from: any, inject: any) => {
+    //     return inject
+    // })
     return construct_propagator([input], [output], () => {
-         const merged = cell_merge(the_nothing, value)
+        const merged = cell_merge(the_nothing, value)
         update_cell(output, merged)
     }, "constant")
 }
+
+export const p_combine_latest = (f: (...inputs: any[]) => any) => (cells: Cell<any>[], output: Cell<any>) => construct_propagator(
+    cells,
+    [output],
+    () => {
+        const value = cells.map(cell_strongest)
+
+        if (value.some(is_unusable_value)) {
+            return;
+        }
+
+        const merged =  f(...cells.map(cell_strongest))
+        console.log("merged", merged)
+        update_cell(output, merged)
+    },
+    "combine_latest"
+)
+
+export const layered_pass_dependences = make_layered_procedure("layered_pass_dependences", 2, (from: any, to: any) => to)
+
+export const p_combine_dependences_with_value_from_right = p_combine_latest(layered_pass_dependences)
+
+export const p_pass_dependences = (from: Cell<any>, to: Cell<any>, out: Cell<any>) => function_to_primitive_propagator("pass_dependences", (f: any, t: any) => t)(from, to, out)
+
+export const ce_pass_dependences = make_ce_arithmetical(p_pass_dependences)
 
 // export const p_constant = (value: any) => function_to_primitive_propagator("constant", (input: any) => {
 //     return value
@@ -164,7 +195,7 @@ export const bi_sync = (a: Cell<any>, b: Cell<any>) => compound_propagator([], [
     //TODO: this is cheating but this works for now 
     p_sync(a, b)
     p_sync(b, a)
-}, "sync")
+}, "bi-sync: " + cell_name(a) + " -> " + cell_name(b))
 
 export const p_reduce = (f: (a: any, b: any) => any, initial: any) => {
     let acc = initial;
@@ -391,7 +422,6 @@ export const p_zip = (to_zip: Cell<any>[], f: Cell<any>, output: Cell<any>) => {
 
 export const com_celsius_to_fahrenheit = (celsius: Cell<number>, fahrenheit: Cell<number>) => { 
     return compound_propagator([], [celsius, fahrenheit], () => {
-        console.log("built")
         link(
             celsius,
             fahrenheit,

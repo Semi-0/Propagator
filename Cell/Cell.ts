@@ -1,5 +1,5 @@
 import { set_global_state, get_global_parent } from "../Shared/PublicState";
-import {type Propagator, internal_propagator_dispose} from "../Propagator/Propagator";
+import {type Propagator, internal_propagator_dispose, propagator_id} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
 import { Primitive_Relation, make_relation } from "../DataTypes/Relation";
@@ -86,7 +86,8 @@ export enum NeighborType{
   received = "received",
   disposing = "disposing",
   neighbor_added = "neighbor_added",
-  neighbor_removed = "neighbor_removed"
+  neighbor_removed = "neighbor_removed",
+  remote = "remote"
 }
 
 // how about hooks
@@ -102,6 +103,8 @@ export const construct_neighbor = (type: NeighborType[], propagator: Propagator)
     propagator
   }
 }
+
+
 
 export const is_interested_neighbor = (prop: NeighborType) => (neighbor: interesetedNeighbor) => {
   return neighbor.type.includes(prop)
@@ -127,18 +130,29 @@ export const alert_interested_propagators = (neighbors: Map<string, interesetedN
 
 
 
-export function primitive_construct_cell<A>(name: string, id: string | null = null): Cell<A> {
+export interface CellInitialData<A> {
+  content?: CellValue<A>;
+  strongest?: CellValue<A>;
+  neighbors?: Map<string, interesetedNeighbor>;
+  active?: boolean;
+}
+
+export function primitive_construct_cell<A>(
+  name: string, 
+  id: string | null = null,
+  initialData: CellInitialData<A> = {}
+): Cell<A> {
   const relation = make_relation(name, get_global_parent(), id);
-  const neighbors: Map<string, interesetedNeighbor> = new Map();
+  const neighbors: Map<string, interesetedNeighbor> = initialData.neighbors ?? new Map();
   // build two stateful streams for content and strongest
   // can be more performative to fine grain observe method args
   // but how?
   // TODO:
   // a better way foe cell disposal is to let cell remember its dependents
   // so disposing can be isolated totally from propagation 
-  var content: CellValue<A> = the_nothing;
-  var strongest: CellValue<A> = the_nothing;
-  var active = true
+  var content: CellValue<A> = initialData.content ?? the_nothing;
+  var strongest: CellValue<A> = initialData.strongest ?? the_nothing;
+  var active = initialData.active ?? true
 
   const handle_cell_contradiction = () => handle_contradiction(cell as Cell<A>);
 
@@ -187,13 +201,21 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
     },
 
     addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
-  
-      neighbors.set(propagator.getRelation().get_id(), {
-        type: interested_in,
-        propagator: propagator
-      });
-      alert_interested_propagators(neighbors, NeighborType.neighbor_added)
-      alert_interested_propagators(neighbors, NeighborType.updated)
+
+      
+        neighbors.set(propagator.getRelation().get_id(), {
+          type: interested_in,
+          propagator: propagator
+        });
+
+        if (interested_in.includes(NeighborType.dependents)){
+          return
+        }
+        else{
+          alert_interested_propagators(neighbors, NeighborType.neighbor_added)
+          alert_interested_propagators(neighbors, NeighborType.updated)
+        }
+    //  }
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(get_id(propagator));
@@ -256,7 +278,13 @@ export function primitive_construct_cell<A>(name: string, id: string | null = nu
   // source layer triggers propagator to updates
 
 export function construct_cell<A>(name: string, id: string | null = null): Cell<A> {
-  return primitive_construct_cell<A>(name, id)
+  // Pass current defaults as initial data
+  return primitive_construct_cell<A>(name, id, {
+    content: the_nothing,
+    strongest: the_nothing,
+    neighbors: new Map(),
+    active: true
+  })
 }
 
 

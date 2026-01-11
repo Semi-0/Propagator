@@ -3,21 +3,15 @@ import type { Cell } from "@/cell/Cell";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import {
   construct_cell,
-  cell_content,
   cell_strongest_base_value,
   set_handle_contradiction,
-  cell_strongest,
   cell_id,
   cell_name
 } from "@/cell/Cell";
-import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
-import { to_array } from "generic-handler/built_in_generics/generic_collection";
-import { get_base_value } from "sando-layer/Basic/Layer";
+import { execute_all_tasks_sequential, run_scheduler_and_replay, set_immediate_execute } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
-import { update } from "../AdvanceReactivity/interface";
-import { merge_layered, set_merge } from "@/cell/Merge";
-import { reactive_merge } from "../AdvanceReactivity/traced_timestamp/genericPatch";
+import { set_merge } from "@/cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import {
   merge_carried_map,
@@ -56,6 +50,7 @@ import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
+import { dependent_update, p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -283,9 +278,41 @@ describe("Carried Cell Tests", () => {
       expect(is_equal(suppose_map.get(cell_name(cellC)), cellC)).toBe(true);
     });
 
-    test_propagator_only(
-      // seems that carried cell is already working with merge_layered
-      // so the next step is how we can integrated merge_layered with the value merge
+  
+    test.only("c_dict_accessor should not cause infinite loop if used in immediate execute mode", async () => {
+
+      
+      set_immediate_execute(true)
+      set_merge(merge_temporary_value_set)
+      
+      const cellA = construct_cell("A");
+      const cellB = construct_cell("B");
+      const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>
+      p_construct_dict_carrier_with_name(cellA, cellB, carrier)
+      const accessed_A = construct_cell("accessed_A") as Cell<number>;
+      const accessed_B = construct_cell("accessed_B") as Cell<number>;
+
+      c_dict_accessor("A")(carrier, accessed_A)
+      c_dict_accessor("B")(carrier, accessed_B)
+
+
+      const source = source_cell("source")
+
+      p_reactive_dispatch(source, cellA)
+      p_reactive_dispatch(source, cellB)
+
+      update_source_cell(source, new Map([[cellA, 100], [cellB, 200]]))
+      
+      await new Promise(resolve => queueMicrotask(resolve));
+      
+
+  
+
+      expect(cell_strongest_base_value(accessed_A)).toBe(100);
+      expect(cell_strongest_base_value(accessed_B)).toBe(200);
+    });
+
+    test_propagator(
       "accessor can work with map carrier",
       (A: Cell<number>, B: Cell<number>, accessed_A: Cell<number>, accessed_B: Cell<number>) => {
          // ahh its because generic merge access directly to the layered object!!
@@ -307,16 +334,7 @@ describe("Carried Cell Tests", () => {
          r_o(100, "accessed_A"),
          r_o(200, "accessed_B"),
       ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(300, "A"),
-      //   r_o(300, "accessed_A"),
-      // ],
-      // [
-      //   // merge_plan(merge_layered),
-      //   r_i(400, "B"),
-      //   r_o(400, "accessed_B"),
-      // ]
+
     )
   });
 
@@ -341,7 +359,7 @@ describe("Carried Cell Tests", () => {
     ["A", "B", "accessed_A", "accessed_B"],
     [
       // trace_scheduler_assessor(console.log),
-      merge_plan(merge_patched_set),
+      merge_plan(merge_temporary_value_set),
     ],
     [
        r_i(100, "A"),
@@ -408,7 +426,7 @@ describe("Carried Cell Tests", () => {
     nested_map_test_network,
     ["A", "B", "inner_A", "inner_B", "inner_inner_A", "accessed_A", "accessed_inner_A", "accessed_inner_inner_A"],
     [
-      merge_plan(merge_patched_set),
+      merge_plan(merge_temporary_value_set),
     ],
     [
       r_i(100, "A"),
@@ -436,7 +454,7 @@ describe("Carried Cell Tests", () => {
 
     },
     ["head", "tail", "car", "cdr"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(100, "head"),
       r_o(100, "car")
@@ -543,7 +561,7 @@ describe("Carried Cell Tests", () => {
         p_car(cdr2, car3)      
     },
     ["list", "list2", "head1", "head2", "head3", "car1", "cdr1", "car2", "cdr2", "car3"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       
       run_replay_scheduler,
@@ -584,7 +602,7 @@ describe("Carried Cell Tests", () => {
       "listCar3",
 
     ],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(1, "item1"),
       r_i(2, "item2"),
@@ -620,7 +638,7 @@ describe("Carried Cell Tests", () => {
       
     },
     ["value1", "value2", "list", "mapped_list", "mapped1", "mapped2"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(5, "value1"),
       r_i(15, "value2"),
@@ -648,7 +666,7 @@ describe("Carried Cell Tests", () => {
       p_car(filteredList, filteredHead);
     },
     ["value1", "value2", "value3", "filteredHead"],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       r_i(4, "value1"),
       r_i(7, "value2"),
@@ -695,7 +713,7 @@ describe("Carried Cell Tests", () => {
       "zippedFirstA",
       "zippedFirstB"
     ],
-    [merge_plan(merge_patched_set)],
+    [merge_plan(merge_temporary_value_set)],
     [
       run_replay_scheduler,
       r_i(1, "list1Value1"),
