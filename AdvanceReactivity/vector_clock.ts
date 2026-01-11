@@ -107,12 +107,16 @@ export const clock_increment = (clock: Clock) => {
     }
 }
 
-export const clock_greater_than = (clock1: Clock, clock2: Clock) => {
-    if (is_constant_clock(clock1) || is_constant_clock(clock2)) {
-        return false;
-    }
-    // @ts-ignore
-    return clock1 > clock2;
+export const clock_greater_than = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) > 0;
+}
+
+export const clock_less_than = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) < 0;
+}
+
+export const clock_equal = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) === 0;
 }
 
 
