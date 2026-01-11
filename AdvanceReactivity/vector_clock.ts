@@ -397,6 +397,10 @@ export const proved_staled_with = curryArgument(
     )
 )
 
+export const is_reactive_value = register_predicate("is_reactive_value", (value: any) => {
+    return is_layered_object(value) && has_layer(value, vector_clock_layer.key);
+});
+
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
     if (!vector_clock || vector_clock.size === 0) {
