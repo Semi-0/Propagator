@@ -137,17 +137,27 @@ export const version_vector_forward = (version_vector: VectorClock, source: Sour
 
 
 
-export const max_clock = (clock1: Clock, clock2: Clock) => {
-    if (is_constant_clock(clock1)) {
-        return clock2;
+export const compare_two_clock = (a: number | string, b: number | string) => {
+    if  (is_constant_clock(a) && is_constant_clock(b)) {
+        return 0;
     }
-    else if (is_constant_clock(clock2)) {
-        return clock1;
+    else if (is_constant_clock(a)) {
+        return -1;
+    }
+    else if (is_constant_clock(b)) {
+        return 1;
     }
     else {
         // @ts-ignore
-        return Math.max(clock1, clock2);
+        if (a > b) return 1;
+        // @ts-ignore
+        if (a < b) return -1;
+        return 0;
     }
+}
+
+export const max_clock = (a: Clock, b: Clock) => {
+    return compare_two_clock(a, b) > 0 ? a : b;
 }
 
 const version_vector_merge = (version_vector1: any, version_vector2: any) => {
