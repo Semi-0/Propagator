@@ -137,10 +137,39 @@ export const version_vector_forward = (version_vector: VectorClock, source: Sour
 
 
 
-const version_vector_merge = (version_vector1: VectorClock, version_vector2: VectorClock) => {
+export const max_clock = (clock1: Clock, clock2: Clock) => {
+    if (is_constant_clock(clock1)) {
+        return clock2;
+    }
+    else if (is_constant_clock(clock2)) {
+        return clock1;
+    }
+    else {
+        // @ts-ignore
+        return Math.max(clock1, clock2);
+    }
+}
+
+const version_vector_merge = (version_vector1: any, version_vector2: any) => {
+    // @ts-ignore
+    if (is_constant_clock(version_vector1)) {
+        return version_vector2;
+    }
+    // @ts-ignore
+    else if (is_constant_clock(version_vector2)) {
+        return version_vector1;
+    }
+    
     const new_version_vector = new Map(version_vector1);
     version_vector2.forEach((value, source) => {
-        new_version_vector.set(source, Math.max(new_version_vector.get(source) || 0, value));
+        const current_clock = vector_clock_get_source(source)(new_version_vector);
+        const current_value = Option.isSome(current_clock) ? current_clock.value : 0;
+        vector_clock_set_source(
+            source,
+            // @ts-ignore
+            max_clock(current_value as Clock, value as Clock),
+            new_version_vector
+        )
     });
     return new_version_vector;
 }
