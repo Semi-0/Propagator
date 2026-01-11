@@ -50,7 +50,10 @@ export const at_least_one_pair_is_proper_vector_clock = (a: Map<any, any>) => {
     return false;
 }
 
-export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => a instanceof Map && at_least_one_pair_is_proper_vector_clock(a))
+export const is_vector_clock = register_predicate("is_vector_clock", (a: any) => 
+    a instanceof Map && at_least_one_pair_is_proper_vector_clock(a) ||
+    is_constant_clock(a)
+)
 
 export const vector_clock_equal = (a: VectorClock, b: VectorClock) => {
     return a.entries().every(([source, value]) => {

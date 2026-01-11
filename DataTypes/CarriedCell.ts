@@ -30,8 +30,14 @@ import { ce_equal } from "ppropogator";
 export const merge_carried_map = (content: Map<any, any>, increment: Map<any, any>) => {
     for (const [key, value] of increment) {
         const elem = content.get(key)
-        if(is_cell(elem) && is_cell(value)) {
-            bi_sync(elem, value)
+        if (is_cell(elem) && is_cell(value)) {
+
+            if (cell_id(elem) === cell_id(value)) {
+
+            }
+            else {
+                bi_sync(elem, value)
+            }
         }
         else{
             content.set(key, value)

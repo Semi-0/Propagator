@@ -4,7 +4,7 @@ import { make_relation } from "ppropogator/DataTypes/Relation";
 import { get_global_parent } from "ppropogator/Shared/PublicState";
 import { alert_interested_propagators, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, NeighborType, construct_cell, update_cell, type interesetedNeighbor } from "ppropogator/Cell/Cell";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
+import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
 import type { CellValue } from "ppropogator";
 import type { Propagator } from "ppropogator";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
@@ -83,12 +83,13 @@ export const source_cell = (name: string, initial_value: any = source_inited) =>
         construct_layered_datum(
             initial_value,
             vector_clock_layer,
-            construct_vector_clock([
-                {
-                    source: premises,
-                    value: 0
-                }
-            ])
+            constant_clock
+            // construct_vector_clock([
+            //     {
+            //         source: premises,
+            //         value: 0
+            //     }
+            // ])
         )
     )
     return cell;
