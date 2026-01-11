@@ -399,7 +399,12 @@ export const proved_staled_with = curryArgument(
 
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
-    return Array.from(vector_clock.keys());
+    if (!vector_clock || vector_clock.size === 0) {
+        return [];
+    }
+    else {
+        return Array.from(vector_clock.keys());
+    }
 }
 
 
