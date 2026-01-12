@@ -195,16 +195,7 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
         inputs,
         outputs,
         () => {
-            // delay blue print gives one gotcha
-            // if bi-directional propagation
-            // we need to at least init all input and output once
-            // other way? feedback or perhaps just give up the idea of tail recursion using propagator
-           if (name === "expand_closures") {
-            console.log("summarizing expand_closures")
-            // console.log(propagator.summarize())
-           }
-
-
+   
            const inputs_unusable = any_unusable_values(inputs.map(cell_strongest)) 
            const should_build = !(built || inputs_unusable)
            if (should_build) {

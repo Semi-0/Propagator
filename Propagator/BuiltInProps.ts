@@ -105,11 +105,11 @@ export const p_not = primitive_propagator(not, "not");
 
 export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator(log_tracer("add propagation", add), "+");
+export const p_add = primitive_propagator(add, "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 
-export const p_multiply =  primitive_propagator(log_tracer("multiply", multiply), "*");
+export const p_multiply =  primitive_propagator(multiply, "*");
 
 export const p_divide = primitive_propagator(divide, "/"); 
 
@@ -146,7 +146,6 @@ export const p_combine_latest = (f: (...inputs: any[]) => any) => (cells: Cell<a
         }
 
         const merged =  f(...cells.map(cell_strongest))
-        console.log("merged", merged)
         update_cell(output, merged)
     },
     "combine_latest"
@@ -749,6 +748,7 @@ export const p_set_array = (c: Cell<any>) => (index: Cell<number>, output: Cell<
     console.log("set array called", to_string(arr), index)
     console.log("c", to_string(c))
     if (is_array(arr)) {
+        // @ts-ignore
         arr[index] = c
         // console.log("called", to_string(arr))
         return arr

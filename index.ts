@@ -222,11 +222,6 @@ import { trace_func } from "./helper";
  */
 export const cell = construct_cell;
 
-/**
- * Shorthand for constant_cell
- */
-export const constant = ce_constant;
-
 
 /**
  * Shorthand for add_cell_content
@@ -371,8 +366,8 @@ export function cleanup() {
 /**
  * Create a reactive constant cell
  * - Use this instead of constant() in reactive mode
+ * Note: Re-exported as alias to avoid circular dependency
  */
-export const reactive_constant = ce_constant;
 
 // ============================================================================
 // LAZY OBJECT HELPER
@@ -714,6 +709,8 @@ export {
   // Cell exports
     construct_cell as construct_cell,
   ce_constant,
+  ce_constant as constant, // Shorthand alias
+  ce_constant as reactive_constant, // Reactive constant alias
   internal_cell_dispose as cell_dispose,
   cell_strongest,
   cell_strongest_base_value,
@@ -863,8 +860,8 @@ export {
 export default lazyObject(() => ({
   // Shorthand functions
   cell,
-  constant,
-  reactive_constant,
+  constant: ce_constant, // Re-exported alias
+  reactive_constant: ce_constant, // Re-exported alias
   
   dispose_propagator,
   add_content,

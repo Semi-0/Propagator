@@ -248,12 +248,13 @@ const version_vector_merge = (version_vector1: any, version_vector2: any) => {
     }
    
 
-    version_vector2.forEach((value, source) => {
+    version_vector2.forEach((value: Clock, source: SourceID) => {
 
     vector_clock_set_source(
         source,
         // @ts-ignore
         max_clock(
+            // @ts-ignore
             vector_clock_get_source(source, new_version_vector) as Clock, value as Clock
         ),
         new_version_vector
@@ -411,12 +412,12 @@ export const result_is_equal = is_version_clock_concurrent;
 
 
 export const clock_channels_subsume = (b: VectorClock, a: VectorClock): boolean => {
-    // Return true if b "covers" all channels in a and their counters are >= a's
-    // Handle non-Map values (e.g., constant clocks)
-    if (!(a instanceof Map) || !(b instanceof Map)) {
-        return false;
+    // @ts-ignore
+    if (is_constant_clock(b) || is_constant_clock(a)) {
+        return true;
     }
-    
+
+    // Return true if b "covers" all channels in a and their counters are >= a's
     if (b.size <= a.size) {
         return false;
     }
@@ -600,6 +601,7 @@ export const proved_staled_with = curryArgument(
 
 
 export const get_clock_channels = (vector_clock: VectorClock) => {
+    // @ts-ignore
     if (is_constant_clock(vector_clock)) {
         return [];
     }
