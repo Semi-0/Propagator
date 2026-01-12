@@ -412,6 +412,11 @@ export const result_is_equal = is_version_clock_concurrent;
 
 export const clock_channels_subsume = (b: VectorClock, a: VectorClock): boolean => {
     // Return true if b "covers" all channels in a and their counters are >= a's
+    // Handle non-Map values (e.g., constant clocks)
+    if (!(a instanceof Map) || !(b instanceof Map)) {
+        return false;
+    }
+    
     if (b.size <= a.size) {
         return false;
     }
