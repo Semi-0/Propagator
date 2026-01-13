@@ -52,6 +52,7 @@ import {
   update_cell,
   make_temp_cell,
   type Cell,
+  is_cell,
   general_contradiction,
   set_handle_contradiction,
   handle_cell_contradiction
@@ -720,6 +721,7 @@ export {
   update_cell as add_cell_content,
   make_temp_cell,
   type Cell,
+  is_cell,
   general_contradiction,
   set_handle_contradiction,
   handle_cell_contradiction,
@@ -735,7 +737,6 @@ export {
   propagator_name,
   dispose_propagator as propagator_dispose,
   propagator_activate,
-  type Propagator,
   
   // Built-in propagators
   p_add,
@@ -855,6 +856,10 @@ export {
   all_results,
   enum_num_set
 };
+
+// Separate type exports for better compatibility
+export type { Propagator } from "./Propagator/Propagator";
+export type { Cell } from "./Cell/Cell";
 
 // Default export for convenience (lazy)
 export default lazyObject(() => ({

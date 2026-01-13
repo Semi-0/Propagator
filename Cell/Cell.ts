@@ -64,6 +64,9 @@ export interface Cell<A> {
   dispose: () => void;  // <-- new dispose method
 }
 
+// Explicit type export for better compatibility with bundlers
+export type { Cell };
+
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   a !== null && a !== undefined 
   && a.getRelation !== undefined 

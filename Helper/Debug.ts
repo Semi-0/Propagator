@@ -1,8 +1,6 @@
 import { cell_strongest, cell_name, cell_content, type Cell } from "@/cell/Cell";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import type { PublicStateMessage } from "../Shared/PublicState";
-import { observe_all_cells_update } from "../Shared/PublicState";
-import { compound_propagator, construct_propagator, function_to_primitive_propagator, primitive_propagator } from "../Propagator/Propagator";
+import { construct_propagator } from "../Propagator/Propagator";
 
 const inspect_formatter = (name:string) => {
     return "#inspect#" + name 
@@ -52,43 +50,43 @@ export function create_string_logger() {
  * @example
  * const fileLogger = create_file_logger('debug.log');
  * const inspector = inspect_strongest(fileLogger);
- */
-export function create_file_logger(filePath: string, append: boolean = true) {
-    return (message: string) => {
-        try {
-            // Use Bun's file system API if available
-            if (typeof Bun !== 'undefined') {
-                if (append) {
-                    // Append mode: read existing content, then write with new message
-                    Bun.file(filePath).text()
-                        .then(existing => {
-                            Bun.write(filePath, existing + message + '\n');
-                        })
-                        .catch(() => {
-                            // File doesn't exist yet, create it
-                            Bun.write(filePath, message + '\n');
-                        });
-                } else {
-                    // Overwrite mode: just write the message
-                    Bun.write(filePath, message + '\n');
-                }
-            } else if (typeof require !== 'undefined') {
-                // Node.js fs module
-                const fs = require('fs');
-                const content = append && fs.existsSync(filePath) 
-                    ? fs.readFileSync(filePath, 'utf8') 
-                    : '';
-                fs.writeFileSync(filePath, content + message + '\n', 'utf8');
-            } else {
-                console.warn('File logging not available in this environment');
-                console.log(message);
-            }
-        } catch (error) {
-            console.error(`Error writing to file ${filePath}:`, error);
-            console.log(message); // Fallback to console
-        }
-    };
-}
+//  */
+// export function create_file_logger(filePath: string, append: boolean = true) {
+//     return (message: string) => {
+//         try {
+//             // Use Bun's file system API if available
+//             if (typeof Bun !== 'undefined') {
+//                 if (append) {
+//                     // Append mode: read existing content, then write with new message
+//                     Bun.file(filePath).text()
+//                         .then(existing => {
+//                             Bun.write(filePath, existing + message + '\n');
+//                         })
+//                         .catch(() => {
+//                             // File doesn't exist yet, create it
+//                             Bun.write(filePath, message + '\n');
+//                         });
+//                 } else {
+//                     // Overwrite mode: just write the message
+//                     Bun.write(filePath, message + '\n');
+//                 }
+//             } else if (typeof require !== 'undefined') {
+//                 // Node.js fs module
+//                 const fs = require('fs');
+//                 const content = append && fs.existsSync(filePath) 
+//                     ? fs.readFileSync(filePath, 'utf8') 
+//                     : '';
+//                 fs.writeFileSync(filePath, content + message + '\n', 'utf8');
+//             } else {
+//                 console.warn('File logging not available in this environment');
+//                 console.log(message);
+//             }
+//         } catch (error) {
+//             console.error(`Error writing to file ${filePath}:`, error);
+//             console.log(message); // Fallback to console
+//         }
+//     };
+// }
 
 /**
  * Inspects the strongest value of cells

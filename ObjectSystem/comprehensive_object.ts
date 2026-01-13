@@ -135,7 +135,8 @@ export const commitEnvWithReduceCE = (
 // ========================================
 // Env helpers (from your earlier module)
 // ========================================
-import { ce_lookup_env, ce_set_env } from "./object_propagator";
+// import { ce_lookup_env, ce_set_env } from "./object_propagator";
+// Note: ce_lookup_env and ce_set_env are commented out in object_propagator.ts
 
 // ========================================
 // Core B-style object (decoupled selector)

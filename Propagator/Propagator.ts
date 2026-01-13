@@ -26,7 +26,6 @@ export interface Propagator {
   dispose: () => void;
 }
 
-
 export type PropagatorConstructor = (...inputs: Cell<any>[]) => Propagator
 
 export const is_propagator = register_predicate("is_propagator", (propagator: any): propagator is Propagator => {
@@ -67,7 +66,7 @@ export function construct_propagator(
                                  interested_in: NeighborType[] = [NeighborType.updated]
                                 ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
-
+  var activation: (() => void) | null = activate;
 
 
   const propagator: Propagator = {
@@ -88,19 +87,13 @@ export function construct_propagator(
         outputSummary
       ].join("\n");
     },
-    activate: () => {
-      // if (disposing_scan([...inputs, ...outputs])) {
-      //   mark_for_disposal(propagator)
-      // }
-      // else {
-        activate();
-      // }
-    },
+    activate: activation,
     dispose: () => {
       [...inputs, ...outputs].forEach(cell => {
         if (cell === undefined || cell === null) {
           return;
         }
+        activation = null;
 
         const neighbors = cell.getNeighbors();
         if (neighbors.has(relation.get_id())) {
