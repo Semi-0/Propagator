@@ -421,4 +421,9 @@ define_generic_procedure_handler(get_id, match_args(is_cell), cell_id);
 // Register get_children handler for Cell
 define_generic_procedure_handler(get_children, match_args(is_cell), cell_children);
 
+// Worker cell support - exported for use with worker threads
+export { construct_worker_cell, createSyncWorkerCell } from "./WorkerCell/WorkerCell";
+export { createWorkerPoolState, terminateWorkerPool } from "./WorkerCell/WorkerPool";
+export type { WorkerPoolState } from "./WorkerCell/WorkerPool";
+
 
