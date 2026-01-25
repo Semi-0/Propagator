@@ -62,15 +62,66 @@ cell it was propagated to for update)
 
 
 
-To install dependencies:
+## Installation
 
+### Quick Start
+
+The easiest way to set up the Propagator workspace is using the provided install script:
+
+```bash
+git clone https://github.com/Semi-0/Propagator.git
+cd Propagator
+./install.sh
+```
+
+This script will:
+- Clone required workspace dependencies (GenericProcedure, Sando)
+- Set up the workspace structure
+- Install all dependencies using `bun`
+- Run tests to verify the installation
+
+### Manual Setup
+
+If you prefer to set up manually:
+
+1. Clone the repository and its dependencies:
+```bash
+git clone https://github.com/Semi-0/Propagator.git
+git clone https://github.com/Semi-0/GenericProcedure.git
+git clone https://github.com/Semi-0/Sando.git
+```
+
+2. Create a workspace `package.json` in the parent directory:
+```json
+{
+  "name": "propagator-workspace",
+  "private": true,
+  "workspaces": [
+    "Propagator",
+    "GenericProcedure",
+    "Sando"
+  ]
+}
+```
+
+3. Install dependencies:
 ```bash
 bun install
 ```
 
-To run:
+## Usage
+
+### Running Tests
 
 ```bash
+cd Propagator
+bun test
+```
+
+### Running Examples
+
+```bash
+cd Propagator
 bun run index.ts
 ```
 
