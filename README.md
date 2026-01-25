@@ -8,12 +8,9 @@ propagators, support layer,
 generic arithmetic, as well as
 simple backtracking(amb op).
 
-Also, a customized observer-based reactive system has been included for 
-transmitting values between cells and propagators, and a more generic scheduler supports promise,
-which is different from the scheme implementation.
+The system extends a **vector clock-based reactive system** for transmitting values between cells and propagators. Vector clocks track causality and temporal ordering, enabling correct reactive updates in distributed and concurrent scenarios. Vector clocks can also be used as a **Truth Maintenance System (TMS)**, tracking dependencies and support relationships between values (see `test/advanceReactive.test.ts` and `DataTypes/TemporaryValueSet.ts`). Cells support **reflectivity**, allowing them to observe and react to their own state changes. The system includes a more generic scheduler that supports promises, which is different from the scheme implementation.
 
-So, both the cell and propagator could be observed by external observers,
-this could potentially open up some possibilities for visualization.
+Both cells and propagators can be observed by external observers, opening up possibilities for visualization and debugging of the reactive computation flow.
 
 
 Todos:
