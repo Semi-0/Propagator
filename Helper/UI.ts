@@ -47,7 +47,7 @@ export async function reactive_tell(cell: Cell<any>, value: any, source: string 
     const maybe_last_clock = pipe(cell, 
         cell_strongest, 
         get_vector_clock_layer, 
-        vector_clock_get_source(source_name)
+        (c) => vector_clock_get_source(source_name, c)
     )
     // console.log("maybe_last_clock", maybe_last_clock)
     // in current patched value set
@@ -56,24 +56,24 @@ export async function reactive_tell(cell: Cell<any>, value: any, source: string 
     // or it is fine because this injection means this cell 
     // is the source cell
     // so it is not related to previous sources
-    const new_clock = Option.match(
-        maybe_last_clock, {
-            onNone: () => construct_vector_clock([{
-                source: source_name,
-                value: 0
-            }]),
-            onSome: (last_clock) => construct_vector_clock([{
-                source: source_name,
-                value: last_clock + 1
-            }])
-        }
-    )
+    // const new_clock = Option.match(
+    //     maybe_last_clock, {
+    //         onNone: () => construct_vector_clock([{
+    //             source: source_name,
+    //             value: 0
+    //         }]),
+    //         onSome: (last_clock) => construct_vector_clock([{
+    //             source: source_name,
+    //             value: last_clock + 1
+    //         }])
+    //     }
+    // )
 
     
     compound_tell(
         cell,
         value,
-        vector_clock_layer, new_clock,
+        vector_clock_layer, maybe_last_clock,
         ...layered_alist
     )
 

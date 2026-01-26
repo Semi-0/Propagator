@@ -1559,7 +1559,7 @@ import { type LayeredObject} from "sando-layer/Basic/LayeredObject";
 import { 
   kick_out, 
   bring_in, 
-  clean_dependence_cells, 
+  internal_clear_source_cells, 
   source_cell,
   update_source_cell,
   dependent_update,
@@ -1572,7 +1572,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   
   beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
-    clean_dependence_cells();
+    internal_clear_source_cells();
     // set_handle_contradiction(trace_earliest_emerged_value);
     set_merge(merge_temporary_value_set);
   });

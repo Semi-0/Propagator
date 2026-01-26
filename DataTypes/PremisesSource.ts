@@ -1,4 +1,4 @@
-import { construct_cell as cell, cell_strongest_base_value, cell_id, cell_name, cell_strongest, cell_content, update_cell, NeighborType, construct_cell, alert_interested_propagators, type interesetedNeighbor } from "../Cell/Cell";
+import { construct_cell as cell, cell_strongest_base_value, cell_id, cell_name, cell_strongest, cell_content, update_cell, NeighborType, construct_cell, alert_interested_propagators, type interesetedNeighbor, same_cell } from "../Cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { p_sync } from "../Propagator/BuiltInProps";
 import { register_predicate } from "generic-handler/Predicates";
@@ -42,29 +42,36 @@ export const is_source_inited = (x: any) => {
     return x === source_inited;
 }
 
-const register_dependence_cell = (cell: Cell<any>) => {
+const register_source_cell = (cell: Cell<any>) => {
     const premises = cell_id(cell);
     register_premise(premises, cell);
     dependents_cells.set(premises, cell);
 }
 
 
-export const clean_dependence_cells = () => {
+export const internal_clear_source_cells = () => {
     dependents_cells.clear();
 }
 
-export const has_dependence_cell = (source: string) => {
+export const has_source_cell = (source: string) => {
     return dependents_cells.has(source);
 }
 
-export const get_dependence_cell = (source: string) => {
+export const get_source_cell = (source: string) => {
     return dependents_cells.get(source);
 }
 
-export const dependence_has_neighbor = (source: string, neighbor: Cell<any>) => {
-    const source_cell = get_dependence_cell(source);
+export const source_has_neighbor = (source: string, neighbor: Cell<any>) => {
+    const source_cell = get_source_cell(source);
     if (!source_cell) return false;
-    return source_cell.getNeighbors().has(neighbor.getRelation().get_id());
+    return source_cell
+        .getNeighbors()
+        .values()
+        .find(n =>
+            n.propagator
+                .getOutputs()
+                .some(c => same_cell(c, neighbor))
+        ) !== undefined;
 }
 
 // the only problem is that premises bring in or retract can not be tracked remotely
@@ -79,19 +86,13 @@ export const source_cell = (name: string, initial_value: any = source_inited) =>
     const cell = construct_cell(name);
 
     const premises = cell_id(cell);
-    register_dependence_cell(cell);
+    register_source_cell(cell);
 
     update_cell(cell,
         construct_layered_datum(
             initial_value,
             vector_clock_layer,
             constant_clock
-            // construct_vector_clock([
-            //     {
-            //         source: premises,
-            //         value: constant_clock 
-            //     }
-            // ])
         )
     )
     return cell;
@@ -161,7 +162,7 @@ export const change_premises = (premises_operation: (premises: string) => void) 
     // a more robust way is gather all its neighbor have this dependence in content 
     // then broadcast the same value but with new timestamp
     // 
-    const cell = get_dependence_cell(dependence) as Cell<any>;
+    const cell = get_source_cell(dependence) as Cell<any>;
     if (!cell) {
         console.error("dependence cell not found", dependence);
         return;
@@ -221,7 +222,7 @@ export const bring_in_cell = (cell: Cell<any>) => {
 }
 
 
-export const p_reactive_dispatch = (dependent: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("dispatch",
+export const p_reactive_dispatch = (source: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("dispatch",
     (source: Map<Cell<any>, any>) => {
         if (is_map(source)){
             const update = source.get(output)
@@ -236,84 +237,84 @@ export const p_reactive_dispatch = (dependent: Cell<any>, output: Cell<any>) => 
         else {
             return no_compute
         }
-    })(dependent, output)
+    })(source, output)
 
 
 export const ce_dependents = make_ce_arithmetical(p_reactive_dispatch)
 
-// Helper function to update a regular cell with a value from a source
-const update_cell_from_source = (cell: Cell<any>, value: any, source_name: string) => {
-    const current_strongest = cell_strongest(cell);
+// // Helper function to update a regular cell with a value from a source
+// const update_cell_from_source = (cell: Cell<any>, value: any, source_name: string) => {
+//     const current_strongest = cell_strongest(cell);
     
-    // Get the current vector clock for this source, or start at 0
-    const maybe_last_clock = pipe(
-        current_strongest,
-        get_vector_clock_layer,
-        vector_clock_get_source(source_name)
-    );
+//     // Get the current vector clock for this source, or start at 0
+//     const maybe_last_clock = pipe(
+//         current_strongest,
+//         get_vector_clock_layer,
+//         (c) => vector_clock_get_source(source_name, c)
+//     );
     
-    const new_clock = match(maybe_last_clock, {
-        onNone: () => construct_vector_clock([{
-            source: source_name,
-            value: 0
-        }]),
-        onSome: (last_clock) => construct_vector_clock([{
-            source: source_name,
-            value: last_clock + 1
-        }])
-    });
+//     const new_clock = match(maybe_last_clock, {
+//         onNone: () => construct_vector_clock([{
+//             source: source_name,
+//             value: 0
+//         }]),
+//         onSome: (last_clock) => construct_vector_clock([{
+//             source: source_name,
+//             value: last_clock + 1
+//         }])
+//     });
     
-    // Create layered datum with the value and vector clock
-    const layered = construct_layered_datum(
-        value,
-        vector_clock_layer,
-        new_clock
-    );
+//     // Create layered datum with the value and vector clock
+//     const layered = construct_layered_datum(
+//         value,
+//         vector_clock_layer,
+//         new_clock
+//     );
     
-    update_cell(cell, layered);
-}
+//     update_cell(cell, layered);
+// }
 
-// Create or get a source cell for a given source name
-const get_or_create_source_cell = (source_name: string): Cell<any> => {
-    if (has_dependence_cell(source_name)) {
-        return get_dependence_cell(source_name)!;
-    }
-    const source = source_cell(source_name, the_nothing);
-    dependents_cells.set(source_name, source);
+// // Create or get a source cell for a given source name
+// const get_or_create_source_cell = (source_name: string): Cell<any> => {
+//     if (has_source_cell(source_name)) {
+//         return get_source_cell(source_name)!;
+//     }
+//     const source = source_cell(source_name, the_nothing);
+//     dependents_cells.set(source_name, source);
     
-    // Ensure the source name is registered as a premise
-    // The source_cell already registers it via register_dependence_cell,
-    // but we also need to ensure the source_name itself is registered
-    // in case it's different from the cell ID
-    const cell_id_value = cell_id(source);
-    if (cell_id_value !== source_name) {
-        // If the cell ID is different from source_name, register source_name as well
-        // This allows the source_name to be used in vector clocks
-        register_premise(source_name, source);
-    }
+//     // Ensure the source name is registered as a premise
+//     // The source_cell already registers it via register_dependence_cell,
+//     // but we also need to ensure the source_name itself is registered
+//     // in case it's different from the cell ID
+//     const cell_id_value = cell_id(source);
+//     if (cell_id_value !== source_name) {
+//         // If the cell ID is different from source_name, register source_name as well
+//         // This allows the source_name to be used in vector clocks
+//         register_premise(source_name, source);
+//     }
     
-    return source;
-}
+//     return source;
+// }
 
 // dependent_update allows updating multiple cells from a single source
-// It returns a function that takes a Map of cell->value pairs
-export const dependent_update = (source_name: string) => (updates: Map<Cell<any>, any>) => {
-    // Ensure the source cell exists and is registered as a premise
-    const source_cell_ref = get_or_create_source_cell(source_name);
+// // It returns a function that takes a Map of cell->value pairs
+// export const dependent_update = (source_name: string) => (updates: Map<Cell<any>, any>) => {
+//     // Ensure the source cell exists and is registered as a premise
+//     const source_cell_ref = get_or_create_source_cell(source_name);
     
-    // Ensure the premise is marked as "in" (believed) so it's active
-    // This is important for the premise system to recognize the source
-    const premises_id = cell_id(source_cell_ref);
-    mark_premise_in(premises_id);
+//     // Ensure the premise is marked as "in" (believed) so it's active
+//     // This is important for the premise system to recognize the source
+//     const premises_id = cell_id(source_cell_ref);
+//     mark_premise_in(premises_id);
     
-    // Update each target cell with the value from this source
-    for (const [cell, value] of updates) {
-        update_cell_from_source(cell, value, source_name);
-    }
+//     // Update each target cell with the value from this source
+//     for (const [cell, value] of updates) {
+//         update_cell_from_source(cell, value, source_name);
+//     }
     
-    // Forward the source clock to mark that this source has updated
-    forwarding_source_clock(source_cell_ref);
-}
+//     // Forward the source clock to mark that this source has updated
+//     forwarding_source_clock(source_cell_ref);
+// }
 
 // source update 
 // source update could be multiple value

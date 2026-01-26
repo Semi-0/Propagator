@@ -27,9 +27,9 @@ import {
     dependent_update, 
     kick_out_cell, 
     bring_in_cell, 
-    clean_dependence_cells,
-    get_dependence_cell,
-    has_dependence_cell,
+    internal_clear_source_cells,
+    get_source_cell,
+    has_source_cell,
     kick_out,
     bring_in
 } from "../DataTypes/PremisesSource";

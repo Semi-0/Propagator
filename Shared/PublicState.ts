@@ -12,7 +12,7 @@ import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { set_handle_contradiction } from '@/cell/Cell';
 import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators';
-import { clean_dependence_cells } from '../DataTypes/PremisesSource';
+import { internal_clear_source_cells } from '../DataTypes/PremisesSource';
 import { pipe } from 'fp-ts/lib/function';
 import { map } from './Reactivity/MiniReactor/MrCombinators';
 //@ts-ignore
@@ -171,7 +171,7 @@ subscribe((msg: PublicStateMessage) => {
             clean_hypothetical_store()
             Current_Scheduler.clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
-            clean_dependence_cells()
+            internal_clear_source_cells()
             break;
 
         case PublicStateCommand.SET_CELL_MERGE:
