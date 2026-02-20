@@ -293,7 +293,7 @@ describe("Propagator Disposal Tests", () => {
         const c = construct_cell("c");
         
         const prop1 = p_add(a, construct_cell("const1"), b);
-        const prop2 = p_multiply(b,  ce_constant(2), c);
+        const prop2 = p_multiply(b, ce_constant(2), c);
         
         // Test initial propagation
         update_cell(a, 10);
