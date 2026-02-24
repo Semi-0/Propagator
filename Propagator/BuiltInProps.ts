@@ -105,7 +105,7 @@ export const p_not = primitive_propagator(not, "not");
 
 export const p_less_than = primitive_propagator(less_than, "less_than");
 
-export const p_add = primitive_propagator(add, "+");
+export const p_add = primitive_propagator(log_tracer("add", add), "+");
 
 export const p_subtract = primitive_propagator(subtract, "-");
 

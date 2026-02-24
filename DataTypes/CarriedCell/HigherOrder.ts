@@ -1,6 +1,6 @@
 import { construct_cell } from "@/cell/Cell";
-import { compound_propagator, primitive_propagator } from "../../Propagator/Propagator";
-import { ce_constant, p_constant } from "../../Propagator/BuiltInProps";
+import { compound_propagator, function_to_primitive_propagator, primitive_propagator } from "../../Propagator/Propagator";
+import { ce_constant, p_constant, p_sync } from "../../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
@@ -8,6 +8,7 @@ import { ce_switch } from "../../Propagator/BuiltInProps";
 import { ce_cons, ce_car, ce_cdr, p_cons, ce_is_atom, ce_copy_list } from "./List";
 import { p_dict_pair } from "./Dict";
 import { diff_map } from "./Core";
+import { is_map } from "../../Helper/Helper";
 
 export const p_zip = (combine: (...cells: Cell<any>[]) => Propagator) => (list_A: Cell<Map<string, any>>, list_B: Cell<Map<string, any>>, output: Cell<Map<string, any>>) => compound_propagator(
     [list_A, list_B],
@@ -86,8 +87,31 @@ export const carrier_map = (closureCell: Cell<(...args: any[]) => Propagator>, i
         closureFn(inputCell, outCell)
         built.set(key, outCell)
       }
-      // 把 built 本身當成新的 carrier 輸出
       return built
     }, "carrier_map")(closureCell, input, output)
   }
+
+// this is not generic
+export const selective_sync = (
+  predicate: (entry: { key: string; value: Cell<any> }) => boolean,
+  input: Cell<Map<string, any>>,
+  output: Cell<any>
+) => {
+  const built = new Map<string, Cell<any>>()
+
+  function_to_primitive_propagator("selective_sync", (inputMap) => {
+    if (is_map(inputMap)) {
+      const diffed = diff_map(built, inputMap)
+      for (const [key, inputCell] of diffed) {
+        if (predicate({ key, value: inputCell })) {
+          built.set(key, inputCell)
+        }
+      }
+    }
+    else{
+      console.error("selective_sync: input is not a map", inputMap)
+    }
+    return built
+  })(input, output)
+}
 

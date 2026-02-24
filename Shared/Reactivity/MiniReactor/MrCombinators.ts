@@ -17,10 +17,10 @@ export function filter<A>(f: (a: A) => boolean){
 }
 
 export function reduce<A, B>(f: (a: A, b: B) => A, initial_value: A){
-    var initial = initial_value;
+    var accumulated = initial_value;
     return apply((notify, update: B) => {
-        initial_value = f(initial, update);
-        notify(initial);
+        accumulated = f(accumulated, update);
+        notify(accumulated);
     });
 }
 

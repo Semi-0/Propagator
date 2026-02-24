@@ -3,18 +3,18 @@ import {  guard, throw_error } from 'generic-handler/built_in_generics/other_gen
 import { clean_hypothetical_store } from '../DataTypes/Premises';
 import { generic_merge, set_merge } from '../Cell/Merge';
 
-import { type Stepper } from './Reactivity/MiniReactor/MrPrimitiveCombinators';
-import { construct_state } from './Reactivity/MiniReactor/MrState';
+import { type Stepper } from './Reactivity/MiniReactor/MrPrimitiveCombinators.ts';
+import { construct_state } from './Reactivity/MiniReactor/MrState.ts';
 import type { Cell } from '@/cell/Cell';
 import type { Propagator } from '../Propagator/Propagator';
-import { construct_node } from './Reactivity/MiniReactor/MrPrimitive';
+import { construct_node } from './Reactivity/MiniReactor/MrPrimitive.ts';
 import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { set_handle_contradiction } from '@/cell/Cell';
-import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators';
+import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators.ts';
 import { internal_clear_source_cells } from '../DataTypes/PremisesSource';
 import { pipe } from 'fp-ts/lib/function';
-import { map } from './Reactivity/MiniReactor/MrCombinators';
+import { map } from './Reactivity/MiniReactor/MrCombinators.ts';
 //@ts-ignore
 var parent: Stepper<Primitive_Relation> = construct_state(make_relation("root", null));
 // Todo: make this read only

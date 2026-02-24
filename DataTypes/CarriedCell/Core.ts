@@ -33,16 +33,18 @@ export const merge_carried_map = (content: Map<any, any>, increment: Map<any, an
                 content.set(key, value)
             }
             else {
-                const listener = construct_cell(key)
-                content.set(key, listener)
-                update_cell(listener, value)
+                throw new Error("value is not a cell")
+                // const listener = construct_cell(key)
+                // content.set(key, listener)
+                // update_cell(listener, value)
             }
         }
     }
     return content
 }
 
-define_generic_procedure_handler(generic_merge, all_match(is_map),  merge_carried_map)
+define_generic_procedure_handler(generic_merge, all_match(is_map), merge_carried_map)
+
 
 export const is_layered_map = register_predicate("is_layered_map", (value: any) => is_layered_object(value) && get_base_value(value) instanceof Map)
 

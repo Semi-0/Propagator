@@ -4,10 +4,7 @@ import {  construct_better_set } from 'generic-handler/built_in_generics/generic
 import { guard, throw_error } from 'generic-handler/built_in_generics/other_generic_helper';
 import { add_item, for_each, map } from 'generic-handler/built_in_generics/generic_collection';
 export function connect<A, B>(parent: Node<A>, child: Node<B>, f: EdgeCallback<A, B>){
-    const edge = construct_edge(parent, child, f);
-
-    parent.add_child_edge(edge);
-    child.add_parent_edge(edge);
+    construct_edge(parent, child, f);
 }
 
 export function disconnect<A, B>(parent: Node<A>, child: Node<B>){
@@ -141,6 +138,5 @@ export function dispose(node: Node<any>) {
         }
     });
 }
-
 
 

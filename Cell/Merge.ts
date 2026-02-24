@@ -28,7 +28,7 @@ export const generic_merge = construct_simple_generic_procedure("merge", 2,
             return content
         }
         else {
-            console.error("error merge" + " + \n content: \n " + to_string(content) + " increment:  \n" + to_string(increment))
+            console.error("error merge" + "  \n content: \n " + to_string(content) + " increment:  \n" + to_string(increment))
             return the_contradiction
         }
     }

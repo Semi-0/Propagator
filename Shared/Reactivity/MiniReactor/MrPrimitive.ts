@@ -1,14 +1,17 @@
 import { type Node, type Edge, type EdgeCallback, is_node } from './MrType';
-import {  reference_store } from '../../../Helper/Helper';
 import { construct_better_set, identify_by  } from 'generic-handler/built_in_generics/generic_better_set';
 
 import { to_string } from 'generic-handler/built_in_generics/generic_conversation';
 import { add_item, remove_item, for_each } from 'generic-handler/built_in_generics/generic_collection';
 import { map, length, every } from 'generic-handler/built_in_generics/generic_collection';
 import { define_generic_procedure_handler } from 'generic-handler/GenericProcedure';
-import { match_args } from 'generic-handler/Predicates';
+import { match_args } from 'generic-handler/Predicates'
 
-export const get_reference = reference_store();
+let local_reference = 0;
+export const get_reference = () => {
+    local_reference = local_reference + 1;
+    return local_reference;
+};
 
 const node_store = new Map<number, Node<any>>();
 
@@ -104,7 +107,6 @@ export function remove_edge(edge: Edge<any, any>){
 
 export function fetch_edge<A, B>(source: Node<A>, target: Node<B>): Edge<A, B>{
     const v = edge_store.get(to_edge_key(source.id, target.id))
-    console.log(v)
     if (v !== undefined){
         return v
     }

@@ -4,8 +4,8 @@ import type { Cell } from "@/cell/Cell";
 import {
   construct_cell,
   cell_strongest_base_value,
-
-  cell_id
+  cell_id,
+  update_cell
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential,  run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 
@@ -1567,6 +1567,7 @@ import {
 } from "../DataTypes/PremisesSource";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet.ts";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
+import { carrier_map } from "../DataTypes/CarriedCell";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   
@@ -2049,6 +2050,59 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       await execute_all_tasks_sequential((error: Error) => {});
       
       expect(cell_strongest_base_value(output)).toEqual(["x", "y"]);
+    });
+  });
+
+  describe("carrier_map tests", () => {
+    test("carrier_map should run without throwing with p_constant closure", async () => {
+      const closureCell = construct_cell("closure") as Cell<((input: Cell<any>, output: Cell<any>) => import("../Propagator/Propagator").Propagator)>;
+      const cellA = construct_cell("cellA");
+      const cellB = construct_cell("cellB");
+      const inputMap = new Map<string, Cell<any>>([
+        ["a", cellA],
+        ["b", cellB]
+      ]);
+      const inputMapCell = construct_cell("inputMap") as Cell<Map<string, any>>;
+      const outputCell = construct_cell("output") as Cell<Map<string, Cell<any>>>;
+
+      carrier_map(closureCell, inputMapCell, outputCell);
+      update_cell(closureCell, p_constant(42));
+      update_cell(inputMapCell, inputMap);
+
+      await execute_all_tasks_sequential(() => {});
+
+      const result = cell_strongest_base_value(outputCell);
+      expect(result).toBeDefined();
+      if (result instanceof Map) {
+        const outA = result.get("a");
+        const outB = result.get("b");
+        expect(outA).toBeDefined();
+        expect(outB).toBeDefined();
+        expect(cell_strongest_base_value(outA!)).toBe(42);
+        expect(cell_strongest_base_value(outB!)).toBe(42);
+      }
+    });
+
+    test("carrier_map with p_constant (from BuiltInProps) should create output for new keys", async () => {
+      const closureCell = construct_cell("closure") as Cell<((input: Cell<any>, output: Cell<any>) => import("../Propagator/Propagator").Propagator)>;
+      const cellA = construct_cell("cellA");
+      const inputMap = new Map<string, Cell<any>>([["x", cellA]]);
+      const inputMapCell = construct_cell("inputMap") as Cell<Map<string, any>>;
+      const outputCell = construct_cell("output") as Cell<Map<string, Cell<any>>>;
+
+      carrier_map(closureCell, inputMapCell, outputCell);
+      update_cell(closureCell, p_constant(100));
+      update_cell(inputMapCell, inputMap);
+
+      await execute_all_tasks_sequential(() => {});
+
+      const result = cell_strongest_base_value(outputCell);
+      expect(result).toBeDefined();
+      if (result instanceof Map) {
+        const outX = result.get("x");
+        expect(outX).toBeDefined();
+        expect(cell_strongest_base_value(outX!)).toBe(100);
+      }
     });
   });
 

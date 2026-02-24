@@ -73,8 +73,16 @@ export const recursive_accessor = (keys: string[]) => (container: Cell<Map<strin
 
 const dict_accessor_cache = new Map<String, Cell<any>>()
 
+/**
+ * Returns the cell that acts as the accessor for container[key].
+ * REQUIRED: cache must stay enabled. Same (key, container) must return the same accessor cell.
+ * Without cache, every call creates a new accessor; merge_carried_map bi_syncs it to the one in the
+ * container, but (1) updates and reads can target different instances so the runtime (e.g. card
+ * API) sees wrong values, (2) callers that store "the" slot cell (e.g. source_this_cell_storage)
+ * and others that read it later (e.g. internal_cell_this(card) in tests) must see the same cell.
+ * See: lain-lang/docs/CE_DICT_ACCESSOR_CACHE.md
+ */
 export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any>>) => Cell<any> = (key: string) => (container: Cell<Map<string, any>>) =>{
-
     const storage_key = key + cell_id(container)
     const stored = dict_accessor_cache.get(storage_key)
     if (stored != undefined){
@@ -82,10 +90,9 @@ export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any
     }
     else{
         const accessor = construct_cell("map_accessor_" + key)
-
-        c_dict_accessor(key)(container, accessor) 
+        c_dict_accessor(key)(container, accessor)
         dict_accessor_cache.set(storage_key, accessor)
-        return accessor 
+        return accessor
     }
 }
 

@@ -70,6 +70,6 @@ export {
     ce_dict_zip,
     p_combine_list,
     ce_combine_list,
-    carrier_map
+    selective_sync as carrier_map
 } from "./HigherOrder"
 

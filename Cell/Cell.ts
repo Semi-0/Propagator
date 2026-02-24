@@ -57,7 +57,11 @@ export function not_handle_cell_contradiction<A>(cell: Cell<A>) {
   // do nothing
 }
 
-export var handle_contradiction = not_handle_cell_contradiction;
+export function log_cell_encountered_contradiction<A>(cell: Cell<A>) {
+  console.log("cell encountered contradiction", cell.summarize());
+}
+
+export var handle_contradiction = log_cell_encountered_contradiction;
 
 export function set_handle_contradiction<A>(func: (cell: Cell<A>) => void){
   // @ts-ignore
@@ -192,7 +196,7 @@ export function primitive_construct_cell<A>(
     }
     else if (is_contradiction(new_strongest)){
       alert_interested_propagators(neighbors, NeighborType.content_tested)
-      set_strongest(new_strongest)
+      set_strongest(new_strongest)  
       handle_cell_contradiction()
 
     }
@@ -218,8 +222,6 @@ export function primitive_construct_cell<A>(
     },
 
     addNeighbor: (propagator: Propagator, interested_in: NeighborType[]) => {
-
-      
         neighbors.set(propagator.getRelation().get_id(), {
           type: interested_in,
           propagator: propagator
