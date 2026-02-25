@@ -18,7 +18,7 @@ import {
   bi_switcher,
   function_to_cell_carrier_constructor,
   make_map_carrier,
-
+  p_construct_dict_carrier,
   p_construct_dict_carrier_with_name,
   ce_construct_cell_carrier,
   ce_construct_dict_carrier_with_name,
@@ -279,7 +279,7 @@ describe("Carried Cell Tests", () => {
     });
 
   
-    test.only("c_dict_accessor should not cause infinite loop if used in immediate execute mode", async () => {
+    test("c_dict_accessor should not cause infinite loop if used in immediate execute mode", async () => {
 
       
       set_immediate_execute(true)
@@ -336,6 +336,60 @@ describe("Carried Cell Tests", () => {
       ],
 
     )
+
+    /**
+     * Hypothesis: merge_carried_map bi_syncs multiple accessors for the same key,
+     * so we get value consistency after propagation—even without caching accessor identity.
+     * Card API may fail without cache only due to read-before-propagation ordering.
+     */
+    describe("multiple accessors for same key (bi_sync value consistency)", () => {
+      test("two accessors for same key: update one, run execute, other sees value (value consistency via bi_sync)", async () => {
+        const inner = construct_cell("inner") as Cell<number>;
+        const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>;
+        const slotMap = new Map<string, Cell<any>>([["K", inner]]);
+        p_construct_dict_carrier(slotMap, carrier);
+
+        const accessor1 = construct_cell("accessor1") as Cell<number>;
+        const accessor2 = construct_cell("accessor2") as Cell<number>;
+        c_dict_accessor("K")(carrier, accessor1);
+        c_dict_accessor("K")(carrier, accessor2);
+
+        await execute_all_tasks_sequential(() => {});
+
+        compound_tell(accessor1, 42, vector_clock_layer, construct_vector_clock([{ source: "test", value: 0 }]));
+        run_scheduler_and_replay(console.log);
+
+        expect(cell_strongest_base_value(accessor2)).toBe(42);
+      });
+
+      test("two accessors for same key: update one, read other without execute may be stale", async () => {
+        const inner = construct_cell("inner") as Cell<number>;
+        const carrier = construct_cell("carrier") as Cell<Map<string, Cell<any>>>;
+        const slotMap = new Map<string, Cell<any>>([["K", inner]]);
+        p_construct_dict_carrier(slotMap, carrier);
+
+        const accessor1 = construct_cell("accessor1") as Cell<number>;
+        const accessor2 = construct_cell("accessor2") as Cell<number>;
+        c_dict_accessor("K")(carrier, accessor1);
+        c_dict_accessor("K")(carrier, accessor2);
+
+        await execute_all_tasks_sequential(() => {});
+
+        compound_tell(accessor1, 42, vector_clock_layer, construct_vector_clock([{ source: "test", value: 0 }]));
+        run_scheduler_and_replay(console.log);
+
+        const accessor3 = construct_cell("accessor3") as Cell<number>;
+        c_dict_accessor("K")(carrier, accessor3);
+        const valueBeforeExecute = cell_strongest_base_value(accessor3);
+        run_scheduler_and_replay(console.log);
+        const valueAfterExecute = cell_strongest_base_value(accessor3);
+
+        expect(valueAfterExecute).toBe(42);
+        if (valueBeforeExecute !== 42) {
+          expect(valueBeforeExecute).toBe(the_nothing);
+        }
+      });
+    });
   });
 
 
