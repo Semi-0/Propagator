@@ -1,10 +1,11 @@
-import { cell_id, construct_cell } from "@/cell/Cell";
+import { cell_id, cell_strongest_base_value, construct_cell } from "@/cell/Cell";
 import { compound_propagator, function_to_primitive_propagator } from "../../Propagator/Propagator";
 import { p_constant } from "../../Propagator/BuiltInProps";
 import type { Cell } from "@/cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { p_struct } from "./Carrier";
+import { is_map } from "../../Helper/Helper";
 
 // warning this have a fundamental problem
 //  if the key of dict are changed dynamically
@@ -80,9 +81,27 @@ export const recursive_accessor = (keys: string[]) => (container: Cell<Map<strin
 // early access hack if container already contain the cell 
 // return that early
 export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any>>) => Cell<any> = (key: string) => (container: Cell<Map<string, any>>) =>{
-    const accessor = construct_cell("map_accessor_" + key)
-    c_dict_accessor(key)(container, accessor)
-    return accessor
+    const maybe_map = cell_strongest_base_value(container)
+
+    const return_accessor_cell = () => {
+        const accessor = construct_cell("map_accessor_" + key)
+        c_dict_accessor(key)(container, accessor)
+        return accessor
+    }
+
+    if (is_map(maybe_map)) {
+        // @ts-ignore
+        const stored = maybe_map.get(key) as Cell<any>
+        if (stored != undefined){
+            return stored
+        }
+        else{
+            return return_accessor_cell()
+        }
+    }
+    else{
+        return return_accessor_cell()
+    }
 }
 
 
