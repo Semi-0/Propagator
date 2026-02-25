@@ -4,7 +4,8 @@ import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapp
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
-import { get_base_value, layer_accessor, make_annotation_layer, type Layer } from "sando-layer/Basic/Layer";
+import { get_base_value, layer_accessor, type Layer } from "sando-layer/Basic/Layer";
+import { vector_clock_layer } from "sando-layer/Specified/VectorClockLayer";
 import { define_consolidator_per_layer_dispatcher } from "sando-layer/Basic/LayeredCombinators";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { find_related_elements, patch_join, patch_remove, scan_for_patches, subsumes } from "../DataTypes/GenericValueSet";
@@ -434,31 +435,7 @@ export const clock_channels_subsume = (b: VectorClock, a: VectorClock): boolean 
 
 
 
-export const vector_clock_layer = make_annotation_layer<VectorClock, any>("vector_clock", 
-    (get_name: () => string,
-    has_value: (object: any) => boolean,
-    get_value: (object: any) => any,
-    summarize_self: () => string[]): Layer<VectorClock> => {
-
-        function get_default_value(): VectorClock {
-            return new Map();
-        }
-
-        function get_procedure(name: string, arity: number): any | undefined {
-            return (base: VectorClock, ...values: VectorClock[]) => {
-                return values.reduce((acc, value) => version_vector_merge(acc, value), new Map());
-            }
-        }
-        return {
-            get_name,
-            has_value,
-            get_value,
-            get_default_value,
-            get_procedure,
-            summarize_self,
-        }
-    }
-)
+export { vector_clock_layer };
 
 export const get_vector_clock_layer = layer_accessor(vector_clock_layer)
 
