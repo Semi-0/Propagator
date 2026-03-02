@@ -24,6 +24,7 @@ import { Option } from "effect";
 import { match } from "effect/Option";
 import { define_layered_procedure_handler, extend_layered_procedure, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { make_ce_arithmetical } from "../Propagator/Sugar";
+import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 
 
 
@@ -112,12 +113,21 @@ extend_layered_procedure(
     }
 )
 
-export const p_source =  (input_cell: Cell<any>, output_cell: Cell<any>) => primitive_propagator(
+export const p_connect_to_source =  (input_cell: Cell<any>, output_cell: Cell<any>) => primitive_propagator(
     (input: any) => {
-        return source_clock_forward(input, cell_id(output_cell), cell_strongest(output_cell))
+        if (is_equal(cell_strongest_base_value(output_cell), get_base_value(input))){
+            // monotone update
+            return no_compute
+        }
+        else{
+            return source_clock_forward(input, cell_id(output_cell), cell_strongest(output_cell))
+        }
+        
     },
     "reactive_source"
 )(input_cell, output_cell)
+
+
 
 
 
