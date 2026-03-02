@@ -4,11 +4,11 @@ import { p_sync } from "../Propagator/BuiltInProps";
 import { register_predicate } from "generic-handler/Predicates";
 import { the_disposed, the_nothing, type CellValue } from "../Cell/CellValue";
 import type { Cell } from "../Cell/Cell";
-import { construct_propagator, function_to_primitive_propagator, type Propagator } from "../Propagator/Propagator";
+import { construct_propagator, function_to_primitive_propagator, primitive_propagator, type Propagator } from "../Propagator/Propagator";
 import { make_relation } from "./Relation";
 import { get_global_parent } from "../Shared/PublicState";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
+import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import { describe } from "../Helper/UI";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -22,7 +22,7 @@ import { find } from "generic-handler/built_in_generics/generic_collection";
 import { pipe } from "fp-ts/lib/function";
 import { Option } from "effect";
 import { match } from "effect/Option";
-import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { define_layered_procedure_handler, extend_layered_procedure, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { make_ce_arithmetical } from "../Propagator/Sugar";
 
 
@@ -82,6 +82,45 @@ export const source_has_neighbor = (source: string, neighbor: Cell<any>) => {
 // or we can embeded environment into the source cell?
 // if it just have one value can it still update bi-directional cell?
 // with switch or filter?
+
+
+export const source_clock_forward = make_layered_procedure(
+    "source_clock_forward",
+    2,
+    (input: any, channel: string, original_source: any) => {
+        return input
+    }
+)
+
+extend_layered_procedure(
+    source_clock_forward,
+    vector_clock_layer,
+    (base: any, input: LayeredObject<any>, channel: LayeredObject<any>, original_source: any) => {
+        const source_channel = get_base_value(channel) 
+        const original_source_clock = get_vector_clock_layer(original_source)
+        const input_clock = get_vector_clock_layer(input)
+        const new_clock = vector_clock_forward(original_source_clock, source_channel)
+      
+        // merge forwarded clock with input clock
+        for (const channel of get_clock_channels(input_clock)) {
+            if (channel !== source_channel) {
+                new_clock.set(channel, input_clock.get(channel))
+            }
+        }
+
+        return new_clock
+    }
+)
+
+export const p_source =  (input_cell: Cell<any>, output_cell: Cell<any>) => primitive_propagator(
+    (input: any) => {
+        return source_clock_forward(input, cell_id(output_cell), cell_strongest(output_cell))
+    },
+    "reactive_source"
+)(input_cell, output_cell)
+
+
+
 export const source_cell = (name: string, initial_value: any = source_inited) => {
     const cell = construct_cell(name);
 
@@ -138,18 +177,26 @@ export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp
             )
         }
         else{
-            update_cell(source_cell, 
-                construct_layered_datum(
-                    value,
-                    vector_clock_layer,
-                    construct_vector_clock([
-                        {
-                            source: cell_id(source_cell),
-                            value: timestamp
-                        }
-                    ])
+            update_cell(
+                source_cell,
+                source_clock_forward(
+                    value, 
+                    cell_id(source_cell),
+                    cell_strongest(source_cell)
                 )
-            );
+            )
+            // update_cell(source_cell, 
+            //     construct_layered_datum(
+            //         value,
+            //         vector_clock_layer,
+            //         construct_vector_clock([
+            //             {
+            //                 source: cell_id(source_cell),
+            //                 value: timestamp
+            //             }
+            //         ])
+            //     )
+            // );
         }
     }
     else{

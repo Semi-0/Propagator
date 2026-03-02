@@ -12,7 +12,7 @@
  * Licensed under the GNU General Public License v3.0 or later.
  */
 
-import { set_global_state, get_global_parent } from "../Shared/PublicState";
+import { set_global_state, get_global_parent, cell_snapshot } from "../Shared/PublicState";
 import {type Propagator, internal_propagator_dispose, propagator_id} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
@@ -59,6 +59,8 @@ export function not_handle_cell_contradiction<A>(cell: Cell<A>) {
 
 export function log_cell_encountered_contradiction<A>(cell: Cell<A>) {
   console.log("cell encountered contradiction", cell.summarize());
+  // console.log("all cells", summarize_cells(cell_snapshot(), "    "));
+    // execute_all_tasks_sequential(console.error);
 }
 
 export var handle_contradiction = log_cell_encountered_contradiction;

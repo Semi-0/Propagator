@@ -144,7 +144,7 @@ export const clock_equal = (a: Clock, b: Clock) => {
 //     return vector_clock;
 // }
 
-export const version_vector_forward = (version_vector: VectorClock, source: SourceID) => {
+export const vector_clock_forward = (version_vector: VectorClock, source: SourceID) => {
     const new_version_vector = new Map(version_vector);
     vector_clock_set_source(
         source,
@@ -154,6 +154,8 @@ export const version_vector_forward = (version_vector: VectorClock, source: Sour
   
     return new_version_vector;
 }
+
+export const version_vector_forward = vector_clock_forward
 
 // export const compare_two_clock = (a: number | string, b: number | string) => {
 //     if  (is_constant_clock(a) && is_constant_clock(b)) {

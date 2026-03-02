@@ -88,20 +88,21 @@ export const ce_dict_accessor: (key: string) => (container: Cell<Map<string, any
         c_dict_accessor(key)(container, accessor)
         return accessor
     }
+    // removed early hack because it would cause problem in disposal system
 
-    if (is_map(maybe_map)) {
-        // @ts-ignore
-        const stored = maybe_map.get(key) as Cell<any>
-        if (stored != undefined){
-            return stored
-        }
-        else{
-            return return_accessor_cell()
-        }
-    }
-    else{
-        return return_accessor_cell()
-    }
+    // if (is_map(maybe_map)) {
+    //     // @ts-ignore
+    //     const stored = maybe_map.get(key) as Cell<any>
+    //     if (stored != undefined){
+    //         return stored
+    //     }
+    //     else{
+    return return_accessor_cell()
+    //     }
+    // }
+    // else{
+    //     return return_accessor_cell()
+    // }
 }
 
 

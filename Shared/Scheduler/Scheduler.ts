@@ -19,8 +19,12 @@ export function set_immediate_execute(value: boolean){
     Current_Scheduler.set_immediate_execute(value)
 }
 
-export function report_executed_length(){
+export function get_current_scheduler(){
     return Current_Scheduler
+}
+
+export function get_remain_tasks_length(){
+    return Current_Scheduler.pending_propagators().length
 }
 
 export function reset_scheduler(){
