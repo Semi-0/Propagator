@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (c) 2009–2015 Gerald Jay Sussman and Chris Hanson
+// Copyright (c) 2024–2026 semi-0
+//
+// This file was ported from the SDF propagator system (Software Design for Flexibility).
+
 // -*- TypeScript -*-
 
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";

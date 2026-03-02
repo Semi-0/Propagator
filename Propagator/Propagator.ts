@@ -1,16 +1,9 @@
-/**
- * Copyright © 2024–2026 semi-0
- *
- * Based on propagator and interpreter ideas originally developed by
- * Chris Hanson and Gerald Jay Sussman as part of the SDF system
- * accompanying the book "Software Design for Flexibility".
- *
- * This file is part of a substantially modified TypeScript
- * reimplementation with a different execution, scheduling,
- * and distribution model.
- *
- * Licensed under the GNU General Public License v3.0 or later.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (c) 2009–2015 Gerald Jay Sussman and Chris Hanson
+// Copyright (c) 2024–2026 semi-0
+//
+// This file was ported from the SDF propagator system (Software Design for Flexibility).
 
 import { Primitive_Relation, make_relation, type Relation, is_relation } from "../DataTypes/Relation";
 import { type Cell, update_cell, cell_id, cell_strongest, internal_cell_dispose, NeighborType, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";

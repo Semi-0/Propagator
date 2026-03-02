@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (c) 2009–2015 Gerald Jay Sussman and Chris Hanson
+// Copyright (c) 2024–2026 semi-0
+//
+// This file was ported from the SDF propagator system (Software Design for Flexibility).
+
 import { v4 as uuidv4 } from 'uuid';
 import { match_args, register_predicate } from 'generic-handler/Predicates';
 import { define_generic_procedure_handler } from 'generic-handler/GenericProcedure';

@@ -1,16 +1,9 @@
-/**
- * Copyright © 2024–2026 semi-0
- *
- * Based on propagator and interpreter ideas originally developed by
- * Chris Hanson and Gerald Jay Sussman as part of the SDF system
- * accompanying the book "Software Design for Flexibility".
- *
- * This file is part of a substantially modified TypeScript
- * reimplementation with a different execution, scheduling,
- * and distribution model.
- *
- * Licensed under the GNU General Public License v3.0 or later.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (c) 2009–2015 Gerald Jay Sussman and Chris Hanson
+// Copyright (c) 2024–2026 semi-0
+//
+// This file was ported from the SDF propagator system (Software Design for Flexibility).
 
 import { set_global_state, get_global_parent, cell_snapshot } from "../Shared/PublicState";
 import {type Propagator, internal_propagator_dispose, propagator_id} from "../Propagator/Propagator";
