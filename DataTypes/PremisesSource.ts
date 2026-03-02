@@ -8,7 +8,7 @@ import { construct_propagator, function_to_primitive_propagator, primitive_propa
 import { make_relation } from "./Relation";
 import { get_global_parent } from "../Shared/PublicState";
 import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
-import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, layered_vector_clock_forward, vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
+import { constant_clock, construct_vector_clock, get_clock_channels, get_vector_clock_layer, is_reactive_value, layered_vector_clock_forward, vector_clock_forward, vector_clock_get_source, vector_clock_layer, vector_clocked_value_update, version_vector_forward } from "../AdvanceReactivity/vector_clock";
 import { get_id } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 import { describe } from "../Helper/UI";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
@@ -25,6 +25,7 @@ import { match } from "effect/Option";
 import { define_layered_procedure_handler, extend_layered_procedure, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { make_ce_arithmetical } from "../Propagator/Sugar";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 
@@ -113,16 +114,65 @@ extend_layered_procedure(
     }
 )
 
+export const without_source_backward = make_layered_procedure(
+    "without_source_backward",
+    2,
+    (output: any, channel: string) => {
+        return output
+    }
+)
+
+extend_layered_procedure(
+    without_source_backward,
+    vector_clock_layer,
+    (base: any, output_layered: LayeredObject<any>, channel_layered: LayeredObject<any>) => {
+        const channel = get_base_value(channel_layered)
+        const output_clock = get_vector_clock_layer(output_layered)
+
+        const new_clock = new Map<string, number>()
+        for (const output_channel of get_clock_channels(output_clock)) {
+            if (output_channel !== channel) {
+                new_clock.set(channel, output_clock.get(channel))
+            }
+        }
+
+        return new_clock
+
+    }
+)
+
 export const p_connect_to_source =  (input_cell: Cell<any>, output_cell: Cell<any>) => primitive_propagator(
     (input: any) => {
         if (is_equal(cell_strongest_base_value(output_cell), get_base_value(input))){
             // monotone update
+            console.log("monotone update")
+            console.log("input", to_string(input))
+            console.log("output", to_string(output_cell))
             return no_compute
         }
         else{
-            return source_clock_forward(input, cell_id(output_cell), cell_strongest(output_cell))
+            const result = source_clock_forward(input, cell_id(output_cell), cell_strongest(output_cell))
+            console.log("source_clock_forward result", describe(result))
+            return result
         }
-        
+    },
+    "reactive_source"
+)(input_cell, output_cell)
+
+export const p_sync_back_without_source =  (output_cell: Cell<any>, input_cell: Cell<any>) => primitive_propagator(
+    (output: any) => {
+        if (is_equal(cell_strongest_base_value(input_cell), get_base_value(output))){
+            // monotone update
+            console.log("monotone update")
+            console.log("input", to_string(output))
+            console.log("output", to_string(output_cell))
+            return no_compute
+        }
+        else{
+            const result = without_source_backward(output, cell_id(output_cell))
+            console.log("without_source_backward result", describe(result))
+            return result
+        }
     },
     "reactive_source"
 )(input_cell, output_cell)
@@ -174,46 +224,64 @@ export const is_source_cell = (cell: Cell<any>) => {
 }
 
 export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp: number | undefined = undefined) => { 
-    if (is_source_cell(source_cell)) {
+
 
         if (timestamp == undefined){
-            update_cell(
-                source_cell,
-                vector_clocked_value_update(
-                    cell_strongest(source_cell), 
-                    value, 
-                    cell_id(source_cell)
+            const current = cell_strongest(source_cell);
+            if (is_layered_object(current)){
+                if (is_reactive_value(current)){
+                    const layered_value = source_clock_forward(
+                        value, 
+                        cell_id(source_cell),
+                        cell_strongest(source_cell)
+                    )
+                    update_cell(source_cell, layered_value)
+                }
+                else {
+                    const layered_value = value.update_layer(
+                        vector_clock_layer,
+                        construct_vector_clock([
+                            {
+                                source: cell_id(source_cell),
+                                value: 0
+                            }
+                        ])
+                    )
+                    update_cell(source_cell, layered_value)
+                }
+            }
+            else {
+                const layered_value = construct_layered_datum(
+                    value,
+                    vector_clock_layer,
+                    construct_vector_clock([
+                        {
+                            source: cell_id(source_cell),
+                            value: 0
+                        }
+                    ])
                 )
-            )
+                update_cell(source_cell, layered_value)
+            }
         }
         else{
-            update_cell(
-                source_cell,
-                source_clock_forward(
-                    value, 
-                    cell_id(source_cell),
-                    cell_strongest(source_cell)
-                )
+           const layered_value = construct_layered_datum(
+            value,
+            vector_clock_layer,
+            construct_vector_clock([
+                {
+                    source: cell_id(source_cell),
+                    value: timestamp
+                }
+            ])
+             )
+            update_cell(source_cell, 
+                layered_value
             )
-            // update_cell(source_cell, 
-            //     construct_layered_datum(
-            //         value,
-            //         vector_clock_layer,
-            //         construct_vector_clock([
-            //             {
-            //                 source: cell_id(source_cell),
-            //                 value: timestamp
-            //             }
-            //         ])
-            //     )
-            // );
         }
     }
-    else{
-        console.error("source cell is not a source cell", describe(source_cell));
-        return;
-    }
-}
+
+
 
 export const change_premises = (premises_operation: (premises: string) => void) => (dependence: string) => {
     // a more robust way is gather all its neighbor have this dependence in content 
