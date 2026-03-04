@@ -145,14 +145,20 @@ export const clock_equal = (a: Clock, b: Clock) => {
 // }
 
 export const vector_clock_forward = (version_vector: VectorClock, source: SourceID) => {
-    const new_version_vector = new Map(version_vector);
-    vector_clock_set_source(
-        source,
-        clock_increment(vector_clock_get_source(source, version_vector)), 
-        new_version_vector
-    )
-  
-    return new_version_vector;
+    // @ts-ignore
+    if (is_constant_clock(version_vector)) {
+        return version_vector;
+    }
+    else {
+        const new_version_vector = new Map(version_vector);
+        vector_clock_set_source(
+            source,
+            clock_increment(vector_clock_get_source(source, version_vector)), 
+            new_version_vector
+        )
+    
+        return new_version_vector;
+    }
 }
 
 export const version_vector_forward = vector_clock_forward
@@ -173,7 +179,7 @@ export const version_vector_forward = vector_clock_forward
 //         }
 //         else if (a < b) {
 //             return -1;
-//         }
+//         }pf
 //         else {
 //             return 0;
 //         }

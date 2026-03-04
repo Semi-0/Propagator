@@ -23,7 +23,7 @@ import { to_string } from "generic-handler/built_in_generics/generic_conversatio
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
-import { cell_neightbor_set, internal_cell_dispose } from "@/cell/Cell";
+import { cell_neighbor_set, internal_cell_dispose } from "@/cell/Cell";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {

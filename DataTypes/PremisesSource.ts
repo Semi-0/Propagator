@@ -181,7 +181,7 @@ export const p_sync_back_without_source =  (output_cell: Cell<any>, input_cell: 
 
 
 
-export const source_cell = (name: string, initial_value: any = source_inited) => {
+export const source_constant_cell = (name: string, initial_value: any = source_inited) => {
     const cell = construct_cell(name);
 
     const premises = cell_id(cell);

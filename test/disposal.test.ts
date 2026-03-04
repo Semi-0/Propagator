@@ -55,7 +55,7 @@ import { compound_tell } from "../Helper/UI";
 import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { merge_patched_set } from "../DataTypes/PatchedValueSet";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
+import { p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 
 // Alias to match the public API names
@@ -169,7 +169,7 @@ describe("Cell Disposal Tests", () => {
     test("disposing a cell should not affect unrelated propagators", async () => {
         set_merge(merge_temporary_value_set)
 
-        const source = source_cell("source");
+        const source = source_constant_cell("source");
        
  
         
@@ -317,7 +317,7 @@ describe("Propagator Disposal Tests", () => {
 describe("Compound Propagator Disposal Tests", () => {
     test("disposing compound propagator should dispose all child cells", async () => {
         set_merge(merge_temporary_value_set)
-        const source = source_cell("source");
+        const source = source_constant_cell("source");
 
        
 

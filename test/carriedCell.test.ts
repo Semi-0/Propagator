@@ -50,7 +50,7 @@ import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { dependent_update, p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
+import { dependent_update, p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
@@ -296,7 +296,7 @@ describe("Carried Cell Tests", () => {
       c_dict_accessor("B")(carrier, accessed_B)
 
 
-      const source = source_cell("source")
+      const source = source_constant_cell("source")
 
       p_reactive_dispatch(source, cellA)
       p_reactive_dispatch(source, cellB)

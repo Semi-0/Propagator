@@ -1560,7 +1560,7 @@ import {
   kick_out, 
   bring_in, 
   internal_clear_source_cells, 
-  source_cell,
+  source_constant_cell,
   update_source_cell,
   dependent_update,
   p_reactive_dispatch
@@ -1581,14 +1581,14 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Basic Source Cell Update Tests", () => {
     
     test("source_update should update a cell with annotated value", async () => {
-      const cell = source_cell("srcUpdateTest", 0);
+      const cell = source_constant_cell("srcUpdateTest", 0);
       update_source_cell(cell, 42);
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(cell)).toBe(42);
     });
 
     test("source_update multiple times should reflect latest value", async () => {
-      const cell = source_cell("multiSrc");
+      const cell = source_constant_cell("multiSrc");
       
       update_source_cell(cell, 1);
       await execute_all_tasks_sequential((error: Error) => {});
@@ -1607,7 +1607,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Propagator Tests", () => {
     
     test("p_sync should update output when source cell input changes", async () => {
-      const input = source_cell("syncSrc");
+      const input = source_constant_cell("syncSrc");
       const output = construct_cell("srcSyncOutput");
       p_sync(input, output);
       
@@ -1621,8 +1621,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_add with source cells should correctly add values", async () => {
-      const cell1 = source_cell("addSrcA");
-      const cell2 = source_cell("addSrcB");
+      const cell1 = source_constant_cell("addSrcA");
+      const cell2 = source_constant_cell("addSrcB");
       const output = construct_cell("srcAddOut");
       p_add(cell1, cell2, output);
 
@@ -1633,8 +1633,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_subtract with source cells should correctly subtract", async () => {
-      const cell1 = source_cell("subSrcA");
-      const cell2 = source_cell("subSrcB");
+      const cell1 = source_constant_cell("subSrcA");
+      const cell2 = source_constant_cell("subSrcB");
       const output = construct_cell("srcSubOut");
       p_subtract(cell1, cell2, output);
 
@@ -1645,8 +1645,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_multiply with source cells should correctly multiply", async () => {
-      const cell1 = source_cell("mulSrcA");
-      const cell2 = source_cell("mulSrcB");
+      const cell1 = source_constant_cell("mulSrcA");
+      const cell2 = source_constant_cell("mulSrcB");
       const output = construct_cell("srcMulOut");
       p_multiply(cell1, cell2, output);
 
@@ -1657,8 +1657,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_divide with source cells should correctly divide", async () => {
-      const cell1 = source_cell("divSrcA");
-      const cell2 = source_cell("divSrcB");
+      const cell1 = source_constant_cell("divSrcA");
+      const cell2 = source_constant_cell("divSrcB");
       const output = construct_cell("srcDivOut");
       p_divide(cell1, cell2, output);
 
@@ -1672,8 +1672,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Switch/Conditional Tests", () => {
     
     test("p_switch with source cells should route based on condition", async () => {
-      const condition = source_cell("switchCondSrc") as Cell<boolean>;
-      const thenCell = source_cell("switchThenSrc");
+      const condition = source_constant_cell("switchCondSrc") as Cell<boolean>;
+      const thenCell = source_constant_cell("switchThenSrc");
       const output = construct_cell("srcSwitchOut");
       p_switch(condition, thenCell, output);
 
@@ -1691,7 +1691,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Chainable Operators Tests", () => {
     
     test("ce_pipe with p_map_a using source cells", async () => {
-      const input = source_cell("pipeMapSrc");
+      const input = source_constant_cell("pipeMapSrc");
       const output = ce_pipe(input, p_map_a((x: number) => x + 10));
 
       update_source_cell(input, 5);
@@ -1700,7 +1700,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("ce_pipe chaining multiple operators with source cells", async () => {
-      const input = source_cell("chainSrc");
+      const input = source_constant_cell("chainSrc");
       const composed = ce_pipe(
         input, 
         p_map_a((x: number) => x * 2), 
@@ -1714,7 +1714,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("ce_pipe with p_filter_a using source cells", async () => {
-      const input = source_cell("filterSrc");
+      const input = source_constant_cell("filterSrc");
       const filtered = ce_pipe(input, p_filter_a((x: number) => x > 10));
 
       update_source_cell(input, 5);
@@ -1727,7 +1727,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("ce_pipe with p_reduce using source cells", async () => {
-      const input = source_cell("reduceSrc");
+      const input = source_constant_cell("reduceSrc");
       const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
 
       update_source_cell(input, 5);
@@ -1747,7 +1747,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Bi-Directional Tests", () => {
     
     test("bi_sync with source cells should propagate in both directions", async () => {
-      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
 
       const left = construct_cell("left") as Cell<number>;
@@ -1774,7 +1774,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // which don't integrate with the Reality/dependent_update pattern. Use reactive_tell instead.
     test("temperature conversion with source cells (compound propagator - use reactive_tell)", async () => {
 
-      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
       const celsius = construct_cell("celsius") as Cell<number>;
       const fahrenheit = construct_cell("fahrenheit") as Cell<number>;
       
@@ -1798,8 +1798,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell kick_out/bring_in Tests", () => {
     
     test("kick_out should stop source contribution to downstream", async () => {
-      const cellA = source_cell("kickSrcA");
-      const cellB = source_cell("kickSrcB");
+      const cellA = source_constant_cell("kickSrcA");
+      const cellB = source_constant_cell("kickSrcB");
       const output = construct_cell("kickTestOut");
       p_add(cellA, cellB, output);
 
@@ -1819,8 +1819,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
 
     test("bring_in should restore source contribution", async () => {
       set_merge(log_tracer("merge_temporary_value_set", merge_temporary_value_set));
-      const cellA = source_cell("bringSrcA");
-      const cellB = source_cell("bringSrcB");
+      const cellA = source_constant_cell("bringSrcA");
+      const cellB = source_constant_cell("bringSrcB");
       const output = construct_cell("bringTestOut");
       p_multiply(cellA, cellB, output);
 
@@ -1842,8 +1842,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       // Note: This test needs two source cells that both update the same target cell
       // Since we can't have two source cells updating the same cell directly,
       // we'll create a regular cell and use p_sync from source cells
-      const source1 = source_cell("switchSrc1");
-      const source2 = source_cell("switchSrc2");
+      const source1 = source_constant_cell("switchSrc1");
+      const source2 = source_constant_cell("switchSrc2");
       const cell = construct_cell("switchSrcCell");
       const output = construct_cell("switchSrcOut");
       p_sync(source1, cell);
@@ -1897,7 +1897,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       }, "src_radius_to_circle");
 
       // Set radius via source cell
-      const radiusSrc = source_cell("radiusSrc") as Cell<number>;
+      const radiusSrc = source_constant_cell("radiusSrc") as Cell<number>;
       p_sync(radiusSrc, radius);
       
       update_source_cell(radiusSrc, 5);
@@ -1941,8 +1941,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // Note: c_if_a uses internal caching that doesn't respond to Reality/dependent_update condition changes.
     // The output is computed once based on the initial condition and cached. Use reactive_tell for c_if_a.
     test("c_if_a with source cells (conditional caches state - use reactive_tell)", async () => {
-      const condition = source_cell("condition") as Cell<boolean>;
-      const source = source_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const condition = source_constant_cell("condition") as Cell<boolean>;
+      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
       const output = construct_cell("output") as Cell<number>;
 
@@ -1978,7 +1978,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell p_drop/p_take Tests", () => {
     
     test("p_drop with source cells should skip first N values", async () => {
-      const input = source_cell("dropSrc");
+      const input = source_constant_cell("dropSrc");
       const output = construct_cell("srcDropOutput");
       p_drop(2)(input, output);
 
@@ -2001,7 +2001,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_take with source cells should only take first N values", async () => {
-      const input = source_cell("takeSrc");
+      const input = source_constant_cell("takeSrc");
       const output = construct_cell("srcTakeOutput");
       p_take(2)(input, output);
 
@@ -2020,7 +2020,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_index with source cells should only take nth value", async () => {
-      const input = source_cell("indexSrc");
+      const input = source_constant_cell("indexSrc");
       const output = construct_cell("srcIndexOutput");
       p_index(1)(input, output);
 
@@ -2037,9 +2037,9 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell p_zip Tests", () => {
     
     test("p_zip with source cells should combine values", async () => {
-      const cell1 = source_cell("zip1Src");
-      const cell2 = source_cell("zip2Src");
-      const zipFunc = source_cell("zipFuncSrc");
+      const cell1 = source_constant_cell("zip1Src");
+      const cell2 = source_constant_cell("zip2Src");
+      const zipFunc = source_constant_cell("zipFuncSrc");
       const output = construct_cell("srcZipOut");
       
       p_zip([cell1, cell2], zipFunc, output);

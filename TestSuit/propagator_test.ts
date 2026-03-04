@@ -16,7 +16,7 @@ import { curried_map } from "../Helper/Helper";
 import { to_array } from "generic-handler/built_in_generics/generic_collection";
 import { Current_Scheduler } from "ppropogator";
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { p_reactive_dispatch, source_cell, update_source_cell } from "../DataTypes/PremisesSource";
+import { p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 export type TestAssessor = {
     category: "input" | "output" | "scheduler" | "replay_scheduler" | "merge_plan" | "trace_scheduler";
@@ -300,7 +300,7 @@ export const test_propagator_constructor = (testor: (description: string, test: 
         const env = pop_cell_env(cell_names);
 
         // connect all cells to the source cell
-        const source = source_cell("test_source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+        const source = source_constant_cell("test_source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
         env.forEach((cell: Cell<any>) => {
             p_reactive_dispatch(source, cell);
         })

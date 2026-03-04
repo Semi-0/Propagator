@@ -17,7 +17,7 @@ import { describe } from "../Helper/UI";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { process_contradictions } from "../Propagator/Search";
 import { construct_better_set, identify_by, is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set"
-import { length, to_array } from "generic-handler/built_in_generics/generic_collection"
+import { for_each, length, to_array } from "generic-handler/built_in_generics/generic_collection"
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { strongest_value } from "./StrongestValue";
 import { cell_merge } from "./Merge";
@@ -32,7 +32,9 @@ import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
 import { pipe } from "fp-ts/lib/function";
 import { toArray } from "fp-ts/lib/Map";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { strong } from "fp-ts";
+import { filter } from "generic-handler/built_in_generics/generic_collection";
+import { vector_clock_layer } from "sando-layer/Specified/VectorClockLayer";
+import { get_vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 
 export const general_contradiction =  construct_simple_generic_procedure("general_contradiction",
    1, (value: any) => {
@@ -309,9 +311,21 @@ export function make_temp_cell(){
     return construct_cell<any>(name);
 }
 
+export const cell_neighbor_map = (cell: Cell<any>) => {
+  return cell.getNeighbors()
+}
 
-export const cell_neightbor_set = (cell: Cell<any>) => {
-   
+export const cell_dependents = (cell: Cell<any>) => {
+  return Array.from(cell
+      .getNeighbors()
+      .entries()
+      .filter(([_, neighbor]) => neighbor.type.includes(NeighborType.dependents))
+      .map(([_, neighbor]) => neighbor.propagator)
+  )
+}
+
+
+export const cell_neighbor_set = (cell: Cell<any>) => {
   return new Set(cell.getNeighbors().values().map(n => n.propagator));
 }
 

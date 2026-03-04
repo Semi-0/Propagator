@@ -23,7 +23,7 @@ import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
 import { support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out as kick_out_premise, reactive_tell } from "../Helper/UI";
 import { 
-   source_cell as  construct_dependent_cell, 
+   source_constant_cell as  construct_dependent_cell, 
     dependent_update, 
     kick_out_cell, 
     bring_in_cell, 
