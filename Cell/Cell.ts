@@ -28,7 +28,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler, trace_generic_procedure } from "generic-handler/GenericProcedure";
 import { alert_propagators, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { get_children, get_id, mark_for_disposal } from "../Shared/Generics";
+import { get_children, get_id } from "../Shared/Generics";
 import { pipe } from "fp-ts/lib/function";
 import { toArray } from "fp-ts/lib/Map";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
@@ -374,12 +374,14 @@ export function cell_name<A>(cell: Cell<A>){
   return cell.getRelation().get_name()
 }
 
+/** For scheduler use only (cell GC). Callers must not request cell disposal; only propagators are disposed. */
 export function internal_cell_dispose(cell: Cell<any>){
   cell.dispose()
 }
 
-export function dispose_cell(cell: Cell<any>){
-  mark_for_disposal(cell)
+/** @deprecated Cell disposal is done by the scheduler when cells become unreachable. Do not call; no-op. */
+export function dispose_cell(_cell: Cell<any>){
+  // No-op: disposal is propagator-only; scheduler runs cell GC for unreachable cells.
 }
 
 export const cell_downstream = (cell: Cell<any>) => {

@@ -54,6 +54,12 @@ export const get_parent = construct_simple_generic_procedure(
 
 // disposing
 
+/** Duck-check for cell-like items. Used to avoid enqueueing cells (disposal is propagator-only; cells are GC'd by scheduler). */
+const looks_like_cell = (item: any): boolean =>
+  item != null &&
+  typeof item.getNeighbors === "function" &&
+  typeof item.getRelation === "function" &&
+  typeof item.getContent === "function";
 
 export const get_the_id_and_mark_for_disposal = compose(get_id, mark_id_for_disposal)
 
@@ -66,6 +72,8 @@ export const mark_children_for_disposal = (item: any) => {
 }
 
 export const mark_for_disposal = (item: any) => {
-    mark_children_for_disposal(item)
-    get_the_id_and_mark_for_disposal(item)
-}
+    // Disposal is propagator-only; cells are collected by scheduler when unreachable. Do not enqueue cells.
+    if (looks_like_cell(item)) return;
+    mark_children_for_disposal(item);
+    get_the_id_and_mark_for_disposal(item);
+};

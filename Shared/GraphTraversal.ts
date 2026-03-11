@@ -2,7 +2,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import type { Cell } from "../Cell/Cell";
 import { cell_id, cell_level, is_cell } from "../Cell/Cell";
 import type { Propagator } from "../Propagator/Propagator";
-import { is_propagator, propagator_id, propagator_level } from "../Propagator/Propagator";
+import { is_propagator, propagator_id, propagator_level, dispose_propagator } from "../Propagator/Propagator";
 import { cell_snapshot, propagator_snapshot } from "./PublicState";
 import { traverse, get_downstream, get_id, traverse_downstream } from "./Spider";
 
@@ -82,15 +82,12 @@ export const trace_cell = (cell: Cell<any>): TraceResult => {
 };
 
 /**
- * Dispose an entire downstream subgraph, starting from the root cell.
- * Propagators are torn down first, then cells (excluding the root).
+ * Dispose an entire downstream subgraph by marking propagators for disposal.
+ * The scheduler will run cleanup and GC unreachable cells (including those in this subgraph).
+ * Callers must run the scheduler's cleanup_disposed_items() (e.g. via execute_all_tasks_sequential) to perform disposal.
  */
 export function disposeSubtree(root: Cell<any>) {
   const result = trace_cell(root);
-  // Exclude root cell itself
-  result.cells.delete(cell_id(root));
-  // Dispose all propagators first
-  result.propagators.forEach(p => p.dispose());
-  // Then dispose all downstream cells
-  result.cells.forEach(c => c.dispose());
+  result.propagators.forEach(p => dispose_propagator(p));
+  // Do not dispose cells here; scheduler cell GC will collect unreachable cells after propagator cleanup.
 }

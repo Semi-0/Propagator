@@ -21,9 +21,11 @@ import type { SimpleSet } from "../../helper";
 import { make_easy_set } from "../../helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
-import { find_cell_by_id, find_propagator_by_id } from "../../Shared/GraphTraversal";
+import { cell_snapshot } from "../../Shared/PublicState";
+import { find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
-import { cell_neighbor_set, internal_cell_dispose } from "@/cell/Cell";
+import { internal_cell_dispose } from "@/cell/Cell";
+import type { Cell } from "@/cell/Cell";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {
@@ -95,37 +97,36 @@ export const simple_scheduler = (): Scheduler => {
         disposalQueue.add(id)
     }
 
-    const cleanupDisposedItems = () => {
-        disposalQueue.forEach(id => {
-            // Try to find and dispose cell
-            const cell = find_cell_by_id(id)
-            if (cell) {
-                // dispose all neighbors
-                cell.getNeighbors().forEach(n => {
-                    internal_propagator_dispose(n.propagator)
-                    set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, n.propagator)
-                })
+    /** Cells that were inputs/outputs of disposed propagators and now have no neighbors. Scheduler uses this for cell GC; roots (never connected) are not collected. */
+    const collect_unreachable_cells = (touchedCellIds: Set<string>): Cell<any>[] => {
+        const cells = cell_snapshot();
+        return cells.filter(
+            c => touchedCellIds.has(c.getRelation().get_id()) && c.getNeighbors().size === 0
+        );
+    }
 
-                
-                internal_cell_dispose(cell)
-                set_global_state(PublicStateCommand.REMOVE_CELL, cell)
-            }
-            else{
-                console.log("cell not found for disposal", id)
-            }
-            
-            // Try to find and dispose propagator
-            const propagator = find_propagator_by_id(id)
+    const cleanupDisposedItems = () => {
+        const touchedCellIds = new Set<string>();
+
+        // 1. Propagator phase: only propagator ids are in the queue. Collect touched cells, dispose each propagator, remove from state.
+        disposalQueue.forEach(id => {
+            const propagator = find_propagator_by_id(id);
             if (propagator) {
-                internal_propagator_dispose(propagator)
-                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator)
-     
+                propagator.getInputs().forEach(c => { if (c?.getRelation) touchedCellIds.add(c.getRelation().get_id()); });
+                propagator.getOutputs().forEach(c => { if (c?.getRelation) touchedCellIds.add(c.getRelation().get_id()); });
+                internal_propagator_dispose(propagator);
+                set_global_state(PublicStateCommand.REMOVE_PROPAGATOR, propagator);
             }
-            else{
-                console.log("propagator not found for disposal", id)
-            }
-        })
-        disposalQueue.clear()
+        });
+
+        // 2. Cell GC phase: dispose only cells that were touched by disposed propagators and now have no neighbors (roots are not collected).
+        const unreachable = collect_unreachable_cells(touchedCellIds);
+        unreachable.forEach(cell => {
+            internal_cell_dispose(cell);
+            set_global_state(PublicStateCommand.REMOVE_CELL, cell);
+        });
+
+        disposalQueue.clear();
     }
 
     const getDisposalQueueSize = () => {

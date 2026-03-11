@@ -6,7 +6,7 @@
 // This file was ported from the SDF propagator system (Software Design for Flexibility).
 
 import { Primitive_Relation, make_relation, type Relation, is_relation } from "../DataTypes/Relation";
-import { type Cell, update_cell, cell_id, cell_strongest, internal_cell_dispose, NeighborType, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
+import { type Cell, update_cell, cell_id, cell_strongest, NeighborType, summarize_cells, cell_strongest_base_value } from "../Cell/Cell";
 import { set_global_state, get_global_parent, parameterize_parent} from "../Shared/PublicState";
 import { PublicStateCommand } from "../Shared/PublicState";
 import { match_args, register_predicate } from "generic-handler/Predicates";
@@ -299,6 +299,7 @@ export function propagator_upstream(propagator: Propagator): Cell<any>[] {
     return propagator.getInputs()
 }
 
+/// Public disposal is propagator-only; scheduler performs cell GC.
 export function dispose_propagator(propagator: Propagator){
     mark_for_disposal(propagator)
 }
