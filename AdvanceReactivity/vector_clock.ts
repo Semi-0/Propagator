@@ -18,7 +18,6 @@ import { Option } from "effect";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
-import { v4 as uuidv4 } from 'uuid';
 
 
 // because vector clock already mark the source id
@@ -235,7 +234,7 @@ export const compare_two_clock = (a: number | string, b: number | string) => {
 //     return compare_two_clock(a, b) > 0 ? a : b;
 // }
 
-const version_vector_merge = (version_vector1: any, version_vector2: any) => {
+export const merge_vector_clocks = (version_vector1: any, version_vector2: any) => {
     // @ts-ignore
     if (is_constant_clock(version_vector1)) {
         return version_vector2;
@@ -455,7 +454,7 @@ export const layered_vector_clock_forward = (channel: string, obj: LayeredObject
 
     define_layered_procedure_handler(proc, vector_clock_layer, (o: any, ...values: VectorClock[]) => {
         return version_vector_forward(
-            values.reduce((acc, value) => version_vector_merge(acc, value), new Map()), 
+            values.reduce((acc, value) => merge_vector_clocks(acc, value), new Map()), 
             channel
         );
     })

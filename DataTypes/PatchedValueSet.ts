@@ -1,8 +1,13 @@
 /**
  * @fileoverview PatchedValueSet Module
  *
- * A ContentPatch-based value set implementation for managing layered object collections
- * with support for applying transformations (join, remove) from different layers.
+ * @deprecated This module is legacy and should not be extended for new work.
+ * Prefer `ValueSet.ts` and the newer temporary/semantic value-set paths when
+ * possible. Keep this file only for compatibility with older layered patch code.
+ *
+ * A ContentPatch-based value set implementation for managing layered object
+ * collections with support for applying transformations (join, remove) from
+ * different layers.
  *
  * Key Design Principles:
  * - Uses immutable patches to track changes across layers

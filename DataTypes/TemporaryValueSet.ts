@@ -17,7 +17,7 @@ import { get_base_value, the_nothing, is_nothing, is_unusable_value, value_imple
 import { map, filter, reduce, add_item, find, flat_map, for_each, has, remove_item, length, every, some } from "generic-handler/built_in_generics/generic_collection";
 import { strongest_value } from "../Cell/StrongestValue";
 import { pipe } from 'fp-ts/function';
-import { merge_layered, partial_merge } from "../Cell/Merge";
+import { merge_layered, partial_merge, set_merge } from "../Cell/Merge";
 import { get_base_value as layered_get_base_value } from "sando-layer/Basic/Layer";
 import { less_than } from "generic-handler/built_in_generics/generic_arithmetic";
 import { compose, curryArgument } from "generic-handler/built_in_generics/generic_combinator.ts";
@@ -38,7 +38,18 @@ export function substitute<A>(set: TemporaryValueSet<A>, old_elt: A, new_elt: A)
 
 
 // Predicates and handlers
-const is_temporary_value_set = register_predicate("is_temporary_value_set", (value: any) =>  is_better_set(value));
+const has_vector_clock_element = (value: any) => {
+    if (!is_better_set(value)) {
+        return false;
+    }
+
+    return some(value, (element: LayeredObject<any>) => has_vector_clock_layer(element));
+};
+
+const is_temporary_value_set = register_predicate("is_temporary_value_set", (value: any) =>
+     is_better_set(value) && has_vector_clock_element(value)
+);
+
 
 
 
@@ -149,22 +160,46 @@ export const tvs_strongest_consequence = (content: TemporaryValueSet<any>) => re
 )
 
 // ValueSet handlers
-define_generic_procedure_handler(get_base_value,
-    match_args(is_temporary_value_set),
-    (set: TemporaryValueSet<any>) => get_base_value(strongest_consequence(set))
-);
+// define_generic_procedure_handler(get_base_value,
+//     match_args(is_temporary_value_set),
+//     (set: TemporaryValueSet<any>) => get_base_value(strongest_consequence(set))
+// );
 
-define_generic_procedure_handler(is_unusable_value,
-    match_args(is_temporary_value_set),
-    (set: TemporaryValueSet<any>) => is_unusable_value(strongest_consequence(set))
-);
+// define_generic_procedure_handler(is_unusable_value,
+//     match_args(is_temporary_value_set),
+//     (set: TemporaryValueSet<any>) => is_unusable_value(strongest_consequence(set))
+// );
 
-define_generic_procedure_handler(strongest_value,
-    match_args(is_temporary_value_set),
-    tvs_strongest_consequence
-)
+// define_generic_procedure_handler(strongest_value,
+//     match_args(is_temporary_value_set),
+//     tvs_strongest_consequence
+// )
 
 // ValueSet operations
+
+export const install_temporary_value_set_handlers = () => {
+    define_generic_procedure_handler(get_base_value,
+        match_args(is_temporary_value_set),
+        (set: TemporaryValueSet<any>) => get_base_value(strongest_consequence(set))
+    );
+    
+    define_generic_procedure_handler(is_unusable_value,
+        match_args(is_temporary_value_set),
+        (set: TemporaryValueSet<any>) => is_unusable_value(strongest_consequence(set))
+    );
+    
+    define_generic_procedure_handler(strongest_value,
+        match_args(is_temporary_value_set),
+        tvs_strongest_consequence
+    )
+
+    
+    set_merge(
+        merge_temporary_value_set
+    )
+
+    console.log("temporary value set handlers installed");
+}
 
 
 
