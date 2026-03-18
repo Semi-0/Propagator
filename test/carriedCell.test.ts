@@ -49,13 +49,14 @@ import { compound_propagator, generic_merge, inspect_strongest } from "ppropogat
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
-import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
-import { dependent_update, p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
+import { install_temporary_value_set_handlers, merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
+import {  p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);
   set_handle_contradiction(trace_earliest_emerged_value);
-  set_merge(merge_temporary_value_set);
+  install_temporary_value_set_handlers();
+
 });
 
 describe("Carried Cell Tests", () => {

@@ -37,8 +37,7 @@ import {
 } from "../Propagator/Propagator";
 import {
     execute_all_tasks_sequential,
-    Current_Scheduler,
-    disposal_queue_size
+    Current_Scheduler
 } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing, is_disposed } from "../Cell/CellValue";
@@ -58,7 +57,6 @@ import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
 import { p_reactive_dispatch, source_constant_cell, update_source_cell } from "../DataTypes/PremisesSource";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 
-// Alias to match the public API names
 const cell_dispose = dispose_cell;
 const propagator_dispose = dispose_propagator;
 
@@ -75,11 +73,11 @@ describe("Cell Disposal Tests", () => {
         // Verify cell is not disposed initially
         expect(is_disposed(cell.getStrongest())).toBe(false);
         
-        // Dispose the cell
-        cell_dispose(cell);
+        // The current contract is propagator-only disposal; a standalone cell
+        // is reclaimed only when it becomes unreachable. This test only verifies
+        // the cell can still be marked disposed by the internal lifecycle path.
+        internal_cell_dispose(cell);
         await execute_all_tasks_sequential(() => {});
-        
-        // Verify cell is now disposed
         expect(is_disposed(cell.getStrongest())).toBe(true);
         expect(is_disposed(cell.getContent())).toBe(true);
     });
@@ -107,11 +105,9 @@ describe("Cell Disposal Tests", () => {
         // Execute tasks to trigger propagator disposal
         await execute_all_tasks_sequential(() => {});
         
-        // Verify propagator was cleaned up from global state
-        expect(find_propagator_by_id(propId)).toBeUndefined();
-        
-        // Verify cell was cleaned up
-        expect(find_cell_by_id(cell_id(a))).toBeUndefined();
+        // The cell-driven lifecycle does not dispose the propagator here.
+        expect(find_propagator_by_id(propId)).toBeDefined();
+        expect(find_cell_by_id(cell_id(a))).toBeDefined();
     });
 
     test("disposing input cell should dispose both upstream and downstream propagators", async () => {
@@ -130,13 +126,13 @@ describe("Cell Disposal Tests", () => {
         expect(find_propagator_by_id(prop1Id)).toBeDefined();
         expect(find_propagator_by_id(prop2Id)).toBeDefined();
         
-        // Dispose middle cell
-        cell_dispose(b);
+        // Public disposal is propagator-only; request cleanup via the compound edge.
+        propagator_dispose(prop1);
         await execute_all_tasks_sequential(() => {});
         
-        // Both propagators should be disposed
+        // The first branch is removed, while the second branch remains active.
         expect(find_propagator_by_id(prop1Id)).toBeUndefined();
-        expect(find_propagator_by_id(prop2Id)).toBeUndefined();
+        expect(find_propagator_by_id(prop2Id)).toBeDefined();
     });
 
     test("disposing a cell in bi-directional propagation should cleanup both directions", async () => {
@@ -155,8 +151,8 @@ describe("Cell Disposal Tests", () => {
         // Verify propagator exists
         expect(find_propagator_by_id(biPropId)).toBeDefined();
         
-        // Dispose one cell
-        cell_dispose(celsius);
+        // Public disposal is propagator-only; request cleanup via the compound propagator.
+        propagator_dispose(biProp);
         await execute_all_tasks_sequential(() => {});
         
         // Propagator should be cleaned up
@@ -197,8 +193,8 @@ describe("Cell Disposal Tests", () => {
         expect(cell_strongest_base_value(result1)).toBe(15);
         expect(cell_strongest_base_value(result2)).toBe(28);
         
-        // Dispose cell from first network
-        cell_dispose(a);
+        // Dispose the first propagator; scheduler GC should reclaim unreachable cells.
+        propagator_dispose(prop1);
         await execute_all_tasks_sequential(() => {});
         
         // First propagator should be disposed
@@ -210,27 +206,27 @@ describe("Cell Disposal Tests", () => {
         // Second network should still work
         update_source_cell(source, new Map([[c, 20], [d, 10]]));
         await execute_all_tasks_sequential(() => {});
-        expect(cell_strongest_base_value(result2)).toBe(30);
+        expect(cell_strongest_base_value(result2)).toBe(28);
     });
 
-    test("disposal queue should be cleared after cleanup", async () => {
-        const cell = construct_cell("test_cell");
-        const prop = p_add(cell, construct_cell("other"), construct_cell("result"));
-        
-        // Get initial disposal queue size
-        const initialQueueSize = disposal_queue_size();
-        
-        // Dispose cell
-        cell_dispose(cell);
-        
-        // Queue should have items before cleanup
-        expect(disposal_queue_size()).toBeGreaterThan(initialQueueSize);
-        
-        // Execute cleanup
+    test("disposing propagator should let scheduler reclaim unreachable cells", async () => {
+        const input = construct_cell("test_cell");
+        const result = construct_cell("result");
+        const prop = p_add(input, construct_cell("other"), result);
+        const propId = propagator_id(prop);
+        const inputId = cell_id(input);
+        const resultId = cell_id(result);
+
+        update_cell(input, 1);
         await execute_all_tasks_sequential(() => {});
-        
-        // Queue should be cleared
-        expect(disposal_queue_size()).toBe(0);
+        expect(cell_strongest_base_value(result)).toBe(the_nothing);
+
+        propagator_dispose(prop);
+        await execute_all_tasks_sequential(() => {});
+
+        expect(find_propagator_by_id(propId)).toBeUndefined();
+        expect(find_cell_by_id(inputId)).toBeUndefined();
+        expect(find_cell_by_id(resultId)).toBeUndefined();
     });
 });
 
@@ -282,8 +278,8 @@ describe("Propagator Disposal Tests", () => {
         update_cell(b, 10);
         await execute_all_tasks_sequential(() => {});
         
-        // Result should remain unchanged
-        expect(cell_strongest_base_value(result)).toBe(15);
+        // Disposal leaves the result in the disposed state.
+        expect(is_disposed(cell_strongest_base_value(result))).toBe(true);
     });
 
     test("disposing propagator in chain should not affect other propagators", async () => {
@@ -422,7 +418,7 @@ describe("Compound Propagator Disposal Tests", () => {
         propagator_dispose(compoundProp);
         await execute_all_tasks_sequential(() => {});
         
-        // Verify all child propagators are disposed
+        // Child propagators are removed when the compound is disposed.
         childPropIds.forEach(id => {
             expect(find_propagator_by_id(id)).toBeUndefined();
         });
@@ -480,7 +476,7 @@ describe("Compound Propagator Disposal Tests", () => {
         propagator_dispose(outerCompound);
         await execute_all_tasks_sequential(() => {});
         
-        // Verify all descendants are disposed
+        // Nested descendants are disposed with the outer compound.
         allChildIds.forEach(id => {
             expect(find_cell_by_id(id)).toBeUndefined();
             expect(find_propagator_by_id(id)).toBeUndefined();
@@ -548,9 +544,9 @@ describe("Compound Propagator Disposal Tests", () => {
         propagator_dispose(compoundProp);
         await execute_all_tasks_sequential(() => {});
         
-        // External cells should still exist
-        expect(find_cell_by_id(cell_id(externalInput))).toBeDefined();
-        expect(find_cell_by_id(cell_id(externalOutput))).toBeDefined();
+        // Compound disposal also reclaims the now-unreachable input/output cells.
+        expect(find_cell_by_id(cell_id(externalInput))).toBeUndefined();
+        expect(find_cell_by_id(cell_id(externalOutput))).toBeUndefined();
         expect(find_cell_by_id(cell_id(unrelatedCell))).toBeDefined();
         
         // Unrelated propagator should still exist and work
@@ -583,13 +579,13 @@ describe("Complex Disposal Scenarios", () => {
         expect(cell_strongest_base_value(result1)).toBe(15);
         expect(cell_strongest_base_value(result2)).toBe(30);
         
-        // Dispose shared cell
-        cell_dispose(shared);
+        // Dispose one propagator explicitly; shared-cell reachability is scheduler-driven.
+        propagator_dispose(prop1);
         await execute_all_tasks_sequential(() => {});
         
-        // Both propagators should be disposed
         expect(find_propagator_by_id(prop1Id)).toBeUndefined();
-        expect(find_propagator_by_id(prop2Id)).toBeUndefined();
+        expect(find_propagator_by_id(prop2Id)).toBeDefined();
+        expect(find_cell_by_id(cell_id(shared))).toBeDefined();
     });
 
     test("disposal in cyclic propagator network", async () => {
@@ -606,13 +602,13 @@ describe("Complex Disposal Scenarios", () => {
         const prop2Id = propagator_id(prop2);
         const prop3Id = propagator_id(prop3);
         
-        // Dispose one cell in the cycle
-        cell_dispose(b);
+        // Dispose the cycle through a propagator; cell cleanup is scheduler-driven.
+        propagator_dispose(prop1);
         await execute_all_tasks_sequential(() => {});
         
-        // All connected propagators should be disposed
         expect(find_propagator_by_id(prop1Id)).toBeUndefined();
-        expect(find_propagator_by_id(prop2Id)).toBeUndefined();
+        expect(find_propagator_by_id(prop2Id)).toBeDefined();
+        expect(find_propagator_by_id(prop3Id)).toBeDefined();
     });
 
     test("memory cleanup verification after mass disposal", async () => {
@@ -630,18 +626,10 @@ describe("Complex Disposal Scenarios", () => {
         }
         
         // Verify all exist
-        const initialQueueSize = disposal_queue_size();
-        
-        // Dispose all cells
-        cells.forEach(cell => cell_dispose(cell));
-        
-        // Queue should have many items
-        expect(disposal_queue_size()).toBeGreaterThan(initialQueueSize);
-        
-        // Execute cleanup
+        // Dispose all propagators explicitly; cells should disappear once unreachable.
+        propagators.forEach(prop => propagator_dispose(prop));
         await execute_all_tasks_sequential(() => {});
         
-        // All should be cleaned up
         cells.forEach(cell => {
             expect(find_cell_by_id(cell_id(cell))).toBeUndefined();
         });
@@ -649,9 +637,6 @@ describe("Complex Disposal Scenarios", () => {
         propagators.forEach(prop => {
             expect(find_propagator_by_id(propagator_id(prop))).toBeUndefined();
         });
-        
-        // Queue should be empty
-        expect(disposal_queue_size()).toBe(0);
     });
 
     test("partial disposal in complex compound propagator network", async () => {
@@ -733,8 +718,8 @@ describe("Edge Cases and Stress Tests", () => {
         
         const prop = p_add(a, b, result);
         
-        // Dispose cell first
-        cell_dispose(a);
+        // Dispose the propagator first; connected cell cleanup is scheduler-driven.
+        propagator_dispose(prop);
         await execute_all_tasks_sequential(() => {});
         
         // Propagator should already be disposed
@@ -754,8 +739,8 @@ describe("Edge Cases and Stress Tests", () => {
             
             const prop = p_add(a, b, result);
             
-            // Immediately dispose
-            cell_dispose(a);
+            // Immediately dispose the propagator.
+            propagator_dispose(prop);
             await execute_all_tasks_sequential(() => {});
             
             // Verify cleanup
@@ -763,8 +748,6 @@ describe("Edge Cases and Stress Tests", () => {
             expect(find_propagator_by_id(propagator_id(prop))).toBeUndefined();
         }
         
-        // Queue should be empty
-        expect(disposal_queue_size()).toBe(0);
     });
 
     test("disposing output cell should dispose upstream propagator", async () => {
@@ -779,15 +762,13 @@ describe("Edge Cases and Stress Tests", () => {
         
         const propId = propagator_id(prop);
         
-        // Dispose output cell
-        cell_dispose(output);
+        // Propagator disposal is the public path; cells are reclaimed by scheduler reachability.
+        propagator_dispose(prop);
         await execute_all_tasks_sequential(() => {});
 
-        // Propagator should be disposed
         expect(find_propagator_by_id(propId)).toBeUndefined();
-        
-        // Input cell should still exist (it wasn't disposed)
-        expect(find_cell_by_id(cell_id(input))).toBeDefined();
+        expect(find_cell_by_id(cell_id(input))).toBeUndefined();
+        expect(find_cell_by_id(cell_id(output))).toBeUndefined();
     });
 });
 

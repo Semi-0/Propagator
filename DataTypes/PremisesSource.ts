@@ -48,6 +48,7 @@ const register_source_cell = (cell: Cell<any>) => {
     const premises = cell_id(cell);
     register_premise(premises, cell);
     dependents_cells.set(premises, cell);
+    dependents_cells.set(cell_name(cell), cell);
 }
 
 

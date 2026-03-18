@@ -13,18 +13,19 @@ import type { Cell } from "@/cell/Cell";
 import {
     construct_cell,
     cell_strongest_base_value,
+    cell_id,
 } from "@/cell/Cell";
 import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { the_nothing } from "@/cell/CellValue";
 import { p_add, p_subtract, p_multiply, p_divide } from "../Propagator/BuiltInProps";
 import { set_merge } from "@/cell/Merge";
-import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
+import { install_temporary_value_set_handlers, merge_temporary_value_set } from "../DataTypes/TemporaryValueSet";
 import { support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out as kick_out_premise, reactive_tell } from "../Helper/UI";
 import { 
    source_constant_cell as  construct_dependent_cell, 
-    dependent_update, 
+    update_source_cell, 
     kick_out_cell, 
     bring_in_cell, 
     internal_clear_source_cells,
@@ -35,14 +36,51 @@ import {
 } from "../DataTypes/PremisesSource";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
-import "../DataTypes/register_vector_clock_patchedValueSet";
 import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
+
+const source_cells_by_name = new Map<string, Cell<any>>();
+
+const dependent_update = (source_name: string) => (updates: Map<Cell<any>, any>) => {
+    const source_cell = has_source_cell(source_name)
+        ? get_source_cell(source_name)
+        : construct_dependent_cell(source_name);
+
+    if (source_cell === undefined) {
+        throw new Error(`Unable to create source cell: ${source_name}`);
+    }
+
+    source_cells_by_name.set(source_name, source_cell);
+
+    for (const [target_cell, value] of updates) {
+        update_source_cell(target_cell, value);
+    }
+
+    return source_cell;
+};
+
+const kick_out_source = (source_name: string) => {
+    const source_cell = source_cells_by_name.get(source_name);
+    if (!source_cell) {
+        console.error(`dependence cell not found ${source_name}`);
+        return;
+    }
+    kick_out(cell_id(source_cell));
+};
+
+const bring_in_source = (source_name: string) => {
+    const source_cell = source_cells_by_name.get(source_name);
+    if (!source_cell) {
+        console.error(`dependence cell not found ${source_name}`);
+        return;
+    }
+    bring_in(cell_id(source_cell));
+};
 
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
 
-    set_merge(merge_temporary_value_set);
+    install_temporary_value_set_handlers();
 });
 
 describe("TemporaryValueSet Propagator Integration Tests", () => {
@@ -232,8 +270,8 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             update_sourceA1(new Map([[cellA, 7]]))
             update_sourceB1(new Map([[cellB, 4]]))
 
-            kick_out("A")
-            kick_out("B")
+            kick_out_source("A")
+            kick_out_source("B")
   
             
             await execute_all_tasks_sequential((error: Error) => {
@@ -271,7 +309,7 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             const update_sourceA1 = dependent_update("sourceA1");
             update_sourceA1(new Map([[cellA, 7]]));
 
-            kick_out("sourceA");
+            kick_out_source("sourceA");
             
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR 2:", error.message);
@@ -314,7 +352,7 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             let result_mixed_2 = cell_strongest_base_value(output);
             expect(result_mixed_2).toBe(8); 
 
-            kick_out("supportOnlyA")
+            kick_out_source("supportOnlyA")
 
             await execute_all_tasks_sequential((error: Error) => {
                 if (error) console.log("ERROR adding VC:", error.message);
@@ -349,8 +387,8 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             update_sourceA_v2(new Map([[cellA, 5]]));
             update_sourceB_v2(new Map([[cellB, 4]]));
             
-            kick_out("sourceA_v1");
-            kick_out("sourceB_v1");
+            kick_out_source("sourceA_v1");
+            kick_out_source("sourceB_v1");
             
             await execute_all_tasks_sequential((error: Error) => {});
             let result2 = cell_strongest_base_value(output);
@@ -363,8 +401,8 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             update_sourceA_v3(new Map([[cellA, 7]]));
             update_sourceB_v3(new Map([[cellB, 6]]));
             
-            kick_out("sourceA_v2");
-            kick_out("sourceB_v2");
+            kick_out_source("sourceA_v2");
+            kick_out_source("sourceB_v2");
             
             await execute_all_tasks_sequential((error: Error) => {});
             let result3 = cell_strongest_base_value(output);
@@ -419,15 +457,15 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             const update_supportC = dependent_update("supportC");
             update_supportC(new Map([[cellB, 20]]));
             
-            kick_out("supportB");
+            kick_out_source("supportB");
             await execute_all_tasks_sequential((error: Error) => {});
             
             let result2 = cell_strongest_base_value(output);
             expect(result2).toBe(30); // 10 + 20
             
             // Now kick out one of the conflicting premises
-            kick_out("supportC");
-            bring_in("supportB");
+            kick_out_source("supportC");
+            bring_in_source("supportB");
             
             await execute_all_tasks_sequential((error: Error) => {});
             
@@ -459,7 +497,7 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             const update_supportC = dependent_update("supportC");
             update_supportC(new Map([[cellA, 3]]));
             
-            kick_out("supportA");
+            kick_out_source("supportA");
             await execute_all_tasks_sequential((error: Error) => {});
             
             let result2 = cell_strongest_base_value(output);
@@ -469,8 +507,8 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             expect(result2).toBe(12); // 20 - 8 (5*4 - 3*4)
             
             // Resolve by kicking out the conflicting support premise
-            kick_out("supportC");
-            bring_in("supportA");
+            kick_out_source("supportC");
+            bring_in_source("supportA");
          
             await execute_all_tasks_sequential((error: Error) => {});
             
@@ -516,10 +554,10 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             update_supportA_v2(new Map([[cellA, 7]]));
             update_supportB_v2(new Map([[cellB, 4]]));
             
-            kick_out("supportA_v1");
-            kick_out("supportB_v1");
-            kick_out("supportC");
-            kick_out("supportD");
+            kick_out_source("supportA_v1");
+            kick_out_source("supportB_v1");
+            kick_out_source("supportC");
+            kick_out_source("supportD");
             
             await execute_all_tasks_sequential((error: Error) => {});
             
@@ -567,21 +605,21 @@ describe("TemporaryValueSet Propagator Integration Tests", () => {
             expect(result2).toBe(20); // 20 + 2
             
             // Resolve cascade: remove old supports one by one
-            kick_out("sourceA_v1");
+            kick_out_source("sourceA_v1");
             
             await execute_all_tasks_sequential((error: Error) => {});
             
             let resultAfterD = cell_strongest_base_value(output);
             expect(resultAfterD).toBe(20); // 22 - 5
             
-            kick_out("sourceB_v1");
+            kick_out_source("sourceB_v1");
             
             await execute_all_tasks_sequential((error: Error) => {});
             
             let resultAfterE = cell_strongest_base_value(output);
             expect(resultAfterE).toBe(20); // 17 - 2
             
-            kick_out("sourceC_v1");
+            kick_out_source("sourceC_v1");
             
 
             console.log("runned scheduler")

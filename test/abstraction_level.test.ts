@@ -19,7 +19,7 @@ import { set_merge } from "../Cell/Merge";
 beforeEach(() => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     set_merge(merge_value_sets);
-    set_merge(merge_value_sets);
+   ;
 });
 
 describe("Abstraction Level Tests", () => {
