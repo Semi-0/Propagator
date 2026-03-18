@@ -340,9 +340,11 @@ export const test_propagator_constructor = (testor: (description: string, test: 
 
 export const test_propagator = test_propagator_constructor(test)
 
-export const test_propagator_only = test_propagator_constructor(test.only)
+export const test_propagator_only = (...args: Parameters<typeof test_propagator_constructor>) =>
+  test_propagator_constructor(test.only)(...args as any)
 
-export const test_propagator_only_with_merge_plan = (merge_plan: (content: any, increment: any) => any) => test_propagator_constructor(test.only, merge_plan)
+export const test_propagator_only_with_merge_plan = (merge_plan: (content: any, increment: any) => any) =>
+  test_propagator_constructor(test.only, merge_plan)
 
 export const reactive_input = (value: any, name: string) =>
     input_accessor(name, (cell: Cell<any>, env: Map<string, Cell<any>>) => {
