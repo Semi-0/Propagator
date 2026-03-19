@@ -73,7 +73,8 @@ export function construct_propagator(
                                  interested_in: NeighborType[] = [NeighborType.updated]
                                 ): Propagator {
   const relation = make_relation(name, get_global_parent(), id);
-  var activation: (() => void) | null = activate;
+  var activation: (() => void) | null = () => parameterize_parent(relation)(activate);
+
 
 
   const propagator: Propagator = {
@@ -151,16 +152,8 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
 
                 if (any_unusable_values(inputs_values)){
                     // do nothing
-                    // if (name === "+"){
-                        // console.log(name + " propagation unusable")
-                        // inputs_values.forEach(value => {
-                        //     console.log(to_string(value))
-                        // })
-
-                    // }
                 }
                 else{
-                    
                     const output_value = f(...inputs_values);
 
                     if ((output) && (is_not_no_compute(output_value))){
@@ -195,30 +188,14 @@ export function compound_propagator(inputs: Cell<any>[], outputs: Cell<any>[], t
         inputs,
         outputs,
         () => {
-   
            const inputs_unusable = any_unusable_values(inputs.map(cell_strongest)) 
            const should_build = !(built || inputs_unusable)
            if (should_build) {
-                parameterize_parent(propagator.getRelation())(() => {
+               
                     to_build();
-                });
+              
                 built = true;
            } 
-           else{
-            // if (inputs_unusable){
-            //     if (name === "expand_closures") {
-            //         console.log("summarizing expand_closures")
-            //         console.log("inputs unusable", inputs.map(cell_strongest))
-            //         // const any_unusable_values = (arr: Cell<any>[]) => trace_generic_procedure(console.log, any_unusable_values, [arr])
-            //         // any_unusable_values(inputs.map(cell_strongest))
-            //         // console.log(propagator.summarize())
-            //        }
-        
-                
-            // }
-
-           }
-
         },
         name,
         id

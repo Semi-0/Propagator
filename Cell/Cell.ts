@@ -184,6 +184,7 @@ export function primitive_construct_cell<A>(
   }
 
   function test_content(): void {
+    // const new_strongest = trace_generic_procedure(console.log, strongest_value, [content])
     const new_strongest = strongest_value(content)
 
     if (is_equal(new_strongest, strongest)){

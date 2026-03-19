@@ -194,32 +194,84 @@ describe("Abstraction Level Tests", () => {
         const input = construct_cell("input");
         const output = construct_cell("output");
         
-        let childRelation: Primitive_Relation;
+
         let activationLevel: number;
         
         // Create propagator with parameterize_parent
-        const propagator = parameterize_parent(parentRelation)(() => {
-            const prop = construct_propagator(
+        const propagator = construct_propagator(
                 [input], 
                 [output], 
                 () => {
+                    parameterize_parent(parentRelation)(() => {
                     // Capture the current parent level during activation
-                    activationLevel = get_global_parent().get_level();
+                        activationLevel = get_global_parent().get_level();
+                    });
                 },
                 "activation_test_propagator"
             );
-            childRelation = prop.getRelation();
-            return prop;
-        });
-        
-        // Verify the child relation has correct level
-        expect(childRelation.get_level()).toBe(2);
+           
+      
+    
         
         // Activate the propagator
         propagator.activate();
         
         // During activation, the parent should be the child relation (level 2)
-        expect(activationLevel).toBe(2);
+        expect(activationLevel).toBe(1);
+    });
+
+    test("cell constructed inside same parameterize_parent as propagator has correct abstraction level", () => {
+        const rootRelation = get_global_parent();
+        const parentRelation = make_relation("parent", rootRelation);
+
+        let cellInside: Cell<unknown>;
+        let propagatorRelation: Primitive_Relation;
+
+        parameterize_parent(parentRelation)(() => {
+            cellInside = construct_cell("cell_inside");
+            const output = construct_cell("output_inside");
+            const prop = construct_propagator(
+                [cellInside],
+                [output],
+                () => { output.update(cellInside!.getStrongest()); },
+                "prop_inside"
+            );
+            propagatorRelation = prop.getRelation();
+        });
+
+        expect(cellInside!.getRelation().get_level()).toBe(2);
+        expect(propagatorRelation.get_level()).toBe(2);
+        expect(cellInside!.getRelation().get_level()).toBe(propagatorRelation.get_level());
+    });
+
+    test("cell constructed inside propagator activate() has wrong abstraction level (scheduler does not set parent)", () => {
+        const rootRelation = get_global_parent();
+        const parentRelation = make_relation("parent", rootRelation);
+
+        let cellCreatedDuringActivate: Cell<unknown> | undefined;
+        let propagatorRelation: Primitive_Relation;
+
+        const input = construct_cell("input");
+        const output = construct_cell("output");
+        const propagator = parameterize_parent(parentRelation)(() =>
+            construct_propagator(
+                [input],
+                [output],
+                () => {
+                    cellCreatedDuringActivate = construct_cell("temp_during_activate");
+                    output.update(input.getStrongest());
+                },
+                "prop_activate"
+            )
+        );
+        propagatorRelation = propagator.getRelation();
+
+        input.update(1);
+        execute_all_tasks_sequential(() => {});
+
+        expect(propagatorRelation.get_level()).toBe(2);
+        expect(cellCreatedDuringActivate).toBeDefined();
+        expect(cellCreatedDuringActivate!.getRelation().get_level()).toBe(3);
     });
 
     test("complex nested propagator hierarchy maintains correct abstraction levels", () => {

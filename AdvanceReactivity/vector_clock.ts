@@ -18,6 +18,7 @@ import { Option } from "effect";
 import { is_array, is_number, is_string } from "generic-handler/built_in_generics/generic_predicates";
 
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
+import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 
 
 // because vector clock already mark the source id
@@ -234,6 +235,11 @@ export const compare_two_clock = (a: number | string, b: number | string) => {
 //     return compare_two_clock(a, b) > 0 ? a : b;
 // }
 
+const display_map = (map: Map<any, any>) => {
+
+    return `Map(${Array.from(map.entries()).map(([key, value]) => `${key}: ${to_string(value)}`).join(", ")})`
+}
+
 export const merge_vector_clocks = (version_vector1: any, version_vector2: any) => {
     // @ts-ignore
     if (is_constant_clock(version_vector1)) {
@@ -245,15 +251,6 @@ export const merge_vector_clocks = (version_vector1: any, version_vector2: any) 
     }
     
     const new_version_vector = new Map(version_vector1);
-
-    // @ts-ignore
-    if (is_constant_clock(version_vector1)) {
-        return version_vector2;
-    }
-    // @ts-ignore
-    else if (is_constant_clock(version_vector2)) {
-        return version_vector1;
-    }
    
 
     version_vector2.forEach((value: Clock, source: SourceID) => {
@@ -267,7 +264,6 @@ export const merge_vector_clocks = (version_vector1: any, version_vector2: any) 
         ),
         new_version_vector
     )
-
     });
     return new_version_vector;
 }
