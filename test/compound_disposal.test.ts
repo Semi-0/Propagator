@@ -10,10 +10,13 @@ import { compound_propagator, propagator_id, function_to_primitive_propagator, d
 import { find_cell_by_id, find_propagator_by_id } from "../Shared/GraphTraversal";
 import { update } from "../AdvanceReactivity/interface";
 import { is_child, get_children } from "../Shared/Generics";
+import { init_propagator_system } from "../index";
 
 describe("Compound Propagator Child Disposal", () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         set_global_state(PublicStateCommand.CLEAN_UP);
+
+        await init_propagator_system();
         set_global_state(PublicStateCommand.SET_SCHEDULER, simple_scheduler());
         clear_all_tasks();
         install_temporary_value_set_handlers();

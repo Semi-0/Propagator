@@ -54,6 +54,8 @@
 
 // Initialize all generic procedure handlers (must be imported early to avoid circular dependencies)
 
+import { init_propagator_system } from "./init_propagator_system";
+
 // Cell-related imports
 import { 
   construct_cell, 
@@ -373,6 +375,8 @@ export function get_disposal_queue_size() {
 export function cleanup() {
   Current_Scheduler.cleanup_disposed_items();
 }
+
+export { init_propagator_system };
 
 // ============================================================================
 // REACTIVE CONSTANTS

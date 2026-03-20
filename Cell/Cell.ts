@@ -28,7 +28,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { construct_simple_generic_procedure, define_generic_procedure_handler, trace_generic_procedure } from "generic-handler/GenericProcedure";
 import { alert_propagators, Current_Scheduler } from "../Shared/Scheduler/Scheduler";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
-import { get_children, get_id } from "../Shared/Generics";
+
 import { pipe } from "fp-ts/lib/function";
 import { toArray } from "fp-ts/lib/Map";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
@@ -80,7 +80,7 @@ export interface Cell<A> {
 }
 
 // Explicit type export for better compatibility with bundlers
-export type { Cell };
+export type { Cell as CellInterface };
 
 export const is_cell = register_predicate("is_cell", (a: any): a is Cell<any> => 
   a !== null && a !== undefined 
@@ -235,7 +235,7 @@ export function primitive_construct_cell<A>(
     //  }
     },
     removeNeighbor: (propagator: Propagator) => {
-      neighbors.delete(get_id(propagator));
+      neighbors.delete(propagator.getRelation().get_id());
       alert_interested_propagators(neighbors, NeighborType.neighbor_removed)
     },
     summarize: () => {
@@ -443,11 +443,11 @@ define_generic_procedure_handler(to_string, match_args(is_cell), (cell: Cell<any
 // Register identify_by handler for Cell
 define_generic_procedure_handler(identify_by, match_args(is_cell), cell_id);
 
-// Register get_id handler for Cell
-define_generic_procedure_handler(get_id, match_args(is_cell), cell_id);
+// // Register get_id handler for Cell
+// define_generic_procedure_handler(get_id, match_args(is_cell), cell_id);
 
-// Register get_children handler for Cell
-define_generic_procedure_handler(get_children, match_args(is_cell), cell_children);
+// // Register get_children handler for Cell
+// define_generic_procedure_handler(get_children, match_args(is_cell), cell_children);
 
 // Worker cell support - exported for use with worker threads
 export { construct_worker_cell, createSyncWorkerCell } from "./WorkerCell/WorkerCell";

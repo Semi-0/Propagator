@@ -110,6 +110,15 @@ bun install
 ```
 
 ## Usage
+### Initialization
+
+Some subsystems rely on generic-procedure handlers (e.g. `get_id`, `get_children`).
+Call `init_propagator_system()` once during your app/test bootstrap to install them.
+
+```ts
+import { init_propagator_system } from "ppropogator";
+await init_propagator_system();
+```
 
 ### Running Tests
 

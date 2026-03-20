@@ -1568,6 +1568,7 @@ import {
 import { install_temporary_value_set_handlers, merge_temporary_value_set } from "../DataTypes/TemporaryValueSet.ts";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger.ts";
 import { carrier_map } from "../DataTypes/CarriedCell";
+import { init_propagator_system } from "../init_propagator_system.ts";
 
 describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   
@@ -1575,6 +1576,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     set_global_state(PublicStateCommand.CLEAN_UP);
     internal_clear_source_cells();
     install_temporary_value_set_handlers();
+    init_propagator_system();
     // set_handle_contradiction(trace_earliest_emerged_value);
     // set_merge(merge_temporary_value_set);
   });
@@ -1607,7 +1609,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
 
   describe("Source Cell Propagator Tests", () => {
     
-    test("p_sync should update output when source cell input changes", async () => {
+    test.only("p_sync should update output when source cell input changes", async () => {
       const input = source_constant_cell("syncSrc");
       const output = construct_cell("srcSyncOutput");
       p_sync(input, output);

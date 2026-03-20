@@ -5,6 +5,8 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { match_args } from "generic-handler/Predicates";
 import { mark_for_disposal as mark_id_for_disposal} from "./Scheduler/Scheduler";
 import { is_relation, type Relation } from "../DataTypes/Relation";
+import { cell_children, cell_id, is_cell } from "@/cell/Cell";
+import { is_propagator, propagator_id, propagator_children } from "../Propagator/Propagator";
 // import type { Propagator } from "ppropogator";
 
 
@@ -15,8 +17,27 @@ export const get_id = construct_simple_generic_procedure(
     throw new Error("get_id is not implemented with:" + x)
    } 
 )
+// needs install get_id_handler package for relationship cell and propagator
 
-
+export const install_get_id_generic_package = () => {
+    define_generic_procedure_handler(
+        get_id,
+        match_args(is_relation),
+        (relation: Relation) => {
+            return relation.get_id();
+        }
+    )
+    define_generic_procedure_handler(
+        get_id,
+        match_args(is_cell),
+        cell_id
+    )
+    define_generic_procedure_handler(
+        get_id,
+        match_args(is_propagator),
+        propagator_id
+    )
+}
 
 export const get_children = construct_simple_generic_procedure(
     "get_children",
@@ -27,13 +48,35 @@ export const get_children = construct_simple_generic_procedure(
     }
 )
 
-define_generic_procedure_handler(get_children, match_args(is_relation), (relation: Relation) => {
-    return relation.get_children();
-});
+export const install_get_children_generic_package = () => {
+    define_generic_procedure_handler(
+        get_children,
+        match_args(is_relation),
+        (relation: Relation) => {
+            return relation.get_children();
+        }
+    )
+    define_generic_procedure_handler(
+        get_children,
+        match_args(is_cell),
+        cell_children
+    )
+    define_generic_procedure_handler(
+        get_children,
+        match_args(is_propagator),
+        propagator_children
+    )
+}
 
-define_generic_procedure_handler(get_id, match_args(is_relation), (relation: Relation) => {
-    return relation.get_id();
-});
+
+
+// define_generic_procedure_handler(get_children, match_args(is_relation), (relation: Relation) => {
+//     return relation.get_children();
+// });
+
+// define_generic_procedure_handler(get_id, match_args(is_relation), (relation: Relation) => {
+//     return relation.get_id();
+// });
 
 export const is_child = (a: any, b: any) => {
     // a is a child of b 
@@ -51,6 +94,7 @@ export const get_parent = construct_simple_generic_procedure(
         return null;
     }
 )
+
 
 // disposing
 
@@ -77,3 +121,9 @@ export const mark_for_disposal = (item: any) => {
     mark_children_for_disposal(item);
     get_the_id_and_mark_for_disposal(item);
 };
+
+
+export const install_generics_package = () => {
+    install_get_id_generic_package();
+    install_get_children_generic_package();
+}

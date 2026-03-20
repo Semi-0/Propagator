@@ -1,8 +1,9 @@
-import { cell_downstream, cell_id, cell_name, cell_upstream, is_cell, type Cell } from "../Cell/Cell";
+import { compose } from "generic-handler/built_in_generics/generic_combinator";
+import { cell_downstream, cell_id, cell_name, cell_upstream, is_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 import { is_propagator, propagator_downstream, propagator_id, propagator_name, propagator_upstream } from "../Propagator/Propagator";
 import { flat_map } from "generic-handler/built_in_generics/generic_collection";
-import { cell_strongest_base_value } from "ppropogator";
 import { is_array, is_atom } from "generic-handler/built_in_generics/generic_predicates";
+import { filter } from "generic-handler/built_in_generics/generic_collection";
 
 // generic graph traverse agent
 
@@ -15,6 +16,8 @@ export const traverse = (step: (x: any, go: (x: any) => any[]) => any[], final: 
         return final(go(target));
     }
 }
+
+
 
 
 export const get_downstream = (x: any) => {
@@ -117,6 +120,66 @@ export const traverse_downstream = (final: (traversed: any[]) => any) => travers
     final
 )
 
+export const traverse_upstream = (final: (traversed: any[]) => any) => traverse(
+    (node: any, go: (x: any) => any[]) => {
+        const upstream = get_upstream(node)
+        if (upstream.length === 0) {
+            return [node]
+        }
+        else {
+            const upstream_traversed = flat_map(upstream, go)
+            return unshift(node, upstream_traversed)
+        }
+    },
+    final
+)
+
+
+export const cyclic_prevention_traverse =
+  (final: (traversed: any[]) => any) =>
+  (start: any) => {
+    const visited = new Set<any>();
+
+    return traverse(
+      (node: any, go: (x: any) => any[]) => {
+        if (visited.has(node)) {
+          return [];
+        }
+
+        visited.add(node);
+
+        const upstream = get_upstream(node);
+        if (upstream.length === 0) {
+          return [node];
+        }
+
+        const upstream_traversed = flat_map(upstream, go);
+        return unshift(node, upstream_traversed);
+      },
+      final
+    )(start);
+  };
+
+// export const cyclic_prevention_traverse_upstream = (final: (traversed: any[]) => any) => traverse(
+//     (node: any, go: (x: any) => any[]) => {
+//         const upstream = get_upstream(node)
+//         if (upstream.length === 0) {
+//             return [node]
+//         }
+//         else {
+
+//             const go_without_cycle = (x: any) => {
+//                 if ()
+//             } 
+//             const upstream_traversed = flat_map(upstream, go)
+//             return unshift(node, upstream_traversed)
+//         }
+//     },
+//     final
+// )
+
+
+
 export const display_value = (a: any) => {
     if (is_cell(a)) {
         return "[ cell: " + get_name(a) + " : " + cell_strongest_base_value(a) + " ]"
@@ -184,9 +247,9 @@ export const is_neighbors = (x: any) => x === "neighbors"
 // this api is used as a interface to be easier to understand
 // because it provides a metaphor which grounds user's understanding in the real world
 interface Spider {
-    get_location(): any 
-    goto(location: any): void 
-    get_web(): any[] 
+    get_location(): any
+    goto(location: any): void
+    get_web(): Set<any>
 }
 
 export const create_spider = (current_location: any): Spider => {
@@ -205,18 +268,18 @@ export const create_spider = (current_location: any): Spider => {
             )(current_location, location).flatMap((path: any[]) => path)
 
             if (perhaps_upstream.length > 0) {
-                perhaps_upstream.forEach(path => web.add(path))
+                perhaps_upstream.forEach((path: any) => web.add(path))
             }
             else if (perhaps_downstream.length > 0) {
-                perhaps_downstream.forEach(path => web.add(path))
+                perhaps_downstream.forEach((path: any) => web.add(path))
             }
             else {
-                perhaps_upstream.forEach(path => web.add(path))
-                perhaps_downstream.forEach(path => web.add(path))
+                perhaps_upstream.forEach((path: any) => web.add(path))
+                perhaps_downstream.forEach((path: any) => web.add(path))
             }
             current_location = location
         },
-        get_web: () => web
+        get_web: (): Set<any> => web
     }
 }
 // higer order function on spider?
