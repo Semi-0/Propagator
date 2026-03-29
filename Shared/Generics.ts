@@ -5,8 +5,8 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { match_args } from "generic-handler/Predicates";
 import { mark_for_disposal as mark_id_for_disposal} from "./Scheduler/Scheduler";
 import { is_relation, type Relation } from "../DataTypes/Relation";
-import { cell_children, cell_id, is_cell } from "@/cell/Cell";
-import { is_propagator, propagator_id, propagator_children } from "../Propagator/Propagator";
+import { cell_children, cell_dependents, cell_downstream, cell_id, is_cell } from "@/cell/Cell";
+import { is_propagator, propagator_children, propagator_id } from "../Propagator/Propagator";
 // import type { Propagator } from "ppropogator";
 
 
@@ -122,6 +122,27 @@ export const mark_for_disposal = (item: any) => {
     get_the_id_and_mark_for_disposal(item);
 };
 
+
+export const get_dependents = (x: any): any[] => {
+    if (is_cell(x)) return cell_dependents(x)
+    if (x && typeof x.getInputs === 'function') return x.getInputs()
+    return []
+}
+
+export const get_downstream = (x: any): any[] => {
+    if (is_cell(x)) return cell_downstream(x)
+    if (x && typeof x.getOutputs === 'function') return x.getOutputs()
+    return []
+}
+
+export const at_primitives = (x: any): boolean =>
+    is_cell(x) && cell_dependents(x).length === 0
+
+export const generic_relation_parent_child = (parent: any, child: any) => {
+    if (parent && typeof parent.getRelation === 'function') {
+        parent.getRelation().add_child(child)
+    }
+}
 
 export const install_generics_package = () => {
     install_get_id_generic_package();

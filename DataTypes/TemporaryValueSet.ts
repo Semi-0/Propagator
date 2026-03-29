@@ -177,6 +177,8 @@ export const tvs_strongest_consequence = (content: TemporaryValueSet<any>) => re
 
 // ValueSet operations
 
+export const init_temporary_value_set_system = () => install_temporary_value_set_handlers()
+
 export const install_temporary_value_set_handlers = () => {
     define_generic_procedure_handler(get_base_value,
         match_args(is_temporary_value_set),
