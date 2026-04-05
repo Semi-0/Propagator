@@ -145,8 +145,11 @@ export const alert_interested_propagators = (neighbors: Map<string, interesetedN
   )
 }
 
-
-
+export const cell_equal = construct_simple_generic_procedure(
+  "cell_equal",
+  2,
+  is_equal
+)
 
 export interface CellInitialData<A> {
   content?: CellValue<A>;
@@ -187,7 +190,7 @@ export function primitive_construct_cell<A>(
     // const new_strongest = trace_generic_procedure(console.log, strongest_value, [content])
     const new_strongest = strongest_value(content)
 
-    if (is_equal(new_strongest, strongest)){
+    if (cell_equal(new_strongest, strongest)){
       alert_interested_propagators(neighbors, NeighborType.content_tested)
       // because new strongest doesn't change
       // so constant cell would not be updated on first update

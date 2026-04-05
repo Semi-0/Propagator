@@ -43,10 +43,18 @@ export const merge_carried_map = (content: Map<any, any>, increment: Map<any, an
     return content
 }
 
-define_generic_procedure_handler(generic_merge, all_match(is_map), merge_carried_map)
+export const is_compound_cell = register_predicate(
+    "is_compound_cell",
+    (data: any) => {
+        const maybe_map = data as Map<string, any>
+        return is_map(maybe_map) && Array.from(maybe_map.values()).every(is_cell)
+    }
+)
+
+define_generic_procedure_handler(generic_merge, all_match(is_compound_cell), merge_carried_map)
 
 
-export const is_layered_map = register_predicate("is_layered_map", (value: any) => is_layered_object(value) && get_base_value(value) instanceof Map)
+export const is_layered_map = register_predicate("is_layered_map", (value: any) => is_layered_object(value) && is_compound_cell(get_base_value(value)) )
 
 define_generic_procedure_handler(merge_layered, match_args(is_nothing, is_layered_map), (content: LayeredObject<any>, increment: Map<any, any>) => {
     return increment
