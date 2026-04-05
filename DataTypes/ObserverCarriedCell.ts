@@ -43,14 +43,14 @@ export const p_sync_to_link = (notifier: Cell<any>, cell_held_link: Cell<any>) =
     if (is_link(link)) {
       const resolved_cell = resolve_link(link)
       if (resolved_cell) {
-        update_cell(cell_strongest(notifier), resolved_cell)
+        update_cell(resolved_cell, cell_strongest(notifier))
       }
     }
     else if (is_link_set(link)) {
       for_each(link, (link: Link) => {
         const resolved_cell = resolve_link(link)
         if (resolved_cell) {
-          update_cell(cell_strongest(notifier), resolved_cell)
+          update_cell(resolved_cell, cell_strongest(notifier))
         }
       })
     }
