@@ -31,7 +31,6 @@ export const p_switch = (condition: Cell<boolean>, value: Cell<any>, output: Cel
         return value;
     }
     else{
-        console.log("switch false", no_compute)
         return no_compute
     }
 })(condition, value, output)

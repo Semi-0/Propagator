@@ -1964,7 +1964,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       expect(cell_strongest_base_value(output)).toBe(100);
       
       update_source_cell(condition, false);
-      run_scheduler_and_replay(console.error)
+      execute_all_tasks_sequential(console.error)
       expect(cell_strongest_base_value(output)).toBe(200);
      
 
