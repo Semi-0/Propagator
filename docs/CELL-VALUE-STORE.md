@@ -52,7 +52,7 @@ Premises must be registered before values carrying them arrive in the store. Thi
 
 ## Implementation Stages
 
-### Stage 1 — `CellValueStore` module (no cell changes yet)
+### Stage 1 — `CellValueStore` module (no cell changes yet) ✅ DONE
 
 **Goal:** create the store and prove the inverse index works in isolation.
 
@@ -130,9 +130,16 @@ const clear_cell_store = (): void => {
 - `test_content` with unchanged strongest does not alert neighbors (no spurious propagation)
 - `clear_cell_store()` resets both maps cleanly (needed for existing test suite reset pattern)
 
+**Implementation notes (actual):**
+- Created `Propogator/Shared/CellValueStore.ts` with `CellValueMetaData`, `cell_store`, `premise_index`
+- `test_content` lives in `Cell.ts` as a closure (`recompute_strongest` is the store side; alerting neighbors stays in the cell)
+- `the_disposed` imported from `../Cell/CellValue` for `write_disposed`
+- `clear_cell_store` called from `PublicState.ts` CLEAN_UP handler
+- All 144 passing tests from baseline continue to pass
+
 ---
 
-### Stage 2 — Wire `primitive_construct_cell` to the store
+### Stage 2 — Wire `primitive_construct_cell` to the store ✅ DONE
 
 **Goal:** cells read/write through the store combinators; `Cell<A>` interface unchanged.
 
@@ -170,6 +177,13 @@ The cell object itself carries only `relation` and `neighbors` — purely struct
 - No new global state introduced beyond the singleton store (consistent with `PublicStateCommand.ADD_CELL` pattern)
 - Cell disposal removes the `CellValueMetaData` entry and patches `premise_index` to remove the cellId from all premise sets it was registered under
 
+**Implementation notes (actual):**
+- `primitive_construct_cell` now calls `init_cell(cid)`, `write_content(cid, increment)`, `read_content(cid)`, `read_strongest(cid)`, `recompute_strongest(cid)`, `write_disposed(cid)` — all from `CellValueStore`
+- Closure vars `var content` and `var strongest` removed entirely
+- `dispose()` calls `write_disposed(cid)` which writes `the_disposed` sentinel without removing the store entry (required for disposal tests)
+- `PublicState.ts` CLEAN_UP handler calls `clear_cell_store()` to reset store between tests
+- Test result: 144 pass, 15 fail, 6 errors (identical to pre-implementation baseline)
+
 ---
 
 ### Stage 3 — Replace `FORCE_UPDATE_ALL_CELLS` with targeted wake
@@ -200,11 +214,9 @@ wake_up_roots() {
 
 ---
 
-### Stage 4 — Fix `tvs_strongest_consequence` and decouple GC from merge
+### Stage 4a — Fix `tvs_strongest_consequence` filter-first
 
-**Goal:** make premise filtering a pre-step before merge (not interleaved inside it), and stop `value_set_adjoin` from evicting during write.
-
-#### 4a. Fix `tvs_strongest_consequence`
+**Goal:** make premise filtering a pre-step before merge, not interleaved inside it.
 
 The current implementation checks premise state pairwise inside the reduce, mixing control logic into merge:
 
@@ -221,28 +233,405 @@ export const tvs_strongest_consequence = (content) => reduce(
 )
 ```
 
-Replace with filter-first, matching the pattern already used in `ValueSet.strongest_consequence`:
+Replace with filter-first, matching the pattern already used in `ValueSet.strongest_consequence`. Also exclude `Situation` entries (they are not data values):
 
 ```ts
 // proposed — premise filtering is a pre-step; partial_merge is premise-unaware
 export const tvs_strongest_consequence = (content: TemporaryValueSet<any>) => pipe(
     content,
-    (elements) => filter(elements, tvs_is_premises_in),
+    (elements) => filter(elements, (e) => tvs_is_premises_in(e) && !is_situation(get_base_value(e))),
     (filtered) => reduce(filtered, partial_merge, the_nothing)
 )
 ```
 
-The cell content (TVS) still holds all values including premise-out ones — nothing is deleted. Premise-out values simply do not participate in the merge that produces `strongest`. `partial_merge` remains completely premise-unaware; all premise logic is in the filter step.
-
-#### 4b. Remove eviction from `value_set_adjoin`
-
-Remove the `vector_clock_prove_staled_by` eviction call inside `internal_merge_temporary_value_set`. `value_set_adjoin` only adjoins; it never evicts. Eviction moves to the explicit GC pass described in the Value GC Design section.
+`partial_merge` remains completely premise-unaware. All premise logic lives in the filter step.
 
 **Criteria for success:**
-- `tvs_strongest_consequence` produces identical results to the current implementation for all existing tests
+- `tvs_strongest_consequence` produces identical results for all existing tests
 - `partial_merge` has zero calls to `is_premises_in` / `is_premises_out` — verifiable by grep
 - Retracted values survive in the TVS (resurrection without source re-emit works for at least one premise flip cycle)
-- GC does not remove values whose premise is currently "in"
+
+---
+
+### Stage 4b — Remove eviction from `value_set_adjoin`
+
+**Goal:** stop `value_set_adjoin` from evicting during write so that TVS is append-only at merge time.
+
+Remove the `vector_clock_prove_staled_by` eviction call inside `internal_merge_temporary_value_set`. `value_set_adjoin` only adjoins; it never evicts. Compaction is now the responsibility of Situation's own merge handler (for history values) and of Stage 3's targeted wake (for data values).
+
+**Criteria for success:**
+- No call to `vector_clock_prove_staled_by` remains inside `value_set_adjoin` or `internal_merge_temporary_value_set`
+- Premise-out values are not lost when a newer premise-in value arrives at the same cell
+
+---
+
+### Stage 4c — Implement `Situation<A>` type
+
+**Goal:** define the Situation data structure and its core operations.
+
+Create `Propogator/DataTypes/Situation.ts`.
+
+```ts
+type Situation<A> = {
+    kind:    "situation";
+    entries: A[];          // kept as a sorted array for now; red-black tree later
+}
+
+export const is_situation = register_predicate(
+    "is_situation",
+    (v: any): v is Situation<any> => v?.kind === "situation"
+)
+
+export const empty_situation = <A>(): Situation<A> => ({ kind: "situation", entries: [] })
+
+export const situation_size = <A>(s: Situation<A>): number => s.entries.length
+```
+
+`situation_adjoin` applies `cell_merge` pairwise against all existing entries to determine the incoming value's fate:
+
+```ts
+export const situation_adjoin = <A>(sit: Situation<A>, value: A): Situation<A> => {
+    const surviving: A[] = [];
+    let   absorbed = false;
+
+    for (const e of sit.entries) {
+        const m = cell_merge(e, value);
+        if (is_contradiction(m)) {
+            // contradiction — keep both
+            surviving.push(e);
+        } else if (m === value || (is_equal(m, value) && !is_equal(m, e))) {
+            // value subsumes e — drop e, keep scanning
+        } else if (m === e || is_equal(m, e)) {
+            // e subsumes value — value is redundant, keep e, mark absorbed
+            surviving.push(e);
+            absorbed = true;
+        } else {
+            // incomparable — keep both
+            surviving.push(e);
+        }
+    }
+
+    if (!absorbed) surviving.push(value);
+    return { kind: "situation", entries: surviving };
+}
+```
+
+**Criteria for success:**
+- `situation_adjoin(s, v)` where `v` is subsumed by an existing entry returns an identical entry list
+- `situation_adjoin(s, v)` where `v` subsumes an existing entry evicts that entry
+- Contradicting values both survive
+- Incomparable values both survive
+- Unit tests cover all four cases
+
+---
+
+### Stage 4d — Implement Situation merge handler
+
+**Goal:** register a generic merge handler so two Situation values compose correctly when they arrive in the same TVS.
+
+```ts
+// in Situation.ts or a CellGenerics-style registration file
+define_generic_procedure_handler(
+    generic_merge,
+    match_args(is_situation, is_situation),
+    <A>(a: Situation<A>, b: Situation<A>): Situation<A> => {
+        // fold all entries of b into a via situation_adjoin
+        return b.entries.reduce(situation_adjoin, a);
+    }
+)
+```
+
+This means two propagators each writing their own Situation to the same cell produce a single merged Situation where the full `cell_merge` subsumption relation holds across both entry sets.
+
+**Criteria for success:**
+- `generic_merge(sit_A, sit_B)` contains all entries from both, with dominated entries removed
+- Contradictions from cross-Situation merge survive
+- Registering the handler does not break any existing merge tests
+
+---
+
+### Stage 4e — Wire Situation into TVS accessors
+
+**Goal:** add `tvs_situation` so consumers of historical values have a clean accessor, symmetric to `tvs_strongest_consequence`.
+
+```ts
+// in TemporaryValueSet.ts
+export const tvs_situation = <A>(content: TemporaryValueSet<A>): Situation<A> =>
+    pipe(
+        content,
+        (elements) => filter(elements, (e) => is_situation(get_base_value(e))),
+        (sits)     => reduce(
+            sits,
+            (acc: Situation<A>, e: any) => {
+                const m = generic_merge(acc, get_base_value(e));
+                return is_situation(m) ? m : acc;
+            },
+            empty_situation<A>()
+        )
+    )
+```
+
+`tvs_strongest_consequence` (already updated in Stage 4a) excludes Situation entries. `tvs_situation` is the complementary accessor that collects them.
+
+**Criteria for success:**
+- `tvs_situation` on a TVS with no Situation entries returns `empty_situation()`
+- `tvs_situation` on a TVS with multiple Situation entries returns their merged Situation
+- `tvs_strongest_consequence` and `tvs_situation` partition the TVS entries cleanly — no entry appears in both
+
+---
+
+### Stage 4f — Propagator API: `p_situation`
+
+**Goal:** give propagators a first-class way to spawn a Situation accumulator without boilerplate.
+
+`p_situation` creates a propagator that reads from an input cell and accumulates every new value into a Situation written to a dedicated output cell:
+
+```ts
+// usage
+const history_cell = construct_cell("my_cell_history");
+p_situation(source_cell, history_cell);
+
+// implementation sketch
+export const p_situation = <A>(input: Cell<A>, output: Cell<Situation<A>>): Propagator => {
+    return primitive_propagator([input], [output], () => {
+        const new_val = cell_strongest(input);
+        if (is_nothing(new_val)) return;
+
+        const current_sit = tvs_situation(cell_content(output));
+        const updated_sit = situation_adjoin(current_sit, new_val);
+        update_cell(output, updated_sit);
+    });
+}
+```
+
+The output cell's Situation grows monotonically. If the propagator's premise is later retracted, the Situation entry in the output cell weakens out via TVS support layers automatically — no special disposal needed.
+
+**Criteria for success:**
+- `p_situation(source, hist)` accumulates successive values of `source` into `hist`'s Situation
+- Subsumed values are not duplicated in the history
+- Retracting the input's premise weakens the Situation out of `tvs_situation` on the output cell
+- `tvs_strongest_consequence` on the output cell returns `the_nothing` (Situation entries are excluded from strongest)
+
+---
+
+### Stage 4g — Antichain invariant + clock merge in `situation_adjoin`
+
+**Goal:** extend `situation_adjoin` to also merge vector clock information, so that the Situation accumulates causal knowledge independently of value-level subsumption.
+
+Stage 4c handles the value dimension (subsume / absorb / contradiction / incomparable). This stage adds the clock dimension: when two entries are compared, their clocks are joined (empty slot filled, existing slot takes max) regardless of the value outcome.
+
+```ts
+import { merge_vector_clocks } from "../AdvanceReactivity/vector_clock";
+
+export const situation_adjoin = <A>(sit: Situation<A>, incoming: A): Situation<A> => {
+    const surviving: A[] = [];
+    let   absorbed = false;
+
+    for (const e of sit.entries) {
+        const m = cell_merge(e, incoming);
+
+        if (is_contradiction(m)) {
+            surviving.push(e);                         // contradiction — keep both
+        } else if (dominates(m, incoming, e)) {        // incoming subsumes e
+            // clock evidence from e folds into incoming before e is evicted
+            incoming = merge_clock_into(incoming, e);
+        } else if (dominates(m, e, incoming)) {        // e subsumes incoming
+            surviving.push(e);
+            absorbed = true;                           // incoming redundant for value
+            // but still fold incoming's clock evidence into e
+            surviving[surviving.length - 1] = merge_clock_into(e, incoming);
+        } else {
+            surviving.push(e);                         // incomparable — keep both
+        }
+    }
+
+    if (!absorbed) surviving.push(incoming);
+    return { kind: "situation", entries: surviving };
+}
+```
+
+`merge_clock_into(target, source)` reads the vector clock layer of `source` and adjoins any channels not present in `target`'s clock (filling empty slots). A value can be evicted from the Situation while its causal evidence survives folded into the entry that subsumed it.
+
+**Criteria for success:**
+- Adjoining an entry whose value is subsumed still transfers its clock channels to the surviving entry
+- `situation_adjoin` on entries with disjoint clocks produces an entry whose clock covers both source clocks
+- No clock information is lost when an entry is evicted by subsumption
+- A round-trip retract/restore still works correctly with the enriched clock state
+
+---
+
+### Stage 4h — Persistent DAG backing (optional upgrade from antichain list)
+
+**Goal:** replace the flat `entries` array with a persistent causal DAG that preserves the full branching structure, not just the current antichain frontier.
+
+This stage is optional — the antichain list from Stage 4c is correct and sufficient when the number of live worlds is small. Implement this when profiling shows O(n·k) antichain scans are a bottleneck, or when extraction propagators need to traverse causal ancestry.
+
+#### Node type
+
+```ts
+type SituationNode<A> = {
+    value:   A;
+    clock:   VectorClock;
+    parents: SituationNode<A>[];   // empty for root nodes
+}
+
+type Situation<A> = {
+    kind:   "situation";
+    leaves: SituationNode<A>[];    // current antichain — nodes with no children
+    // all interior nodes are reachable via parent pointers from leaves
+}
+```
+
+#### Adjoin on the DAG
+
+When `situation_adjoin` evicts an entry `e` because `incoming` subsumes it, `incoming` becomes a child of `e` in the DAG (it is causally after `e`). When `incoming` is incomparable to `e`, both remain leaves with no parent/child relationship between them. When `incoming` contradicts `e`, both become leaves with a shared "fork" annotation.
+
+```
+before:  leaves = [e1, e2]
+incoming v subsumes e1:
+  v.parents = [e1]          // causal successor of e1
+  leaves = [v, e2]          // e1 is now interior, v is new leaf
+```
+
+This gives extraction propagators access to the full ancestry of any current world — they can walk `node.parents` to reconstruct the causal chain that produced the current state.
+
+#### Structural sharing
+
+Immutable nodes (never mutated after creation) mean two Situations that share a common ancestor share those nodes in memory. A situation that forked at node `e` and later converged back can reference the same `e` node from both branches — analogous to Git's DAG of commits.
+
+**Criteria for success:**
+- `situation_adjoin` on the DAG produces the same antichain as the list implementation (same leaves)
+- Interior nodes are reachable from leaves via `parents`
+- Structural sharing: merging two Situations with a common ancestor does not duplicate the ancestor node
+- Memory use is bounded by total unique `(value, clock)` pairs ever adjoined, not by the number of operations
+
+---
+
+### Stage 4i — Extraction propagator API
+
+**Goal:** provide a standard set of propagator factories for reading history out of a Situation cell without modifying it.
+
+Each extraction propagator wires a Situation cell as input and produces a derived output. The Situation itself is never written by extraction — only `p_situation` (Stage 4f) adjoins into it.
+
+#### `p_situation_reduce` — fold over antichain
+
+```ts
+export const p_situation_reduce = <A, B>(
+    sit_cell:    Cell<Situation<A>>,
+    output_cell: Cell<B>,
+    reducer:     (entries: A[]) => B
+): Propagator =>
+    primitive_propagator([sit_cell], [output_cell], () => {
+        const sit = tvs_situation(cell_content(sit_cell));
+        update_cell(output_cell, reducer(sit.entries));
+    })
+
+// usage: extract the merged value across all live worlds
+p_situation_reduce(hist_cell, output_cell,
+    (entries) => entries.reduce(cell_merge, the_nothing))
+```
+
+#### `p_situation_filter` — project a subset of worlds
+
+```ts
+export const p_situation_filter = <A>(
+    sit_cell:    Cell<Situation<A>>,
+    output_cell: Cell<Situation<A>>,
+    predicate:   (entry: A) => boolean
+): Propagator =>
+    primitive_propagator([sit_cell], [output_cell], () => {
+        const sit      = tvs_situation(cell_content(sit_cell));
+        const filtered = sit.entries.filter(predicate);
+        update_cell(output_cell, { kind: "situation", entries: filtered });
+    })
+
+// usage: only worlds where clock channel "P1" was observed
+p_situation_filter(hist_cell, p1_cell,
+    (entry) => has_clock_channel(entry, "P1"))
+```
+
+#### `p_situation_before` — causal filter (requires DAG from Stage 4h)
+
+```ts
+// retain only entries causally before a given clock snapshot
+export const p_situation_before = <A>(
+    sit_cell:    Cell<Situation<A>>,
+    output_cell: Cell<Situation<A>>,
+    cutoff:      VectorClock
+): Propagator =>
+    primitive_propagator([sit_cell], [output_cell], () => {
+        const sit = tvs_situation(cell_content(sit_cell));
+        const before = sit.entries.filter(
+            (e) => vector_clock_dominates(cutoff, get_vector_clock_layer(e))
+        );
+        update_cell(output_cell, { kind: "situation", entries: before });
+    })
+```
+
+**Criteria for success:**
+- `p_situation_reduce` reruns when `sit_cell` updates, producing the correct folded value
+- `p_situation_filter` produces a valid Situation (antichain invariant holds on the filtered subset)
+- Retracting the spawning propagator's premise weakens the Situation in `sit_cell`, which flows through to all extraction outputs
+- Extraction propagators do not write back to `sit_cell`
+
+---
+
+### Stage 4j — Custom merge handler API
+
+**Goal:** make it easy to register domain-specific merge semantics for Situation entries without touching the core `situation_adjoin` logic.
+
+The default merge handler (Stage 4d) uses `cell_merge` for pairwise entry comparison. For specific value types — intervals, fact sets, Datalog rules — the subsumption relation is different. `situation_merge_with` factors out the pairwise function so only the comparison changes:
+
+```ts
+export const situation_merge_with = <A>(
+    a:           Situation<A>,
+    b:           Situation<A>,
+    entry_merge: (x: A, y: A) => A
+): Situation<A> => {
+    const adjoin_with = (sit: Situation<A>, v: A): Situation<A> => {
+        const surviving: A[] = [];
+        let absorbed = false;
+        for (const e of sit.entries) {
+            const m = entry_merge(e, v);
+            if (is_contradiction(m))         { surviving.push(e); }
+            else if (dominates_with(m, v, e, entry_merge)) { /* e evicted, clock merged */ }
+            else if (dominates_with(m, e, v, entry_merge)) { surviving.push(e); absorbed = true; }
+            else                             { surviving.push(e); }
+        }
+        if (!absorbed) surviving.push(v);
+        return { kind: "situation", entries: surviving };
+    };
+    return b.entries.reduce(adjoin_with, a);
+}
+```
+
+Registering a custom handler for a specific value type:
+
+```ts
+// intervals: subsumption = containment
+define_generic_procedure_handler(
+    generic_merge,
+    match_args(is_situation_of(is_interval), is_situation_of(is_interval)),
+    (a: Situation<Interval>, b: Situation<Interval>) =>
+        situation_merge_with(a, b, interval_merge)
+)
+
+// fact sets: subsumption = subset relation
+define_generic_procedure_handler(
+    generic_merge,
+    match_args(is_situation_of(is_fact_set), is_situation_of(is_fact_set)),
+    (a: Situation<FactSet>, b: Situation<FactSet>) =>
+        situation_merge_with(a, b, fact_set_merge)
+)
+```
+
+`is_situation_of(pred)` is a compound predicate: `(v) => is_situation(v) && v.entries.every(pred)`. This lets the generic dispatch pick the right handler based on both the Situation wrapper and the entry type.
+
+**Criteria for success:**
+- `situation_merge_with` produces the same antichain invariant as the default handler for the default `cell_merge`
+- Registering a custom handler for `is_interval` does not affect Situation merge for any other entry type
+- `is_situation_of` correctly identifies Situations whose entries all satisfy the entry predicate
+- Existing merge tests are unaffected (no handler collision)
 
 ---
 
@@ -307,267 +696,209 @@ This is the boundary of what the TVS-as-TMS approach handles. A full justificati
 
 ---
 
-## Value GC Design
+## Situation Design
 
 ### Why GC is currently entangled with merge
 
 `TemporaryValueSet.value_set_adjoin` (`DataTypes/TemporaryValueSet.ts:89`) calls `vector_clock_prove_staled_by` on every adjoin to filter out dominated entries. This is convenient but wrong for two reasons:
 
 1. **Evicts during retraction**: a premise-out value that happens to be clock-dominated by a newer entry gets removed at merge time, destroying the information needed for resurrection.
-2. **Ignores consumer intent**: GC runs blindly on every write. Some propagators may need history; others need nothing beyond the current strongest. A single eviction policy cannot serve both.
+2. **One-size-fits-all**: GC runs blindly on every write. Propagators that need history get the same aggressive eviction as propagators that only care about the current strongest.
 
-After Stage 4, `value_set_adjoin` only adjourns; it never evicts. Eviction is an explicit, context-aware operation driven by what downstream propagators actually need.
-
----
-
-### `HistoryWant`: a predicate-based value type inside the TVS
-
-`HistoryWant` is a distinct value type that lives **inside the TVS** alongside regular data values. The cell interface stays completely unchanged — `content` is still the TVS, `strongest` is still derived from it. `HistoryWant` entries can carry the same support and vector clock layers as data values, so TMS can later track which propagator justified which retention requirement without any extra machinery.
-
-Rather than storing a count or a channel map, `HistoryWant` holds a **`RetainPredicate`** — a serializable data description of which TVS elements to keep. GC evaluates this predicate against each element to decide what survives. This makes retention criteria arbitrarily composable and extensible without changing the GC machinery.
-
-#### `RetainPredicate` — a closed algebra over TVS elements
-
-```ts
-type RetainPredicate =
-    | { kind: "none" }                              // retain nothing (⊥)
-    | { kind: "all" }                               // retain everything (⊤)
-    | { kind: "last_n";    channel: string; n: number }   // last N by clock in channel
-    | { kind: "all_from";  channel: string }              // all elements carrying channel
-    | { kind: "within_ms"; channel: string; ms: number }  // elements within N ms in channel
-    | { kind: "or";  preds: RetainPredicate[] }    // retain if ANY pred matches (join ⊔)
-    | { kind: "and"; preds: RetainPredicate[] }    // retain if ALL preds match  (meet ⊓)
-```
-
-Evaluation against a single TVS element:
-
-```ts
-const retain_matches = (pred: RetainPredicate, element: any, tvs: TemporaryValueSet<any>): boolean => {
-    switch (pred.kind) {
-        case "none":      return false
-        case "all":       return true
-        case "last_n":    return rank_in_channel(element, pred.channel, tvs) <= pred.n
-        case "all_from":  return has_clock_channel(element, pred.channel)
-        case "within_ms": return age_in_channel(element, pred.channel)  <= pred.ms
-        case "or":        return pred.preds.some(p  => retain_matches(p, element, tvs))
-        case "and":       return pred.preds.every(p => retain_matches(p, element, tvs))
-    }
-}
-```
-
-`rank_in_channel` sorts all TVS elements by clock value for a given channel and returns this element's 1-based position. `age_in_channel` requires a timestamp layer on elements.
-
-#### `HistoryWant` type
-
-```ts
-type HistoryWant = {
-    kind:      "history_want";
-    predicate: RetainPredicate;
-}
-
-const is_history_want = register_predicate(
-    "is_history_want",
-    (v: any): v is HistoryWant => v?.kind === "history_want"
-)
-```
-
-#### Constructors
-
-```ts
-const want_none  = (): HistoryWant => ({ kind: "history_want", predicate: { kind: "none" } })
-const want_all   = (): HistoryWant => ({ kind: "history_want", predicate: { kind: "all"  } })
-
-const want_last_n   = (channel: string, n: number):  HistoryWant =>
-    ({ kind: "history_want", predicate: { kind: "last_n",    channel, n  } })
-const want_all_from = (channel: string): HistoryWant =>
-    ({ kind: "history_want", predicate: { kind: "all_from",  channel     } })
-const want_within   = (channel: string, ms: number): HistoryWant =>
-    ({ kind: "history_want", predicate: { kind: "within_ms", channel, ms } })
-```
-
-#### Algebraic operations
-
-`want_or` is the **join** (⊔) — an element is retained if any predicate covers it. This is the correct operation for composing multiple independent propagator wants: the cell must retain what any propagator needs:
-
-```ts
-const want_or = (a: HistoryWant, b: HistoryWant): HistoryWant => ({
-    kind: "history_want",
-    predicate: { kind: "or", preds: [a.predicate, b.predicate] }
-})
-
-const want_and = (a: HistoryWant, b: HistoryWant): HistoryWant => ({
-    kind: "history_want",
-    predicate: { kind: "and", preds: [a.predicate, b.predicate] }
-})
-```
-
-`want_none()` is the lattice bottom (⊥) — identity under `want_or`. `want_all()` is the top (⊤).
-
-#### Normalization rules
-
-Predicate trees can be simplified before evaluation or storage:
-
-```
-or(none, p)   = p          and(all,  p)  = p
-or(all,  _)   = all        and(none, _)  = none
-or(p,    p)   = p          and(p,    p)  = p     (idempotent)
-or(or(a,b),c) = or(a,b,c)                        (flatten nested ors)
-```
-
-Normalization is optional but keeps predicate trees from growing unboundedly when many propagators compose their wants.
-
-#### Composition examples
-
-```ts
-// retain last 5 from any channel
-want_last_n("*", 5)   // or: want_all() with a global rank — depends on implementation
-
-// retain last 3 from source A AND last 7 from source B
-want_or(want_last_n("A", 3), want_last_n("B", 7))
-
-// propagator 1 wants last 3 from all channels; propagator 2 wants everything from B
-want_or(
-    want_last_n("A", 3),   // propagator 1
-    want_all_from("B")     // propagator 2
-)
-// element retained if: (rank in A <= 3) OR (carries channel B)
-
-// the previous count-based want_all(5) and want_channel("B", 7) from earlier designs:
-want_or(want_last_n("*", 5), want_last_n("B", 7))
-// count-based approach is a special case of predicate-based
-```
-
-The `merge_history_want` generic handler (registered for `(is_history_want, is_history_want)`) delegates to `want_or`, so `HistoryWant` entries compose automatically when adjoined into the same TVS.
+After Stage 4b, `value_set_adjoin` only adjoins; it never evicts. For propagators that need history, compaction is handled by `Situation`'s own merge semantics — not by external GC policy.
 
 ---
 
-### `tvs_strongest_consequence` splits by type
+### What a Situation is
 
-`tvs_strongest_consequence` filters to data values only — `HistoryWant` entries are invisible to the strongest computation:
+A `Situation<A>` is a value type that lives **inside the TVS** alongside regular data values, carrying support layers and vector clocks like any other TVS entry. The cell interface is unchanged — `content` is still the TVS, `strongest` is still derived from it. `Situation` is invisible to `tvs_strongest_consequence`.
+
+Unlike the earlier HistoryWant design (a declarative predicate telling external GC what to retain), a `Situation` holds the actual retained values and manages its own compaction via `cell_merge` semantics — analogous to situation calculus, where each "action" (cell update) produces a new situation, subsumption prunes dominated situations, and contradictions are kept as distinct branches.
 
 ```ts
-export const tvs_strongest_consequence = (content: TemporaryValueSet<any>) => pipe(
-    content,
-    (elements) => filter(elements, (e) => tvs_is_premises_in(e) && !is_history_want(get_base_value(e))),
-    (filtered) => reduce(filtered, partial_merge, the_nothing)
+type Situation<A> = {
+    kind:    "situation";
+    entries: A[];   // self-compacting via cell_merge on adjoin; red-black tree for large histories
+}
+```
+
+---
+
+### Merge semantics: `situation_adjoin`
+
+When a new value arrives, `cell_merge` is applied pairwise against every existing entry:
+
+```
+incoming value v, existing entry e:
+  cell_merge(e, v) = v            → v subsumes e    — evict e
+  cell_merge(e, v) = e            → e subsumes v    — skip v (absorbed)
+  cell_merge(e, v) = contradiction → incompatible   — keep both
+  cell_merge(e, v) = something else → incomparable  — keep both
+```
+
+The Situation grows only when new information arrives that is not subsumed by anything already present. Contradictions are always kept — they represent distinct hypotheses needed for search and backtracking.
+
+### Why GC never needs to touch a Situation
+
+Subsumption via `cell_merge` IS the compaction mechanism. The only entries that survive indefinitely are:
+
+- Values on incomparable branches (genuinely distinct information — correct to retain)
+- Contradictions (needed for search/amb backtracking — correct to retain)
+
+The Situation size is bounded by the antichain width of the information lattice for the cell's value type. No external GC policy or trigger is needed.
+
+---
+
+### A tree of worlds, not a linear history
+
+A Situation is not a sequence of values in time. It is a **partially ordered set (poset) of possible worlds** — the antichain of maximal, mutually incomparable situations that have accumulated so far. Each world is a `(value, clock)` pair where the clock records its causal position relative to every premise channel.
+
+The antichain is the live frontier: entries that nothing else subsumes. Branches under different hypotheses are incomparable (neither clock dominates the other), so they all coexist in the antichain simultaneously. This is why Situation naturally represents **search / amb worlds** — each live hypothesis is one antichain element, and the antichain grows when hypotheses fork and shrinks when one is resolved or subsumed.
+
+```
+World A (premise P1 in):  value=42,  clock={ P1:3, P2:∅ }
+World B (premise P2 in):  value=100, clock={ P1:∅, P2:5 }
+World C (merged):         value=?,   clock={ P1:3, P2:5 }  ← if A and B are compatible, C subsumes both
+```
+
+If A and B cannot be merged (contradiction or incomparable values), both stay in the antichain. If a third entry C's value subsumes both and its clock dominates both, both are evicted and C becomes the sole element.
+
+### Why an array is wrong and a red-black tree is only partially right
+
+An **array** implies a total order — a sequence — which the poset does not have. Scanning it for dominance is O(n·k) per insert (n entries, k clock channels) and gives no structural benefit.
+
+A **red-black tree (BST)** requires a total ordering on keys. Vector clocks have a partial order, not a total one. Two entries with incomparable clocks have no defined BST position relative to each other. You can impose an arbitrary total order (e.g. lexicographic on the clock vector) to use a BST, but then dominance queries still require a scan — the tree structure doesn't help with partial order queries.
+
+### Suitable data structures
+
+**Antichain list (starting point):**  
+Keep only the maximal elements. On each `situation_adjoin`, scan the list to find dominated entries (evict) and check whether the new entry is itself dominated (skip). O(n·k) per insert, where n = antichain width and k = number of clock channels. Correct and simple. For propagator systems where the number of live hypotheses is small (typically 2–10 with `p_amb`), this is adequate.
+
+**Persistent causal DAG (for full world-branching):**  
+Nodes are `(value, clock)` pairs. Directed edges run from predecessor situations to successor situations (causal order). When two worlds merge (their clocks become comparable), a new node with two parent edges is created. Structural sharing means worlds that share causal history share nodes — analogous to Git's commit DAG.
+
+This structure preserves the full branching/merging history, not just the current antichain. Extraction propagators can traverse it to answer questions like "which worlds converged to this value?" or "what did the cell look like before premise P2 came in?". The antichain is simply the set of nodes with no outgoing edges (leaf nodes).
+
+**Trie indexed by clock channels (for wide antichains):**  
+If k (number of channels) is fixed and small, a trie on clock coordinate values gives O(k) dominance queries. Each path from root to leaf encodes a clock vector; dominance is prefix containment. Suitable when many worlds accumulate from a small set of premises.
+
+**Starting recommendation:** implement with an antichain list (Stage 4c), define the interface cleanly, and replace the backing structure later — the merge handler and extraction API are independent of the backing store.
+
+### Extending behavior: extraction propagators and custom merge handlers
+
+The Situation's open-ended design means you never need to build every query into the core. There are two extension points:
+
+**Extraction / reducer propagators** — a propagator that reads a Situation from an input cell and produces a derived value (or another Situation) in an output cell. Examples:
+
+```ts
+// extract the strongest value across all worlds
+p_situation_reduce(hist_cell, output_cell, (sit) => tvs_strongest_consequence(sit.entries))
+
+// extract only entries from premise P1's world
+p_situation_filter(hist_cell, output_cell, (entry) => has_clock_channel(entry, "P1"))
+
+// project the causal graph: which entries happened before clock { P1: 3 }?
+p_situation_before(hist_cell, output_cell, { P1: 3 })
+```
+
+Each of these is a normal propagator wired to `hist_cell` as an input. When `hist_cell`'s Situation updates, the propagator runs and produces a new derived value. The Situation itself is never modified by extraction — it only grows via `situation_adjoin`.
+
+**Custom merge handlers** — when the default `cell_merge` subsumption semantics are not right for a specific value type, register a new generic procedure handler for `(is_situation, is_situation)` scoped to that type. Examples:
+
+```ts
+// for numeric intervals: subsumption means containment, not equality
+define_generic_procedure_handler(
+    generic_merge,
+    match_args(is_situation_of(is_interval), is_situation_of(is_interval)),
+    (a, b) => situation_merge_with(a, b, interval_merge)
+)
+
+// for fact sets: subsumption means subset, union is the join
+define_generic_procedure_handler(
+    generic_merge,
+    match_args(is_situation_of(is_fact_set), is_situation_of(is_fact_set)),
+    (a, b) => situation_merge_with(a, b, fact_set_merge)
 )
 ```
 
-A parallel reducer collects the effective `HistoryWant` by joining all `HistoryWant` entries in the TVS with `want_or`:
+`situation_merge_with` is the same fold as the default handler but parameterized on the pairwise merge function. The Situation structure — antichain maintenance, clock merging, TMS integration — is reused; only the value-level comparison changes.
+
+---
+
+### Vector clocks as partial situation information
+
+Each entry in a Situation carries a vector clock layer recording which channels contributed to that value and at what logical time. The clock is not merely a versioning tag — it is itself **partial information about the situation**, and it accumulates independently of the value payload.
+
+An empty slot in a vector clock means "we have not yet observed anything from that channel." This is the bottom element in that channel's dimension. When two Situation entries are merged, their clocks are joined component-wise:
+
+```
+entry_1: value X, clock { P1: 3, P2: ∅ }
+entry_2: value Y, clock { P1: ∅, P2: 5 }
+
+clock join → { P1: 3, P2: 5 }
+```
+
+Filling an empty slot is not overwriting — it is **learning**. The resulting clock carries strictly more causal knowledge than either entry alone. This means `situation_adjoin` does two orthogonal things simultaneously:
+
+1. **Value merge** — `cell_merge` pairwise: subsumption, incomparable, contradiction (already described)
+2. **Clock merge** — vector clock join: fill empty slots, take max at filled slots
+
+These two dimensions are independent. Two entries can be causally comparable (one clock dominates the other) while their values are incomparable, or vice versa. The Situation accumulates both kinds of information without conflating them.
+
+The practical consequence is that **you can decouple the event from the time it happened**. A Situation entry might arrive carrying clock evidence about channel P1 even though its value is only partially related to P1. Later, a second entry fills in P2. The merged Situation now knows the causal ordering of both, even if neither entry alone had the full picture. The clock gradually fills in as more partial views of the situation accumulate — exactly the monotone accumulation model of the propagator system applied to time itself.
+
+This also interacts with subsumption: if entry_2's clock strictly dominates entry_1's clock *and* its value subsumes entry_1's value, entry_1 is safely evicted. If only the clock dominates but the values are incomparable, both entries survive — the clock evidence is retained inside each surviving entry's layer.
+
+---
+
+### Situation calculus connection
+
+Each write to a cell is an "action" producing a new situation. `situation_adjoin` applies successor state logic: weaker situations are pruned, incompatible situations survive as branches. This gives a principled account of search (multiple worlds), retraction (world weakens out), and restoration (world re-activates) — all within the existing TVS machinery.
+
+---
+
+### TMS and retraction
+
+A `Situation` entry carries support layers exactly like any other TVS value. When the spawning propagator's premise is retracted:
+
+- The Situation entry's premise goes out
+- `tvs_situation` (which filters by `tvs_is_premises_in`) excludes premise-out Situation entries automatically
+- No special disposal logic is needed — same machinery as any other TVS value
+
+When the premise is restored, `tvs_situation` includes the Situation again. Its entries are intact because nothing evicted them — only premise-out filtering excluded them temporarily.
+
+---
+
+### `tvs_situation` accessor
+
+Symmetric to `tvs_strongest_consequence` for data values:
 
 ```ts
-export const tvs_history_want = (content: TemporaryValueSet<any>): HistoryWant =>
+export const tvs_situation = <A>(content: TemporaryValueSet<A>): Situation<A> =>
     pipe(
         content,
-        (elements) => filter(elements, (e) => is_history_want(get_base_value(e))),
-        (wants)    => reduce(wants,
-            (acc, e) => want_or(acc, get_base_value(e)),
-            want_none()
+        (elements) => filter(elements, (e) => tvs_is_premises_in(e) && is_situation(get_base_value(e))),
+        (sits)     => reduce(
+            sits,
+            (acc: Situation<A>, e: any) => generic_merge(acc, get_base_value(e)) as Situation<A>,
+            empty_situation<A>()
         )
     )
 ```
 
-GC evaluates `retain_matches(tvs_history_want(content).predicate, element, tvs)` per element to decide what survives. No separate storage; no extra cell fields.
+`tvs_strongest_consequence` and `tvs_situation` partition the TVS — no entry appears in both.
 
 ---
 
-### How propagators declare their want
+### Boundedness
 
-On initialization, a propagator writes a `HistoryWant` value into the cell via the standard `update_cell` path:
+| State | Situation bound |
+|-------|----------------|
+| All values comparable (total order) | O(1) — only the strongest survives |
+| Values from N independent premises | O(N) — one per antichain element |
+| Contradictions from search | O(hypotheses) — all contradictory branches kept |
 
-```ts
-// propagator 1 — retain last 3 from channel A
-update_cell(input_cell, support_by(want_last_n("A", 3), propagator_1_premise_id))
-
-// propagator 2 — retain everything from channel B
-update_cell(input_cell, support_by(want_all_from("B"), propagator_2_premise_id))
-
-// effective predicate via tvs_history_want:
-// or(last_n("A", 3), all_from("B"))
-// element retained if: rank in A <= 3  OR  carries channel B
-```
-
-`HistoryWant` entries survive in the TVS exactly as long as their supporting premise is in — which is exactly when the declaring propagator is active. If a propagator is retracted as a premise, its `HistoryWant` entry weakens out of `tvs_history_want` automatically, and GC tightens retention on the next post-settle pass. New predicate kinds can be added without changing `tvs_history_want`, `tvs_strongest_consequence`, or the GC trigger — only `retain_matches` needs a new case.
-
----
-
-### Baseline: no `history_want` declared
-
-When `history_want` is empty (no propagator has declared a requirement), the cell retains only what is necessary for correct premise retraction and resurrection:
-
-- **Keep**: any element that is premise-in (required for current `strongest`)
-- **Keep**: any premise-out element that is NOT clock-dominated by a premise-in element from the same source (required for resurrection)
-- **Evict**: premise-out elements that are clock-dominated by a premise-in element — a newer, currently-believed version already covers them
-
-```
-evict(E) iff:
-    all channels of E are premise-out
-    AND exists E' in TVS:
-        vector_clock_prove_staled_by(E, E')
-        AND all channels of E' are premise-in
-```
-
----
-
-### With `history_want` declared
-
-For each channel `C` with a declared want `n`, GC retains the `n` most recent elements whose vector clock includes `C`, regardless of premise state. These are kept in addition to the baseline retention set:
-
-```
-for each channel C in history_want:
-    n = history_want[C]
-    sorted = sort elements by clock[C] descending
-    mark sorted[0..n-1] as retained for channel C
-
-evict(E) iff:
-    E is not in baseline retention set
-    AND E is not marked retained for any channel
-```
-
-This composes cleanly: an element retained by any channel's want or by the baseline rule survives GC.
-
----
-
-### Monotone growth and disposal
-
-`history_want` only ever grows. If a propagator that declared `want: 5` is disposed, the cell's `history_want` does not decrease — the history is kept as a safe over-approximation. This matches the monotone model: information is never retracted from `history_want`, only accumulated. In practice, cells accumulate wants from a small fixed set of propagators (their static neighbors), so unbounded growth is not a concern.
-
-If a cell needs to shed history (e.g. after a test reset), the explicit `store.gc_cell(cellId)` call with a zeroed `history_want` handles that.
-
----
-
-### GC trigger
-
-GC runs **post-settle**: after `wake_up_roots` completes and the propagation queue drains, schedule `gc_cell(cellId)` for each cell in `cells_for_premise(premiseId)`. At that point `test_content` has already run, so `strongest` is correct and GC operates on a stable snapshot.
-
-Explicit `store.gc_cell(cellId)` is also exposed for test boundary resets.
-
----
-
-### GC and the premise index
-
-After eviction, clean up stale premise index entries:
-
-```ts
-const surviving_channels = all_clock_channels(retained);
-for each premiseId previously indexed for cellId:
-    if premiseId not in surviving_channels:
-        store.premise_index.get(premiseId).delete(cellId);
-```
-
-Cells whose TVS no longer holds any value from premise `P` are removed from the premise index and will not be woken on future `P` flips.
-
----
-
-### Boundedness guarantees
-
-| `history_want` state | TVS bound per cell |
-|----------------------|--------------------|
-| Empty (no wants declared) | O(active premises contributing to cell) |
-| `{ C: n }` for channel C | O(n) for channel C + baseline |
-| Multiple channels | O(sum of n per channel) + baseline |
-
-In the existing test suite no propagator declares history wants. TVS converges to at most one entry per source channel — bounded by the number of premises in the system.
+In the existing test suite no propagator creates a Situation. The TVS itself converges to at most one entry per source channel — bounded by the number of premises.
 
 ---
 

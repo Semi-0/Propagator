@@ -6,6 +6,7 @@
 // This file was ported from the SDF propagator system (Software Design for Flexibility).
 
 import { set_global_state, get_global_parent, cell_snapshot } from "../Shared/PublicState";
+import { init_cell, write_content, read_content, read_strongest, recompute_strongest, write_disposed } from "../Shared/CellValueStore";
 import {type Propagator, internal_propagator_dispose, propagator_id} from "../Propagator/Propagator";
 import { Reactive } from '../Shared/Reactivity/ReactiveEngine';
 import type { ReactiveState } from '../Shared/Reactivity/ReactiveEngine';
@@ -159,66 +160,49 @@ export interface CellInitialData<A> {
 }
 
 export function primitive_construct_cell<A>(
-  name: string, 
+  name: string,
   id: string | null = null,
   initialData: CellInitialData<A> = {}
 ): Cell<A> {
   const relation = make_relation(name, get_global_parent(), id);
+  const cid = relation.get_id();
   const neighbors: Map<string, interesetedNeighbor> = initialData.neighbors ?? new Map();
-  // build two stateful streams for content and strongest
-  // can be more performative to fine grain observe method args
-  // but how?
-  // TODO:
-  // a better way foe cell disposal is to let cell remember its dependents
-  // so disposing can be isolated totally from propagation 
-  var content: CellValue<A> = initialData.content ?? the_nothing;
-  var strongest: CellValue<A> = initialData.strongest ?? the_nothing;
   var active = initialData.active ?? true
 
-  const handle_cell_contradiction = () => handle_contradiction(cell as Cell<A>);
-
-  function set_content(new_content: CellValue<A>){
-    content = new_content
+  // Seed the store with any initial data provided by the caller.
+  // Cells own only relation + neighbors; all value state lives in CellValueStore.
+  init_cell(cid);
+  if (initialData.content !== undefined && initialData.content !== the_nothing) {
+    write_content(cid, initialData.content);
   }
 
-  function set_strongest(new_strongest: CellValue<A>){
-    strongest = new_strongest
-    alert_interested_propagators(neighbors, NeighborType.updated)
-  }
+  const do_handle_contradiction = () => handle_contradiction(cell as Cell<A>);
 
   function test_content(): void {
-    // const new_strongest = trace_generic_procedure(console.log, strongest_value, [content])
-    const new_strongest = strongest_value(content)
+    const { new_strongest, changed } = recompute_strongest(cid);
 
-    if (cell_equal(new_strongest, strongest)){
-      alert_interested_propagators(neighbors, NeighborType.content_tested)
-      // because new strongest doesn't change
-      // so constant cell would not be updated on first update
-    }
-    else if (is_contradiction(new_strongest)){
-      alert_interested_propagators(neighbors, NeighborType.content_tested)
-      set_strongest(new_strongest)  
-      handle_cell_contradiction()
+    alert_interested_propagators(neighbors, NeighborType.content_tested);
 
-    }
-    else{
-      alert_interested_propagators(neighbors, NeighborType.content_tested)
-      set_strongest(new_strongest)
+    if (changed) {
+      if (is_contradiction(new_strongest)) {
+        alert_interested_propagators(neighbors, NeighborType.updated);
+        do_handle_contradiction();
+      } else {
+        alert_interested_propagators(neighbors, NeighborType.updated);
+      }
     }
   }
-
-  
 
   const cell = {
     getRelation: () => relation,
-    getContent: () => content,
-    getStrongest: () => strongest,
+    getContent:  () => read_content(cid),
+    getStrongest: () => read_strongest(cid),
     getNeighbors: () => neighbors,
     testContent: test_content,
     update: (increment: CellValue<A> = the_nothing) => {
       if (active) {
-        set_content(cell_merge(content, increment))
-        test_content()
+        write_content(cid, increment);
+        test_content();
       }
     },
 
@@ -235,16 +219,14 @@ export function primitive_construct_cell<A>(
           alert_interested_propagators(neighbors, NeighborType.neighbor_added)
           alert_interested_propagators(neighbors, NeighborType.updated)
         }
-    //  }
     },
     removeNeighbor: (propagator: Propagator) => {
       neighbors.delete(propagator.getRelation().get_id());
       alert_interested_propagators(neighbors, NeighborType.neighbor_removed)
     },
     summarize: () => {
-      const name = relation.get_name();
-      const strongVal = strongest;
-      const contVal = content;
+      const strongVal = read_strongest(cid);
+      const contVal   = read_content(cid);
 
       const summarizeNeighbor = ([id, info]: [string, interesetedNeighbor], index: number) => {
         const interested = info?.type ?? [];
@@ -259,7 +241,7 @@ export function primitive_construct_cell<A>(
 
       return [
         `CELL ${name}`,
-        `  ID: ${relation.get_id()}`,
+        `  ID: ${cid}`,
         `  STATUS: ${active ? "active" : "disposed"}`,
         `  STRONGEST: \n ${describe(strongVal)}`,
         `  CONTENT: \n ${describe(contVal)}`,
@@ -269,28 +251,13 @@ export function primitive_construct_cell<A>(
     },
 
     dispose: () => {
-      // Set the cell to disposed value
-      alert_interested_propagators(neighbors, NeighborType.disposing)
-      content = the_disposed
-      strongest = the_disposed
-      active = false
-      // Mark for cleanup
-      // mark_for_disposal(cell.getRelation())
-      // Trigger propagation to connected cells
-      // mark_for_disposal(cell)
-      // // but what about dependents?
-      // neighbors.forEach(n => {
-      //   mark_for_disposal(n.propagator)
-      // })
+      alert_interested_propagators(neighbors, NeighborType.disposing);
+      write_disposed(cid);
+      active = false;
     }
   };
 
   set_global_state(PublicStateCommand.ADD_CELL, cell)
-  
-// because i killed cell register in global state
-// now premises cannot find cell anymore
-// but i dont like this 
-// its there a way for premises to locally track cell
 
   return cell as Cell<A>;
 }

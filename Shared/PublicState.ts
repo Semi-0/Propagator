@@ -10,6 +10,7 @@ import type { Propagator } from '../Propagator/Propagator';
 import { construct_node } from './Reactivity/MiniReactor/MrPrimitive.ts';
 import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
+import { clear_cell_store } from './CellValueStore';
 import { set_handle_contradiction } from '@/cell/Cell';
 import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators.ts';
 import { internal_clear_source_cells } from '../DataTypes/PremisesSource';
@@ -169,6 +170,7 @@ subscribe((msg: PublicStateMessage) => {
             all_amb_propagators.receive([])
             clean_premises_store()
             clean_hypothetical_store()
+            clear_cell_store()
             Current_Scheduler.clear_all_tasks()
             set_global_state(PublicStateCommand.SET_CELL_MERGE, generic_merge)
             internal_clear_source_cells()
