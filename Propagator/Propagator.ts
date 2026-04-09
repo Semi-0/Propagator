@@ -149,8 +149,8 @@ export function primitive_propagator(f: (...inputs: any[]) => any, name: string,
             output ? [output] : [],
             () => {
                 const inputs_values = inputs.map(cell => cell_strongest(cell));
-
-                if (any_unusable_values(inputs_values)){
+                const has_unusable_values = any_unusable_values(inputs_values);
+                if (has_unusable_values){
                     // do nothing
                 }
                 else{

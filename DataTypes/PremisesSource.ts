@@ -229,11 +229,13 @@ export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp
 
         if (timestamp == undefined){
             const current = cell_strongest(source_cell);
+            const premises = cell_id(source_cell);
+            register_premise(premises, source_cell);
             if (is_layered_object(current)){
                 if (is_reactive_value(current)){
                     const layered_value = source_clock_forward(
                         value, 
-                        cell_id(source_cell),
+                        premises,
                         cell_strongest(source_cell)
                     )
                     update_cell(source_cell, layered_value)
@@ -243,8 +245,8 @@ export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp
                         vector_clock_layer,
                         construct_vector_clock([
                             {
-                                source: cell_id(source_cell),
-                                value: 0
+                                source: premises,
+                                value: 1
                             }
                         ])
                     )
@@ -257,8 +259,8 @@ export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp
                     vector_clock_layer,
                     construct_vector_clock([
                         {
-                            source: cell_id(source_cell),
-                            value: 0
+                            source: premises,
+                            value: 1
                         }
                     ])
                 )
@@ -266,23 +268,71 @@ export const update_source_cell = (source_cell: Cell<any>, value: any, timestamp
             }
         }
         else{
+            const premises = cell_id(source_cell);
+            register_premise(premises, source_cell);
            const layered_value = construct_layered_datum(
             value,
             vector_clock_layer,
             construct_vector_clock([
                 {
-                    source: cell_id(source_cell),
+                    source: premises,
                     value: timestamp
                 }
             ])
              )
-            update_cell(source_cell, 
+             update_cell(source_cell, 
                 layered_value
             )
         }
     }
 
-
+/**
+ * Merge `value` into `target_cell` using the vector-clock channel `cell_id(source_cell)`.
+ * Use this when a dependence source cell registers the premise but updates flow into other cells
+ * (so the clock channel matches `register_premise(cell_id(source_cell), …)` and
+ * `CellValueStore` premise_index / targeted premise wake stay consistent).
+ */
+export const update_target_cell_from_source = (
+    source_cell: Cell<any>,
+    target_cell: Cell<any>,
+    value: any,
+    timestamp: number | undefined = undefined,
+): void => {
+    const channel = cell_id(source_cell);
+    if (timestamp !== undefined) {
+        const layered_value = construct_layered_datum(
+            value,
+            vector_clock_layer,
+            construct_vector_clock([{ source: channel, value: timestamp }]),
+        );
+        update_cell(target_cell, layered_value);
+        return;
+    }
+    const current = cell_strongest(target_cell);
+    if (is_layered_object(current)) {
+        if (is_reactive_value(current)) {
+            const layered_value = source_clock_forward(
+                value,
+                channel,
+                cell_strongest(target_cell),
+            );
+            update_cell(target_cell, layered_value);
+        } else {
+            const layered_value = value.update_layer(
+                vector_clock_layer,
+                construct_vector_clock([{ source: channel, value: 0 }]),
+            );
+            update_cell(target_cell, layered_value);
+        }
+    } else {
+        const layered_value = construct_layered_datum(
+            value,
+            vector_clock_layer,
+            construct_vector_clock([{ source: channel, value: 0 }]),
+        );
+        update_cell(target_cell, layered_value);
+    }
+};
 
 export const change_premises = (premises_operation: (premises: string) => void) => (dependence: string) => {
     // a more robust way is gather all its neighbor have this dependence in content 
@@ -303,8 +353,8 @@ export const change_premises = (premises_operation: (premises: string) => void) 
   
 }
 
-export const kick_out = change_premises(mark_premise_out);
-export const bring_in = change_premises(mark_premise_in);
+export const kick_out = mark_premise_out 
+export const bring_in = mark_premise_in;
 
 
 
@@ -348,22 +398,20 @@ export const bring_in_cell = (cell: Cell<any>) => {
 }
 
 
-export const p_reactive_dispatch = (source: Cell<any>, output: Cell<any>) => function_to_primitive_propagator("dispatch",
-    (source: Map<Cell<any>, any>) => {
-        if (is_map(source)){
-            const update = source.get(output)
-
-            if ((update !== undefined) && (update !== null)){
-                return update
+export const p_reactive_dispatch = (source: Cell<any>, output: Cell<any>) =>
+    function_to_primitive_propagator(
+        "dispatch",
+        (source: Map<Cell<any>, any>) => {
+            if (is_map(source)) {
+                const update = source.get(output);
+                if (update !== undefined && update !== null) {
+                    return update;
+                }
+                return no_compute;
             }
-            else {
-                return no_compute
-            }
-        }
-        else {
-            return no_compute
-        }
-    })(source, output)
+            return no_compute;
+        },
+    )(source, output);
 
 
 export const ce_dependents = make_ce_arithmetical(p_reactive_dispatch)

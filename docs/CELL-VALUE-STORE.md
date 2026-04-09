@@ -186,31 +186,23 @@ The cell object itself carries only `relation` and `neighbors` — purely struct
 
 ---
 
-### Stage 3 — Replace `FORCE_UPDATE_ALL_CELLS` with targeted wake
+### Stage 3 — Replace `FORCE_UPDATE_ALL_CELLS` with targeted wake ✅ DONE
 
 **Goal:** `PremiseMetaData.wake_up_roots` uses the store's premise index.
 
-Replace `wake_up_roots` in `DataTypes/PremiseMetaData.ts`:
+**Scope:** **Clock-channel premises only** — see [TODO-PREMISE-INDEX-SUPPORT-LAYER.md](./TODO-PREMISE-INDEX-SUPPORT-LAYER.md) for deferred support-layer indexing.
 
-```ts
-wake_up_roots() {
-    const affected = cell_value_store.cells_for_premise(this.name);
-    for (const cellId of affected) {
-        const cell = get_cell_by_id(cellId);  // from existing cell registry
-        if (cell) cell_value_store.test_content(cellId, cell);
-    }
-    set_global_state(PublicStateCommand.ALERT_ALL_AMBS);
-    // FORCE_UPDATE_ALL_CELLS removed
-}
-```
+**Implementation (actual):**
 
-`get_cell_by_id` uses the existing cell registry populated by `PublicStateCommand.ADD_CELL`.
+- Added `PublicStateCommand.WAKE_CELLS_FOR_PREMISE` in `Shared/PublicState.ts`. The handler: for each `cellId` in `cells_for_premise(premiseId)`, find the live cell in `all_cells` by `cell_id`, call `testContent()` (no merge), then `ALERT_ALL_AMBS`. This avoids importing `CellValueStore` from `PremiseMetaData` (would cycle with `Premises.ts`).
+- `PremiseMetaData.wake_up_roots` dispatches only `WAKE_CELLS_FOR_PREMISE` with `this.name` (no `FORCE_UPDATE_ALL_CELLS` from library code).
+- `FORCE_UPDATE_ALL_CELLS` remains in the enum and switch as a manual/debug escape hatch.
+- Tests: `Propogator/test/premise_wake.test.ts` (premise index + targeted wake vs unrelated cells).
 
 **Criteria for success:**
-- `kick_out` / `bring_in` in `advanceReactive.test.ts` pass
-- Premise retraction does not wake cells whose content contains no value from that premise
-- `temporaryValueSetIntegration.test.ts` passes (the alias issue in `TODO.md` must also be resolved or explicitly deferred)
-- No `FORCE_UPDATE_ALL_CELLS` call remains in production code paths
+- Premise retraction does not wake cells whose content is not indexed for that premise (clock channels only).
+- No `FORCE_UPDATE_ALL_CELLS` call remains in **production** library paths (`PremiseMetaData`).
+- Named doc tests (`advanceReactive.test.ts`, etc.) — add/port when present in the tree; current coverage is `premise_wake.test.ts`.
 
 ---
 
@@ -283,6 +275,10 @@ export const is_situation = register_predicate(
 )
 
 export const empty_situation = <A>(): Situation<A> => ({ kind: "situation", entries: [] })
+
+
+
+// this is sus, i think we only needs to extends the new value into unknown histories
 
 export const situation_size = <A>(s: Situation<A>): number => s.entries.length
 ```

@@ -65,16 +65,9 @@ export class PremiseMetaData {
     } 
 
     wake_up_roots(){
-          // TODO: force update propagators
-       set_global_state(PublicStateCommand.ALERT_ALL_AMBS)
-
-       //TODO:  alert amb propagatorm
-        // TODO: this can be even simplified with define relationship between premises cells and ambs
-        // if add content is scheduled cannot make sure amb is only notified after all the current content has been all propagated
-       set_global_state(PublicStateCommand.FORCE_UPDATE_ALL_CELLS)
-        
-
-      
+        // Targeted testContent via CellValueStore premise_index (clock-channel premises only;
+        // see Propogator/docs/TODO-PREMISE-INDEX-SUPPORT-LAYER.md). Then alert ambs for search.
+        set_global_state(PublicStateCommand.WAKE_CELLS_FOR_PREMISE, this.name);
     }
 
     get_roots(): BetterSet<any>{

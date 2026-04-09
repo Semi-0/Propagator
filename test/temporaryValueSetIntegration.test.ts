@@ -25,7 +25,7 @@ import { support_layer } from "sando-layer/Specified/SupportLayer";
 import { assert, compound_tell, kick_out as kick_out_premise, reactive_tell } from "../Helper/UI";
 import { 
    source_constant_cell as  construct_dependent_cell, 
-    update_source_cell, 
+    update_target_cell_from_source, 
     kick_out_cell, 
     bring_in_cell, 
     internal_clear_source_cells,
@@ -53,7 +53,7 @@ const dependent_update = (source_name: string) => (updates: Map<Cell<any>, any>)
     source_cells_by_name.set(source_name, source_cell);
 
     for (const [target_cell, value] of updates) {
-        update_source_cell(target_cell, value);
+        update_target_cell_from_source(source_cell, target_cell, value);
     }
 
     return source_cell;

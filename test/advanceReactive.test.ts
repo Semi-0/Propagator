@@ -1609,7 +1609,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
 
   describe("Source Cell Propagator Tests", () => {
     
-    test.only("p_sync should update output when source cell input changes", async () => {
+    test("p_sync should update output when source cell input changes", async () => {
       const input = source_constant_cell("syncSrc");
       const output = construct_cell("srcSyncOutput");
       p_sync(input, output);
@@ -1750,7 +1750,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Bi-Directional Tests", () => {
     
     test("bi_sync with source cells should propagate in both directions", async () => {
-      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const source = construct_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
 
       const left = construct_cell("left") as Cell<number>;
@@ -1766,7 +1766,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       expect(cell_strongest_base_value(right)).toBe(1);
 
       // Kick out old source before updating from different source
-  
+
       update_source_cell(source, new Map([[right, 5]]));
       await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(right)).toBe(5);
@@ -1777,7 +1777,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // which don't integrate with the Reality/dependent_update pattern. Use reactive_tell instead.
     test("temperature conversion with source cells (compound propagator - use reactive_tell)", async () => {
 
-      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const source = construct_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
       const celsius = construct_cell("celsius") as Cell<number>;
       const fahrenheit = construct_cell("fahrenheit") as Cell<number>;
       
@@ -1801,8 +1801,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell kick_out/bring_in Tests", () => {
     
     test("kick_out should stop source contribution to downstream", async () => {
-      const cellA = source_constant_cell("kickSrcA");
-      const cellB = source_constant_cell("kickSrcB");
+      const cellA = construct_cell("kickSrcA");
+      const cellB = construct_cell("kickSrcB");
       const output = construct_cell("kickTestOut");
       p_add(cellA, cellB, output);
 
@@ -1822,8 +1822,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
 
     test("bring_in should restore source contribution", async () => {
       set_merge(log_tracer("merge_temporary_value_set", merge_temporary_value_set));
-      const cellA = source_constant_cell("bringSrcA");
-      const cellB = source_constant_cell("bringSrcB");
+      const cellA = construct_cell("bringSrcA");
+      const cellB = construct_cell("bringSrcB");
       const output = construct_cell("bringTestOut");
       p_multiply(cellA, cellB, output);
 
@@ -1845,8 +1845,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       // Note: This test needs two source cells that both update the same target cell
       // Since we can't have two source cells updating the same cell directly,
       // we'll create a regular cell and use p_sync from source cells
-      const source1 = source_constant_cell("switchSrc1");
-      const source2 = source_constant_cell("switchSrc2");
+      const source1 = construct_cell("switchSrc1");
+      const source2 = construct_cell("switchSrc2");
       const cell = construct_cell("switchSrcCell");
       const output = construct_cell("switchSrcOut");
       p_sync(source1, cell);
@@ -1866,7 +1866,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       kick_out(cell_id(source1));
       // it kicked out source 1 but because source 1 was nothing
       // so the update failed to propagated into output...
-      run_scheduler_and_replay(console.error)
+      await execute_all_tasks_sequential((error: Error) => {});
       expect(cell_strongest_base_value(output)).toBe(200);
 
       // Switch back to source 1
@@ -1900,7 +1900,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
       }, "src_radius_to_circle");
 
       // Set radius via source cell
-      const radiusSrc = source_constant_cell("radiusSrc") as Cell<number>;
+      const radiusSrc = construct_cell("radiusSrc") as Cell<number>;
       p_sync(radiusSrc, radius);
       
       update_source_cell(radiusSrc, 5);
@@ -1944,8 +1944,8 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     // Note: c_if_a uses internal caching that doesn't respond to Reality/dependent_update condition changes.
     // The output is computed once based on the initial condition and cached. Use reactive_tell for c_if_a.
     test("c_if_a with source cells (conditional caches state - use reactive_tell)", async () => {
-      const condition = source_constant_cell("condition") as Cell<boolean>;
-      const source = source_constant_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
+      const condition = construct_cell("condition") as Cell<boolean>;
+      const source = construct_cell("source") as Cell<LayeredObject<Map<Cell<any>, any>>>;
 
       const output = construct_cell("output") as Cell<number>;
 

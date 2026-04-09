@@ -19,6 +19,7 @@ import { is_array, is_number, is_string } from "generic-handler/built_in_generic
 
 import { define_layered_procedure_handler, make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 
 // because vector clock already mark the source id
@@ -516,7 +517,8 @@ export const is_reactive_values = register_predicate("is_reactive_values", (arr:
 define_generic_procedure_handler(any_unusable_values, match_args(is_reactive_values), (as: LayeredObject<any>[] | any[]) => {
     // 1. if all the values has victor clock and their clock are out of sync, then return true
     // 2. if some of the values doesn't have victor clock, skip that value 
-    const result = any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, is_unusable_value))
+
+    const result =  any_victor_clock_out_of_sync(as) || as.some(compose(get_base_value, is_unusable_value))
     return result;
 })
 

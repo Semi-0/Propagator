@@ -10,8 +10,8 @@ import type { Propagator } from '../Propagator/Propagator';
 import { construct_node } from './Reactivity/MiniReactor/MrPrimitive.ts';
 import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
-import { clear_cell_store } from './CellValueStore';
-import { set_handle_contradiction } from '@/cell/Cell';
+import { clear_cell_store, cells_for_premise } from './CellValueStore';
+import { set_handle_contradiction, cell_id } from '@/cell/Cell';
 import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators.ts';
 import { internal_clear_source_cells } from '../DataTypes/PremisesSource';
 import { pipe } from 'fp-ts/lib/function';
@@ -41,7 +41,9 @@ export enum PublicStateCommand{
     REMOVE_CELL = "remove_cell",
     REMOVE_PROPAGATOR = "remove_propagator",
     REMOVE_AMB_PROPAGATOR = "remove_amb_propagator",
-    ALERT_ALL_AMBS = "alert_all_ambs"
+    ALERT_ALL_AMBS = "alert_all_ambs",
+    /** Targeted strongest recompute for cells indexed on this premise (see CellValueStore premise_index). */
+    WAKE_CELLS_FOR_PREMISE = "wake_cells_for_premise",
 }
 
 export interface PublicStateMessage{
@@ -123,6 +125,24 @@ subscribe((msg: PublicStateMessage) => {
                Current_Scheduler.alert_propagator(propagator)
             })
             break;
+
+        case PublicStateCommand.WAKE_CELLS_FOR_PREMISE: {
+            console.log("WAKE_CELLS_FOR_PREMISE");
+            const premiseId = msg.args[0];
+            if (typeof premiseId !== "string") {
+                console.warn("WAKE_CELLS_FOR_PREMISE expects string premise id", msg.args);
+                break;
+            }
+            const cells = all_cells.get_value();
+            for (const id of cells_for_premise(premiseId)) {
+                const cell = cells.find((c) => cell_id(c) === id);
+                if (cell) cell.testContent();
+            }
+            all_amb_propagators.get_value().forEach((propagator: Propagator) => {
+                Current_Scheduler.alert_propagator(propagator);
+            });
+            break;
+        }
 
         case PublicStateCommand.SET_SCHEDULER:
             set_scheduler(msg.args[0]);
