@@ -8,6 +8,8 @@ propagators, support layer,
 generic arithmetic, as well as
 simple backtracking(amb op).
 
+**Module map:** the core propagator implementation is documented in [`Propagator/docs/README.md`](Propagator/docs/README.md) (file index and links to related packages).
+
 The system extends a **vector clock-based reactive system** for transmitting values between cells and propagators. Vector clocks track causality and temporal ordering, enabling correct reactive updates in distributed and concurrent scenarios. Vector clocks can also be used as a **Truth Maintenance System (TMS)**, tracking dependencies and support relationships between values (see `test/advanceReactive.test.ts` and `DataTypes/TemporaryValueSet.ts`). Cells support **reflectivity**, allowing them to observe and react to their own state changes.
 
 ## Key Architectural Extensions
