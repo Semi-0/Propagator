@@ -1610,7 +1610,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell Propagator Tests", () => {
     
     test("p_sync should update output when source cell input changes", async () => {
-      const input = source_constant_cell("syncSrc");
+      const input = construct_cell("syncSrc");
       const output = construct_cell("srcSyncOutput");
       p_sync(input, output);
       
@@ -1730,7 +1730,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("ce_pipe with p_reduce using source cells", async () => {
-      const input = source_constant_cell("reduceSrc");
+      const input = construct_cell("reduceSrc");
       const reduced = ce_pipe(input, p_reduce((acc: number, x: number) => acc + x, 0));
 
       update_source_cell(input, 5);
@@ -1981,7 +1981,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
   describe("Source Cell p_drop/p_take Tests", () => {
     
     test("p_drop with source cells should skip first N values", async () => {
-      const input = source_constant_cell("dropSrc");
+      const input = construct_cell("dropSrc");
       const output = construct_cell("srcDropOutput");
       p_drop(2)(input, output);
 
@@ -2004,7 +2004,7 @@ describe("Reality Source Cell - Advance Reactive Adapted Tests", () => {
     });
 
     test("p_take with source cells should only take first N values", async () => {
-      const input = source_constant_cell("takeSrc");
+      const input = construct_cell("takeSrc");
       const output = construct_cell("srcTakeOutput");
       p_take(2)(input, output);
 
