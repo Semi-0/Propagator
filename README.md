@@ -51,19 +51,6 @@ Sussman as part of the SDF system accompanying the book
 The original implementation is written in MIT/GNU Scheme and released
 under the GNU General Public License v3 or later.
 
-This implementation is not a line-by-line translation. It adapts the
-core ideas to a modern TypeScript runtime and introduces architectural
-changes appropriate to a push-based and distributed execution model.
-
-Todos:
-1. simplify premise->cell->amb subs
-2. integrate with socket/libp2p for distributed computation
-3. localize premises maintainance system(means premises also should notify whatever 
-cell it was propagated to for update)
-
-
-
-
 ## Installation
 
 ### Quick Start
