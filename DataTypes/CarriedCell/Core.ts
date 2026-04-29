@@ -51,6 +51,7 @@ export const is_compound_cell = register_predicate(
     }
 )
 
+// i think we should delay merge later
 define_generic_procedure_handler(generic_merge, all_match(is_compound_cell), merge_carried_map)
 
 

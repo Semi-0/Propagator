@@ -20,6 +20,7 @@ export function init_propagator_system(): Promise<void> {
     const mod = await import("./Shared/Generics");
     mod.install_generics_package();
     g[key] = true;
+    console.log("propagator system initialized");
   })();
 
   return _initPromise;

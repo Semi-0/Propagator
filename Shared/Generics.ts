@@ -6,7 +6,7 @@ import { match_args } from "generic-handler/Predicates";
 import { mark_for_disposal as mark_id_for_disposal} from "./Scheduler/Scheduler";
 import { is_relation, type Relation } from "../DataTypes/Relation";
 import { cell_children, cell_dependents, cell_downstream, cell_id, is_cell } from "@/cell/Cell";
-import { is_propagator, propagator_children, propagator_id } from "../Propagator/Propagator";
+import { is_propagator, propagator_children, propagator_id, propagator_inputs, propagator_outputs } from "../Propagator/Propagator";
 // import type { Propagator } from "ppropogator";
 
 
@@ -123,16 +123,62 @@ export const mark_for_disposal = (item: any) => {
 };
 
 
-export const get_dependents = (x: any): any[] => {
-    if (is_cell(x)) return cell_dependents(x)
-    if (x && typeof x.getInputs === 'function') return x.getInputs()
-    return []
+// export const get_dependents = (x: any): any[] => {
+//     if (is_cell(x)) return cell_dependents(x)
+//     // if (is_propagator(x)) return propagator_inputs(x)
+//     if (x && typeof x.getInputs === 'function') return x.getInputs()
+//     return []
+// }
+
+export const get_dependents = construct_simple_generic_procedure(
+    "get_dependents",
+    1,
+    (x: any) => {
+        console.error("get_dependents is not implemented with:" + x)
+        return []
+    }
+)
+
+export const get_downstream = construct_simple_generic_procedure(
+    "get_downstream",
+    1,
+    (x: any) => {
+        console.error("get_downstream is not implemented with:" + x)
+        return []
+    }
+)
+
+// export const get_downstream = (x: any): any[] => {
+//     if (is_cell(x)) return cell_downstream(x)
+//     // if (is_propagator(x)) return propagator_outputs(x)
+//     if (x && typeof x.getOutputs === 'function') return x.getOutputs()
+//     return []
+// }
+
+export const install_get_dependents_generic_package = () => {
+    define_generic_procedure_handler(
+        get_dependents,
+        match_args(is_cell),
+        cell_dependents
+    )
+    define_generic_procedure_handler(
+        get_dependents,
+        match_args(is_propagator),
+        propagator_inputs
+    )
 }
 
-export const get_downstream = (x: any): any[] => {
-    if (is_cell(x)) return cell_downstream(x)
-    if (x && typeof x.getOutputs === 'function') return x.getOutputs()
-    return []
+export const install_get_downstream_generic_package = () => {
+    define_generic_procedure_handler(
+        get_downstream,
+        match_args(is_cell),
+        cell_downstream
+    )
+    define_generic_procedure_handler(
+        get_downstream,
+        match_args(is_propagator),
+        propagator_outputs
+    )
 }
 
 export const at_primitives = (x: any): boolean =>
@@ -147,4 +193,8 @@ export const generic_relation_parent_child = (parent: any, child: any) => {
 export const install_generics_package = () => {
     install_get_id_generic_package();
     install_get_children_generic_package();
+    install_get_dependents_generic_package();
+    install_get_downstream_generic_package()
+    console.log("generics package installed");
+;
 }
