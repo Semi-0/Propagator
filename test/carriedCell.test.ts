@@ -42,7 +42,7 @@ import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { is_map } from "../Helper/Helper";
 import { compound_tell } from "../Helper/UI";
 import { construct_vector_clock, vector_clock_layer } from "../AdvanceReactivity/vector_clock";
-import { compound_propagator, generic_merge, inspect_strongest } from "ppropogator";
+import { compound_propagator, construct_propagator, generic_merge, inspect_strongest } from "ppropogator";
 import { traced_generic_procedure } from "generic-handler/GenericProcedure";
 import { the_contradiction } from "ppropogator";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
@@ -706,3 +706,91 @@ describe("Carried Cell Tests", () => {
     expect(cell_strongest_base_value(zippedFirstA)).toBe(1);
     expect(cell_strongest_base_value(zippedFirstB)).toBe(2);
   });
+
+describe("memory footprint: N cells and N propagators (directed ring)", () => {
+  function requestGc_bestEffort(): void {
+    const bun = globalThis.Bun as { gc?: (sync: boolean) => void } | undefined;
+    if (bun?.gc) {
+      bun.gc(false);
+    } else if (typeof globalThis.gc === "function") {
+      globalThis.gc();
+    }
+  }
+
+  /** N cells, N propagators: prop i wires cell[i] → cell[(i + 1) % N]. */
+  function buildDirectedRing(n: number): {
+    cells: Cell<any>[];
+    propagators: ReturnType<typeof construct_propagator>[];
+  } {
+    const cells: Cell<any>[] = [];
+    for (let i = 0; i < n; i++) {
+      cells.push(construct_cell(`mem_ring_cell_${i}`));
+    }
+    const propagators: ReturnType<typeof construct_propagator>[] = [];
+    for (let i = 0; i < n; i++) {
+      const outIdx = (i + 1) % n;
+      propagators.push(
+        construct_propagator([cells[i]], [cells[outIdx]], () => {}, `mem_ring_prop_${i}`)
+      );
+    }
+    return { cells, propagators };
+  }
+
+  function measureRingFootprint(n: number): {
+    deltaHeapBytes: number;
+    deltaRssBytes: number;
+    bytesPerCellPropPair: number;
+    nCells: number;
+    nPropagators: number;
+  } {
+    requestGc_bestEffort();
+    const before = process.memoryUsage();
+    const { cells, propagators } = buildDirectedRing(n);
+    const after = process.memoryUsage();
+    void cells;
+    void propagators;
+    const deltaHeapBytes = after.heapUsed - before.heapUsed;
+    const deltaRssBytes = after.rss - before.rss;
+    const deltaHeapClamped = Math.max(0, deltaHeapBytes);
+    return {
+      deltaHeapBytes,
+      deltaRssBytes,
+      bytesPerCellPropPair: deltaHeapClamped / n,
+      nCells: n,
+      nPropagators: propagators.length,
+    };
+  }
+
+  test("100 cells × 100 propagators: report heap / RSS delta", () => {
+    const n = 100;
+    const snapshot = measureRingFootprint(n);
+    console.log(
+      `[memory] ${n} cells + ${n} propagators: ΔheapUsed=${snapshot.deltaHeapBytes} B, Δrss=${snapshot.deltaRssBytes} B (~${(snapshot.bytesPerCellPropPair / 1024).toFixed(2)} KiB per pair vs clamped heap)`
+    );
+    expect(snapshot.nCells).toBe(n);
+    expect(snapshot.nPropagators).toBe(n);
+    // Bun often shows ΔheapUsed = 0 for small graphs that fit in allocator slack; 1k / 10k cases still grow heap.
+  });
+
+  test("1000 cells × 1000 propagators: report heap / RSS delta", () => {
+    const n = 1000;
+    const snapshot = measureRingFootprint(n);
+    console.log(
+      `[memory] ${n} cells + ${n} propagators: ΔheapUsed≈${(Math.max(0, snapshot.deltaHeapBytes) / (1024 * 1024)).toFixed(3)} MiB (${snapshot.deltaHeapBytes} B), Δrss=${snapshot.deltaRssBytes} B, ~${(snapshot.bytesPerCellPropPair / 1024).toFixed(2)} KiB per pair`
+    );
+    expect(snapshot.nCells).toBe(n);
+    expect(snapshot.nPropagators).toBe(n);
+    expect(Math.max(0, snapshot.deltaHeapBytes)).toBeGreaterThan(0);
+  });
+
+  test("10000 cells × 10000 propagators: report heap / RSS delta", () => {
+    const n = 10000;
+    const snapshot = measureRingFootprint(n);
+    console.log(
+      `[memory] ${n} cells + ${n} propagators: ΔheapUsed≈${(Math.max(0, snapshot.deltaHeapBytes) / (1024 * 1024)).toFixed(3)} MiB (${snapshot.deltaHeapBytes} B), Δrss=${snapshot.deltaRssBytes} B, ~${(snapshot.bytesPerCellPropPair / 1024).toFixed(2)} KiB per pair`
+    );
+    expect(snapshot.nCells).toBe(n);
+    expect(snapshot.nPropagators).toBe(n);
+    expect(Math.max(0, snapshot.deltaHeapBytes)).toBeGreaterThan(0);
+  });
+});
