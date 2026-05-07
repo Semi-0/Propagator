@@ -1,8 +1,8 @@
 import { is_unusable_value } from "@/cell/CellValue";
 import { update_cell, type Cell } from "@/cell/Cell";
-import { construct_propagator, type Propagator } from "../../Propagator/Propagator";
+import { construct_propagator, type Propagator } from "../../../Propagator/Propagator";
 import type { DiffMessage, VersionedCollection } from "./messagesTrace";
-import { is_diff_message, is_diff_trace, is_frontier_message } from "./messagesTrace";
+import { is_diff_message, is_diff_trace, is_frontier_message, vc_records } from "./messagesTrace";
 
 export interface TraceCursor {
   readonly offset: number;
@@ -24,7 +24,7 @@ export const read_messages_since = <T>(
 };
 
 const non_empty_message = (message: DiffMessage<any>): boolean =>
-  is_frontier_message(message) || (message as VersionedCollection<any>).collection.records.length > 0;
+  is_frontier_message(message) || vc_records(message as VersionedCollection<any>).length > 0;
 
 const emit_messages = (output: Cell<any>, messages: readonly DiffMessage<any>[]): void => {
   for (const m of messages) if (non_empty_message(m)) update_cell(output, m);
@@ -85,3 +85,4 @@ export const make_diff_binary_operator = <S, L, R, O>(
     name,
   );
 };
+

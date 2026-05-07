@@ -1,15 +1,21 @@
+import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
+import { make_unprocedural_layer, type Layer } from "sando-layer/Basic/Layer";
+import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
+import { vector_clock_layer } from "sando-layer/Specified/VectorClockLayer";
 import {
   merge_vector_clocks,
   vector_clock_forward,
   vector_clock_get_source_direct,
-} from "../../AdvanceReactivity/vector_clock";
+} from "../../../AdvanceReactivity/vector_clock";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import type { VersionClock, VersionClockValue } from "./diffAlgebra";
 
-export interface Version {
-  readonly kind: "diff_version";
-  readonly clock: VersionClock;
-}
+export type Version = LayeredObject<undefined>;
+
+export const version_marker_layer: Layer<true> = make_unprocedural_layer<true>(
+  "diff_version_marker",
+  () => true,
+);
 
 export interface AntichainFrontier {
   readonly kind: "antichain_frontier";
@@ -18,22 +24,35 @@ export interface AntichainFrontier {
 
 type VersionRelation = "less" | "equal" | "greater" | "incomparable";
 
+const to_clock = (
+  clock: VersionClock | Record<string, VersionClockValue> | number[],
+): VersionClock => {
+  if (clock instanceof Map) return new Map(clock);
+  if (Array.isArray(clock)) return new Map(clock.map((v, i) => [String(i), v]));
+  return new Map(Object.entries(clock));
+};
+
 export const version = (
   clock: VersionClock | Record<string, VersionClockValue> | number[] = new Map(),
-): Version => {
-  if (clock instanceof Map) return { kind: "diff_version", clock: new Map(clock) };
-  if (Array.isArray(clock))
-    return { kind: "diff_version", clock: new Map(clock.map((v, i) => [String(i), v])) };
-  return { kind: "diff_version", clock: new Map(Object.entries(clock)) };
-};
+): Version =>
+  construct_layered_datum(
+    undefined,
+    vector_clock_layer,
+    to_clock(clock),
+    version_marker_layer,
+    true,
+  ) as Version;
+
+export const version_clock = (v: Version): VersionClock =>
+  vector_clock_layer.get_value(v) as VersionClock;
 
 export const initial_version = (): Version => version([0]);
 
 export const version_forward = (v: Version, channel: string): Version =>
-  version(vector_clock_forward(v.clock as any, channel) as VersionClock);
+  version(vector_clock_forward(version_clock(v) as any, channel) as VersionClock);
 
 export const least_upper_bound = (a: Version, b: Version): Version =>
-  version(merge_vector_clocks(a.clock as any, b.clock as any) as VersionClock);
+  version(merge_vector_clocks(version_clock(a) as any, version_clock(b) as any) as VersionClock);
 
 const compare_clock_value = (a: VersionClockValue, b: VersionClockValue): number => {
   if (a === b) return 0;
@@ -43,13 +62,15 @@ const compare_clock_value = (a: VersionClockValue, b: VersionClockValue): number
 };
 
 export const version_relation = (a: Version, b: Version): VersionRelation => {
-  const keys = new Set([...a.clock.keys(), ...b.clock.keys()]);
+  const ac = version_clock(a);
+  const bc = version_clock(b);
+  const keys = new Set([...ac.keys(), ...bc.keys()]);
   let aGreater = false;
   let bGreater = false;
   for (const key of keys) {
     const cmp = compare_clock_value(
-      vector_clock_get_source_direct(key, a.clock),
-      vector_clock_get_source_direct(key, b.clock),
+      vector_clock_get_source_direct(key, ac),
+      vector_clock_get_source_direct(key, bc),
     );
     if (cmp < 0) bGreater = true;
     if (cmp > 0) aGreater = true;
@@ -97,3 +118,4 @@ export const frontier_less_equal = (a: AntichainFrontier, b: AntichainFrontier):
 
 export const frontier_join = (a: AntichainFrontier, b: AntichainFrontier): AntichainFrontier =>
   frontier([...a.versions, ...b.versions]);
+

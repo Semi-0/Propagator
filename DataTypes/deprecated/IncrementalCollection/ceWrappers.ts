@@ -1,5 +1,5 @@
 import type { Cell } from "@/cell/Cell";
-import { make_ce_arithmetical } from "../../Propagator/Sugar";
+import { make_ce_arithmetical } from "../../../Propagator/Sugar";
 import {
   p_diff_concat,
   p_diff_distinct,
@@ -26,3 +26,4 @@ export const ce_diff_concat = make_ce_arithmetical(p_diff_concat, "ce_diff_conca
   left: Cell<any>,
   right: Cell<any>,
 ) => Cell<any>;
+

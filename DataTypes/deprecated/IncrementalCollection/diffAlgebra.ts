@@ -1,5 +1,8 @@
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
+import { construct_layered_datum } from "sando-layer/Basic/LayeredDatum";
+import { make_unprocedural_layer, get_base_value, type Layer } from "sando-layer/Basic/Layer";
+import { type LayeredObject } from "sando-layer/Basic/LayeredObject";
 
 export type VersionClockValue = number | string;
 export type VersionClock = Map<string, VersionClockValue>;
@@ -9,10 +12,12 @@ export interface DiffRecord<T> {
   readonly multiplicity: number;
 }
 
-export interface DiffCollection<T> {
-  readonly kind: "diff_collection";
-  readonly records: readonly DiffRecord<T>[];
-}
+export type DiffCollection<T> = LayeredObject<readonly DiffRecord<T>[]>;
+
+export const diff_collection_marker_layer: Layer<true> = make_unprocedural_layer<true>(
+  "diff_collection_marker",
+  () => true,
+);
 
 export const diff_record = <T>(record: T, multiplicity = 1): DiffRecord<T> => ({ record, multiplicity });
 
@@ -36,21 +41,27 @@ export const consolidate_records = <T>(records: readonly DiffRecord<T>[]): DiffR
   return Array.from(buckets.values()).flat();
 };
 
-export const diff_collection = <T>(records: readonly DiffRecord<T>[] = []): DiffCollection<T> => ({
-  kind: "diff_collection",
-  records: consolidate_records(records),
-});
+export const diff_collection = <T>(records: readonly DiffRecord<T>[] = []): DiffCollection<T> =>
+  construct_layered_datum(
+    consolidate_records(records),
+    diff_collection_marker_layer,
+    true,
+  ) as DiffCollection<T>;
+
+export const dc_records = <T>(c: LayeredObject<readonly DiffRecord<T>[]>): readonly DiffRecord<T>[] =>
+  get_base_value(c) as readonly DiffRecord<T>[];
 
 export const empty_diff_collection = <T>(): DiffCollection<T> => diff_collection<T>([]);
 
 export const diff_concat = <T>(a: DiffCollection<T>, b: DiffCollection<T>): DiffCollection<T> =>
-  diff_collection([...a.records, ...b.records]);
+  diff_collection([...dc_records(a), ...dc_records(b)]);
 
 export const diff_negate = <T>(c: DiffCollection<T>): DiffCollection<T> =>
-  diff_collection(c.records.map(({ record, multiplicity }) => diff_record(record, -multiplicity)));
+  diff_collection(dc_records(c).map(({ record, multiplicity }) => diff_record(record, -multiplicity)));
 
 export const diff_map = <A, B>(c: DiffCollection<A>, f: (record: A) => B): DiffCollection<B> =>
-  diff_collection(c.records.map(({ record, multiplicity }) => diff_record(f(record), multiplicity)));
+  diff_collection(dc_records(c).map(({ record, multiplicity }) => diff_record(f(record), multiplicity)));
 
 export const diff_filter = <T>(c: DiffCollection<T>, predicate: (record: T) => boolean): DiffCollection<T> =>
-  diff_collection(c.records.filter(({ record }) => predicate(record)));
+  diff_collection(dc_records(c).filter(({ record }) => predicate(record)));
+
