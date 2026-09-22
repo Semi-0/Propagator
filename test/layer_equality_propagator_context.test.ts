@@ -5,9 +5,9 @@ import { vector_clock_layer } from "../AdvanceReactivity/vector_clock";
 import { layered_deep_equal, layers_base_equal, all_layers_value_equal, layers_length_equal } from "sando-layer/Equality";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { set_merge } from "@/cell/Merge";
+import { set_merge } from "../Cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
-import { set_handle_contradiction } from "@/cell/Cell";
+import { set_handle_contradiction } from "../Cell/Cell";
 import { merge_generic_value_sets } from "../DataTypes/GenericValueSet";
 
 beforeEach(() => {

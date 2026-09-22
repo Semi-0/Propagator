@@ -1,13 +1,13 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import type { Cell } from "@/cell/Cell";
-import { construct_cell, cell_strongest_base_value, set_handle_contradiction, cell_content, cell_strongest } from "@/cell/Cell";
+import type { Cell } from "../Cell/Cell";
+import { construct_cell, cell_strongest_base_value, set_handle_contradiction, cell_content, cell_strongest } from "../Cell/Cell";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { the_nothing } from "@/cell/CellValue";
+import { the_nothing } from "../Cell/CellValue";
 import { primitive_propagator } from "../Propagator/Propagator";
 import { p_add, p_sync } from "../Propagator/BuiltInProps";
 import { update } from "../AdvanceReactivity/interface";
-import { set_merge, generic_merge } from "@/cell/Merge";
+import { set_merge, generic_merge } from "../Cell/Merge";
 import { reactive_merge, trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 import { merge_generic_value_sets, to_generic_value_set, is_generic_value_set } from "../DataTypes/GenericValueSet";
 import { vector_clock_layer, generic_version_clock_less_than, generic_version_clock_equal } from "../AdvanceReactivity/victor_clock";

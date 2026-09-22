@@ -5,13 +5,13 @@
 // import { map as generic_map } from "generic-handler/built_in_generics/generic_array_operation";
 // import { annotate_identified_timestamp, patch_traced_timestamps, fresher, get_traced_timestamp_layer, same_source, timestamp_equal, type traced_timestamp, annotate_now_with_id, stale } from "./traced_timestamp/tracedTimestampLayer";
 
-// import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, constant_cell, construct_cell, make_temp_cell, type Cell } from "@/cell/Cell";
+// import { add_cell_content, cell_content, cell_id, cell_name, cell_strongest, cell_strongest_base_value, constant_cell, construct_cell, make_temp_cell, type Cell } from "../Cell/Cell";
 // import { compose } from "generic-handler/built_in_generics/generic_combinator";
 // import { construct_reactive_propagator } from "./reactiveProcedure";
 // import { compound_propagator } from "../Propagator/Propagator";
 // import { p_add, p_divide, p_multiply } from "../Propagator/BuiltInProps";
 // import { initialize, update, update_store } from "./update";
-// import { is_nothing } from "@/cell/CellValue";
+// import { is_nothing } from "../Cell/CellValue";
 // import type { BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 // import { construct_reactor } from "../Shared/Reactivity/Reactor";
 // import { get_new_reference_count, reference_store } from "../Helper/Helper";

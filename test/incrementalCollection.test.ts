@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { construct_cell, cell_strongest, update_cell, type Cell } from "@/cell/Cell";
+import { construct_cell, cell_strongest, update_cell, type Cell } from "../Cell/Cell";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { get_support_layer_value, support_by } from "sando-layer/Specified/SupportLayer";

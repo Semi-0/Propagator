@@ -5,13 +5,13 @@ import { generic_merge, set_merge } from '../Cell/Merge';
 
 import { type Stepper } from './Reactivity/MiniReactor/MrPrimitiveCombinators.ts';
 import { construct_state } from './Reactivity/MiniReactor/MrState.ts';
-import type { Cell } from '@/cell/Cell';
+import type { Cell } from '../Cell/Cell';
 import type { Propagator } from '../Propagator/Propagator';
 import { construct_node } from './Reactivity/MiniReactor/MrPrimitive.ts';
 import { Current_Scheduler, set_scheduler } from './Scheduler/Scheduler';
 import { clean_premises_store } from '../DataTypes/Premises';
 import { clear_cell_store, cells_for_premise } from './CellValueStore';
-import { set_handle_contradiction, cell_id } from '@/cell/Cell';
+import { set_handle_contradiction, cell_id } from '../Cell/Cell';
 import { combine_latest, subscribe } from './Reactivity/MiniReactor/MrCombinators.ts';
 import { internal_clear_source_cells } from '../DataTypes/PremisesSource';
 import { pipe } from 'fp-ts/lib/function';

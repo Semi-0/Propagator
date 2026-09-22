@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../Cell/Cell";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";
 import {
   construct_cell,
@@ -7,11 +7,11 @@ import {
   cell_id,
   cell_name,
   update_cell
-} from "@/cell/Cell";
+} from "../Cell/Cell";
 import { execute_all_tasks_sequential, run_scheduler_and_replay, set_immediate_execute } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { the_nothing } from "@/cell/CellValue";
-import { set_merge } from "@/cell/Merge";
+import { the_nothing } from "../Cell/CellValue";
+import { set_merge } from "../Cell/Merge";
 import {
   merge_carried_map,
   bi_switcher,

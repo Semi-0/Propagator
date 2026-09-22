@@ -1,7 +1,7 @@
 import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { is_better_set, type BetterSet } from "generic-handler/built_in_generics/generic_better_set";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_nothing, is_unusable_value } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value } from "../../Cell/CellValue";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import { type traced_timestamp } from "./type";
 import type { LayeredObject } from "sando-layer/Basic/LayeredObject";

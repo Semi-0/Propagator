@@ -1,4 +1,4 @@
-import { cell_strongest, cell_name, cell_content, type Cell } from "@/cell/Cell";
+import { cell_strongest, cell_name, cell_content, type Cell } from "../Cell/Cell";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_propagator } from "../Propagator/Propagator";
 

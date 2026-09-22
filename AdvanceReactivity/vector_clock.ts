@@ -1,4 +1,4 @@
-import { any_unusable_values, is_unusable_value } from "@/cell/CellValue";
+import { any_unusable_values, is_unusable_value } from "../Cell/CellValue";
 import { Array as A, pipe } from "effect";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
 

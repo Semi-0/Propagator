@@ -1,5 +1,5 @@
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../../Cell/Cell";
 import type { Propagator } from "../../../Propagator/Propagator";
 import {
   consolidate_records,

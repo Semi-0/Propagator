@@ -5,7 +5,7 @@ import { Reactive } from "../Shared/Reactivity/ReactiveEngine";
 import { add, subtract} from "../AdvanceReactivity/Generics/GenericArith";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { not } from "../AdvanceReactivity/Generics/GenericArith";
-import { is_nothing, is_unusable_value, the_nothing } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value, the_nothing } from "../Cell/CellValue";
 import { get_base_value } from "sando-layer/Basic/Layer";
 import { add_item, for_each } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";

@@ -1,9 +1,9 @@
 // carried cell in form of stream?
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { is_map } from "../../Helper/Helper";
-import { cell_strongest, cell_strongest_base_value, update_cell, type Cell } from "@/cell/Cell";
+import { cell_strongest, cell_strongest_base_value, update_cell, type Cell } from "../../Cell/Cell";
 import { construct_propagator } from "../../Propagator/Propagator";
-import { any_unusable_values } from "@/cell/CellValue";
+import { any_unusable_values } from "../../Cell/CellValue";
 import { is_array } from "generic-handler/built_in_generics/generic_predicates";
 import type { LayeredObject } from "sando-layer/Basic";
 import { is_trie, is_trie_patch, make_trie, merge_trie_patch, type Trie } from "../trie";

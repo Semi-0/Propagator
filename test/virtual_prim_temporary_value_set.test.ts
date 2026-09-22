@@ -39,11 +39,11 @@ import {
 } from "../AdvanceReactivity/vector_clock";
 
 // Cell and Scheduler imports
-import { construct_cell, cell_strongest_base_value, type Cell } from "@/cell/Cell";
+import { construct_cell, cell_strongest_base_value, type Cell } from "../Cell/Cell";
 import { execute_all_tasks_sequential, run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { set_merge } from "@/cell/Merge";
-import { the_nothing, get_base_value } from "@/cell/CellValue";
+import { set_merge } from "../Cell/Merge";
+import { the_nothing, get_base_value } from "../Cell/CellValue";
 
 // Layered object utilities
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";

@@ -1,14 +1,14 @@
-import { cell_id, construct_cell, is_cell, update_cell } from "@/cell/Cell";
-import { is_nothing } from "@/cell/CellValue";
+import { cell_id, construct_cell, is_cell, update_cell } from "../../Cell/Cell";
+import { is_nothing } from "../../Cell/CellValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { all_match, match_args, register_predicate } from "generic-handler/Predicates";
 import { compound_propagator } from "../../Propagator/Propagator";
-import { generic_merge, merge_layered } from "@/cell/Merge";
+import { generic_merge, merge_layered } from "../../Cell/Merge";
 import { bi_sync, p_switch } from "../../Propagator/BuiltInProps";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import { is_map } from "../../Helper/Helper";
 import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
-import { get_base_value } from "@/cell/CellValue";
+import { get_base_value } from "../../Cell/CellValue";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 
 // todo: this design is meant for carried cell to be retractable 

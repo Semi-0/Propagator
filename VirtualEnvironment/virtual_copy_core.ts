@@ -1,10 +1,10 @@
 import { pipe } from "fp-ts/lib/function"
 import * as A from "fp-ts/Array"
 import { type Frame, construct_frame, compute_frame_ancestors, frame_ancestors } from "./frames"
-import { the_nothing, type CellValue } from "@/cell/CellValue"
+import { the_nothing, type CellValue } from "../Cell/CellValue"
 import * as HS from "effect/HashSet"
-import type { Cell } from "@/cell/Cell"
-import { cell_merge } from "@/cell/Merge"
+import type { Cell } from "../Cell/Cell"
+import { cell_merge } from "../Cell/Merge"
 import type { HashSet } from "effect/HashSet"
 export type VirtualCopySet = Map<Frame, any>
 export type VirtualCopyList = VirtualCopySet[]

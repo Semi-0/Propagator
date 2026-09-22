@@ -1,7 +1,7 @@
-import { construct_cell, type Cell } from "@/cell/Cell";
+import { construct_cell, type Cell } from "../Cell/Cell";
 import {  p_add, p_divide, p_equal, p_less_than, p_multiply, p_subtract, p_switch } from "./BuiltInProps";
 import { propagator_name, type Propagator } from "./Propagator";
-import { make_temp_cell } from "@/cell/Cell";
+import { make_temp_cell } from "../Cell/Cell";
 import { get_new_reference_count } from "../Helper/Helper";
 
 

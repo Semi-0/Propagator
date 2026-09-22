@@ -1,5 +1,5 @@
 // import { describe, test, expect, beforeEach } from "bun:test";
-// import type { Cell } from "@/cell/Cell";
+// import type { Cell } from "../Cell/Cell";
 
 // import { r_constant, update } from "../AdvanceReactivity/interface";
 // import {
@@ -9,12 +9,12 @@
 //   cell_content,
 //   cell_strongest,
 //   make_temp_cell
-// } from "@/cell/Cell";
+// } from "../Cell/Cell";
 // import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 // import { get_base_value } from "sando-layer/Basic/Layer";
 // import { no_compute } from "../Helper/noCompute";
 // import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-// import { is_contradiction, the_nothing } from "@/cell/CellValue";
+// import { is_contradiction, the_nothing } from "../Cell/CellValue";
 // import { compound_propagator, primitive_propagator, construct_propagator, function_to_primitive_propagator } from "../Propagator/Propagator";
 // import { construct_reactor } from "../Shared/Reactivity/Reactor";
 // import { get_traced_timestamp_layer, has_timestamp_layer } from "../AdvanceReactivity/traced_timestamp/TracedTimestampLayer.ts";
@@ -22,7 +22,7 @@
 // import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";
 // import { trace_earliest_emerged_value, is_timestamp_value_set, reactive_merge, reactive_fresh_merge, trace_latest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
 
-// import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
+// import { generic_merge, set_merge, set_trace_merge } from "../Cell/Merge";
 // import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 // import { exec } from "child_process";
 // import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";

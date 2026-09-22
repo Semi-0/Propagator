@@ -1,4 +1,4 @@
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../../Cell/Cell";
 import { make_ce_arithmetical } from "../../../Propagator/Sugar";
 import {
   p_diff_concat,

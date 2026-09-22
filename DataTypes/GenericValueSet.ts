@@ -17,8 +17,8 @@ import { base_value_implies, get_support_layer_set_length, strongest_consequence
 import { length } from "generic-handler/built_in_generics/generic_collection";
 import { generic_wrapper } from "generic-handler/built_in_generics/generic_wrapper";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_nothing, is_unusable_value } from "@/cell/CellValue";
-import { strongest_value } from "@/cell/StrongestValue";
+import { is_nothing, is_unusable_value } from "../Cell/CellValue";
+import { strongest_value } from "../Cell/StrongestValue";
 import { log_tracer, trace_function } from "generic-handler/built_in_generics/generic_debugger";
 import { base_layer, is_base_layer, type Layer } from "sando-layer/Basic/Layer";
 import { pipe } from "fp-ts/lib/function";

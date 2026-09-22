@@ -1,7 +1,7 @@
-import { construct_cell } from "@/cell/Cell";
+import { construct_cell } from "../../Cell/Cell";
 import { compound_propagator, function_to_primitive_propagator, type Propagator } from "../../Propagator/Propagator";
 import { ce_add, ce_constant, p_constant, p_set_array } from "../../Propagator/BuiltInProps";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import { is_map } from "../../Helper/Helper";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";

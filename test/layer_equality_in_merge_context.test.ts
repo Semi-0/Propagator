@@ -6,9 +6,9 @@ import { layered_deep_equal, layers_base_equal, all_layers_value_equal } from "s
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { merge_generic_value_sets, to_generic_value_set, find_related_elements } from "../DataTypes/GenericValueSet";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { set_merge } from "@/cell/Merge";
+import { set_merge } from "../Cell/Merge";
 import { trace_earliest_emerged_value } from "../AdvanceReactivity/traced_timestamp/genericPatch";
-import { set_handle_contradiction } from "@/cell/Cell";
+import { set_handle_contradiction } from "../Cell/Cell";
 
 beforeEach(() => {
   set_global_state(PublicStateCommand.CLEAN_UP);

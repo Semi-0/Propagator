@@ -1,7 +1,7 @@
-import { cell_name, construct_cell, same_cell } from "@/cell/Cell";
+import { cell_name, construct_cell, same_cell } from "../../Cell/Cell";
 import { compound_propagator, function_to_primitive_propagator } from "../../Propagator/Propagator";
 import { p_constant } from "../../Propagator/BuiltInProps";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { compose } from "generic-handler/built_in_generics/generic_combinator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";

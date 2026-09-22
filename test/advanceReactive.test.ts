@@ -1,18 +1,18 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../Cell/Cell";
 
 import {
   construct_cell,
   cell_strongest_base_value,
   cell_id,
   update_cell
-} from "@/cell/Cell";
+} from "../Cell/Cell";
 import { execute_all_tasks_sequential,  run_scheduler_and_replay } from "../Shared/Scheduler/Scheduler";
 
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { the_nothing } from "@/cell/CellValue";
+import { the_nothing } from "../Cell/CellValue";
 import { compound_propagator} from "../Propagator/Propagator";
-import {  set_merge } from "@/cell/Merge";
+import {  set_merge } from "../Cell/Merge";
 
 import {  com_celsius_to_fahrenheit, p_add, p_divide, p_filter_a, p_index, p_map_a, p_multiply, p_reduce, p_subtract, p_switch, p_sync, p_zip, c_if_a, c_if_b, p_range, c_range, ce_add, p_drop, p_take, p_pull, ce_pull, bi_sync, p_constant, p_dispatch } from "../Propagator/BuiltInProps";
 

@@ -1,7 +1,7 @@
-import { construct_cell } from "@/cell/Cell";
+import { construct_cell } from "../../Cell/Cell";
 import { compound_propagator, function_to_primitive_propagator, primitive_propagator } from "../../Propagator/Propagator";
 import { ce_constant, p_constant, p_sync } from "../../Propagator/BuiltInProps";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { ce_switch } from "../../Propagator/BuiltInProps";

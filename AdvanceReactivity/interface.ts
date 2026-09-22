@@ -12,9 +12,9 @@
  * Licensed under the GNU General Public License v3.0 or later.
  */
 
-import { update_cell, cell_id,construct_cell } from "@/cell/Cell";
+import { update_cell, cell_id,construct_cell } from "../Cell/Cell";
 import { annotate_now_with_id, annotate_smallest_time_with_id } from "./traced_timestamp/Annotater";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../Cell/Cell";
 import { stale } from "./traced_timestamp/Annotater";
 import { register_premise } from "../DataTypes/Premises";
 import { support_by } from "sando-layer/Specified/SupportLayer";

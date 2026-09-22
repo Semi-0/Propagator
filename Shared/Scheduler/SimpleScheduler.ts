@@ -24,8 +24,8 @@ import { set_global_state, PublicStateCommand } from "../../Shared/PublicState";
 import { cell_snapshot } from "../../Shared/PublicState";
 import { find_propagator_by_id } from "../../Shared/GraphTraversal";
 import { make_propagator_frame, type PropagatorFrame } from "./RuntimeFrame";
-import { internal_cell_dispose } from "@/cell/Cell";
-import type { Cell } from "@/cell/Cell";
+import { internal_cell_dispose } from "../../Cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 
 //TODO: merge simple_scheduler & reactive_scheduler
 export const simple_scheduler = (): Scheduler => {

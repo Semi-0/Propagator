@@ -1,4 +1,4 @@
-import { update_cell, cell_id, construct_cell, cell_strongest, cell_content } from "@/cell/Cell";
+import { update_cell, cell_id, construct_cell, cell_strongest, cell_content } from "../../Cell/Cell";
 import { update } from "../../AdvanceReactivity/interface";
 import { annotate_now_with_id } from "../../AdvanceReactivity/traced_timestamp/Annotater";
 import { traced_timestamp_layer, has_timestamp_layer, get_traced_timestamp_layer } from "../../AdvanceReactivity/traced_timestamp/TracedTimestampLayer";
@@ -27,7 +27,7 @@ import { JStrategy, joinPatch } from './joins';
 import { projectMonotone } from './projection';
 import { addToFrontier, createEmptyFrontier } from './lineage';
 import { computeEffectiveValue } from './reducers';
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 
 // Create the patch layer for cell content (following TracedTimestampLayer pattern)
 export const patch_layer = make_annotation_layer<CellContent, any>("patch", (

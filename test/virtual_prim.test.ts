@@ -13,7 +13,7 @@ import {
 import {
   construct_cell,
   cell_strongest_base_value
-} from "@/cell/Cell";
+} from "../Cell/Cell";
 
 import { update } from "../AdvanceReactivity/interface";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";

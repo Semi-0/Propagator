@@ -1,5 +1,5 @@
-import { is_unusable_value } from "@/cell/CellValue";
-import { update_cell, type Cell } from "@/cell/Cell";
+import { is_unusable_value } from "../../../Cell/CellValue";
+import { update_cell, type Cell } from "../../../Cell/Cell";
 import { construct_propagator, type Propagator } from "../../../Propagator/Propagator";
 import type { DiffMessage, VersionedCollection } from "./messagesTrace";
 import { is_diff_message, is_diff_trace, is_frontier_message, vc_records } from "./messagesTrace";

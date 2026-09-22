@@ -1,14 +1,14 @@
-import { cell_id, cell_strongest, cell_strongest_base_value, update_cell } from "@/cell/Cell";
-import { type Cell } from "@/cell/Cell";
+import { cell_id, cell_strongest, cell_strongest_base_value, update_cell } from "../../Cell/Cell";
+import { type Cell } from "../../Cell/Cell";
 import { match_args, one_of_args_match, register_predicate } from "generic-handler/Predicates";
 import { find_cell_by_id } from "../../Shared/GraphTraversal";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { ce_constant, p_constant } from "../../Propagator/BuiltInProps";
 import { compound_propagator, construct_propagator, primitive_propagator } from "../../Propagator/Propagator";
 import { no_compute } from "../../Helper/noCompute";
-import { cell_merge } from "@/cell/Merge";
+import { cell_merge } from "../../Cell/Merge";
 import { is_concrete } from "generic-handler/built_in_generics/generic_predicates";
-import { is_nothing, the_contradiction, the_nothing } from "@/cell/CellValue";
+import { is_nothing, the_contradiction, the_nothing } from "../../Cell/CellValue";
 import { make_layered_procedure } from "sando-layer/Basic/LayeredProcedure";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";

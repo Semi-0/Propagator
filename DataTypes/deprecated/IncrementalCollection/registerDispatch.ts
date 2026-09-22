@@ -1,6 +1,6 @@
-import { any_unusable_values, is_nothing, is_unusable_value } from "@/cell/CellValue";
-import { generic_merge } from "@/cell/Merge";
-import { strongest_value } from "@/cell/StrongestValue";
+import { any_unusable_values, is_nothing, is_unusable_value } from "../../../Cell/CellValue";
+import { generic_merge } from "../../../Cell/Merge";
+import { strongest_value } from "../../../Cell/StrongestValue";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";

@@ -1,7 +1,7 @@
 // import { socket_IO_client_cell } from "../Cell/RemoteCell/SocketClientCell";
 // import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 // import { describe, it, expect, beforeEach, afterEach, test } from "bun:test";
-// import { cell_id, cell_strongest, cell_strongest_base_value, construct_cell, type Cell } from "@/cell/Cell";
+// import { cell_id, cell_strongest, cell_strongest_base_value, construct_cell, type Cell } from "../Cell/Cell";
 // import { construct_traced_timestamp } from "../AdvanceReactivity/traced_timestamp/TracedTimeStamp";
 // import { c_multiply } from "../Propagator/BuiltInProps";
 // import { tell } from "../Helper/UI";
@@ -11,7 +11,7 @@
 // import type { TCPSocketConnectOptions, TCPSocketListenOptions } from "bun";
 // import { inspect, type Server } from "bun";
 // import { p_multiply } from "../Propagator/BuiltInProps";
-// import { the_nothing } from "@/cell/CellValue";
+// import { the_nothing } from "../Cell/CellValue";
 // import { compound_propagator, construct_propagator } from "../Propagator/Propagator";
 // import { pipe } from "fp-ts/lib/function";
 

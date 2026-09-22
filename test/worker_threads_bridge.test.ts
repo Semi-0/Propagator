@@ -1,12 +1,12 @@
 import { describe, test, expect, beforeEach } from "bun:test"
 import { Worker } from "node:worker_threads"
 
-import { construct_cell, update_cell, cell_strongest_base_value } from "@/cell/Cell"
-import { the_nothing } from "@/cell/CellValue"
+import { construct_cell, update_cell, cell_strongest_base_value } from "../Cell/Cell"
+import { the_nothing } from "../Cell/CellValue"
 import { construct_propagator } from "../Propagator/Propagator"
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler"
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState"
-import { set_merge } from "@/cell/Merge"
+import { set_merge } from "../Cell/Merge"
 import { merge_temporary_value_set } from "../DataTypes/TemporaryValueSet"
 
 type SquareResp = { id: string; y: number }

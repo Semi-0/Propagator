@@ -2,8 +2,8 @@
 // import { execute_all_tasks_sequential } from "../Shared/Reactivity/Scheduler";
 // import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 // import { test } from "bun:test";
-// import { cell_strongest_base_value } from "@/cell/Cell";
-// import { construct_cell, cell_strongest_value } from "@/cell/Cell";
+// import { cell_strongest_base_value } from "../Cell/Cell";
+// import { construct_cell, cell_strongest_value } from "../Cell/Cell";
 // import { c_add } from "../Propagator/BuiltInProps";
 // import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
 // import SuperJSON from "superjson";

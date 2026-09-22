@@ -1,7 +1,7 @@
-import { cell_id, cell_strongest_base_value, construct_cell } from "@/cell/Cell";
+import { cell_id, cell_strongest_base_value, construct_cell } from "../../Cell/Cell";
 import { compound_propagator, function_to_primitive_propagator } from "../../Propagator/Propagator";
 import { p_constant } from "../../Propagator/BuiltInProps";
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import type { Propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { p_struct } from "./Carrier";

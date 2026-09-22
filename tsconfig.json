@@ -7,9 +7,6 @@
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
-    "paths": {
-      "@/cell/*": ["./Cell/*"]
-    },
 
     // Bundler mode
     "moduleResolution": "bundler",

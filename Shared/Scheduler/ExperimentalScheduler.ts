@@ -11,8 +11,8 @@
 // import { is_layered_object, type LayeredObject } from "sando-layer/Basic/LayeredObject";
 // import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
 // import { match_args } from "generic-handler/Predicates";
-// import { cell_id } from "@/cell/Cell";
-// import { type Cell } from "@/cell/Cell";
+// import { cell_id } from "../../Cell/Cell";
+// import { type Cell } from "../../Cell/Cell";
 // import type { StandardScheduler } from "./StandardScheduler";
 //
 // const l_propagator_id = make_layered_procedure("propagator_id", 1, _propagator_id)

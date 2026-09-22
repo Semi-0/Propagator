@@ -5,12 +5,12 @@ import { construct_better_set, is_better_set, set_merge as _set_merge, identify_
 import { every } from "generic-handler/built_in_generics/generic_collection";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { get_base_value } from "sando-layer/Basic/Layer";
-import { define_handler, generic_merge, set_merge } from "@/cell/Merge";
+import { define_handler, generic_merge, set_merge } from "../../Cell/Merge";
 import { match_args, register_predicate } from "generic-handler/Predicates";
-import { strongest_value } from "@/cell/StrongestValue";
+import { strongest_value } from "../../Cell/StrongestValue";
 import { construct_simple_generic_procedure, define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_contradiction, is_not_contradiction, the_contradiction } from "@/cell/CellValue";
-import {  cell_content, type Cell } from "@/cell/Cell";
+import { is_contradiction, is_not_contradiction, the_contradiction } from "../../Cell/CellValue";
+import {  cell_content, type Cell } from "../../Cell/Cell";
 import { update } from "../interface";
 import { fresher } from "./Fresher/Fresher";
 import { same_source } from "./SameSource";

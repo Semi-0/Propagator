@@ -1,9 +1,9 @@
 import { describe, test, expect, beforeEach } from "bun:test";
-import { construct_cell, update_cell, cell_id, NeighborType } from "@/cell/Cell";
+import { construct_cell, update_cell, cell_id, NeighborType } from "../Cell/Cell";
 import { construct_propagator } from "../Propagator/Propagator";
 import { execute_all_tasks_sequential } from "../Shared/Scheduler/Scheduler";
 import { set_global_state, PublicStateCommand } from "../Shared/PublicState";
-import { set_merge } from "@/cell/Merge";
+import { set_merge } from "../Cell/Merge";
 import {
     install_temporary_value_set_handlers,
     merge_temporary_value_set,

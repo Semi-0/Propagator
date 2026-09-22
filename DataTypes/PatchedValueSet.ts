@@ -40,20 +40,20 @@ import { construct_layered_consolidator, define_consolidator_per_layer_dispatche
 import { match_args, register_predicate } from "generic-handler/Predicates";
 import { log_tracer } from "generic-handler/built_in_generics/generic_debugger";
 import { define_generic_procedure_handler } from "generic-handler/GenericProcedure";
-import { is_nothing, is_unusable_value } from "@/cell/CellValue";
+import { is_nothing, is_unusable_value } from "../Cell/CellValue";
 import { pipe } from "fp-ts/lib/function";
 import { base_value_implies, strongest_consequence, supported_value_less_than_or_equal } from "./ValueSet";
 import { identify_by } from "generic-handler/built_in_generics/generic_better_set";
 import { compose } from "generic-handler/built_in_generics/generic_combinator.ts";
 import { define_generic_propagator_handler } from "../GenericPropagator/generic_propagator";
-import { strongest_value } from "@/cell/StrongestValue";
+import { strongest_value } from "../Cell/StrongestValue";
 import { is_equal } from "generic-handler/built_in_generics/generic_arithmetic";
 import { throw_error } from "generic-handler/built_in_generics/other_generic_helper";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { is_map } from "../Helper/Helper";
 import { generic_merge } from "../Cell/Merge";
 import { is_any } from "generic-handler/built_in_generics/generic_predicates";
-import { merge_layered } from "@/cell/Merge";
+import { merge_layered } from "../Cell/Merge";
 
 /**
  * @type {BetterSet} PatchedSet - Type alias for a set of ContentPatches

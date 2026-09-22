@@ -1,4 +1,4 @@
-import type { Cell } from "@/cell/Cell";
+import type { Cell } from "../../Cell/Cell";
 import { compound_propagator } from "../../Propagator/Propagator";
 import { make_ce_arithmetical } from "../../Propagator/Sugar";
 import { ce_switch, ce_equal } from "../../Propagator/BuiltInProps";

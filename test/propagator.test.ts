@@ -27,7 +27,7 @@ import { simple_scheduler} from "../Shared/Scheduler/SimpleScheduler.ts";
 import { set_global_state } from "../Shared/PublicState";
 import { merge_value_sets } from "../DataTypes/ValueSet";
 import { PublicStateCommand } from "../Shared/PublicState";
-import { generic_merge, set_merge, set_trace_merge } from "@/cell/Merge";
+import { generic_merge, set_merge, set_trace_merge } from "../Cell/Merge";
 import { get_support_layer_value } from "sando-layer/Specified/SupportLayer";
 import { to_string } from "generic-handler/built_in_generics/generic_conversation";
 import { construct_better_set } from "generic-handler/built_in_generics/generic_better_set";

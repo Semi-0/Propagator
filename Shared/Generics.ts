@@ -5,7 +5,7 @@ import { construct_simple_generic_procedure, define_generic_procedure_handler } 
 import { match_args } from "generic-handler/Predicates";
 import { mark_for_disposal as mark_id_for_disposal} from "./Scheduler/Scheduler";
 import { is_relation, type Relation } from "../DataTypes/Relation";
-import { cell_children, cell_dependents, cell_downstream, cell_id, is_cell } from "@/cell/Cell";
+import { cell_children, cell_dependents, cell_downstream, cell_id, is_cell } from "../Cell/Cell";
 import { is_propagator, propagator_children, propagator_id, propagator_inputs, propagator_outputs } from "../Propagator/Propagator";
 // import type { Propagator } from "ppropogator";
 
